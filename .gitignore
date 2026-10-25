@@ -1,0 +1,7 @@
+node_modules/
+dist/
+tools/captures/
+.env
+.env.*
+.DS_Store
+lycee-vie-sociale.zip

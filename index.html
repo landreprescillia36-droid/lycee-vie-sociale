@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b1d23">
+<title>Lycée · vie sociale</title>
+<meta name="description" content="Jeu de vie sociale en terminale dans un lycée de Guadeloupe.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lycée">
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap" id="atelier">
+  <header>
+    <h1 id="atTitle">Atelier d'avatar</h1>
+    <p id="atSub">Crée le personnage qui entrera au lycée.</p>
+  </header>
+
+  <section class="idcard" aria-label="Identité">
+    <div class="idnames">
+        <div class="field">
+          <label for="nom" id="nomLbl">Prénom du personnage</label>
+          <div class="inwrap"><input id="nom" type="text" maxlength="24" autocomplete="off"><button class="dice" id="diceNom" type="button" aria-label="Prénom au hasard" title="Prénom au hasard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button></div>
+        </div>
+        <div class="field" id="nomFamBox">
+          <label for="nomFam">Nom de famille</label>
+          <div class="inwrap"><input id="nomFam" type="text" maxlength="24" autocomplete="off"><button class="dice" id="diceFam" type="button" aria-label="Nom de famille au hasard" title="Nom de famille au hasard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button></div>
+        </div>
+      </div>
+        <div class="ident" id="idBlock">
+          <div class="field"><span class="lbl" id="lblSexe">Sexe</span><div class="segs" id="segSexe" role="group" aria-labelledby="lblSexe"></div></div>
+          <div class="field"><span class="lbl" id="lblOri">Attirance</span><div class="segs" id="segOri" role="group" aria-labelledby="lblOri"></div></div>
+          <p class="hint" id="oriHint"></p>
+        </div>
+  </section>
+
+  <div class="studio">
+    <section class="stage" aria-label="Aperçu">
+      <div class="segs" id="viewSeg" role="group" aria-label="Vue"><button class="sub" type="button" data-pv="portrait">Portrait</button><button class="sub" type="button" data-pv="full">En pied</button></div>
+      <div class="portrait" id="portrait"></div>
+      <div class="adjust" id="adjust" hidden>
+        <span class="lbl" id="adjLbl">Ajuster</span>
+        <div class="tools" id="tools"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="Personnalisation">
+      <nav class="tabs" id="tabs" role="tablist"></nav>
+      <div class="subs" id="subs"></div>
+      <div class="grid" id="grid"></div>
+      <div class="detail" id="detail" hidden></div>
+    </section>
+  </div>
+
+  <div class="actions">
+    <button class="btn" id="bRand" type="button">Aléatoire</button>
+    <button class="btn" id="bReset" type="button">Réinitialiser</button>
+    <button class="btn" id="bSave" type="button">Enregistrer</button>
+    <button class="btn" id="bCompte" type="button" hidden>Mon compte</button>
+    <button class="btn" id="bRestart" type="button" hidden>Recommencer la partie</button>
+    <button class="btn primary" id="bPlay" type="button">Commencer la partie</button>
+    <button class="btn primary" id="bFamDone" type="button" hidden>Valider l'apparence</button>
+  </div>
+
+  <details class="code" id="codeBox">
+    <summary>Code de l'avatar</summary>
+    <p>Ce code décrit l'avatar. Copie-le pour l'utiliser dans le jeu, ou colle un code ici puis clique sur Charger.</p>
+    <textarea id="code" spellcheck="false"></textarea>
+    <div class="row">
+      <button class="btn" id="bCopy" type="button">Copier le code</button>
+      <button class="btn" id="bLoad" type="button">Charger</button>
+    </div>
+  </details>
+</div>
+<div class="wrap" id="famille" hidden>
+  <header>
+    <h1>Ma famille</h1>
+    <p>Les personnes qui vivent avec ton personnage. Elles t'écriront et réagiront à ta vie au lycée.</p>
+    <p class="hint" id="famNom"></p>
+  </header>
+  <div class="fam-list" id="famList"></div>
+  <div class="actions">
+    <button class="btn" id="famBack" type="button">Retour</button>
+    <button class="btn" id="famAdd" type="button">Ajouter un membre</button>
+    <button class="btn primary" id="famGo" type="button">Commencer la partie</button>
+  </div>
+</div>
+
+<div class="game" id="game" hidden>
+  <div class="gtop">
+    <div class="row1">
+      <div class="day"><svg viewBox="0 0 32 32" id="gSky"></svg><span id="gDay">Jour 1</span></div>
+      <button class="pill" id="gAd" type="button"><span class="adlong">Regarder une pub </span><span class="adshort">Pub </span><b>+5 ⚡</b><span class="dot"></span></button>
+      <button class="sq" id="gShop" type="button" aria-label="Boutique"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 9l1.5-5h13L20 9M4 9h16v11H4zM4 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3"/><path d="M10 20v-5h4v5"/></svg></button>
+      <button class="sq red" id="gExit" type="button" aria-label="Retour à l'atelier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h5v16h-5M3 12h11M10 8l4 4-4 4"/></svg></button>
+    </div>
+    <div class="clockrow">
+      <div class="clock"><b id="gTime">07:30</b><span id="gPhase">Avant les cours</span></div>
+      <button class="sq sm" id="gPause" type="button" aria-label="Mettre le temps en pause"></button>
+      <button class="sq sm" id="gMusic" type="button" aria-label="Couper la musique"></button>
+      <button class="avgpill" id="gAvgBtn" type="button" aria-label="Moyenne générale"><span>Notes</span><b id="gAvg">–</b><small>/20</small></button>
+    </div>
+    <div class="labels"><span>Bonus</span><span id="gRecharge">Recharge dans 10:00</span></div>
+    <div class="meters">
+      <svg viewBox="0 0 24 24"><path d="M13.5 2L4 14h7l-1.5 8L20 9.5h-7z" fill="#ffd23f"/></svg>
+      <div class="battery"><button class="cell" id="gEnergy" type="button" aria-label="Énergie">85</button><button class="cell bonus" id="gBonus" type="button" aria-label="Récupérer le bonus"><i id="gBonusFill"></i><span id="gBonusTxt">4/5</span></button></div>
+      <button class="plus gold" id="gEnergyPlus" type="button" aria-label="Acheter de l'énergie">+</button>
+      <div class="gems"><svg viewBox="0 0 28 28"><path d="M14 2l9 5v14l-9 5-9-5V7z" fill="#b48cff"/><path d="M14 6l5.5 3v10L14 22l-5.5-3V9z" fill="#d6c0ff"/></svg><span id="gGems">45</span><button class="plus purple" id="gGemPlus" type="button" aria-label="Obtenir des gemmes">+</button></div>
+    </div>
+  </div>
+  <div class="stories" id="gStories"></div>
+  <main class="gview" id="gView"></main>
+  <nav class="gnav" id="gNav"></nav>
+</div>
+<div class="fabs" id="gFabs" hidden><div class="fabs-in">
+  <button class="fab-event" id="gEvent" type="button"><svg viewBox="0 0 64 64"><rect x="10" y="10" width="44" height="44" rx="11" fill="#fff" stroke="#c9cde0" stroke-width="2"/><circle cx="22" cy="22" r="4.5" fill="#1d2140"/><circle cx="42" cy="22" r="4.5" fill="#1d2140"/><circle cx="32" cy="32" r="4.5" fill="#1d2140"/><circle cx="22" cy="42" r="4.5" fill="#1d2140"/><circle cx="42" cy="42" r="4.5" fill="#1d2140"/></svg>Événement</button>
+  <button class="fab-plus" id="gCompose" type="button" aria-label="Publier">+</button>
+</div></div>
+<div class="sheet-back" id="sheet" hidden><div class="sheet" id="sheetBody" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="js/app.js"></script>
+<script src="js/config.js"></script>
+<script src="js/vendor/supabase.js"></script>
+<script src="js/cloud.js"></script>
+<script>
+/* application installable : le service worker n'existe qu'en https ou sur localhost (pas en ouvrant le fichier directement) */
+if('serviceWorker' in navigator && location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "lycee-vie-sociale",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Jeu de vie sociale au lycée en Guadeloupe : création d'avatar, terminale, bac, camarades, réseaux sociaux.",
+  "scripts": {
+    "dev": "vite --host",
+    "test": "node tools/simulate.js",
+    "captures": "node tools/captures.js",
+    "icones": "node tools/icones.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0",
+    "vite": "^5.4.10"
+  }
+}
