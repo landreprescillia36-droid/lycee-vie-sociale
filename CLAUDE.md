@@ -64,3 +64,4 @@ Dans claude.ai, les réponses des camarades venaient de `window.claude.use('samp
 - Cheveux crépus : contours et ombres seulement, pas de boucles ni de vagues dessinées. Pas de trou entre la tête et les cheveux.
 - Catalogues de vêtements séparés filles / garçons.
 - Elle préfère voir un aperçu avant qu'une grosse nouveauté soit intégrée.
+- **À chaque demande où elle doit faire quelque chose elle-même** (réglage GitHub, Supabase, téléphone…) : donner le **lien direct** vers la page exacte (pas juste le site), la **marche à suivre exacte** étape par étape (où cliquer, quoi choisir, quoi écrire), et une **capture ou un schéma** de l'écran à atteindre (image PNG envoyée avec le message).
