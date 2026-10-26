@@ -1692,19 +1692,44 @@ const REP={
 /* dernière phrase dite par la personne, pour ne pas se répéter */
 const lastLines=id=>[...(G.threads[id]||[]),...((G.talks&&G.talks[id])||[])].filter(m=>m.from==='them').slice(-6).map(m=>m.text);
 function smartLine(id,text){
- const t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
+ let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
  const fresh=L=>{const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
- if(!R){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}
- if(s<0)return fresh(VOICE[id].hurt);
+ if(!R){if(!isFam(id)){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}R=FAMREP[famKind(id)]}
+ const V=isFam(id)?R:VOICE[id];
+ if(s<0)return fresh(V.hurt);
  /* « et toi ? » : répondre sur le sujet de sa dernière question */
  if(/(et toi|et vous|toi aussi|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
   if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
   const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]])}
  const hit=TOPICS.find(([k,re])=>re.test(t)&&R[k]);
  if(hit)return fresh(R[hit[0]]);
- if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(VOICE[id].happy);
+ if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(V.happy);
  return fresh(t.includes('?')?R.q:R.def);
 }
+
+/* ---------- la famille parle selon son rôle (parent, grand-parent, petit frère ou petite sœur, grand frère ou grande sœur) ---------- */
+const famKind=id=>{const f=famById(id),r=f?f.role:'';return /^Grand-/.test(r)?'grand':/^Petit|^Petite/.test(r)?'petit':/^Grand |^Grande /.test(r)?'aine':'parent'};
+const FAMREP={
+ parent:{start:["Tout se passe bien au lycée ?","N'oublie pas de ranger ta chambre","On mange à 19h30 ce soir"],happy:["Je suis fier·e de toi ❤️","Haha tu me fais rire","Ça me fait plaisir de t'entendre"],hurt:["On en reparle tout à l'heure.","Ce ton, non merci.","Je ne t'ai pas {p:élevé·e} comme ça."],neutral:["D'accord.","Ok mon cœur.","On verra ça ce soir."],
+  salut:["Coucou mon cœur","Ah, te voilà !"],cava:["Ça va, un peu fatigué·e par le travail. Et toi, ta journée ?","Ça va bien. Et toi, ça s'est passé comment au lycée ?"],activite:["Je prépare à manger","Je termine un truc pour le travail"],
+  ecole:["Et tes notes, ça avance ? Le bac arrive vite","Tu as des devoirs pour demain ?","Si tu as besoin d'aide, demande"],weekend:["Ce week-end on pourrait aller à la plage en famille","Samedi tu m'aides à faire les courses ?"],
+  manger:["On mange à 19h30, sois à l'heure","Il reste du colombo dans le frigo"],amour:["Ah bon ? Tu as quelqu'un en vue ? 👀","Prends ton temps, concentre-toi sur le bac d'abord"],fatigue:["Va te coucher tôt ce soir","Tu dors assez ? Pose ce téléphone"],
+  famille:["On est une famille, on se serre les coudes","Appelle ta grand-mère, ça lui fera plaisir"],merci:["De rien mon cœur","C'est normal"],q:["Bonne question… on en parle à table ?","Je ne sais pas, et toi, tu en penses quoi ?"],def:["Ah oui ?","D'accord, raconte","Je t'écoute","Hmm hmm","C'est bien"],
+  maison:["Mets la table, s'il te plaît","Range un peu ta chambre"]},
+ grand:{start:["Tu passes me voir dimanche ?","Tu manges bien au moins ?","Je pense à toi"],happy:["Oh, ça me fait chaud au cœur","Tu es un amour","Que Dieu te garde"],hurt:["On ne parle pas comme ça à ses aînés !","Tsss… les jeunes d'aujourd'hui"],neutral:["Ah bon…","Mm.","C'est comme ça."],
+  salut:["Bonjour mon petit","Viens m'embrasser"],cava:["Ça va, à part mes genoux. Et toi ?","Ça va doucement. Et l'école ?"],activite:["Je regarde mon émission","J'arrose mes plantes"],ecole:["Travaille bien à l'école, c'est important","De mon temps, on n'avait pas tout ça"],
+  weekend:["Dimanche je fais un bon repas, tu viens ?","Viens m'aider au jardin samedi"],manger:["Tu as faim ? J'ai fait des accras","Mange, tu es tout maigre"],amour:["Ah, l'amour… raconte-moi tout","Choisis quelqu'un de gentil, c'est ça le plus important"],
+  fatigue:["Repose-toi, tu travailles trop","Une bonne tisane et au lit"],famille:["La famille, c'est sacré","Tes parents étaient pareils à ton âge"],merci:["De rien, mon petit","C'est normal"],q:["Je ne sais pas, demande à tes parents","Hmm, à mon âge on ne sait plus tout"],def:["Ah oui…","C'est bien ça","Raconte encore","Mm, mm"],
+  maison:["Viens t'asseoir à côté de moi","Tu veux un jus de groseille ?"]},
+ petit:{start:["Tu joues avec moi ?","C'est quoi le code du wifi ?","Je peux prendre ton chargeur ?"],happy:["Trop bien !! 😁","T'es trop {p:fort·e} 😁","Ouais !!"],hurt:["Je vais le dire à maman !","T'es {p:méchant·e} 😤","Pfff"],neutral:["Ok","Bof","Si tu veux"],
+  salut:["Salut ! T'as ramené des bonbons ?","Yo !"],cava:["Ouais ça va ! J'ai gagné à la console 😁","Bof, j'ai eu une punition"],activite:["Je joue à la console","Je fais mes devoirs… enfin presque"],
+  ecole:["J'ai eu 15 en maths ! Et toi ?","Ma maîtresse est trop sévère"],weekend:["On va à la plage ce week-end ? Dis oui !","Tu m'emmènes au glacier ?"],manger:["J'ai faim ! Y a quoi à manger ?","Tu me fais des crêpes ?"],
+  amour:["Beurk 🤢","T'as quelqu'un ?? Je vais le dire à tout le monde 😂"],fatigue:["Moi je suis pas fatigué !","Pfff t'es toujours {p:fatigué·e}"],famille:["Maman a dit que je pouvais rester debout tard","Papa ronfle trop fort 😂"],merci:["De rien !","Hé hé"],
+  q:["Je sais pas moi !","Euh… oui ? Non ?"],def:["Ah ouais ?","Cool","Et alors ?","Mdr","Ok ok"],maison:["Tu me prêtes ton téléphone ?","Tu veux voir mon dessin ?"]},
+ aine:{start:["T'as encore pris mon chargeur ?","Tu me dois un service","Ça se passe bien la terminale ?"],happy:["Haha t'es bête","Ok là t'as raison","Trop bien"],hurt:["Calme-toi","Parle-moi mieux","Ok, laisse tomber"],neutral:["Ok","Ouais","Si tu veux"],
+  salut:["Salut toi","Yo"],cava:["Ça va, fatigué·e par les cours. Et toi ?","Tranquille. Et la terminale ?"],activite:["Je regarde une série","Je révise, pour une fois"],ecole:["La terminale c'est dur, mais tu vas gérer","Si tu veux je t'aide en maths"],
+  weekend:["Samedi je sors avec mes potes","On peut aller au centre-ville ensemble si tu veux"],manger:["Il reste des pâtes","On commande une pizza ?"],amour:["Ohh, raconte 👀","Fais attention à toi quand même"],fatigue:["Va dormir alors","Moi aussi, j'en peux plus"],
+  famille:["Les parents sont sur mon dos en ce moment","Le petit est insupportable aujourd'hui 😂"],merci:["De rien","Tu me revaudras ça"],q:["Bonne question","Jsp, et toi ?"],def:["Ah ouais ?","Ok","Raconte","Pas mal"],maison:["Baisse le son, je travaille","Tu veux regarder un film ?"]}};
 
 function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
@@ -1764,9 +1789,10 @@ function npcPing(){
 }
 function familyPing(){
  if(!G.family.length)return;const h=G.min/60,wd=weekday();
- if(h===7&&wd<5)pushMsg(pickR(G.family).id,'them',pickR(["Bonne journée mon cœur ❤️ travaille bien","N'oublie pas ta gourde !","Bon courage pour aujourd'hui 💪"]));
+ const adulte=()=>pickR(G.family.filter(f=>['parent','grand'].includes(famKind(f.id))).concat(G.family).slice(0,Math.max(1,G.family.filter(f=>['parent','grand'].includes(famKind(f.id))).length))).id;
+ if(h===7&&wd<5)pushMsg(adulte(),'them',pickR(["Bonne journée mon cœur ❤️ travaille bien","N'oublie pas ta gourde !","Bon courage pour aujourd'hui 💪"]));
  if(h===18&&!famPending()&&Math.random()<(wd===3||wd===4?.5:.2)){const f=pickR(G.family);const pl=famPlan(f.id);pushMsg(f.id,'them',famProposalText(pl),{plan:pl.id});return}
- if(h===18&&Math.random()<.6)pushMsg(pickR(G.family).id,'them',pickR(["Tu rentres à quelle heure ?","On mange à 19h30, sois à l'heure","Tu as des devoirs pour demain ?"]));
+ if(h===18&&Math.random()<.6)pushMsg(adulte(),'them',pickR(["Tu rentres à quelle heure ?","On mange à 19h30, sois à l'heure","Tu as des devoirs pour demain ?"]));
 }
 function parentReact(kind){
  const p=G.family.find(f=>/Mère|Père|mère|père|Grand/.test(f.role))||G.family[0];if(!p)return;const strict=/Strict/.test(p.trait);
@@ -2710,7 +2736,7 @@ function drawChatMsgs(){
  box.innerHTML=(th.length?th.map(m=>`<div class="bub ${m.from==='me'?'me':''}">${fmtText(m.text)}<small class="tm">${m.tm||''}</small>${m.from==='me'?'':bubbleExtra(m)}</div>`).join(''):`<p class="muted" style="text-align:center">Écris le premier message à ${esc(nameOf(chat.id))}.</p>`)+(busyId===chat.id?`<div class="bub typing">${esc(nameOf(chat.id))} écrit…</div>`:'');
  box.scrollTop=box.scrollHeight;
 }
-const voiceOf=id=>VOICE[isFam(id)?'fam':id];
+const voiceOf=id=>isFam(id)?FAMREP[famKind(id)]:VOICE[id];
 /* ---------- parler en vrai (face à face) ----------
    Différent des messages : dialogue à l'oral, au lieu où l'on se trouve, avec gestes ; historique séparé (G.talks).
    Le ou la camarade sait que c'est en vrai (consigne dans le prompt, gestes et remarques sur le lieu en secours). */
@@ -2764,7 +2790,7 @@ function talkFallback(id,text){
  /* pas de question qui reprend ce que tu viens de dire */
  const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))):[];
  let r=met===0?'*te regarde avec curiosité* '+introLine(id):g+' '+strip(smartLine(id,text))+(met<3&&fq.length?' '+pickR(fq):'');
- const pt=(PLACE_TALK[talk.pl]||PLACE_TALK.cour).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
+ const pt=(isFam(id)?FAMREP[famKind(id)].maison:(PLACE_TALK[talk.pl]||PLACE_TALK.cour)).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
  return {reponse:r,amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0};
 }
