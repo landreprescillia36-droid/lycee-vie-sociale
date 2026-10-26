@@ -1637,8 +1637,9 @@ Réponds uniquement avec un objet JSON :
 function sentiment(t){t=t.toLowerCase();if(/(nul|ferme[ -]la|idiot|débile|moche|dégage|tais-toi|je te déteste|chiant|bête|pathétique)/.test(t))return -1;if(/(merci|cool|trop bien|génial|j'adore|❤|😍|🥰|mdr|ptdr|haha|bravo|bisou|beau|belle|mignon|gentil|super|top|manqué|t'aime)/.test(t))return 1;return 0}
 function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
- const first=isNpc(id)&&(G.met[id]||0)<3;
- return{reponse:pickR(s>0?v.happy:s<0?v.hurt:v.neutral)+(first?' '+pickR(FOLLOW_Q[id]):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
+ const met=isNpc(id)?(G.met[id]||0):3;
+ return{reponse:met===0?introLine(id):pickR(s>0?v.happy:s<0?v.hurt:v.neutral)+(met<3?' '+pickR(FOLLOW_Q[id]):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
@@ -1862,7 +1863,7 @@ const COSTUMES=['vampire 🧛','sorcière 🧙','zombie 🧟','soukougnan 🔥',
 const CARNAVAL=['madras et foulard 🌺','diable rouge 😈','pierrot 🤡','super-héros 🦸','marin ⚓'];
 const FETES=[
  {id:'rentree',date:'2026-09-01',n:'Rentrée des terminales',ic:'🎒',scene:'cour',post:"[Officiel] Bienvenue aux terminales 🎒 Nouvelle année, nouveaux drames. On vous surveille 👀",info:"C'est ta première journée dans ce lycée : discours de la proviseure, visite, inscriptions aux clubs.",acts:[
-  {l:"Te présenter à quelqu'un",sm:"Faire connaissance",pick:'any',e:0,fx:to=>{pushMsg(to,'them',introLine(to));G.met[to]=G.met[to]||0;return joinFx([`Tu te présentes à ${WHO[to].name}, qui t'écrit déjà pour en savoir plus`,relChange(to,3)])}},
+  {l:"Te présenter à quelqu'un",sm:"Faire connaissance",pick:'any',e:0,fx:to=>{G.met[to]=Math.max(G.met[to]||0,1);return joinFx([`Tu te présentes à ${WHO[to].name}. ${WHO[to].name} : « ${introLine(to)} »`,relChange(to,3)])}},
   {l:"Visiter le lycée avec quelqu'un",sm:"Amitié",pick:'any',e:3,fx:to=>joinFx([`${WHO[to].name} te fait visiter le lycée`,relChange(to,5)])},
   {l:"T'inscrire à un club",sm:"Grosse amitié avec un membre",pick:'club',e:0,fx:to=>{G.club=to;return joinFx([`Tu rejoins le ${CLUB[to]} avec ${WHO[to].name}`,relChange(to,6)])}},
   {l:"Écouter le discours de la proviseure",sm:"Connaître les règles",e:0,fx:()=>{const id=pickR(NPCS).id;return joinFx([`La proviseure rappelle les règles. ${WHO[id].name} te chuchote une blague pendant le discours 😂`,relChange(id,2)])}}]},
@@ -2614,8 +2615,6 @@ const SUGG=["Ça va ?","Tu fais quoi ?","T'as fait les devoirs ?","Tu m'as manqu
 const chatSub=id=>isNpc(id)?`Amitié ${G.rel[id].ami} · Amour ${G.rel[id].amour}`:isFam(id)?`${famById(id).role} · complicité ${G.famRel[id]}`:'';
 function openChat(id,face){
  chat={id,face};G.unreadMsg[id]=0;
- /* première fois : le ou la camarade ne te connaît pas encore et pose des questions */
- if(isNpc(id)&&G.met[id]==null&&!(G.threads[id]||[]).length){G.met[id]=0;pushMsg(id,'them',introLine(id))}
  openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="chatSub">${chatSub(id)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  ${face?`<p class="muted" style="margin:0">Vous discutez ${PLACES[G.place]?'au '+PLACES[G.place].toLowerCase():''} en face à face.</p>`:''}
  <div class="msgs" id="chatMsgs"></div>
