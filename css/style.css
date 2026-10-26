@@ -194,7 +194,7 @@ body.playing{background:var(--g-bg)}
 .gbtn:disabled{opacity:.5;cursor:default}
 
 .sheet-back{position:fixed;inset:0;background:rgba(6,7,10,.72);display:flex;align-items:flex-end;justify-content:center;z-index:20;padding-left:max(0px,env(safe-area-inset-left,0px));padding-right:max(0px,env(safe-area-inset-right,0px))}
-.sheet{width:100%;max-width:480px;max-height:88%;overflow:auto;background:var(--g-card);color:var(--g-ink);border-radius:22px 22px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;font-family:var(--body)}
+.sheet{box-sizing:border-box;width:100%;max-width:480px;max-height:88%;overflow:auto;background:var(--g-card);color:var(--g-ink);border-radius:22px 22px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;font-family:var(--body)}
 .sheet h2{margin:0;font:700 21px var(--display);text-wrap:balance}
 .sheet .who{display:flex;align-items:center;gap:12px}
 .sheet .who .av{width:64px;height:64px;border-radius:50%;overflow:hidden;flex:none}
@@ -218,7 +218,7 @@ body.playing{background:var(--g-bg)}
 .av.sm svg{width:100%;height:100%;display:block}
 .cm{display:flex;gap:10px}
 .cm p{margin:2px 0 0;font-size:14.5px;overflow-wrap:anywhere}
-.clist{display:flex;flex-direction:column;gap:12px;max-height:34vh;overflow:auto}
+.clist{display:flex;flex-direction:column;gap:12px;max-height:42vh;overflow:auto;flex-shrink:0}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{border:1px solid #3a3d47;background:#1b1d23;color:var(--g-ink);border-radius:999px;padding:7px 12px;font:700 13px var(--body);cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--g-blue);border-color:var(--g-blue)}
@@ -367,3 +367,29 @@ body.playing{background:var(--g-bg)}
 .toast{position:fixed;z-index:30;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);font:700 14px var(--body);padding:10px 16px;border-radius:12px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+
+/* ---------- Insta : compte, abonnements, fils de commentaires ---------- */
+.avbtn{border:0;padding:0;cursor:pointer;background:none;display:block}
+.pname{all:unset;cursor:pointer;font:800 16px var(--body);white-space:nowrap}.pname:focus-visible{outline:2px solid var(--g-blue);border-radius:4px}
+.cprev{display:flex;flex-direction:column;gap:3px;min-width:0}
+.post .more{background:none;border:0;padding:0;text-align:left;color:var(--g-muted);font:700 13.5px var(--body);cursor:pointer}
+.cm.re{margin-left:44px}
+.cm .rep{background:none;border:0;padding:3px 0 0;color:var(--g-muted);font:700 12.5px var(--body);cursor:pointer}
+.cm .rep:hover{color:var(--g-ink)}
+.replyto{display:flex;align-items:center;justify-content:space-between;gap:8px;background:#1b1d23;border-radius:12px;padding:8px 10px;font-size:14px}
+.replyto .gbtn{padding:7px 12px;font-size:13px}
+.ig-top{display:flex;align-items:center;gap:16px;margin-top:16px}
+.ig-av{width:84px;height:84px;border-radius:50%;overflow:hidden;flex:none;border:3px solid var(--g-blue)}
+.ig-av svg{width:100%;height:100%;display:block}
+.ig-stats{flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));text-align:center;gap:4px}
+.ig-stats b{display:block;font:800 19px var(--display);font-variant-numeric:tabular-nums}
+.ig-stats small{color:var(--g-muted);font-size:12px}
+.ig-id{display:flex;flex-direction:column;gap:2px;margin:10px 0}
+.ig-bio{margin:4px 0 0;line-height:1.4;overflow-wrap:anywhere}
+.ig-chip{display:inline-block;background:#2c3352;color:var(--g-ink);border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700}
+.ig-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;margin-bottom:8px}
+.ig-tile{aspect-ratio:1;max-width:100%;border:0;padding:0;overflow:hidden;cursor:pointer;background:#23252d;color:#fff;display:grid;place-items:center}
+.ig-tile svg{width:100%;height:100%;display:block}
+.ig-tile span{font:700 11px/1.3 var(--body);padding:8px;text-align:center;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-line}
+.gnav button{width:auto;flex:1;min-width:0}
+.gnav .badge{right:calc(50% - 22px)}

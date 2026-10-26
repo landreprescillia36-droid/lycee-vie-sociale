@@ -1483,7 +1483,8 @@ function photoSVG(ph){
 const tagLine=ph=>{const t=ph.people.filter(x=>x!==ph.author);return t.length?`<div class="tags">avec ${t.map(x=>`<span class="mention">${handleOf(x)}</span>`).join(', ')}</div>`:''};
 
 /* ---------- contenu du fil ---------- */
-const C=(by,text)=>({by,text});
+const mkC=(by,text,o)=>Object.assign({id:'c'+Date.now().toString(36)+Math.floor(Math.random()*1e8).toString(36),by,text},o||{});
+const C=(by,text)=>mkC(by,text);
 const START_POSTS=[
  {by:'potins',text:"[Anonyme] : quelqu'un a vu avec qui Kylian est reparti après le match ?\n[Sceptique] : arrête d'inventer\n[Anonyme] : ouvrez bien les yeux demain matin devant les casiers.",c:15,r:848,l:18900,comments:[C('kylian',"n'importe quoi 🙄"),C('maelle',"oh le drama 👀")]},
  {by:'maelle',text:"Après-midi plage avant les contrôles 🌊",photo:{scene:'plage',people:['maelle','ines']},c:24,r:520,l:12400,comments:[C('ines',"meilleure journée 🥰"),C('noah',"et on m'invite pas ?")]},
@@ -1517,7 +1518,7 @@ const TONES={
  moqueur:{label:'Moqueur',d:-4,l:-1,cls:'neg',lines:["Personne n'a demandé 🙄","Encore toi ?","On s'en passerait bien"],reply:["sérieux ?","ok, je retiens 😒","t'es jaloux ou quoi"]},
  mechant:{label:'Méchant',d:-8,l:-4,cls:'neg',lines:["C'est vraiment nul","Franchement, tu abuses","Arrête de poster, s'il te plaît"],reply:["wow… ok.","je ne te pensais pas comme ça"]}
 };
-function npcComment(id){const r=G.rel[id].ami;const tone=r>=65?pickR(['gentil','drole']):r>=30?pickR(['drole','neutre','gentil']):r>=0?pickR(['neutre','neutre','gentil']):pickR(['moqueur','neutre']);return C(id,pickR(TONES[tone].lines).replace('{n}',me().name||''))}
+function npcComment(id){const r=G.rel[id].ami;const tone=r>=65?pickR(['gentil','drole']):r>=30?pickR(['drole','neutre','gentil']):r>=0?pickR(['neutre','neutre','gentil']):pickR(['moqueur','neutre']);return mkC(id,genderize(pickR(TONES[tone].lines).replace('{n}',me().name||''),id),{tone})}
 
 /* ---------- objectifs ---------- */
 const OBJ=[
@@ -1542,6 +1543,9 @@ const OBJ=[
  {id:'tri1',day:5,t:"Obtiens la moyenne au 1er trimestre",gems:25,c:()=>G.bulletins.some(b=>b.tri===1&&b.ok)},
  {id:'tri2',day:85,t:"Obtiens la moyenne au 2e trimestre",gems:25,c:()=>G.bulletins.some(b=>b.tri===2&&b.ok)},
  {id:'tri3',day:169,t:"Obtiens la moyenne au 3e trimestre",gems:25,c:()=>G.bulletins.some(b=>b.tri===3&&b.ok)},
+ {id:'igfollow',day:2,t:"Abonne-toi à 3 comptes Insta",gems:3,c:()=>Object.keys(G.ig.following).length>=3},
+ {id:'igreply',day:2,t:"Réponds à un commentaire sous un post",gems:3,c:()=>(G.st.replies||0)>=1},
+ {id:'igfans',day:5,t:"Fais-toi suivre par 3 camarades sur Insta",gems:6,c:()=>igFollowers().length>=3},
  {id:'bac',day:236,t:"Décroche ton bac",gems:60,c:()=>!!(G.bac.result&&G.bac.result.ok)}];
 function avg(){return G.grades.length?G.grades.reduce((a,g)=>a+g.v,0)/G.grades.length:null}
 function triAvg(t){const ev=G.evals.filter(e=>e.tri===t);return ev.length?mean(ev.map(e=>e.glob)):null}
@@ -1556,7 +1560,8 @@ function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
   rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0}])),links:initLinks(),couples:[],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
-  posts:START_POSTS.map(p=>mkPost({...p,photo:p.photo&&{...p.photo,author:p.by}})),
+  posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
+  ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
   stories:START_STORIES.map((s,i)=>({id:'st'+i,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
@@ -1569,6 +1574,8 @@ if(G&&G.family&&!G.dressFix){G.dressFix=1;G.family.forEach(f=>{if(f.av&&f.av.dre
 if(G&&G.family)G.family.forEach(f=>{if(f.av&&!f.av.rides)f.av.rides=/Grand-/.test(f.role)?'marquees':/Mère|Père|Belle-mère|Beau-père|Tante|Oncle/.test(f.role)?'fines':'aucune'});
 if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});const L0=initLinks();G.links=G.links||{};for(const a in L0){G.links[a]=G.links[a]||{};for(const b in L0[a])if(!G.links[a][b])G.links[a][b]=L0[a][b]}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
+/* Insta : abonnements et identifiants de commentaires (pour répondre) */
+if(G&&G.posts){if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
 if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
@@ -1712,7 +1719,7 @@ function advance(n){
  for(let i=0;i<n;i++){
   G.min++;if(G.min>=1440){G.min=0;G.day++;onNewDay()}
   if(G.min%15===0&&!G.asleep)G.energy=clamp(G.energy-(G.min<420?2:1),0,100);
-  if(G.min%60===0&&!G.asleep){npcPing();familyPing();checkObjectives()}
+  if(G.min%60===0&&!G.asleep){npcPing();familyPing();followTick();checkObjectives()}
  }
  const ph=phase();
  if(ph.key!==G.phaseKey){const prev=G.lastPhase;G.phaseKey=ph.key;G.lastPhase=ph;onPhaseChange(prev,ph)}
@@ -1792,13 +1799,11 @@ function dailyContent(){
    G.stories.push({id:'st'+Date.now()+n.id,by:n.id,type:'photo',photo:{scene:pickR(Object.keys(SCENES)),people:[n.id,withMe?'me':friend],author:n.id},text:withMe?'Avec '+myHandle()+' 💛':c&&c!=='me'?'💞':'',seen:false,reacted:false});
    if(withMe)note(`${n.name} t'a identifié dans sa story`)}
  });
- [...POST_POOL].sort(()=>Math.random()-.5).slice(0,2).forEach(t=>{
-  const ppl=t.scene&&t.by!=='potins'?[t.by,...(Math.random()<.6?[pickR(NPCS.filter(x=>x.id!==t.by)).id]:[])]:null;
-  const p=mkPost({by:t.by,text:t.text,photo:ppl?{scene:t.scene,people:ppl,author:t.by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
-  NPCS.filter(x=>x.id!==t.by).sort(()=>Math.random()-.5).slice(0,2).forEach(x=>p.comments.push(C(x.id,pickR(TONES[pickR(['gentil','drole','neutre'])].lines).replace('{n}',nameOf(t.by)))));
-  G.posts.unshift(p);
- });
- G.stories=G.stories.slice(-40);G.posts=G.posts.slice(0,60);
+ /* posts du jour : 2 camarades selon leur personnalité, Jade poste souvent un poème, parfois un potin */
+ const by=[...NPCS].sort(()=>Math.random()-.5).slice(0,2).map(n=>n.id);if(!by.includes('jade')&&Math.random()<.6)by.push('jade');
+ by.forEach(id=>{const L=NPC_POSTS[id],t=id==='jade'&&Math.random()<.75?pickR(L.filter(x=>x.poem)):pickR(L);G.posts.unshift(npcPost(id,t))});
+ if(Math.random()<.5){const t=pickR(POST_POOL);G.posts.unshift(t.by==='potins'?mkPost({by:'potins',text:t.text,c:Math.floor(Math.random()*30)+5,r:Math.floor(Math.random()*300)+20,l:Math.floor(Math.random()*8000)+500}):npcPost(t.by,t))}
+ G.stories=G.stories.slice(-40);G.posts=G.posts.filter((p,i)=>i<60||p.by==='me');
 }
 function bond(id,d){if(isFam(id)){famChange(id,d);return d?`${nameOf(id)} : complicité ${d>0?'+':''}${d}`:''}return relChange(id,d)}
 function checkPlans(){
@@ -1966,41 +1971,212 @@ const I={
  r:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4M21 13v2a3 3 0 0 1-3 3H3"/></svg>',
  l:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-9.2-9.3C1.6 7.2 4 4 7.3 4c2 0 3.5 1.1 4.7 2.7C13.2 5.1 14.7 4 16.7 4 20 4 22.4 7.2 21.2 10.7 19.5 15.4 12 20 12 20z"/></svg>',
  f:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"/></svg>'};
+let cm=null;
 function postHTML(p){
- const last=p.comments[p.comments.length-1];
- return `<article class="post" data-id="${p.id}"><div class="av">${avatarOf(p.by)}</div><div class="pbody">
-  <div class="phead"><b>${esc(nameOf(p.by))}</b>${p.by==='me'?'':VERIF}<span class="h">${handleOf(p.by)}</span></div>
+ const prev=p.comments.slice(-2);
+ return `<article class="post" data-id="${p.id}"><button class="av avbtn" type="button" data-a="u" aria-label="Compte Insta de ${esc(nameOf(p.by))}">${avatarOf(p.by)}</button><div class="pbody">
+  <div class="phead"><button class="pname" type="button" data-a="u">${esc(nameOf(p.by))}</button>${p.by==='me'?'':VERIF}<span class="h">${handleOf(p.by)}</span></div>
   <p>${fmtText(p.text)}</p>
   ${p.photo?`<div class="photo">${photoSVG(p.photo)}</div>${tagLine(p.photo)}`:''}
-  ${last?`<button class="peek" type="button" data-a="c"><b>${esc(nameOf(last.by))}</b> ${esc(last.text)}</button>`:''}
+  ${prev.length?`<div class="cprev">${prev.map(c=>`<button class="peek" type="button" data-a="c"><b>${esc(nameOf(c.by))}</b> ${c.to?`<span class="mention">${esc(handleOf(c.to))}</span> `:''}${esc(c.text)}</button>`).join('')}${p.comments.length>2?`<button class="more" type="button" data-a="c">Voir les ${p.comments.length} commentaires</button>`:''}</div>`:''}
   <div class="pact"><button type="button" data-a="c" aria-label="Commenter">${I.c}${fmtN(p.c+p.comments.length)}</button>
    <button type="button" data-a="r" class="rt ${p.rt?'on':''}" aria-label="Republier">${I.r}${fmtN(p.r+(p.rt?1:0))}</button>
    <button type="button" data-a="l" class="like ${p.liked?'on':''}" aria-label="J'aime">${I.l}${fmtN(p.l+(p.liked?1:0))}</button>
    <button type="button" data-a="f" class="fav ${p.fav?'on':''}" aria-label="Favori">${I.f}</button></div></div></article>`;
 }
-let cm=null;
+/* ---------- commentaires : fils de discussion et réponses ----------
+   un commentaire = {id, by, text, re (id du commentaire de départ si c'est une réponse), to (à qui il répond), vs (qui il critique)} */
+const STANCES={
+ accord:{label:"D'accord",cls:'pos',d:4,v:-3,lines:["Grave, t'as raison {n}","Tellement vrai 💯","Je pense exactement pareil"]},
+ desaccord:{label:"Pas d'accord",cls:'neg',d:-4,v:4,lines:["Franchement je suis pas d'accord","Tu exagères un peu là {n}","Laisse {v} tranquille, sérieux"]},
+ drole:{label:'Drôle',cls:'pos',d:2,v:0,lines:["Je prends le pop-corn 🍿","Le débat de l'année 😂","Mdr vous vous clashez en commentaires 😂"]},
+ calmer:{label:'Apaiser',cls:'neu',d:1,v:2,lines:["Allez, on se calme, chacun son avis ✌️","On peut ne pas être d'accord sans se clasher 🙏","Vous avez tous un peu raison"]},
+ mechant:{label:'Méchant',cls:'neg',d:-8,v:0,lines:["Personne t'a demandé ton avis","Franchement, tu saoules {n}"]}};
+const THANKS=["merci de me défendre 🙏","enfin quelqu'un de raisonnable ❤️","merci, vraiment","ça fait plaisir de lire ça 🥹"];
+const cmRow=c=>`<div class="cm${c.re?' re':''}"><div class="av sm">${avatarOf(c.by)}</div><div style="min-width:0;flex:1"><b>${esc(nameOf(c.by))}</b> <span class="muted">${handleOf(c.by)}</span><p>${c.to?`<span class="mention">${esc(handleOf(c.to))}</span> `:''}${fmtText(c.text)}</p>${c.by!=='me'?`<button class="rep" type="button" data-reply="${c.id}">Répondre</button>`:''}</div></div>`;
+function threadHTML(p){const ids=new Set(p.comments.map(c=>c.id)),tops=p.comments.filter(c=>!c.re||!ids.has(c.re));
+ return tops.map(c=>cmRow(c)+p.comments.filter(r=>r.re===c.id).map(cmRow).join('')).join('')}
+function replySugg(R){const n=nameOf(R.by),v=R.vs&&R.vs!=='me'?nameOf(R.vs):null;
+ return Object.keys(STANCES).map(t=>{const L=STANCES[t].lines.filter(l=>v||!l.includes('{v}'));return {t,text:pickR(L).replace('{n}',n).replace('{v}',v||'')}})}
 function openComments(id){
  const p=G.posts.find(x=>x.id===id);if(!p)return;
- if(!cm||cm.id!==id)cm={id,tone:'gentil',sugg:['gentil','drole','moqueur','mechant'].map(t=>({t,text:pickR(TONES[t].lines).replace('{n}',nameOf(p.by))}))};
- const target=p.by==='me'?null:nameOf(p.by);
- openSheet(`<div class="who"><div class="av sm">${avatarOf(p.by)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(p.by))}</b><p class="muted" style="margin:2px 0 0">${fmtText(p.text.length>90?p.text.slice(0,90)+'…':p.text)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
- <div class="clist">${p.comments.length?p.comments.map(c=>`<div class="cm"><div class="av sm">${avatarOf(c.by)}</div><div style="min-width:0"><b>${esc(nameOf(c.by))}</b> <span class="muted">${handleOf(c.by)}</span><p>${fmtText(c.text)}</p></div></div>`).join(''):'<p class="muted">Aucun commentaire pour l\'instant.</p>'}</div>
- ${p.by==='me'?'<p class="muted">C\'est ton post : les réactions des autres apparaissent ici.</p>':`
- <p class="muted">${isNpc(p.by)?(p.mine?`Tu as déjà commenté : ${target} a vu ta réaction.`:`Ton commentaire changera ta relation avec ${target}.`):'Compte anonyme : ton commentaire sera vu de tous.'}</p>
+ if(!cm||cm.id!==id)cm={id,tone:'gentil',stance:'accord',re:null,sugg:['gentil','drole','moqueur','mechant'].map(t=>({t,text:pickR(TONES[t].lines).replace('{n}',nameOf(p.by))}))};
+ const target=p.by==='me'?null:nameOf(p.by),R=cm.re&&p.comments.find(c=>c.id===cm.re);
+ let form;
+ if(R)form=`<div class="replyto"><span>Tu réponds à <b>${esc(nameOf(R.by))}</b></span><button class="gbtn ghost" type="button" data-cancelre>Annuler</button></div>
+  <div class="choices">${cm.rsugg.map((s,i)=>`<button class="choice" type="button" data-rs="${i}">${esc(s.text)}<small class="t-${STANCES[s.t].cls}">${STANCES[s.t].label}</small></button>`).join('')}</div>
+  <label class="muted" for="cTxt">Ou écris ta réponse</label><textarea id="cTxt" maxlength="160" placeholder="Ta réponse…" style="min-height:70px"></textarea>
+  <div class="chips" role="group" aria-label="Ton de la réponse">${Object.entries(STANCES).map(([k,t])=>`<button class="chip" type="button" data-stance="${k}" aria-pressed="${cm.stance===k}">${t.label}</button>`).join('')}</div>
+  <div class="row"><button class="gbtn" type="button" id="cSend">Répondre</button></div>`;
+ else if(p.by==='me')form='<p class="muted">C\'est ton post : appuie sur « Répondre » sous un commentaire pour discuter.</p>';
+ else form=`<p class="muted">${isNpc(p.by)?(p.mine?`Tu as déjà commenté : ${target} a vu ta réaction. Tu peux encore répondre aux commentaires.`:`Ton commentaire changera ta relation avec ${target}.`):'Compte anonyme : ton commentaire sera vu de tous.'}</p>
  <div class="choices">${cm.sugg.map((s,i)=>`<button class="choice" type="button" data-sg="${i}">${esc(s.text)}<small class="t-${TONES[s.t].cls}">${TONES[s.t].label}</small></button>`).join('')}</div>
  <label class="muted" for="cTxt">Ou écris ton propre commentaire</label>
  <textarea id="cTxt" maxlength="160" placeholder="Ton commentaire…" style="min-height:70px"></textarea>
  <div class="chips" role="group" aria-label="Ton du commentaire">${Object.entries(TONES).map(([k,t])=>`<button class="chip" type="button" data-tone="${k}" aria-pressed="${cm.tone===k}">${t.label}</button>`).join('')}</div>
- <div class="row"><button class="gbtn" type="button" id="cSend">Commenter</button></div>`}`);
+ <div class="row"><button class="gbtn" type="button" id="cSend">Commenter</button></div>`;
+ openSheet(`<div class="who"><button class="av sm avbtn" type="button" data-ig="${p.by}" aria-label="Compte Insta">${avatarOf(p.by)}</button><div style="flex:1;min-width:0"><b>${esc(nameOf(p.by))}</b><p class="muted" style="margin:2px 0 0">${fmtText(p.text.length>90?p.text.slice(0,90)+'…':p.text)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ <div class="clist">${p.comments.length?threadHTML(p):'<p class="muted">Aucun commentaire pour l\'instant.</p>'}</div>${form}`);
+ if(R){const el=document.querySelector(`[data-reply="${R.id}"]`);if(el)el.closest('.cm').scrollIntoView({block:'nearest'})}
 }
+function startReply(cid){const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cid);if(!R)return;cm.re=cid;cm.rsugg=replySugg(R);openComments(p.id)}
 function sendComment(text,tone){
  const p=G.posts.find(x=>x.id===cm.id);if(!p||!text)return;
- p.comments.push(C('me',text));G.st.comments++;let msg='Commentaire publié';
- if(isNpc(p.by)&&!p.mine){const T=TONES[tone],ch=relChange(p.by,T.d,T.l);p.mine=true;p.comments.push(C(p.by,pickR(T.reply)));note(`Tu as commenté le post de ${WHO[p.by].name} (${T.label.toLowerCase()}) : ${ch}`);msg=ch}
+ const mine=mkC('me',text);p.comments.push(mine);G.st.comments++;let msg='Commentaire publié';
+ if(isNpc(p.by)&&!p.mine){const T=TONES[tone],ch=relChange(p.by,T.d,T.l);p.mine=true;p.comments.push(mkC(p.by,genderize(pickR(T.reply),p.by),{re:mine.id,to:'me'}));note(`Tu as commenté le post de ${WHO[p.by].name} (${T.label.toLowerCase()}) : ${ch}`);msg=ch||msg;
+  /* le ou la critique habituel·le de l'auteur vient parfois te répondre : tu peux lui répondre à ton tour */
+  const D=DEBATE[p.by];if(D&&TONES[tone].d>0&&Math.random()<.45)p.comments.push(mkC(D.critic,genderize(pickR(CRIT_ME),D.critic),{re:mine.id,to:'me',vs:'me'}))}
  cm.sugg=cm.sugg.map(s=>({t:s.t,text:pickR(TONES[s.t].lines).replace('{n}',nameOf(p.by))}));
  saveG();openComments(p.id);refreshPost(p);drawNav();toast(msg);
 }
+function sendReply(text,stance){
+ const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cm.re);if(!R||!text)return;
+ const root=R.re||R.id,S=STANCES[stance]||STANCES.accord,parts=[];
+ p.comments.push(mkC('me',text,{re:root,to:R.by,vs:stance==='desaccord'||stance==='mechant'?R.by:null}));G.st.comments++;G.st.replies=(G.st.replies||0)+1;
+ if(isNpc(R.by)&&!R.answered){R.answered=1;
+  const d=stance==='drole'?(FICHES[R.by].hum>.5?3:1):S.d,ch=relChange(R.by,d,0);if(ch)parts.push(ch);
+  if(R.vs&&isNpc(R.vs)&&S.v){const c2=relChange(R.vs,S.v,0);if(c2)parts.push(c2)}
+  const V=VOICE[R.by];p.comments.push(mkC(R.by,genderize(pickR(stance==='accord'||stance==='drole'?V.happy:stance==='calmer'?V.neutral:V.hurt),R.by),{re:root,to:'me'}));
+  if(stance==='desaccord'&&R.vs&&isNpc(R.vs)&&Math.random()<.6)p.comments.push(mkC(R.vs,pickR(THANKS),{re:root,to:'me'}));
+  note(`Tu as répondu à ${WHO[R.by].name} sous le post de ${nameOf(p.by)} (${S.label.toLowerCase()})${parts.length?' : '+parts.map(x=>x.split(' : ').join(' ')).join(', '):''}`)}
+ cm.re=null;saveG();openComments(p.id);refreshPost(p);checkObjectives();toast(parts.join(' · ')||'Réponse publiée');
+}
 function refreshPost(p){document.querySelectorAll(`.post[data-id="${p.id}"]`).forEach(el=>el.outerHTML=postHTML(p))}
+
+/* ---------- Insta : comptes, abonnements, débats ---------- */
+const BIO={ines:"Danse dancehall 💃 · K-drama addict 🥺 · Martinique ➜ Guadeloupe ✨",kylian:"⚽ n°10 · Saint-François 🎣 · tkt",maelle:"Capitaine pom-pom 📣 · soirées au Gosier 💅 · DM pour la liste",noah:"🏀 meneur · mangas · la cuisine de mamie 🍛",jade:"poèmes dans la marge.\nastronomie. pas de majuscules.",anais:"Capitaine hand 🤾‍♀️ · footing 6h 🌅 · toujours le smile 😄",sacha:"🎧 zouk · gwo ka · rap — nouveau son bientôt",potins:"Tout ce qui se passe au lycée 👀 · envoie tes potins en DM"};
+const FANS0={ines:412,kylian:986,maelle:2310,noah:644,jade:158,anais:871,sacha:1520,potins:3140};
+const FOLLOW_AT=20;
+/* posts des camarades selon leur personnalité (vie du lycée, passions, avis) ; Jade poste souvent des poèmes */
+const NPC_POSTS={
+ jade:[{text:"la cour à midi\ndes voix qui se croisent\net moi qui compte les nuages\ncomme on compte les jours avant le bac",poem:1},{text:"il pleut sur sainte-anne\nla mer ne sait pas qu'on a philo demain\nelle a de la chance",poem:1},
+  {text:"nous sommes des étoiles en terminale\nbrillantes, fatiguées,\net un peu en retard",poem:1},{text:"le cdi est une île\nj'y accoste chaque midi\nsans passeport",poem:1,scene:'chambre'},
+  {text:"ma grand-mère dit que les flamboyants fleurissent pour ceux qui savent attendre.\nj'attends.",poem:1},{text:"on m'a demandé pourquoi j'écris.\nparce que le silence aussi\na besoin d'une voix.",poem:1},
+  {text:"avis impopulaire : le cdi devrait être ouvert le samedi."},{text:"la réforme du bac nous traite comme des statistiques. je dis ça, je dis rien."}],
+ kylian:[{text:"Victoire 3-1 ce week-end ⚽ le n°10 a encore frappé 😎",scene:'cour'},{text:"Poisson pané 3 fois cette semaine à la cantine. C'est un complot 🐟",scene:'cantine'},
+  {text:"Le bac c'est dans combien de temps déjà ? Demandez pas, c'est pour un ami 😅"},{text:"Qui a dit que le foot c'était pas intelligent ? Venez débattre 😤"},{text:"Pêche avec mon père ce matin, 3 vivaneaux 🎣 respectez",scene:'plage'}],
+ maelle:[{text:"Soirée vendredi au Gosier 🎉 liste fermée 💅",scene:'soiree'},{text:"Honnêtement l'uniforme au lycée ce serait littéralement la fin de la mode 🙄"},
+  {text:"Nouvelle choré des pom-pom ce soir, vous allez pas être prêts 📣",scene:'basket'},{text:"Les gens qui passent leur midi au CDI… vous allez bien ? 🙄"},{text:"Rendez-vous aux casiers, j'ai un truc à vous montrer 👀",scene:'couloir'}],
+ noah:[{text:"Colombo cuisiné avec ma grand-mère, 10/10 🍛",scene:'cantine'},{text:"Match de basket jeudi, venez nous soutenir 🏀",scene:'basket'},
+  {text:"Honnêtement les devoirs le week-end, ça devrait être interdit"},{text:"Le prof de physique a expliqué un truc et j'ai TOUT compris. Moment historique ptdr"}],
+ ines:[{text:"Nouvelle choré dancehall apprise ce week-end 💃✨",scene:'chambre'},{text:"Quelqu'un regarde le nouveau K-drama ? J'ai pleuré 3 fois 🥺"},
+  {text:"Mon petit frère a eu 18 en maths, je suis trop fière 🥹"},{text:"On devrait avoir plus d'activités artistiques au lycée, vous trouvez pas ? ✨"},{text:"Entre deux cours avec ma meilleure 💕",scene:'couloir'}],
+ anais:[{text:"Footing 6 h ✅ le lever de soleil valait le coup 🌅💪",scene:'plage'},{text:"Le hand féminin mérite autant de public que le foot. Venez samedi ! 🔥",scene:'basket'},
+  {text:"Défi : 50 pompes avant le cours de maths, qui me suit ? 😂"},{text:"Journée sans sucre ! … jusqu'à 10 h 😂"}],
+ sacha:[{text:"Nouveau son en écoute privée 🎧 le gwo ka c'est l'avenir",scene:'chambre'},{text:"La musique devrait compter pour le bac. Je dis ça…"},
+  {text:"Répète au foyer à midi, passez écouter 🎸",scene:'couloir'},{text:"Le zouk c'est pas ringard, c'est notre histoire. Point."}]};
+/* qui critique qui sous les posts, et qui prend la défense */
+const DEBATE={
+ jade:{critic:'kylian',p:.5,poem:.9,def:['sacha','anais','ines','noah'],
+  crit:["encore un poème 😭 tu sais qu'on peut juste dire « il fait beau »","frr j'ai lu 3 fois j'ai toujours rien compris","wsh c'est insta ici, pas le cours de français","la poésie en terminale… respect mais non 😂","jade qui transforme la cantine en œuvre d'art, on aura tout vu"],
+  defl:["ses poèmes sont plus beaux que tout ce que tu postes","la poésie c'est pas ringard, c'est toi qui l'es 😂","jade continue, on adore 🌙"],
+  auth:["les critiques sont une forme d'attention. merci kylian.","je n'écris pas pour toi. et pourtant tu lis toujours jusqu'au bout.","il y a de la place pour tout le monde ici. même pour toi."]},
+ maelle:{critic:'jade',p:.5,def:['ines','kylian'],
+  crit:["« liste fermée ». la popularité n'est pas une personnalité.","fascinant. vraiment.","certaines personnes organisent des soirées, d'autres lisent. chacun ses priorités.","trois emojis et zéro idée. performance."],
+  auth:["Jade, ton seul public c'est ta grand-mère 💅","Jalousie détectée 🙄","Littéralement personne t'a demandé ton avis"]},
+ kylian:{critic:'sacha',p:.45,def:['noah','anais'],
+  crit:["un but contre les derniers du championnat, calme-toi gros 😂","t'as oublié de dire que t'as raté le penalty","toujours en train de te la raconter, la vibe est pas là"],
+  auth:["vas-y parle quand tu marques un but toi","jaloux va 😎","t'inquiète je te dédicace le prochain"]},
+ sacha:{critic:'kylian',p:.45,def:['jade','ines'],
+  crit:["ton son on dirait la radio de mon grand-père 😂","encore du gwo ka… change de disque gros","frr la musique ça te donnera pas le bac"],
+  auth:["chacun sa vibe gros ✌️","le gwo ka c'est notre histoire, respecte","t'écouteras quand je serai connu"]},
+ noah:{critic:'maelle',p:.3,def:['kylian','anais'],
+  crit:["Genre tu cuisines maintenant ? 🙄 … ok c'est mignon","Noah qui comprend la physique, littéralement l'événement de l'année 💅"],
+  auth:["ptdr t'es dure","Merci Maëlle… je crois ?"]},
+ anais:{critic:'maelle',p:.3,def:['kylian','noah'],
+  crit:["Le sport à 6 h c'est littéralement de la torture 🙄","Genre tu dors quand ?","On a compris, t'es sportive 💅"],
+  auth:["Viens courir avec moi et on en reparle 😂💪","Le sport c'est la vie ! 🔥"]}};
+const DEF_LINES=["personne t'oblige à lire, sérieux","t'as que ça à faire, critiquer sous chaque post ?","laisse {a} tranquille 🙄","moi j'aime bien, et je suis pas {s:seul·e}","c'est toujours toi qui viens clasher, ça devient lourd","respecte un peu, chacun son truc"];
+const RETORT=["oh ça va, c'était pour rire 😅","je donne mon avis, c'est interdit ?","vous êtes tous ses avocats ou quoi mdr","personne t'a demandé de répondre"];
+const CRIT_ME=["toi aussi tu valides ça ? 😂","sérieux, t'aimes vraiment ça ?","on n'a pas les mêmes goûts mdr"];
+const DEF_ME=["t'as que ça à faire ? 🙄","respecte un peu, sérieux","la jalousie se voit d'ici 😂","laisse tomber, ce post est très bien"];
+/* fil de débat sous un post : critique → défense → réplique → réponse de l'auteur */
+function debateThread(p){
+ const D=DEBATE[p.by];if(!D||Math.random()>(p.poem?D.poem:D.p))return [];
+ const c=D.critic,cr=mkC(c,genderize(pickR(D.crit),c),{vs:p.by}),out=[cr],defs=D.def.filter(x=>x!==c);
+ const line=(id,L)=>genderize(pickR(L).replace('{a}',nameOf(p.by)),id);
+ const d=pickR(defs);out.push(mkC(d,line(d,D.defl&&Math.random()<.5?D.defl:DEF_LINES),{re:cr.id,to:c,vs:c}));
+ if(Math.random()<.7)out.push(mkC(c,genderize(pickR(RETORT),c),{re:cr.id,to:d,vs:d}));
+ if(Math.random()<.6)out.push(mkC(p.by,genderize(pickR(D.auth),p.by),{re:cr.id,to:c,vs:c}));
+ const d2=pickR(defs.filter(x=>x!==d));if(d2&&Math.random()<.4)out.push(mkC(d2,line(d2,DEF_LINES),{re:cr.id,to:c,vs:c}));
+ if(G&&G.links){link(c,p.by).ami=clamp(link(c,p.by).ami-1,0,100);link(d,c).ami=clamp(link(d,c).ami-1,0,100)}
+ return out}
+/* un camarade poste : texte de sa personnalité, photo éventuelle, commentaires et débat */
+function npcPost(by,t){
+ const ppl=t.scene?[by,...(Math.random()<.5?[pickR(NPCS.filter(x=>x.id!==by)).id]:[])]:null;
+ const p=mkPost({by,text:t.text,poem:!!t.poem,photo:ppl?{scene:t.scene,people:ppl,author:by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
+ p.comments.push(...debateThread(p));
+ NPCS.filter(x=>x.id!==by&&!p.comments.some(c=>c.by===x.id)).sort(()=>Math.random()-.5).slice(0,Math.random()<.5?1:2).forEach(x=>{
+  const a=link(x.id,by).ami,tone=a>=60?pickR(['gentil','drole']):a>=35?pickR(['drole','neutre','gentil']):pickR(['neutre','moqueur']);
+  p.comments.push(mkC(x.id,genderize(pickR(TONES[tone].lines).replace('{n}',nameOf(by)),x.id),{tone}))});
+ return p}
+
+/* abonnements : les camarades s'abonnent (ou demandent) quand l'amitié monte, se désabonnent si elle devient négative */
+const igFollowers=()=>NPCS.map(n=>n.id).filter(id=>G.ig.followers[id]);
+const igFriends=()=>igFollowers().filter(id=>G.ig.following[id]);
+function followTick(){
+ const ig=G.ig;let ch=false;
+ NPCS.forEach(n=>{const id=n.id,a=G.rel[id].ami,f=ig.followers[id],rq=ig.reqs.includes(id),th=FOLLOW_AT-(ig.following[id]?6:0);
+  if(!f&&!rq&&a>=th&&Math.random()<.3){ch=true;
+   if(ig.priv){ig.reqs.push(id);note(`${n.name} veut s'abonner à ton compte Insta`);if(!G.asleep&&!$('game').hidden)toast(`📩 ${n.name} veut s'abonner à ton compte`)}
+   else{ig.followers[id]=1;note(S(id,`${n.name} s'est abonné·e à ton compte Insta`));if(!G.asleep&&!$('game').hidden)toast(S(id,`➕ ${n.name} s'est abonné·e à toi`))}}
+  else if(f&&a<0&&Math.random()<.25){delete ig.followers[id];ch=true;note(`${n.name} ne te suit plus sur Insta 💔`)}
+  else if(rq&&a<0){ig.reqs=ig.reqs.filter(x=>x!==id);ch=true}});
+ if(ch&&!$('game').hidden){drawNav();if(view==='insta')drawView()}
+}
+function igFollow(id){
+ const ig=G.ig;let msg;
+ if(ig.following[id]){delete ig.following[id];msg=`Tu ne suis plus ${nameOf(id)}`;if(isNpc(id)&&ig.followers[id]){const c=relChange(id,-2);if(c)msg+=' · '+c}}
+ else{ig.following[id]=1;msg=P(`Tu t'es abonné·e à ${handleOf(id)}`);if(isNpc(id)&&!ig.once[id]){ig.once[id]=1;const c=relChange(id,1);if(c)msg+=' · '+c}note(msg)}
+ checkObjectives();saveG();toast(msg);
+}
+function igRequest(id,ok){
+ const ig=G.ig;ig.reqs=ig.reqs.filter(x=>x!==id);let c;
+ if(ok){ig.followers[id]=1;c=relChange(id,2);note(`Tu as accepté la demande de ${WHO[id].name}`)}else{c=relChange(id,-3);note(`Tu as refusé la demande de ${WHO[id].name}`)}
+ checkObjectives();saveG();drawNav();toast((ok?'Demande acceptée':'Demande refusée')+(c?' · '+c:''));
+}
+const igStat=(n,l)=>`<div><b>${fmtN(n)}</b><small>${l}</small></div>`;
+function igCounts(id){
+ if(id==='me'){const f=igFollowers().length;return {posts:G.posts.filter(p=>p.by==='me').length,fol:G.ig.fans+f,ing:Object.keys(G.ig.following).length}}
+ const base=150+hash(id)%220;return {posts:G.posts.filter(p=>p.by===id).length,fol:(FANS0[id]||200)+(G.ig.following[id]?1:0),ing:base+(G.ig.followers[id]?1:0)}}
+function igGrid(list){
+ if(!list.length)return '<p class="muted">Aucune publication pour l\'instant.</p>';
+ return `<div class="ig-grid">${list.map(p=>p.photo?`<button class="ig-tile" type="button" data-igpost="${p.id}" aria-label="Voir la publication">${photoSVG(p.photo).replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}</button>`
+  :`<button class="ig-tile" type="button" data-igpost="${p.id}" style="background:${STORY_BG[hash(p.id)%STORY_BG.length]}"><span>${esc(p.text)}</span></button>`).join('')}</div>`}
+const igPeople=(ids,extra)=>`<div class="present">${ids.map(id=>`<button class="pers" type="button" data-ig="${id}"><span class="av">${avatarOf(id)}</span><span>${esc(nameOf(id))}</span><small>${extra?extra(id):''}</small></button>`).join('')}</div>`;
+function drawInsta(){
+ const ig=G.ig,c=igCounts('me'),fol=igFollowers(),ing=Object.keys(ig.following),fr=igFriends();
+ const disc=[...NPCS.map(n=>n.id),'potins'].filter(id=>!ig.following[id]);
+ $('gView').innerHTML=`<div class="ig-top"><div class="ig-av">${avatarOf('me')}</div><div class="ig-stats">${igStat(c.posts,'publications')}${igStat(c.fol,'abonnés')}${igStat(c.ing,'abonnements')}</div></div>
+ <div class="ig-id"><b>${esc(fullName(me())||'Moi')}</b><span class="muted">${myHandle()}${ig.priv?' · 🔒 compte privé':''}</span><p class="ig-bio">${ig.bio?fmtText(ig.bio):'<span class="muted">Pas encore de bio.</span>'}</p></div>
+ <div class="row" style="justify-content:flex-start"><button class="gbtn ghost" type="button" data-igbio>Modifier la bio</button><button class="gbtn ghost" type="button" data-igpriv>${ig.priv?'Passer en public':'Passer en privé'}</button><button class="gbtn" type="button" data-igcompose>Publier</button></div>
+ ${ig.reqs.length?`<div class="card"><span class="eyebrow">Demandes d'abonnement · ${ig.reqs.length}</span>${ig.reqs.map(id=>`<div class="relrow"><button class="av avbtn" type="button" data-ig="${id}">${avatarOf(id)}</button><div class="info"><b>${esc(fullNameOf(id))}</b><span class="muted">${WHO[id].handle} · amitié ${G.rel[id].ami}</span></div><button class="gbtn" type="button" data-req="${id}" data-ok="1">Accepter</button><button class="gbtn ghost" type="button" data-req="${id}" data-ok="0" aria-label="Refuser">✕</button></div>`).join('')}</div>`:''}
+ <div class="card"><span class="eyebrow">Amis · ${fr.length}</span>${fr.length?igPeople(fr):'<p class="muted">Tes amis sont les comptes qui te suivent et que tu suis en retour.</p>'}</div>
+ <div class="card"><span class="eyebrow">Abonnés · ${fmtN(c.fol)}</span>${fol.length?igPeople(fol,id=>ig.following[id]?'ami·e':''):''}<p class="muted">${fol.length?`et ${ig.fans} autres élèves du lycée`:`${ig.fans} élèves du lycée te suivent. Tes camarades s'abonneront quand vous serez plus proches (amitié ${FOLLOW_AT}).`}</p></div>
+ <div class="card"><span class="eyebrow">Abonnements · ${ing.length}</span>${ing.length?igPeople(ing,id=>ig.followers[id]?'te suit':''):'<p class="muted">Tu ne suis encore personne.</p>'}</div>
+ ${disc.length?`<div class="card"><span class="eyebrow">Comptes à découvrir</span>${disc.map(id=>`<div class="relrow"><button class="av avbtn" type="button" data-ig="${id}">${avatarOf(id)}</button><div class="info"><b>${esc(nameOf(id))}</b><span class="muted">${handleOf(id)} · ${fmtN(igCounts(id).fol)} abonnés</span></div><button class="gbtn" type="button" data-follow="${id}">S'abonner</button></div>`).join('')}</div>`:''}
+ <div class="sec-title">Mes publications</div>${igGrid(G.posts.filter(p=>p.by==='me'))}`;
+}
+function openInsta(id){
+ if(id==='me'){closeSheet();view='insta';drawNav();drawView();window.scrollTo(0,0);return}
+ const c=igCounts(id),ig=G.ig,f=ig.following[id],them=isNpc(id)&&ig.followers[id];
+ openSheet(`<div class="row" style="justify-content:flex-end"><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ <div class="ig-top" style="margin-top:0"><div class="ig-av">${avatarOf(id)}</div><div class="ig-stats">${igStat(c.posts,'publications')}${igStat(c.fol,'abonnés')}${igStat(c.ing,'abonnements')}</div></div>
+ <div class="ig-id"><b>${esc(isNpc(id)?fullNameOf(id):nameOf(id))}</b><span class="muted">${handleOf(id)}${them?' · <span class="ig-chip">Te suit</span>':ig.reqs.includes(id)?' · <span class="ig-chip">Demande envoyée</span>':''}</span><p class="ig-bio">${fmtText(BIO[id]||'')}</p></div>
+ <div class="row" style="justify-content:flex-start"><button class="gbtn ${f?'ghost':''}" type="button" data-follow="${id}">${f?'Abonné·e ✓':them?"S'abonner en retour":"S'abonner"}</button>${isNpc(id)?`<button class="gbtn ghost" type="button" data-chat="${id}">Message</button><button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}</div>
+ ${igGrid(G.posts.filter(p=>p.by===id))}`.replace('Abonné·e ✓',P('Abonné·e ✓')),true);
+}
+/* clics communs au fil, à l'onglet Insta et aux fiches */
+function igClick(t){let b;
+ if(b=t.closest('[data-follow]')){const id=b.dataset.follow;igFollow(id);if(!$('sheet').hidden&&$('sheetBody').querySelector('.ig-top'))openInsta(id);if(view==='insta')drawView();return true}
+ if(b=t.closest('[data-req]')){igRequest(b.dataset.req,b.dataset.ok==='1');if(view==='insta')drawView();return true}
+ if(b=t.closest('[data-ig]')){openInsta(b.dataset.ig);return true}
+ if(b=t.closest('[data-igpost]')){cm=null;openComments(b.dataset.igpost);return true}
+ if(t.closest('[data-igcompose]')){openCompose('post');return true}
+ if(t.closest('[data-igpriv]')){const ig=G.ig;ig.priv=!ig.priv;if(!ig.priv&&ig.reqs.length){ig.reqs.slice().forEach(id=>igRequest(id,true))}saveG();toast(ig.priv?'🔒 Compte privé : les camarades devront te demander':'Compte public : tout le monde peut s\'abonner');drawNav();drawView();return true}
+ if(t.closest('[data-igbio]')){openSheet(`${sheetHead('Ma bio Insta','150 caractères maximum')}<textarea id="igBioTxt" maxlength="150" style="min-height:90px">${esc(G.ig.bio||'')}</textarea><div class="row"><button class="gbtn" type="button" id="igBioSave">Enregistrer</button></div>`);return true}
+ if(t.id==='igBioSave'){G.ig.bio=$('igBioTxt').value.trim();saveG();closeSheet();drawView();toast('Bio mise à jour');return true}
+ return false}
 
 /* ---------- vues ---------- */
 const NAV=[
@@ -2008,10 +2184,11 @@ const NAV=[
  ['day','Journée','<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 6.5V12l3.8 2.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'],
  ['messages','Messages','<path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" fill="currentColor"/><circle cx="8" cy="12" r="1.4" fill="#16171c"/><circle cx="12" cy="12" r="1.4" fill="#16171c"/><circle cx="16" cy="12" r="1.4" fill="#16171c"/>'],
  ['mates','Camarades','<circle cx="8.5" cy="8" r="3.6" fill="currentColor"/><circle cx="16.5" cy="9" r="3" fill="currentColor"/><path d="M1.5 20c.6-4 3.4-6.3 7-6.3s6.4 2.3 7 6.3z" fill="currentColor"/><path d="M16.5 13.5c3 0 5.3 2 5.8 5.5h-5.2" fill="currentColor"/>'],
+ ['insta','Insta','<rect x="3" y="3" width="18" height="18" rx="5.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/>'],
  ['profil','Profil','<circle cx="12" cy="8" r="4.5" fill="currentColor"/><path d="M3.5 21c.8-4.4 4.2-7 8.5-7s7.7 2.6 8.5 7z" fill="currentColor"/>']];
 function drawNav(){
  const unreadM=Object.values(G.unreadMsg).reduce((a,b)=>a+b,0);
- $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
+ $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='insta'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
 }
 function knowBars(only){return `<div class="kb">${(only||Object.keys(SUBJ)).map(k=>{const v=G.know[k],c=v>=60?'#3fcf8e':v>=45?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${SUBJ[k]}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}%</b></div>`}).join('')}</div>`}
 function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=175)return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
@@ -2113,12 +2290,13 @@ function drawProfile(){
 function drawView(){
  $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home';
  if(view==='home')$('gView').innerHTML=G.posts.map(postHTML).join('');
+ else if(view==='insta')drawInsta();
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
 function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
-function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false}
+function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
 function closeSheet(){clearTimeout(svTimer);const wasStory=!!sv;sv=null;cm=null;chat=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
@@ -2301,7 +2479,9 @@ function publishCompose(){
  if(cp.kind==='story'){G.stories.push({id:'st'+Date.now(),by:'me',type:cp.mode,text,bg:cp.bg,photo,seen:true,reacted:false});G.st.stories++}
  else{const p=mkPost({by:'me',text:text||'📸',photo,l:Math.floor(Math.random()*40)+5,mine:true});
   const com=[...new Set([...tags,...[...NPCS].sort(()=>Math.random()-.5).slice(0,2).map(n=>n.id)])].slice(0,3);
-  com.forEach(id=>p.comments.push(npcComment(id)));G.posts.unshift(p);G.st.posts++;
+  com.forEach(id=>p.comments.push(npcComment(id)));G.posts.unshift(p);G.st.posts++;G.ig.fans+=2+Math.floor(Math.random()*6);
+  /* un·e ami·e prend ta défense si quelqu'un se moque de ton post */
+  const mean=p.comments.find(c=>c.tone==='moqueur'),def=mean&&NPCS.find(n=>n.id!==mean.by&&G.rel[n.id].ami>=55);if(def)p.comments.push(mkC(def.id,genderize(pickR(DEF_ME),def.id),{re:mean.id,to:mean.by,vs:mean.by}));
   if(com.length)note(`${com.map(id=>WHO[id].name).join(', ')} ${com.length>1?'ont':'a'} commenté ton post`)}
  const kind=cp.kind;saveG();closeSheet();view='home';drawGame();checkObjectives();
  toast((kind==='story'?'Story publiée':'Post publié')+(changes.length?' · '+changes.join(' · '):''));
@@ -2344,17 +2524,22 @@ function resolve(ei,ci){
 $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
+ if(igClick(t))return;
  const ch=t.closest('.choice');
  if(ch){const d=ch.dataset;
   if(d.ev!==undefined){resolve(+d.ev,+d.c);return}
   if(d.sg!==undefined){const s=cm.sugg[+d.sg];sendComment(s.text,s.t);return}
+  if(d.rs!==undefined){const s=cm.rsugg[+d.rs];sendReply(s.text,s.t);return}
   if(d.ntone){sendNote(d.ntone);return}
   if(d.rev){revise(d.rev);return}
   if(d.out){d.out.startsWith('f_')?famOuting(d.out,d.pl):outing(d.out,d.pl);return}}
  const q=s=>t.closest(s);
  let b;
  if(b=q('[data-tone]')){cm.tone=b.dataset.tone;document.querySelectorAll('[data-tone]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
- if(t.id==='cSend'){const v=$('cTxt').value.trim();if(!v){toast('Écris un commentaire ou choisis une suggestion');return}sendComment(v,cm.tone);return}
+ if(b=q('[data-reply]')){startReply(b.dataset.reply);return}
+ if(q('[data-cancelre]')){cm.re=null;openComments(cm.id);return}
+ if(b=q('[data-stance]')){cm.stance=b.dataset.stance;document.querySelectorAll('[data-stance]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
+ if(t.id==='cSend'){const v=$('cTxt').value.trim();if(!v){toast('Écris un commentaire ou choisis une suggestion');return}cm.re?sendReply(v,cm.stance):sendComment(v,cm.tone);return}
  if(b=q('[data-sv]')){b.dataset.sv==='next'?nextStory():prevStory();return}
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
@@ -2384,6 +2569,7 @@ $('gNav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)
 $('gView').addEventListener('click',e=>{
  const t=e.target;let b;
  if(t.id==='gEdit'){showAtelier();return}
+ if(igClick(t))return;
  if(t.id==='gFam'){showFamille(true);return}
  if(t.id==='gRestart'){askRestart();return}
  if(t.id==='gCompte'){window.CLOUD.open();return}
@@ -2398,7 +2584,7 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-mate]')){openFiche(b.dataset.mate);return}
  if(b=t.closest('[data-chat]')){openChat(b.dataset.chat);return}
  b=t.closest('[data-a]');if(!b)return;const p=G.posts.find(x=>x.id===b.closest('.post').dataset.id);if(!p)return;
- const a=b.dataset.a;if(a==='c'){cm=null;openComments(p.id);return}
+ const a=b.dataset.a;if(a==='u'){openInsta(p.by);return}if(a==='c'){cm=null;openComments(p.id);return}
  if(a==='l'){p.liked=!p.liked;if(p.liked&&isNpc(p.by)&&!p.likedOnce){p.likedOnce=true;relChange(p.by,1)}}
  if(a==='r')p.rt=!p.rt;if(a==='f')p.fav=!p.fav;saveG();refreshPost(p);
 });

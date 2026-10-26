@@ -17,7 +17,11 @@ view='day';G.min=8*60+5;advance(1);drawDay();classAct('notes');classAct('voisin'
 G.min=10*60+1;advance(1);drawDay();const ph=phase();const m=presence(ph);console.log(ph.type,JSON.stringify(m));
 const someone=Object.values(m).flat()[0]; if(someone){G.place=Object.keys(m).find(k=>m[k].includes(someone));openPerson(someone);personAct(someone,'compliment');personAct(someone,'flirt');console.log(relChange(someone,0,0),G.rel[someone]);}
 console.log(buildPrompt('jade').slice(0,300));
-['home','messages','mates','profil','day'].forEach(v=>{view=v;drawView()});
+['home','messages','mates','insta','profil','day'].forEach(v=>{view=v;drawView()});
+G.rel.jade.ami=40;G.ig.priv=true;for(let i=0;i<30;i++)followTick();console.log('insta demandes',G.ig.reqs);G.ig.reqs.slice().forEach(id=>igRequest(id,true));igFollow('jade');igFollow('kylian');openInsta('jade');drawInsta();
+const jp=npcPost('jade',NPC_POSTS.jade[0]);G.posts.unshift(jp);cm=null;openComments(jp.id);console.log('débat',jp.comments.map(c=>c.by+(c.re?'↳':'')+':'+c.text.slice(0,28)).join(' | '));
+const crit=jp.comments.find(c=>c.vs==='jade');if(crit){startReply(crit.id);sendReply('Laisse Jade tranquille','desaccord');console.log('après réponse',jp.comments.slice(-2).map(c=>c.by+'→'+c.to+':'+c.text).join(' | '))}
+cm=null;openComments(jp.id);sendComment('Trop beau','gentil');console.log('abonnés',igCounts('me'),'objectifs',G.objDone);
 openFiche('noah');openChat('noah');sleepNow();console.log('slept',G.day,fmtT(G.min),G.energy);
 checkObjectives();console.log("obj",G.objDone);const pl=famPlan(G.family[0].id);console.log(planWhen(pl),pl.place);pl.status="accepted";startOuting(pl);famOuting("f_photo",pl.id);console.log("famRel",JSON.stringify(G.famRel),G.posts[0].text);openFamPerson(G.family[1].id);famAct(G.family[1].id,"sortie");console.log("likes",NPCS.map(n=>n.id+":"+npcLikesMe(n.id)+"/"+iLike(n.id)).join(" "));showFamille(false);editFamLook(0);state.hair="frange";document.getElementById("bFamDone").onclick();console.log("famlook",famDraft[0].av.hair,"player",state.name,state.hair);
 console.log("OK : simulation terminée sans erreur");
