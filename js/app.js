@@ -1570,13 +1570,13 @@ function checkObjectives(){
 
 /* ---------- état ---------- */
 function initLinks(){const L={};NPCS.forEach(a=>{L[a.id]={};NPCS.forEach(b=>{if(a.id!==b.id){const v=LINKS0[a.id+'>'+b.id]||[40,0];L[a.id][b.id]={ami:v[0],amour:attracted(FICHES[a.id].o,FICHES[a.id].g,FICHES[b.id].g)?v[1]:0}}})});return L}
-const mkPost=o=>Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o);
+const mkPost=o=>Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o);
 function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
   rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0}])),links:initLinks(),couples:[],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
-  posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
-  met:{},ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
+  posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
+  met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
   stories:START_STORIES.map((s,i)=>({id:'st'+i,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
@@ -1590,7 +1590,7 @@ if(G&&G.family)G.family.forEach(f=>{if(f.av&&!f.av.rides)f.av.rides=/Grand-/.tes
 if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});const L0=initLinks();G.links=G.links||{};for(const a in L0){G.links[a]=G.links[a]||{};for(const b in L0[a])if(!G.links[a][b])G.links[a][b]=L0[a][b]}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
-if(G&&G.posts){if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
+if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
 if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
@@ -1612,7 +1612,7 @@ Peurs : ${f.peurs}. Passions : ${f.passions}.
 Façon de parler : ${f.parle}.
 Genre : ${f.g==='f'?'fille':'garçon'}. Orientation : ${oriLabel(f.o,f.g)}.
 Relations : ${f.relations}. Situation amoureuse : ${c==='me'?'en couple avec '+nameOf('me'):c?'en couple avec '+WHO[c].name:'célibataire'}.
-${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, amour ${r.amour}/100. ${ressentiShort(id)}
+${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}${seatToday()===id?`Aujourd'hui, en cours, ${nameOf('me')} a choisi de s'asseoir à côté de toi.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, amour ${r.amour}/100. ${ressentiShort(id)}
 ${nameOf('me')} est ${SEXL[me().sexe]}${me().sexe==='f'?' : parle-lui au féminin (accords, « la nouvelle », « contente »…)':me().sexe==='m'?' : parle-lui au masculin (accords, « le nouveau », « content »…)':' : utilise des formulations neutres pour parler de cette personne'}. ${npcLikesMe(id)?'':S(id,`Tu n'es pas attiré·e par son genre : si ${nameOf('me')} te drague, reste gentil·le mais fais comprendre que c'est amical, et garde "amour" à 0.`)}`;
 }
 function buildPrompt(id){
@@ -1635,11 +1635,82 @@ Réponds uniquement avec un objet JSON :
 "amitie" et "amour" mesurent l'effet du dernier message de ${me} sur tes sentiments. Si tu proposes une sortie, remplace null par {"lieu":"plage|centre|glacier","quand":"ce soir|demain"}.`;
 }
 function sentiment(t){t=t.toLowerCase();if(/(nul|ferme[ -]la|idiot|débile|moche|dégage|tais-toi|je te déteste|chiant|bête|pathétique)/.test(t))return -1;if(/(merci|cool|trop bien|génial|j'adore|❤|😍|🥰|mdr|ptdr|haha|bravo|bisou|beau|belle|mignon|gentil|super|top|manqué|t'aime)/.test(t))return 1;return 0}
+/* ---------- réponses de secours (sans IA) : selon le sujet du message, la personnalité, sans se répéter ---------- */
+const TOPICS=[
+ ['salut',/^(salut|coucou|bonjour|bonsoir|hey|yo|wesh|wsh|slt|cc)\b/],
+ ['cava',/(ça va|ca va|cv\b|comment tu vas|la forme|tu vas bien)/],
+ ['weekend',/(week-end|weekend|samedi|dimanche|ce soir|demain|sortir|sortie|plage|glacier|cinéma|cinema|soirée|soiree)/],
+ ['origine',/(commune|d'où|d ou|tu viens|t'habites|tu habites|habite où|quel lycée|ancien lycée)/],
+ ['activite',/(tu fais quoi|tu fais koi|tfq|t'es où|t es ou|tu es où|qu'est-ce que tu fais)/],
+ ['lecture',/(lis\b|lire|livre|roman|manga|poème|poeme|poésie|écris|ecris|écrire)/],
+ ['ecole',/(spé\b|spécialité|specialite|lycée|cours|devoir|maths|philo|physique|français|anglais|espagnol|svt|histoire|contrôle|controle|interro|bac|prof|note|réviser|reviser|exam)/],
+ ['sport',/(foot|basket|hand|sport|match|entraînement|entrainement|courir|footing|gym)/],
+ ['musique',/(musique|son|chanson|zouk|gwo ka|gwoka|rap|dancehall|guitare|écoute|ecoute|playlist|danse)/],
+ ['famille',/(famille|parents|mère|mere|père|pere|maman|papa|frère|frere|sœur|soeur|grand-mère|mamie)/],
+ ['amour',/(crush|amoureux|amoureuse|copain|copine|tu me plais|je t'aime|t'aime|sortir avec|célibataire|celibataire|bisou)/],
+ ['potins',/(potins|rumeur|drama|insta|post|story|tu as vu|t'as vu)/],
+ ['fatigue',/(fatigué|fatigue|crevé|creve|dormir|sommeil|ennui|m'ennuie|ennuyer|nul aujourd)/],
+ ['manger',/(manger|faim|cantine|déjeuner|dejeuner|repas|goûter|gouter|colombo|bokit|accras)/],
+ ['merci',/(merci|trop gentil|c'est gentil)/]];
+const REP={
+ ines:{origine:["À la base je viens de Martinique, maintenant on habite aux Abymes ✨","Martinique ➜ Guadeloupe, et toi ? 🥺"],lecture:["Moi je lis surtout des webtoons 🥺","Je lis pas trop, je regarde des K-dramas 😅"],salut:["Coucou toi ✨","Heyy 🥰 ça fait plaisir"],cava:["Ça va et toi ? Moi un peu fatiguée mais ça va 🥺","Super bien ! J'ai appris une nouvelle choré 💃"],activite:["Je regarde mon K-drama 🥺 et toi ?","Je garde mon petit frère, il me rend folle 😅"],
+  ecole:["J'ai rien compris au dernier cours 🥺 tu m'expliques ?","Le contrôle m'a stressée de ouf"],sport:["Moi c'est la danse mon sport 💃","Le foot c'est pas trop mon truc, mais j'aime bien regarder ✨"],musique:["Dancehall forever 💃✨","Tu connais le dernier son qui tourne ? Je l'écoute en boucle 🎧"],
+  weekend:["Samedi je suis libre ! On fait un truc ? ✨","Plage ce week-end avec Maëlle, tu viens ? 🌴"],famille:["Ma mère est infirmière, elle rentre tard… alors je garde Enzo 🥺","Mon petit frère Enzo c'est un phénomène 😂"],
+  amour:["Ohh tu me racontes ? 👀💕","Moi l'amour… c'est compliqué 🥺"],potins:["Raconte !! 👀","J'ai vu ça ! Maëlle va encore faire un drama 😅"],fatigue:["Pareil, j'ai trop sommeil 🥺","Va te reposer mon cœur 💕"],manger:["J'ai trop faim 😩","La cantine aujourd'hui… pas ouf 🥺"],merci:["De rien mon cœur 💕","Avec plaisir ✨"],
+  q:["Bonne question 🥺 je sais pas trop","Hmm… je dirais oui ? ✨","Ça dépend ! Et toi ?"],def:["Ah ouais ? Raconte ✨","Hmm je vois 🥺","Trop bien ça","Ah d'accord 🥰","C'est vrai que…","Tu m'étonnes 😅"]},
+ kylian:{origine:["moi Saint-François frr, au bord de l'eau 🎣","Saint-François, le meilleur coin"],lecture:["frr je lis que les résultats de foot 😂","lire ? moi ? mdrr"],salut:["wsh bien ou quoi","yo"],cava:["tranquille et toi ?","ça va frr, un peu crevé avec l'entraînement"],activite:["je joue à FIFA tkt","je traîne dans la cour, viens"],
+  ecole:["frr me parle pas des cours 😭","j'ai pas fait les devoirs, tu me les passes ?"],sport:["le foot c'est la vie frr ⚽","t'as vu mon but au dernier match ? 😎","viens jouer à la récré"],musique:["moi j'écoute du rap, le zouk c'est pour Sacha 😂","mets un son là"],
+  weekend:["ce week-end match, après on peut traîner","pêche avec mon père samedi 🎣"],famille:["mon père est pêcheur, il me réveille à 5 h 😭","mon grand-père c'est un boss"],amour:["frr parle pas de ça 😅","t'as quelqu'un en tête toi ? 👀"],
+  potins:["les Potins racontent n'importe quoi sur moi 🙄","wsh qui a encore balancé ?"],fatigue:["moi aussi je suis mort","dors frr"],manger:["j'ai la dalle","un bokit là ça passerait trop"],merci:["tkt","normal frr"],
+  q:["bonne question frr","jsp trop, et toi ?","ça dépend"],def:["ah ouais ?","sérieux ?","mdr t'es marrant·e","vas-y raconte","ok ok","ah bon","c'est chaud ça"]},
+ maelle:{origine:["Le Gosier chez ma mère, Pointe-à-Pitre chez mon père 🙄","Le Gosier, évidemment 💅"],lecture:["Je lis les magazines de mode, ça compte ? 💅","Lire c'est le truc de Jade 🙄"],salut:["Coucou 💅","Hey !"],cava:["Ça va, littéralement épuisée par les répétitions 📣","Super ! Et toi ?"],activite:["Je prépare la soirée de vendredi 💅","Shopping en ligne, comme d'hab"],
+  ecole:["Les cours… littéralement l'enfer 🙄","J'ai copié sur Jade, chut 🤫"],sport:["Moi c'est pom-pom, c'est un sport, ok ? 📣","Le hand d'Anaïs ? Genre c'est intense"],musique:["Mets du dancehall, on danse 💃","La playlist de la soirée sera parfaite, fais-moi confiance"],
+  weekend:["Soirée chez moi samedi, t'es sur la liste… peut-être 💅","Centre-ville samedi, shopping obligatoire"],famille:["Mes parents… c'est compliqué depuis le divorce 🙄","Ma sœur est à Paris, elle me manque"],
+  amour:["Ohh dis-moi tout 👀💅","Genre t'as un crush ? Qui ??"],potins:["J'ai LITTÉRALEMENT tout vu 👀","Les Potins, je sais qui c'est… je dirai rien 🤐"],fatigue:["Moi aussi, mais je suis toujours belle 💅","Dors, t'as une tête de zombie 😂"],
+  manger:["La cantine ? Jamais 🙄","On va au snack ?"],merci:["Je sais, je suis géniale 💅","De rien !"],q:["Genre ? Pourquoi tu demandes ? 👀","Évidemment","Bonne question… je dirais non 🙄"],def:["Genre ?","Mouais","Ok et ?","Intéressant 👀","Littéralement","Hmm, si tu le dis"]},
+ noah:{origine:["Baie-Mahault, dans une maison toujours pleine ptdr","Moi Baie-Mahault"],lecture:["Moi c'est les mangas, j'en ai plein","Tu lis des mangas toi ?"],salut:["Salut frère","Hey 👋"],cava:["Ça va bien, et toi ?","Ça va, j'ai bien mangé chez ma grand-mère 😄"],activite:["Je lis un manga","Je fais mes devoirs… enfin j'essaie ptdr"],
+  ecole:["T'as compris l'exo ? Moi pas trop","Je peux t'aider en physique si tu veux"],sport:["Basket jeudi, viens nous voir 🏀","Le sport ça vide la tête"],musique:["J'écoute un peu de tout","Sacha fait des sons de fou"],
+  weekend:["Ce week-end je cuisine avec mamie","On peut aller au glacier si tu veux"],famille:["Chez moi c'est toujours plein de monde ptdr","Mes sœurs me rendent fou"],amour:["Euh… je sais pas trop quoi dire 😅","Moi je suis nul pour ces trucs-là"],
+  potins:["Je lis pas trop les Potins","Encore un drama ?"],fatigue:["Pareil frère","Repose-toi"],manger:["J'ai faim aussi","Ma grand-mère fait le meilleur colombo"],merci:["De rien 🙏","Avec plaisir"],
+  q:["Hmm, peut-être","Je sais pas trop, et toi ?","Bonne question frère"],def:["Ah ok","Ouais je vois","Ptdr","Ah bon ?","C'est vrai","Intéressant"]},
+ jade:{origine:["sainte-anne. chez ma grand-mère, près de la mer.","sainte-anne."],lecture:["oui. des poèmes, surtout. et toi, tu lis quoi ?","j'écris un peu. je ne montre presque jamais."],salut:["bonjour.","salut."],cava:["ça va. je lis.","ça va. le ciel était beau ce matin."],activite:["je lis au cdi.","j'écris."],ecole:["j'ai déjà fini les exercices. tu veux de l'aide ?","le cours de philo était passionnant. vraiment."],
+  sport:["le sport et moi, c'est compliqué.","je préfère marcher au bord de la mer."],musique:["j'aime le silence. et parfois sacha.","le gwo ka, ça me parle."],weekend:["ce week-end, étoiles depuis la plage de sainte-anne.","je reste avec ma grand-mère."],
+  famille:["je vis avec ma grand-mère. elle sait tout.","mes parents sont en métropole."],amour:["l'amour, c'est un poème qu'on n'ose pas finir.","pourquoi cette question ?"],potins:["les potins ne m'intéressent pas.","encore un drama de maëlle ?"],
+  fatigue:["dors. le monde attendra.","moi aussi. trop de livres, pas assez de nuits."],manger:["je mange au cdi. chut.","un thé suffira."],merci:["de rien.","avec plaisir. sincèrement."],
+  q:["bonne question. je n'ai pas de réponse.","peut-être. et toi ?","ça dépend du point de vue."],def:["intéressant.","développe.","hmm.","je vois.","c'est noté.","pas mal."]},
+ anais:{origine:["Sainte-Rose ! 🌴 Et toi ?","Sainte-Rose, la plus belle commune 😄"],lecture:["Je lis des bios de sportifs, ça me motive 💪","Pas trop le temps de lire avec le sport 😂"],salut:["Hey !! 😄","Salut toi ! 🔥"],cava:["Trop bien ! Footing ce matin 💪","Super, et toi ?? 😄"],activite:["Je m'entraîne !","Je cours après mes petits frères 😂"],
+  ecole:["Les cours c'est moins drôle que le sport 😂","Allez, on révise ensemble ? 💪"],sport:["Le sport c'est la vie !! 🔥","Viens courir demain à 6 h 😄"],musique:["Playlist de motivation à fond 🔥","Je danse sur tout 😂"],
+  weekend:["Match samedi ! Viens m'encourager 🔥","Plage dimanche, on court ensemble ? 🌅"],famille:["Mes petits frères sont des tornades 😂","Mon père est entraîneur, devine d'où je tiens ça 😄"],amour:["Hihi raconte 🙈","L'amour ? J'ai pas le temps, j'ai entraînement 😂"],
+  potins:["Haha encore les Potins 😂","Les gens parlent trop !"],fatigue:["Allez, un petit footing et ça repart ! 😂","Dors bien alors 😴"],manger:["J'ai trop faim après le sport 😩","Smoothie mangue ? 🥭"],merci:["De rien ! 😄","Avec plaisir 💪"],
+  q:["Bonne question 😂 je dirais oui !","Hmm, je sais pas, et toi ?","Carrément !"],def:["Carrément !","Haha trop bien","Ah ouais ? 😄","Et après ?","Trop fort 😂","C'est ouf ça"]},
+ sacha:{origine:["Lamentin, gros","Moi je suis du Lamentin"],lecture:["J'écris des textes pour mes sons","Je lis des paroles de chansons, c'est de la poésie aussi"],salut:["Yo","Salut, bonne vibe ?"],cava:["Tranquille, la vibe est bonne","Ça va gros, et toi ?"],activite:["Je compose un son 🎧","Je gratte ma guitare au foyer"],
+  ecole:["Les cours… j'arrive toujours en retard 😅","La musique devrait compter au bac"],sport:["Moi c'est skate","Le foot c'est le délire de Kylian"],musique:["T'écoutes quoi toi ? 🎧","Le zouk rétro c'est la base","Je t'envoie mon son si tu veux"],
+  weekend:["Ce week-end je joue avec ma mère, gwo ka","Viens au foyer, on fait de la musique"],famille:["Mon père veut que je fasse du commerce… pas moi","Ma mère chante, c'est elle qui m'a tout appris"],amour:["L'amour c'est dans toutes mes chansons","Raconte, gros 👀"],
+  potins:["Les Potins c'est pas ma vibe","Encore eux ?"],fatigue:["Moi je dors jamais, je compose","Repose-toi gros"],manger:["Un bokit et je suis bien","J'ai oublié de manger, encore"],merci:["Tranquille","De rien gros"],
+  q:["Bonne question gros","Je sais pas, et toi ?","Peut-être, on verra"],def:["Ah ouais","Tranquille","Je vois la vibe","Intéressant","C'est lourd ça","Ok gros"]}};
+/* dernière phrase dite par la personne, pour ne pas se répéter */
+const lastLines=id=>[...(G.threads[id]||[]),...((G.talks&&G.talks[id])||[])].filter(m=>m.from==='them').slice(-6).map(m=>m.text);
+function smartLine(id,text){
+ const t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
+ const fresh=L=>{const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
+ if(!R){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}
+ if(s<0)return fresh(VOICE[id].hurt);
+ /* « et toi ? » : répondre sur le sujet de sa dernière question */
+ if(/(et toi|et vous|toi aussi|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
+  if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
+  const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]])}
+ const hit=TOPICS.find(([k,re])=>re.test(t)&&R[k]);
+ if(hit)return fresh(R[hit[0]]);
+ if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(VOICE[id].happy);
+ return fresh(t.includes('?')?R.q:R.def);
+}
+
 function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
  /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
  const met=isNpc(id)?(G.met[id]||0):3;
- return{reponse:met===0?introLine(id):pickR(s>0?v.happy:s<0?v.hurt:v.neutral)+(met<3?' '+pickR(FOLLOW_Q[id]):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!lastLines(id).some(u=>u.includes(genderize(q,id)))):[];
+ return{reponse:met===0?introLine(id):smartLine(id,text)+(met<3&&fq.length?' '+pickR(fq):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
@@ -1741,6 +1812,7 @@ function presence(ph){
 function advance(n){
  for(let i=0;i<n;i++){
   G.min++;if(G.min>=1440){G.min=0;G.day++;onNewDay()}
+  if(G.postQ&&G.postQ.length&&G.postQ[0].at<=G.min)publishDue();
   if(G.min%15===0&&!G.asleep)G.energy=clamp(G.energy-(G.min<420?2:1),0,100);
   if(G.min%60===0&&!G.asleep){npcPing();familyPing();followTick();checkObjectives()}
  }
@@ -1824,10 +1896,9 @@ function dailyContent(){
    if(withMe)note(`${n.name} t'a identifié dans sa story`)}
  });
  /* posts du jour : 2 camarades selon leur personnalité, Jade poste souvent un poème, parfois un potin */
- const by=[...NPCS].sort(()=>Math.random()-.5).slice(0,2).map(n=>n.id);if(!by.includes('jade')&&Math.random()<.6)by.push('jade');
- by.forEach(id=>{const L=NPC_POSTS[id],t=id==='jade'&&Math.random()<.75?pickR(L.filter(x=>x.poem)):pickR(L);G.posts.unshift(npcPost(id,t))});
- if(Math.random()<.5){const t=pickR(POST_POOL);G.posts.unshift(t.by==='potins'?mkPost({by:'potins',text:t.text,c:Math.floor(Math.random()*30)+5,r:Math.floor(Math.random()*300)+20,l:Math.floor(Math.random()*8000)+500}):npcPost(t.by,t))}
- G.stories=G.stories.slice(-40);G.posts=G.posts.filter((p,i)=>i<60||p.by==='me');
+ planPosts();
+ if(Math.random()<.5){G.postQ.push({pool:pickR(POST_POOL),at:480+Math.floor(Math.random()*780)});G.postQ.sort((a,b)=>a.at-b.at)}
+ G.stories=G.stories.slice(-40);G.posts=G.posts.filter((p,i)=>i<120||p.by==='me');
 }
 /* ---------- fêtes et manifestations du lycée ----------
    date = vraie date de la fête ; si ce jour-là il n'y a pas cours, la fête a lieu le dernier jour de cours avant.
@@ -1953,7 +2024,7 @@ function feteEnd(fid){fst(fid).done=true;saveG();const next=fetesOpen()[0];if(ne
 const FETE_COM=["trop hâte 🔥","on y va ensemble ?","le meilleur jour de l'année","j'ai déjà ma tenue 😎","qui vient avec moi ?"];
 function feteDay(){
  fetesToday().forEach(f=>{
-  const p=mkPost({by:'potins',text:f.post,c:20+Math.floor(Math.random()*30),r:200+Math.floor(Math.random()*400),l:5000+Math.floor(Math.random()*9000)});
+  const p=mkPost({by:'potins',text:f.post,min:7*60,c:20+Math.floor(Math.random()*30),r:200+Math.floor(Math.random()*400),l:5000+Math.floor(Math.random()*9000)});
   if(f.id!=='abolition')rndNpc(2).forEach(id=>p.comments.push(mkC(id,genderize(pickR(FETE_COM),id))));
   G.posts.unshift(p);note(`${f.ic} ${f.n} aujourd'hui au lycée`);if(!G.asleep&&!$('game').hidden)toast(`${f.ic} ${f.n} aujourd'hui !`)});
  const f=fetesOpen()[0];if(f)popSheet(feteSheet(f));
@@ -1991,7 +2062,7 @@ function incidentDay(){
  if(!schoolDay(G.day)||fetesToday().length||Math.random()>.15)return;
  G.incUsed=G.incUsed||[];const all=Object.entries(INCIDENTS).flatMap(([id,L])=>L.map((x,i)=>({id,i,...x}))),free=all.filter(x=>!G.incUsed.includes(x.id+x.i));
  const inc=pickR(free.length?free:all);G.incUsed.push(inc.id+inc.i);if(!free.length)G.incUsed=[inc.id+inc.i];
- const p=mkPost({by:'potins',text:'[Anonyme] : '+inc.t,c:25+Math.floor(Math.random()*40),r:300+Math.floor(Math.random()*600),l:8000+Math.floor(Math.random()*14000)});
+ const p=mkPost({by:'potins',text:'[Anonyme] : '+inc.t,min:6*60+Math.floor(Math.random()*80),c:25+Math.floor(Math.random()*40),r:300+Math.floor(Math.random()*600),l:8000+Math.floor(Math.random()*14000)});
  const self=mkC(inc.id,genderize(inc.self,inc.id));p.comments.push(self);
  NPCS.filter(n=>n.id!==inc.id).sort(()=>Math.random()-.5).slice(0,2).forEach(n=>p.comments.push(mkC(n.id,genderize(pickR(INC_COM).replace('{n}',WHO[inc.id].name),n.id),Math.random()<.5?{re:self.id,to:inc.id}:{})));
  G.posts.unshift(p);note(`👀 Potins du lycée : ${inc.t}`);G.incToast=inc.t;
@@ -2050,7 +2121,7 @@ function famOuting(kind,pid){
 function openFamPerson(fid){
  const f=famById(fid),k=G.day+'fam'+fid;if(!f)return;
  openSheet(`<div class="who"><div class="av">${avatarOf(fid)}</div><div style="flex:1;min-width:0"><h2>${esc(f.name)} ${esc(me().nom||'')}</h2><p class="muted" style="margin:2px 0 0">${f.role} · ${S(f.id,f.trait)} · complicité ${G.famRel[fid]}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
- <div class="acts"><button class="act" type="button" data-chat="${fid}"><span class="ico">💬</span><span>Discuter</span></button>
+ <div class="acts"><button class="act" type="button" data-talk="${fid}"><span class="ico">🗣️</span><span>Parler en vrai</span></button><button class="act" type="button" data-chat="${fid}"><span class="ico">💬</span><span>Envoyer un message</span></button>
  <button class="act" type="button" data-fa="aider" data-id="${fid}" ${G.done[k+'aider']?'disabled':''}><span class="ico">🧹</span><span>Aider à la maison</span><small class="r-ok">−4 énergie</small></button>
  <button class="act" type="button" data-fa="sortie" data-id="${fid}" ${G.done[k+'sortie']||famPending()?'disabled':''}><span class="ico">🌴</span><span>Proposer une sortie en famille</span></button></div>
  <p class="story-text" id="paOut"></p>`);
@@ -2178,7 +2249,7 @@ const I={
 let cm=null;
 function postHTML(p){
  const prev=p.comments.slice(-2);
- return `<article class="post" data-id="${p.id}"><button class="av avbtn" type="button" data-a="u" aria-label="Compte Insta de ${esc(nameOf(p.by))}">${avatarOf(p.by)}</button><div class="pbody">
+ return `${p.day!=null?`<div class="pdate">${postWhen(p)}</div>`:''}<article class="post${p.day!=null?' dated':''}" data-id="${p.id}"><button class="av avbtn" type="button" data-a="u" aria-label="Compte Insta de ${esc(nameOf(p.by))}">${avatarOf(p.by)}</button><div class="pbody">
   <div class="phead"><button class="pname" type="button" data-a="u">${esc(nameOf(p.by))}</button>${p.by==='me'?'':VERIF}<span class="h">${handleOf(p.by)}</span></div>
   <p>${fmtText(p.text)}</p>
   ${p.photo?`<div class="photo">${photoSVG(p.photo)}</div>${tagLine(p.photo)}`:''}
@@ -2298,7 +2369,7 @@ const CRIT_ME=["toi aussi tu valides ça ? 😂","sérieux, t'aimes vraiment ça
 const DEF_ME=["t'as que ça à faire ? 🙄","respecte un peu, sérieux","la jalousie se voit d'ici 😂","laisse tomber, ce post est très bien"];
 /* fil de débat sous un post : critique → défense → réplique → réponse de l'auteur */
 function debateThread(p){
- const D=DEBATE[p.by];if(!D||Math.random()>(p.poem?D.poem:D.p))return [];
+ const D=DEBATE[p.by];if(!D||Math.random()>(p.poem?D.poem:D.p*(p.daily?.3:1)))return [];
  const c=D.critic,cr=mkC(c,genderize(pickR(D.crit),c),{vs:p.by}),out=[cr],defs=D.def.filter(x=>x!==c);
  const line=(id,L)=>genderize(pickR(L).replace('{a}',nameOf(p.by)),id);
  const d=pickR(defs);out.push(mkC(d,line(d,D.defl&&Math.random()<.5?D.defl:DEF_LINES),{re:cr.id,to:c,vs:c}));
@@ -2310,7 +2381,7 @@ function debateThread(p){
 /* un camarade poste : texte de sa personnalité, photo éventuelle, commentaires et débat */
 function npcPost(by,t){
  const ppl=t.scene?[by,...(Math.random()<.5?[pickR(NPCS.filter(x=>x.id!==by)).id]:[])]:null;
- const p=mkPost({by,text:t.text,poem:!!t.poem,photo:ppl?{scene:t.scene,people:ppl,author:by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
+ const p=mkPost({by,text:t.text,poem:!!t.poem,daily:!!t.daily,photo:ppl?{scene:t.scene,people:ppl,author:by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
  p.comments.push(...debateThread(p));
  NPCS.filter(x=>x.id!==by&&!p.comments.some(c=>c.by===x.id)).sort(()=>Math.random()-.5).slice(0,Math.random()<.5?1:2).forEach(x=>{
   const a=link(x.id,by).ami,tone=a>=60?pickR(['gentil','drole']):a>=35?pickR(['drole','neutre','gentil']):pickR(['neutre','moqueur']);
@@ -2419,16 +2490,15 @@ const ACTS={
  notes:{l:'Prendre des notes',e:4,risk:0,ico:'✏️'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Parler à ton voisin',e:2,risk:.12,ico:'💬'},
  mot:{l:'Écrire en cachette',e:2,risk:.15,ico:'📝'},dessin:{l:'Dessiner',e:0,risk:.06,ico:'🎨'},dormir:{l:'Dormir',e:0,risk:.18,ico:'😴'}};
 const riskLbl=(r,s)=>{const x=r*s;return x===0?['Sans risque','ok']:x<.2?['Risque faible','lo']:x<.4?['Risque moyen','mid']:['Risque élevé','hi']};
-function neighborOf(ph){return NPCS[hash(G.day+'-'+ph.slot)%NPCS.length].id}
 function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
- const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
+ const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
   h+=`<div class="prof"><div><b>${prof}</b><span class="muted"> · ${gtxt(SEV[s],profSex(prof))}</span></div><span class="sev">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>
-  <p class="muted">À côté de toi : <b style="color:var(--g-ink)">${WHO[nb].name}</b> · Actions restantes : ${G.acts}/3 · Chances de réussite en ${SUBJ[ph.sub]} : ${G.know[ph.sub]} %</p>
+  <p class="muted">À côté de toi : <b style="color:var(--g-ink)">${WHO[nb].name}</b>${seatToday()?'':' (au hasard)'} <button class="linkbtn" type="button" data-seatopen>Changer de place</button> · Actions restantes : ${G.acts}/3 · Chances de réussite en ${SUBJ[ph.sub]} : ${G.know[ph.sub]} %</p>
   <div class="acts">${Object.entries(ACTS).map(([k,a])=>{const [rl,rc]=riskLbl(a.risk,s);return `<button class="act" type="button" data-ca="${k}" ${G.acts<=0?'disabled':''}><span class="ico">${a.ico}</span><span>${a.l}</span><small class="r-${rc}">${rl}</small></button>`}).join('')}</div></div>`;
  }else if(['recre','dej','matin','weekend'].includes(ph.type)){
   if(G.placeKey!==ph.key){G.place=placesFor(ph.type)[0];G.placeKey=ph.key}
@@ -2496,7 +2566,7 @@ function drawProfile(){
 }
 function drawView(){
  $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home';
- if(view==='home')$('gView').innerHTML=G.posts.map(postHTML).join('');
+ if(view==='home'){const n=G.feedN||30;$('gView').innerHTML=G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
  else if(view==='insta')drawInsta();
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
@@ -2504,7 +2574,7 @@ function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
 function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){clearTimeout(svTimer);const wasStory=!!sv;sv=null;cm=null;chat=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
+function closeSheet(){clearTimeout(svTimer);const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
 function openFiche(id){
@@ -2528,7 +2598,7 @@ function openPerson(id){
 }
 function personAct(id,a){
  const ph=phase(),k=ph.key+id,r=G.rel[id],f=FICHES[id],V=VOICE[id];
- if(a==='parler'){if(!G.done[k+'talk']){G.done[k+'talk']=1;G.st.talks++}closeSheet();openChat(id,true);return}
+ if(a==='parler'){if(!G.done[k+'talk']){G.done[k+'talk']=1;G.st.talks++}closeSheet();openTalk(id);return}
  if(G.energy<2){toast(P('Trop fatigué·e : va manger ou te reposer'));return}
  G.done[k+a]=1;G.energy=clamp(G.energy-2,0,100);if(!G.done[k+'talk']){G.done[k+'talk']=1;G.st.talks++}
  let da=0,dl=0,line;
@@ -2640,6 +2710,121 @@ function drawChatMsgs(){
  box.scrollTop=box.scrollHeight;
 }
 const voiceOf=id=>VOICE[isFam(id)?'fam':id];
+/* ---------- parler en vrai (face à face) ----------
+   Différent des messages : dialogue à l'oral, au lieu où l'on se trouve, avec gestes ; historique séparé (G.talks).
+   Le ou la camarade sait que c'est en vrai (consigne dans le prompt, gestes et remarques sur le lieu en secours). */
+let talk=null;
+const TALK_SCENE={cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour'};
+const TALK_SUGG=["Salut !","Ça va ?","Tu fais quoi ici ?","On s'assoit ensemble ?","T'as vu le dernier post des Potins ?","Tu fais quoi ce week-end ?"];
+const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux qui brillent*'],neg:['*fronce les sourcils*','*croise les bras*','*soupire*','*détourne le regard*'],neu:['*hausse les épaules*','*hoche la tête*','*réfléchit une seconde*','*te regarde*']};
+const PLACE_TALK={cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
+ foyer:["Le foyer est blindé aujourd'hui","Quelqu'un a mis du zouk au foyer, j'adore"],cantine:["C'est quoi ce plat encore ?","Tu manges ça toi ? 😂"],plage:["L'eau est trop bonne aujourd'hui","Regarde le coucher de soleil…"],centre:["Y a trop de monde au centre-ville aujourd'hui","On passe au glacier après ?"],maison:["On est bien à la maison quand même","Tu as mangé ?"]};
+const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?'maison':G.place||'cour'};
+function openTalk(id){
+ const pl=isFam(id)?'maison':talkPlace();talk={id,pl,day:G.day};
+ const th=(G.talks[id]=G.talks[id]||[]);if(th.length&&th[th.length-1].day!==G.day)th.push({sep:1,day:G.day,pl});
+ if(isNpc(id)&&!G.done[G.day+'vrai'+id]){G.done[G.day+'vrai'+id]=1;G.st.talks++}
+ openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="talkSub">En vrai · ${PLACES[pl]||'Maison'} · ${fmtT(G.min)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Partir">Partir</button></div>
+ <div class="talk-scene">${photoSVG({scene:TALK_SCENE[pl]||'cour',people:[id,'me'],author:id})}<span class="talk-tag">🗣️ Vous parlez en vrai</span></div>
+ <div class="talk" id="talkLines"></div>
+ <div class="chips">${TALK_SUGG.map(s=>`<button class="chip" type="button" data-tsay="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+ <form class="composer" id="talkForm"><label for="talkIn" class="vh">Ce que tu dis</label><input id="talkIn" maxlength="220" placeholder="Dis quelque chose à ${esc(nameOf(id))}…" autocomplete="off"><button class="gbtn" type="submit">Dire</button></form>`,true);
+ drawTalk();
+}
+function drawTalk(){
+ const box=$('talkLines');if(!box||!talk)return;const th=(G.talks[talk.id]||[]).slice(-30);
+ const line=m=>m.sep?`<div class="talk-sep">${fmtDay(m.day,true)} · ${PLACES[m.pl]||'Maison'}</div>`:m.from==='me'?`<div class="say me"><b>Toi</b><p>« ${fmtText(m.text)} »</p></div>`
+  :`<div class="say"><b>${esc(nameOf(talk.id))}</b><p>${fmtText(m.text).replace(/\*([^*]+)\*/g,'<i class="geste">$1</i>')}</p></div>`;
+ box.innerHTML=(th.length?th.map(line).join(''):`<p class="muted" style="text-align:center">${esc(nameOf(talk.id))} est devant toi. Dis-lui quelque chose.</p>`)+(busyId===talk.id?`<div class="say"><b>${esc(nameOf(talk.id))}</b><p><i class="geste">réfléchit…</i></p></div>`:'');
+ box.scrollTop=box.scrollHeight;
+}
+function buildTalkPrompt(id){
+ const me=nameOf('me'),ph=phase(),pl=talk.pl,map=presence(ph),autour=(map[pl]||[]).filter(x=>x!==id).map(x=>WHO[x].name);
+ const th=(G.talks[id]||[]).filter(m=>!m.sep).slice(-14).map(m=>`${m.from==='me'?me:nameOf(id)} : ${m.text}`).join('\n');
+ const mem=G.log.filter(l=>l.t.includes(nameOf(id))).slice(-5).map(l=>'- '+l.t).join('\n')||'- rien de notable';
+ return `${persona(id)}
+
+Souvenirs récents liés à ${me} :
+${mem}
+
+Moment présent : ${fmtDay(G.day,true)}, ${fmtT(G.min)} (${ph.lbl||PLABEL[ph.type]}${ph.sub?' de '+SUBJ[ph.sub]:''}).
+IMPORTANT : vous êtes EN VRAI, face à face, ${pl==='maison'?'à la maison':'au '+(PLACES[pl]||'lycée').toLowerCase()}${autour.length?` (autour de vous : ${autour.join(', ')})`:''}. Ce n'est PAS un message sur le téléphone : c'est une conversation à l'oral. Tu vois ${me}, tu entends sa voix.
+
+Conversation (la plus récente en bas) :
+${th}
+
+Écris ce que ${nameOf(id)} répond à voix haute : 1 ou 2 phrases courtes, à l'oral, uniquement en français (jamais en créole), avec sa façon de parler. Commence souvent par un petit geste ou une expression entre astérisques (*sourit*, *hausse les épaules*, *baisse la voix*). Tu peux réagir au lieu et aux gens autour. Pas d'emojis de message à la suite, pas de « mdr » écrit : c'est de l'oral. Reste cohérent avec la personnalité et les sentiments. Les histoires de cœur restent douces et adaptées à des lycéens, sans contenu sexuel. Ne dis jamais que tu es une IA ou un personnage.
+Réponds uniquement avec un objet JSON :
+{"reponse":"ce que tu dis","amitie":entier de -6 à 6,"amour":entier de -6 à 6}`;
+}
+function talkFallback(id,text){
+ const s=sentiment(text),met=isNpc(id)?(G.met[id]||0):3,v=voiceOf(id),g=pickR(GESTES[s>0?'pos':s<0?'neg':'neu']);
+ const strip=t=>t.replace(/\s*(mdr|ptdr|mdrr)\b/gi,'').trim();
+ /* pas de question qui reprend ce que tu viens de dire */
+ const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))):[];
+ let r=met===0?'*te regarde avec curiosité* '+introLine(id):g+' '+strip(smartLine(id,text))+(met<3&&fq.length?' '+pickR(fq):'');
+ const pt=(PLACE_TALK[talk.pl]||PLACE_TALK.cour).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
+ const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
+ return {reponse:r,amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0};
+}
+async function sendTalk(text){
+ text=(text||'').trim();if(!text||!talk||busyId)return;const id=talk.id;
+ (G.talks[id]=G.talks[id]||[]).push({from:'me',text:genderize(text,'me')});busyId=id;drawTalk();
+ let out=null;
+ if(SAMPLE){try{out=await SAMPLE.json(buildTalkPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
+ else await new Promise(r=>setTimeout(r,700+Math.random()*700));
+ if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=talkFallback(id,text);
+ busyId=null;if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
+ G.talks[id].push({from:'them',text:genderize(out.reponse.trim().slice(0,300),id)});G.talks[id]=G.talks[id].slice(-60);
+ const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
+ if(isNpc(id)){const ch=relChange(id,da,dl);if(ch)toast(ch)}else famChange(id,da);
+ if(!G.done[G.day+'vraiNote'+id]){G.done[G.day+'vraiNote'+id]=1;note(`Tu as parlé en vrai avec ${nameOf(id)} ${talk.pl==='maison'?'à la maison':'au '+(PLACES[talk.pl]||'lycée').toLowerCase()}`)}
+ checkObjectives();saveG();drawTalk();
+}
+
+/* ---------- place en classe : on choisit chaque jour à côté de qui s'asseoir ---------- */
+const seatToday=()=>G.seat&&G.seat.day===G.day?G.seat.id:null;
+function neighborOf(ph){return seatToday()||NPCS[hash(G.day+'-'+ph.slot)%NPCS.length].id}
+function openSeat(){
+ openSheet(sheetHead('À côté de qui tu t\'assois ?',`Pour toute la journée de cours · ${fmtDay(G.day,true)}`)+`<div class="choices">${NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.rel[a.id].ami).map(n=>`<button class="choice" type="button" data-seat="${n.id}">${esc(fullNameOf(n.id))}<small>amitié ${G.rel[n.id].ami}${coupleOf(n.id)==='me'?' · en couple 💞':''}</small></button>`).join('')}</div>`);
+}
+function chooseSeat(id){
+ const r=G.rel[id];let msg,line;
+ if(r.ami<-10){line=pickR(["La place est prise.","*pose son sac sur la chaise* Désolé·e, c'est réservé."]);msg=`${WHO[id].name} ne veut pas que tu t'assoies à côté`;relChange(id,-1)}
+ else{G.seat={day:G.day,id};const c=relChange(id,r.ami>=30?2:1);line=pickR(r.ami>=30?["Enfin, je t'attendais 😄","*pousse sa trousse pour te faire de la place*","Viens, on se met ensemble !"]:["*te fait un peu de place*","Ah, salut. Tu peux t'asseoir.","*hoche la tête* vas-y"]);msg=`Tu t'assois à côté de ${WHO[id].name} aujourd'hui${c?' · '+c:''}`}
+ note(msg);closeSheet();toast(`${WHO[id].name} : « ${genderize(line,id).replace(/\*/g,'')} »`);setTimeout(()=>toast(msg),2300);saveG();drawView();
+}
+
+/* ---------- posts des camarades : au moins 2 par jour chacun, publiés à des heures différentes ---------- */
+const DAILY={
+ ines:{m:["Bonjour tout le monde ✨ {jour} motivée (ou pas) 🥺","Cours de {mat} ce matin… quelqu'un a compris ? 🥺"],j:["Pause goûter avec Maëlle 💕","Mon frère m'a encore piqué mon chargeur 😤","Qui est chaud pour une session révision demain ? 📚✨"],s:["Ce soir : skincare + K-drama, ne me dérangez pas 🥰","Petite choré dans ma chambre avant de dormir 💃","Bonne nuit les amis 🌙✨"]},
+ kylian:{m:["{jour} matin, j'ai pas dormi frr 😴","Cours de {mat}… je vais dormir au fond 😂"],j:["Le CPE m'a encore grillé dans le couloir 😭","Qui a les devoirs de {mat} ? demandez pas pour un ami","Entraînement ce soir, qui vient voir ? ⚽"],s:["Victoire à FIFA ce soir, je suis imbattable 🎮","Mon père veut me réveiller à 5 h pour la pêche 🎣","Bonne nuit les fragiles 😎"]},
+ maelle:{m:["{jour} : tenue validée 💅","Le cours de {mat} va être littéralement interminable 🙄"],j:["Répétition pom-pom à 17 h, soyez à l'heure 📣","Les potins du jour… je dis rien 🤐","Selfie du jour parce que pourquoi pas 💅"],s:["Qui vient faire du shopping samedi ?","Littéralement épuisée, bonne nuit 💤","Soirée Netflix et masque visage 💅"]},
+ noah:{m:["Bonjour la team 🏀","{mat} ce matin, j'ai pris des notes pour une fois ptdr"],j:["Qui a compris l'exo 3 de {mat} ?","Shoot du jour : 8 paniers sur 10 🏀","Entraînement de basket ce soir 💪"],s:["Mamie a fait du gratin de christophine 😍","Nouveau tome de mon manga préféré 📚","Bonne nuit tout le monde"]},
+ jade:{m:["{jour}. café. cours de {mat}. survivre.","le matin, la cour est silencieuse. c'est mon moment préféré."],j:["j'ai trouvé un livre de 1952 au cdi. je suis heureuse.","bibliothèque > tout le reste"],s:["le ciel est rose ce soir au-dessus de sainte-anne","la lune est presque pleine. levez les yeux ce soir.","bonne nuit à ceux qui regardent encore les étoiles"]},
+ anais:{m:["Footing de 6 h ✅ {jour} commence bien 🌅💪","Cours de {mat} puis entraînement, journée chargée ! 🔥"],j:["Séance de muscu au gymnase 💪","Qui vient courir sur la plage demain ? 🏃‍♀️","Victoire à l'entraînement, on lâche rien 🤾‍♀️"],s:["Mes petits frères ont transformé le salon en terrain de hand 😂","Smoothie mangue-passion après le sport 🥭","Bonne nuit, demain on recommence 💪😴"]},
+ sacha:{m:["{jour}, nouvelle mélodie dans la tête 🎶","En retard au cours de {mat}… encore 😅"],j:["Session guitare au foyer à midi 🎸","Ma mère m'a appris un nouveau rythme de gwo ka 🥁","Le son avance, bientôt vous l'entendrez 🎧"],s:["Playlist du soir : zouk rétro 💿","Il pleut, parfait pour écrire 🌧️","Bonne nuit, la vibe est bonne ✌️"]}};
+const DAILY_SCENE={m:['cour','couloir'],j:['cantine','cour','basket','couloir'],s:['chambre','plage']};
+/* au début de chaque jour : 2 heures de publication par camarade (parfois 3), entre 7 h et 22 h 30 */
+function planPosts(){
+ G.postQ=[];NPCS.forEach(n=>{const k=2+(Math.random()<.3?1:0);for(let i=0;i<k;i++)G.postQ.push({by:n.id,at:420+Math.floor(Math.random()*930)})});
+ G.postQ.sort((a,b)=>a.at-b.at);
+}
+function pickPostFor(by){
+ const recent=G.posts.filter(p=>p.by===by).slice(0,14).map(p=>p.text),sd=!!schoolDay(G.day),slot=G.min<660?'m':G.min>=1200?'s':'j';
+ const fill=t=>t.replace('{jour}',t.startsWith('{jour}')&&by!=='jade'?DAYS[weekday()]:DAYS[weekday()].toLowerCase()).replace(/\{mat\}/g,()=>{const wd=weekday(),L=sd&&TT[wd]?TT[wd]:null;return L?SUBJ[pickR(L)].toLowerCase():'révisions'});
+ const opinion=NPC_POSTS[by].filter(t=>!recent.includes(t.text)),daily=DAILY[by][slot].filter(t=>(sd||!t.includes('{mat}'))&&!recent.some(r=>r===fill(t)));
+ if(by==='jade'&&Math.random()<.5){const poems=opinion.filter(t=>t.poem);if(poems.length)return pickR(poems)}
+ if(opinion.length&&(Math.random()<.35||!daily.length))return pickR(opinion);
+ const t=fill(pickR(daily.length?daily:DAILY[by][slot]));return {text:t,daily:1,scene:Math.random()<.35?pickR(DAILY_SCENE[slot]):null};
+}
+function publishDue(){
+ while(G.postQ&&G.postQ.length&&G.postQ[0].at<=G.min){const q=G.postQ.shift(),t=q.pool;
+  G.posts.unshift(t?(t.by==='potins'?mkPost({by:'potins',text:t.text,c:Math.floor(Math.random()*30)+5,r:Math.floor(Math.random()*300)+20,l:Math.floor(Math.random()*8000)+500}):npcPost(t.by,t)):npcPost(q.by,pickPostFor(q.by)))}
+ if(G.posts.length>130)G.posts=G.posts.filter((p,i)=>i<120||p.by==='me');
+}
+const postWhen=p=>p.day==null?'':`${fmtDay(p.day,true)} · ${fmtT(p.min||0)}`;
+
 function answerPlan(pid,yes){
  const p=G.plans.find(x=>x.id===pid);if(!p||p.status!=='pending')return;
  if(yes){p.status='accepted';pushMsg(p.by,'me','Carrément !');pushMsg(p.by,'them',pickR(voiceOf(p.by).happy)+` À ${planWhen(p).replace('vers ','')} !`);bond(p.by,2);note(`Sortie prévue avec ${p.fam?'ta famille':nameOf(p.by)} ${PLACE_OUT[p.place]} ${planWhen(p)}`)}
@@ -2757,6 +2942,9 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-fa]')){famAct(b.dataset.id,b.dataset.fa);return}
  if(b=q('[data-fiche]')){const id=b.dataset.fiche;closeSheet();openFiche(id);return}
  if(b=q('[data-chat]')){const id=b.dataset.chat;closeSheet();openChat(id);return}
+ if(b=q('[data-talk]')){const id=b.dataset.talk;closeSheet();openTalk(id);return}
+ if(b=q('[data-tsay]')){sendTalk(b.dataset.tsay);return}
+ if(b=q('[data-seat]')){chooseSeat(b.dataset.seat);return}
  if(b=q('[data-sugg]')){sendChat(b.dataset.sugg);return}
  if(b=q('[data-plan]')){answerPlan(b.dataset.plan,b.dataset.ans==='yes');return}
  if(b=q('[data-conf]')){answerConfess(b.dataset.conf==='yes');return}
@@ -2769,7 +2957,7 @@ $('sheetBody').addEventListener('click',e=>{
   if(t.id==='cpSend'){publishCompose();return}
  }
 });
-$('sheetBody').addEventListener('submit',e=>{if(e.target.id==='chatForm'){e.preventDefault();const i=$('chatIn');const v=i.value;i.value='';sendChat(v)}});
+$('sheetBody').addEventListener('submit',e=>{if(e.target.id==='chatForm'){e.preventDefault();const i=$('chatIn');const v=i.value;i.value='';sendChat(v)}if(e.target.id==='talkForm'){e.preventDefault();const i=$('talkIn');const v=i.value;i.value='';sendTalk(v)}});
 $('sheetBody').addEventListener('input',e=>{if(e.target.id==='cpTxt'&&cp&&cp.kind==='story'&&cp.mode==='text')updatePreview()});
 $('gStories').addEventListener('click',e=>{
  if(e.target.closest('[data-add]')){openCompose('story');return}
@@ -2781,6 +2969,8 @@ $('gView').addEventListener('click',e=>{
  const t=e.target;let b;
  if(t.id==='gEdit'){showAtelier();return}
  if(igClick(t))return;
+ if(t.closest('[data-seatopen]')){openSeat();return}
+ if(t.closest('[data-feedmore]')){G.feedN=(G.feedN||30)+30;drawView();return}
  if(b=t.closest('[data-fetesheet]')){const f=FETES.find(x=>x.id===b.dataset.fetesheet);if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
  if(t.id==='gRestart'){askRestart();return}
@@ -2838,7 +3028,7 @@ $('famGo').onclick=()=>{
  try{localStorage.setItem(KEY,JSON.stringify(me()))}catch(e){}
  famDraft.forEach(f=>{f.name=(f.name||'').trim()||f.role});
  if(famEdit){G.family=famDraft.map((f,i)=>{const old=G.family.find(x=>x.id===f.id);const id=old?old.id:'fam'+Date.now()+i;if(G.famRel[id]==null)G.famRel[id]=65;return{role:f.role,name:f.name,trait:f.trait,id,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))}});saveG();showGame();return}
- G=newGame(famDraft);
+ G=newGame(famDraft);planPosts();
  G.phaseKey=phase().key;G.lastPhase=phase();
  if(G.rel.ines&&G.rel.ines.ami>=60)pushMsg('ines','them',`Coucou ! C'est toi ${me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle'} ? Bienvenue au lycée ✨ si t'as besoin de quoi que ce soit, demande-moi 🥰`);
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
