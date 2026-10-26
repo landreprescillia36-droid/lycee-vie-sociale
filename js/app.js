@@ -1268,22 +1268,37 @@ const DAYS=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
 const SLOTS=[[0,420,'nuit'],[420,480,'matin'],[480,540,'cours',0],[540,600,'cours',1],[600,615,'recre'],[615,720,'cours',2],[720,840,'dej'],[840,900,'cours',3],[900,915,'recre'],[915,1020,'cours',4],[1020,1320,'soir'],[1320,1440,'nuit']];
 const PLABEL={nuit:'Nuit',matin:'Avant les cours',cours:'Cours',recre:'Récréation',dej:'Pause déjeuner',soir:'Temps libre',weekend:'Week-end',eval:'Évaluation commune',bac:'Épreuves du bac'};
 /* ---------- année de terminale : évaluations, trimestres, bac ---------- */
-const YEAR_DAYS=180,TRI_END=[60,120,175],REV_DAY=176,BAC_DAYS=[177,178],RES_DAYS=[179,180];
-const BAC_EP={177:{am:['philo','maths','physique'],pm:['svt','histoire']},178:{am:['francais','anglais'],pm:['espagnol','eps']}};
-const schoolDay=d=>{const wd=(d-1)%7;return wd>=5?null:Math.floor((d-1)/7)*5+wd+1};
-const schoolDayToCal=n=>Math.floor((n-1)/5)*7+(n-1)%5+1;
-const sdDone=d=>Math.floor((d-1)/7)*5+Math.min((d-1)%7+1,5);
-const triOf=sd=>sd<=60?1:sd<=120?2:3;
-const curTri=()=>triOf(Math.min(sdDone(G.day),175));
+/* calendrier réel : du mardi 1er septembre 2026 au mercredi 30 juin 2027, vacances et jours fériés de Guadeloupe.
+   G.day = jour du calendrier (1 = 1er sept.) ; « jour de cours » = numéro parmi les jours où il y a cours. */
+const dateOf=d=>new Date(2026,8,d);
+const isoOf=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+const VACS=[['2026-10-24','2026-11-01','Vacances de la Toussaint'],['2026-12-19','2027-01-03','Vacances de Noël'],['2027-02-06','2027-02-14','Vacances de Carnaval'],['2027-03-27','2027-04-11','Vacances de Pâques']];
+const FERIES={'2026-11-11':'Armistice','2027-05-01':'Fête du travail','2027-05-06':'Ascension','2027-05-07':"Pont de l'Ascension",'2027-05-08':'Victoire de 1945','2027-05-17':'Lundi de Pentecôte','2027-05-27':"Abolition de l'esclavage"};
+const CAL=(()=>{const c=[null];let n=0;for(let d=1;isoOf(dateOf(d))<='2027-06-30';d++){const x=dateOf(d),k=isoOf(x),wd=(x.getDay()+6)%7,v=VACS.find(([a,b])=>k>=a&&k<=b),f=FERIES[k],sd=wd<5&&!v&&!f?++n:null;c.push({k,wd,sd,done:n,lbl:f?'Férié : '+f:v?v[2]:null})}return c})();
+const CAL_END=CAL.length-1;
+const YEAR_DAYS=CAL[CAL_END].done;
+const sdOfDate=k=>CAL.find(c=>c&&c.k>=k).done;
+/* fin des trimestres = un vendredi de cours (jour de l'évaluation qui déclenche le bulletin) */
+const lastFri=max=>{for(let d=CAL_END;d>0;d--){const c=CAL[d];if(c.sd&&c.sd<=max&&c.wd===4)return c.sd}return max};
+const TRI_END=[sdOfDate('2026-12-18'),sdOfDate('2027-03-26'),lastFri(YEAR_DAYS-5)],REV_DAY=YEAR_DAYS-4,BAC_DAYS=[YEAR_DAYS-3,YEAR_DAYS-2],RES_DAYS=[YEAR_DAYS-1,YEAR_DAYS];
+const BAC_EP={[BAC_DAYS[0]]:{am:['philo','maths','physique'],pm:['svt','histoire']},[BAC_DAYS[1]]:{am:['francais','anglais'],pm:['espagnol','eps']}};
+const wdOf=d=>(dateOf(d).getDay()+6)%7;
+const schoolDay=d=>d>=1&&d<=CAL_END?CAL[d].sd:null;
+const schoolDayToCal=n=>CAL.findIndex(c=>c&&c.sd===n);
+const sdDone=d=>d<1?0:d>CAL_END?YEAR_DAYS:CAL[d].done;
+const dayLbl=d=>d>CAL_END?'Grandes vacances':CAL[d].lbl;
+const fmtDay=(d,long)=>dateOf(d).toLocaleDateString('fr-FR',long?{weekday:'long',day:'numeric',month:'long'}:{weekday:'short',day:'numeric',month:'short'});
+const triOf=sd=>sd<=TRI_END[0]?1:sd<=TRI_END[1]?2:3;
+const curTri=()=>triOf(Math.min(sdDone(G.day),TRI_END[2]));
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const r2=v=>Math.round(v*100)/100;
 const PLACES={cour:'Cour',cdi:'CDI',foyer:'Foyer',cantine:'Cantine',maison:'Maison',plage:'Plage',centre:'Centre-ville'};
 const PLACE_OUT={plage:'à la plage',centre:'au centre-ville',glacier:'au glacier du Gosier',sainteanne:'à la plage de Sainte-Anne',carbet:'aux chutes du Carbet',marche:'au marché de Pointe-à-Pitre',resto:'au restaurant créole',cinema:'au cinéma'};
 const SEV=['','Cool','Exigeant·e','Sévère'];
-const weekday=()=>(G.day-1)%7;
+const weekday=()=>wdOf(G.day);
 function phase(){
  const wd=weekday(),m=G.min,sd=schoolDay(G.day);
- const free=sd===null?'Week-end':sd>YEAR_DAYS?'Vacances':sd===REV_DAY?'Révisions du bac':RES_DAYS.includes(sd)?'Résultats du bac':null;
+ const free=sd===null?(dayLbl(G.day)||'Week-end'):sd===REV_DAY?'Révisions du bac':RES_DAYS.includes(sd)?'Résultats du bac':null;
  if(free){if(m<480||m>=1320)return{type:'nuit',start:m<480?0:1320,end:m<480?480:1440,key:G.day+'n'+(m<480?0:1)};return{type:'weekend',lbl:free,start:480,end:1320,key:G.day+'we'}}
  if(BAC_DAYS.includes(sd)){const e=BAC_EP[sd];if(m>=480&&m<720)return{type:'bac',part:'am',subs:e.am,start:480,end:720,key:G.day+'bac-am'};if(m>=840&&m<1020)return{type:'bac',part:'pm',subs:e.pm,start:840,end:1020,key:G.day+'bac-pm'}}
  else if(wd===4&&m>=840&&m<1020)return{type:'eval',start:840,end:1020,key:G.day+'eval'};
@@ -1609,7 +1624,7 @@ function buildPrompt(id){
 Souvenirs récents liés à ${me} :
 ${mem}
 
-Moment présent : ${DAYS[weekday()]}, ${fmtT(G.min)} (${ph.lbl||PLABEL[ph.type]}${ph.sub?' de '+SUBJ[ph.sub]:''}). C'est l'année de terminale : évaluation commune chaque vendredi après-midi, bac les jours ${BAC_DAYS.join(' et ')} (on est au jour de cours ${Math.min(sdDone(G.day),YEAR_DAYS)}/${YEAR_DAYS}).
+Moment présent : ${fmtDay(G.day,true)}${dayLbl(G.day)?' ('+dayLbl(G.day)+')':''}, ${fmtT(G.min)} (${ph.lbl||PLABEL[ph.type]}${ph.sub?' de '+SUBJ[ph.sub]:''}). C'est l'année de terminale : évaluation commune chaque vendredi après-midi, bac les ${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x),true)).join(' et ')} (on est au jour de cours ${Math.min(sdDone(G.day),YEAR_DAYS)}/${YEAR_DAYS}).
 
 Conversation par messages (la plus récente en bas) :
 ${th}
@@ -1635,11 +1650,11 @@ function pushMsg(id,from,text,extra){
 }
 function makePlan(by,when){
  let day=G.day,hour=18;
- if(when==='demain'||G.min>=17*60+30){day=G.day+1;hour=((day-1)%7)>=5?15:18}
+ if(when==='demain'||G.min>=17*60+30){day=G.day+1;hour=wdOf(day)>=5||!schoolDay(day)?15:18}
  const plan={id:'pl'+Date.now()+Math.floor(Math.random()*999),by,day,hour,place:pickR(['plage','centre','glacier']),status:'pending'};
  G.plans.push(plan);return plan;
 }
-const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.day===G.day+1?'demain':DAYS[(pl.day-1)%7].toLowerCase()} vers ${pl.hour}h`;
+const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase()} vers ${pl.hour}h`;
 const proposalText=(id,pl)=>`${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();
 async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
@@ -1740,7 +1755,7 @@ function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1}
 /* note d'une matière tirée de la jauge de chances (0-100 %) */
 function examGrade(k,stress){const p=G.know[k];return clamp(Math.round((p/100*20+rnd(-(stress||2.2),stress||2.2)+(G.energy<25?-1.5:0))*2)/2,0,20)}
 function popSheet(html){if(G.asleep||$('game').hidden)G.pend.push(html);else openSheet(html,true)}
-function flushPend(){if(G.pend&&G.pend.length&&$('sheet').hidden)openSheet(G.pend.shift(),true)}
+function flushPend(){/* une fête déjà passée ne s'affiche plus */G.pend=(G.pend||[]).filter(h=>!h.includes('data-fete=')||(feteToday()&&G.fete&&!G.fete.done));if(G.pend.length&&$('sheet').hidden)openSheet(G.pend.shift(),true)}
 const sheetHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2>${sub?`<p class="muted" style="margin:2px 0 0">${sub}</p>`:''}</div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`;
 const gradeRows=o=>Object.keys(SUBJ).filter(k=>o[k]!=null).map(k=>`<div class="prof"><span>${SUBJ[k]}</span><b>${fmtG(o[k])}/20</b></div>`).join('');
 function evalSheet(e){return sheetHead(`Évaluation du jour ${e.sd}`,`Trimestre ${e.tri} · note globale ${fmtG(e.glob)}/20`)+`<div class="card list">${gradeRows(e.grades)}</div><p class="muted">Chaque note vient de tes chances de réussite dans la matière au moment de l'évaluation.</p>`}
@@ -1784,11 +1799,12 @@ function computeBac(){
 function endYearSheet(){const r=G.bac.result||{};return sheetHead("Fin de l'année de terminale",r.ok?'Bac en poche 🎓':'Année terminée')
  +`<div class="card list">${G.bulletins.map(b=>`<div class="prof"><span>Trimestre ${b.tri}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'}</b></div>`).join('')}<div class="prof"><span>Bac</span><b>${r.fin!=null?P(fmtG(r.fin)+'/20 · '+(r.ok?'admis·e':'non admis·e')):'–'}</b></div></div><p class="muted">Les vacances commencent : tu peux continuer à profiter de tes amis et de ta famille.</p>`}
 function onNewDay(){
+ fanDay();
  Object.keys(SUBJ).forEach(k=>{if(!G.studied[k]&&G.know[k]>15)G.know[k]=G.know[k]-1});G.studied={};
  {const sd=schoolDay(G.day);if(sd===RES_DAYS[0])computeBac();if(!G.yearDone&&sdDone(G.day)>=YEAR_DAYS&&schoolDay(G.day)===null&&G.day>schoolDayToCal(YEAR_DAYS)){G.yearDone=true;popSheet(endYearSheet())}}
  if(G.st.schoolToday&&!G.st.caughtToday)G.st.cleanDays++;
  G.st.caughtToday=false;G.st.schoolToday=false;G.ate=false;G.rested=false;G.done={};
- dailyContent();
+ dailyContent();incidentDay();feteDay();
  const fresh=OBJ.filter(o=>objOk(o)&&o.day===G.day);if(fresh.length){note(`Nouveaux objectifs : ${fresh.map(o=>o.t).join(' · ')}`);if(!G.asleep)toast('🎯 Nouveaux objectifs disponibles')}
  G.plans=G.plans.filter(p=>p.day>=G.day-1);
 }
@@ -1804,6 +1820,91 @@ function dailyContent(){
  by.forEach(id=>{const L=NPC_POSTS[id],t=id==='jade'&&Math.random()<.75?pickR(L.filter(x=>x.poem)):pickR(L);G.posts.unshift(npcPost(id,t))});
  if(Math.random()<.5){const t=pickR(POST_POOL);G.posts.unshift(t.by==='potins'?mkPost({by:'potins',text:t.text,c:Math.floor(Math.random()*30)+5,r:Math.floor(Math.random()*300)+20,l:Math.floor(Math.random()*8000)+500}):npcPost(t.by,t))}
  G.stories=G.stories.slice(-40);G.posts=G.posts.filter((p,i)=>i<60||p.by==='me');
+}
+/* ---------- fêtes et manifestations du lycée (calendrier réel) ---------- */
+const FETES={
+ '2026-09-01':{n:'Rentrée des terminales',ic:'🎒',scene:'cour',post:"[Officiel] Bienvenue aux terminales 🎒 Nouvelle année, nouveaux drames. On vous surveille 👀",info:"Discours de la proviseure dans la cour à 8 h, puis distribution des emplois du temps."},
+ '2026-10-23':{n:'Soirée Halloween au foyer',ic:'🎃',scene:'soiree',post:"[Officiel] 🎃 Soirée Halloween au foyer ce soir ! Déguisement obligatoire, même pour les profs 👻 Qui sera le plus effrayant ?",info:"Dernier jour avant les vacances de la Toussaint : soirée déguisée au foyer après les cours.",fun:"J'y vais déguisé·e 🧛"},
+ '2026-12-04':{n:'Téléthon du lycée',ic:'💛',scene:'basket',post:"[Officiel] 💛 Téléthon au gymnase aujourd'hui : tournoi de hand, ventes de gâteaux et défis. Anaïs a déjà promis 200 pompes 😂",info:"Tournoi, ventes et défis au gymnase pour récolter des dons.",fun:"Je participe au tournoi 🤾"},
+ '2026-12-18':{n:'Chanté Nwèl au lycée',ic:'🎄',scene:'cour',post:"[Officiel] 🎄 Chanté Nwèl dans la cour cet après-midi ! Ka, cantiques et jus de groseille pays. Sacha a promis un solo de ka 🥁",info:"Dernier jour avant les vacances de Noël : on chante Nwèl tous ensemble dans la cour.",fun:"Je chante à fond 🎶"},
+ '2027-02-05':{n:'Carnaval du lycée',ic:'🎭',scene:'cour',post:"[Officiel] 🎭 Défilé du carnaval du lycée aujourd'hui ! Costumes, groupe à peau et gwo ka. Les terminales défilent en dernier 🔥",info:"Dernier jour avant les vacances de Carnaval : grand défilé déguisé dans la cour et autour du lycée.",fun:"Je défile déguisé·e 🎭"},
+ '2027-02-15':{n:'Saint-Valentin du lycée',ic:'🌹',scene:'couloir',post:"[Anonyme] : la vente de roses de la Saint-Valentin commence au foyer 🌹 On va enfin savoir qui aime qui 👀",info:"Le foyer vend des roses à offrir. Tu peux en offrir une à quelqu'un… ou garder ton secret.",val:1},
+ '2027-03-04':{n:'Mi-Carême',ic:'🖤',scene:'cour',post:"[Officiel] Mi-Carême 🖤❤️ Tenue rouge et noir demandée aujourd'hui. Petit défilé à la récré !",info:"Tout le lycée s'habille en rouge et noir, défilé pendant la récré.",fun:"Je viens en rouge et noir 🖤❤️"},
+ '2027-03-26':{n:'Pâques au lycée',ic:'🦀',scene:'cour',post:"[Officiel] 🐣 Chasse aux œufs au lycée avant les vacances ! Et le club cuisine prépare un matoutou crabe pour tout le monde 🦀",info:"Dernier jour avant les vacances de Pâques : chasse aux œufs et matoutou crabe du club cuisine.",fun:"Je cherche les œufs avec mes amis 🥚"},
+ '2027-05-26':{n:"Exposition sur l'abolition",ic:'✊🏾',scene:'couloir',post:"[Officiel] Demain, 27 mai, la Guadeloupe commémore l'abolition de l'esclavage (1848). Au CDI : exposition des travaux des élèves. Venez nombreux.",info:"Exposition au CDI sur l'abolition de l'esclavage en Guadeloupe, préparée par les élèves.",expo:1},
+ '2027-06-21':{n:'Fête de la musique',ic:'🎶',scene:'cour',post:"[Officiel] 🎶 Fête de la musique dans la cour à midi ! Scène ouverte : Sacha, Inès et le club de danse sont sur la liste 🔥",info:"Scène ouverte dans la cour à midi : chant, danse, musique.",fun:"Je monte sur scène 🎤"},
+ '2027-06-30':{n:'Bal des terminales',ic:'🥂',scene:'soiree',post:"[Officiel] 🥂 Bal des terminales ce soir ! Dernière soirée de l'année, sortez vos plus belles tenues ✨",info:"Dernier jour de l'année : le grand bal des terminales.",fun:"J'y vais sur mon 31 ✨"}};
+const FETE_COM=["trop hâte 🔥","on y va ensemble ?","le meilleur jour de l'année","j'ai déjà ma tenue 😎","qui vient avec moi ?"];
+const feteToday=()=>G.day<=CAL_END?FETES[CAL[G.day].k]:null;
+/* prochaines fêtes et vacances, pour la carte « À venir » de la journée */
+function upcoming(n){const out=[];for(let d=G.day+1;d<=CAL_END&&out.length<n;d++){const c=CAL[d],f=FETES[c.k],v=VACS.find(x=>x[0]===c.k);if(f)out.push([d,f.ic+' '+f.n]);else if(v)out.push([d,'🌴 '+v[2]])}return out}
+function feteSheet(f){
+ const opts=f.val?NPCS.map(n=>`<button class="choice" type="button" data-fete="rose" data-to="${n.id}">Offrir une rose à ${n.name} 🌹<small>${G.rel[n.id].ami>=30?'Vous êtes proches':'Vous vous connaissez peu'}</small></button>`).join('')+`<button class="choice" type="button" data-fete="non">Ne rien offrir cette année</button>`
+  :f.expo?`<button class="choice" type="button" data-fete="expo">Visiter l'exposition au CDI<small class="t-pos">Histoire-Géo +5 %</small></button><button class="choice" type="button" data-fete="non">Pas aujourd'hui</button>`
+  :`<button class="choice" type="button" data-fete="fun">${P(f.fun||'Je participe à fond')}<small class="t-pos">Amitiés, photo sur Insta · −10 énergie</small></button><button class="choice" type="button" data-fete="peu">Je passe un moment<small class="t-pos">Un peu d'amitié · −4 énergie</small></button><button class="choice" type="button" data-fete="non">Je n'y vais pas<small class="t-neu">Rien ne change</small></button>`;
+ return sheetHead(`${f.ic} ${f.n}`,`Aujourd'hui au lycée · ${fmtDay(G.day,true)}`)+`<p class="story-text">${esc(f.info)}</p><div class="choices">${opts}</div>`}
+/* le matin d'une fête : post du compte anonyme, notification, et choix de participer */
+function feteDay(){
+ const f=feteToday();if(!f)return;
+ const p=mkPost({by:'potins',text:f.post,c:20+Math.floor(Math.random()*30),r:200+Math.floor(Math.random()*400),l:5000+Math.floor(Math.random()*9000)});
+ if(!f.expo)NPCS.slice().sort(()=>Math.random()-.5).slice(0,2).forEach(n=>p.comments.push(mkC(n.id,genderize(pickR(FETE_COM),n.id))));
+ G.posts.unshift(p);G.fete={k:CAL[G.day].k,done:false};note(`${f.ic} ${f.n} aujourd'hui au lycée`);
+ if(!G.asleep&&!$('game').hidden)toast(`${f.ic} ${f.n} aujourd'hui !`);popSheet(feteSheet(f));
+}
+function feteChoice(kind,to){
+ const f=feteToday();if(!f||!G.fete||G.fete.done){closeSheet();return}G.fete.done=true;let msg;
+ if(kind==='fun'){G.energy=clamp(G.energy-10,0,100);const fr=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.rel[a.id].ami).slice(0,3).map(n=>n.id),ch=fr.map(id=>relChange(id,4)).filter(Boolean);
+  const p=mkPost({by:'me',text:`${f.ic} ${f.n} avec ${fr.slice(0,2).map(id=>WHO[id].handle).join(' et ')} ✨`,photo:{scene:f.scene,people:['me',...fr.slice(0,2)],author:'me'},l:40+Math.floor(Math.random()*60),mine:true});
+  fr.forEach(id=>p.comments.push(npcComment(id)));G.posts.unshift(p);G.st.posts++;const g=6+Math.floor(Math.random()*8);G.ig.fans+=g;G.ig.act=(G.ig.act||0)+2;
+  msg=`${f.n} : super moment ! Photo publiée, +${g} abonnés${ch.length?' · '+ch.join(' · '):''}`}
+ else if(kind==='peu'){G.energy=clamp(G.energy-4,0,100);const id=pickR(NPCS).id,c=relChange(id,2);msg=`Tu passes un moment à la fête${c?' · '+c:''}`}
+ else if(kind==='rose'){const n=WHO[to],r=G.rel[to];
+  if(npcLikesMe(to)&&r.ami>=30){const c=relChange(to,2,8);pushMsg(to,'them',genderize(pickR(["une rose… pour moi ? 🥹🌹","tu m'as fait rougir devant tout le monde 🙈","je la garde, promis 🌹"]),to));msg=`Tu as offert une rose à ${n.name} 🌹 · ${c}`}
+  else{const c=relChange(to,1);pushMsg(to,'them',genderize(pickR(["merci pour la rose, c'est gentil 😊","oh, merci ! 🌹"]),to));msg=`Tu as offert une rose à ${n.name}${c?' · '+c:''}`}
+  G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : quelqu'un a offert une rose à ${n.handle} ce matin 🌹 on enquête 👀`,c:30,r:300,l:9000}))}
+ else if(kind==='expo'){G.know.histoire=clamp(G.know.histoire+5,0,100);const c=relChange('jade',2);msg=`Tu as visité l'exposition · Histoire-Géo +5 %${c?' · '+c:''}`}
+ else msg="Tu n'y vas pas cette fois";
+ note(msg);closeSheet();toast(msg);checkObjectives();saveG();drawGame();
+}
+
+/* ---------- potins : un·e élève fait quelque chose qui sort de l'ordinaire, selon sa personnalité ---------- */
+const INCIDENTS={
+ anais:[{t:"Anaïs a été surprise en train d'escalader le portail du lycée à 6 h du matin… pour aller s'entraîner au gymnase 🤾‍♀️😭",self:"j'avais un match samedi, fallait bien s'entraîner 😂💪"},
+  {t:"Anaïs a tagué « ALLEZ LES FILLES 🔥 » sur le mur du gymnase avant le match. Convoquée chez la proviseure 😬",self:"j'assume 😅 et on a gagné le match !"},
+  {t:"Anaïs a fait tout le cours d'EPS en courant à reculons. M. Bourgeois ne sait plus quoi faire 😂",self:"échauffement spécial 😂"}],
+ kylian:[{t:"Kylian a fait un petit pont au CPE dans la cour. Ballon confisqué pour la 3e fois ce mois-ci ⚽😭",self:"il était trop lent frr 😂"},
+  {t:"Kylian a séché la philo pour regarder un match sur son téléphone dans les toilettes. Pris par la proviseure 📵",self:"c'était la finale wsh"}],
+ maelle:[{t:"Maëlle a organisé un flash mob en pleine récré. Même la proviseure a dansé (un peu) 💃",self:"Littéralement le meilleur moment de l'année 💅"},
+  {t:"Maëlle a lancé une pétition contre le poisson pané de la cantine : 214 signatures 🐟",self:"Le peuple a parlé 🙄"}],
+ jade:[{t:"Un poème anonyme est apparu sur la porte du CDI ce matin. Tout le monde pense que c'est Jade 📜",self:"je ne confirme rien."},
+  {t:"Jade a corrigé une faute de la prof de philo devant toute la classe. Silence total 😶",self:"une faute reste une faute."}],
+ noah:[{t:"Noah s'est endormi en physique et a ronflé. M. Jean-Baptiste l'a laissé dormir 😂",self:"j'avais entraînement à 6 h ptdr"},
+  {t:"Noah a fait goûter son colombo à toute la salle des profs. Ils veulent tous la recette 🍛",self:"secret de famille frère"}],
+ ines:[{t:"Inès a fait une choré dancehall sur une table de la cantine. Applaudissements… puis heure de colle 💃😬",self:"ça valait le coup 🥺✨"},
+  {t:"Inès a pleuré devant toute la classe pendant le film en anglais. Tout le monde a fait semblant de rien voir 🥺",self:"c'était trop triste ok 😭"}],
+ sacha:[{t:"Sacha a branché une enceinte sous le préau : concert surprise de gwo ka. Coupé par le CPE au 3e morceau 🥁",self:"la vibe était là, c'est ce qui compte ✌️"},
+  {t:"Sacha est arrivé en retard pour la 10e fois. Il a joué de la guitare devant la vie scolaire pour s'excuser 🎸",self:"ils ont souri, je compte ça comme un oui"},
+  {t:"Des paroles de chanson ont été taguées sur le mur du préau. Sacha a été convoqué chez la proviseure 😬",self:"c'était de la poésie urbaine gros"}]};
+const INC_COM=["😭😭😭","c'est tellement {n} ça","je savais que ça arriverait 😂","légende","la proviseure va craquer un jour","quelqu'un a une vidéo ??"];
+function incidentDay(){
+ if(!schoolDay(G.day)||feteToday()||Math.random()>.15)return;
+ G.incUsed=G.incUsed||[];const all=Object.entries(INCIDENTS).flatMap(([id,L])=>L.map((x,i)=>({id,i,...x}))),free=all.filter(x=>!G.incUsed.includes(x.id+x.i));
+ const inc=pickR(free.length?free:all);G.incUsed.push(inc.id+inc.i);if(!free.length)G.incUsed=[inc.id+inc.i];
+ const p=mkPost({by:'potins',text:'[Anonyme] : '+inc.t,c:25+Math.floor(Math.random()*40),r:300+Math.floor(Math.random()*600),l:8000+Math.floor(Math.random()*14000)});
+ const self=mkC(inc.id,genderize(inc.self,inc.id));p.comments.push(self);
+ NPCS.filter(n=>n.id!==inc.id).sort(()=>Math.random()-.5).slice(0,2).forEach(n=>p.comments.push(mkC(n.id,genderize(pickR(INC_COM).replace('{n}',WHO[inc.id].name),n.id),Math.random()<.5?{re:self.id,to:inc.id}:{})));
+ G.posts.unshift(p);note(`👀 Potins du lycée : ${inc.t}`);G.incToast=inc.t;
+}
+/* ---------- abonnés inconnus : plus tu es actif·ve sur Insta, plus des élèves du lycée s'abonnent ---------- */
+function fanDay(){
+ const a=G.ig.act||0;G.ig.act=0;
+ /* plus le compte est gros, plus il est dur de gagner des abonnés (le lycée n'est pas infini) */
+ const gain=a>0?Math.round((a*1.5+Math.random()*3)*Math.max(.15,1-G.ig.fans/1200)):(Math.random()<.35?-1:0);if(!gain)return;
+ G.ig.fans=Math.max(0,G.ig.fans+gain);
+ if(gain<0){note(P('Une personne s\'est désabonnée : tu as été peu actif·ve sur Insta hier'));return}
+ const L=[...PRENOMS.f,...PRENOMS.m],hs=Array.from({length:Math.min(gain,3)},()=>slug(pickR(L))+pickR(['.971','_gwada','.off','971','_lyc','']));
+ G.ig.newFans=[...hs,...(G.ig.newFans||[])].slice(0,12);
+ note(`📈 +${gain} abonné${gain>1?'s':''} : ${hs.join(', ')}${gain>3?` et ${gain-3} autre${gain>4?'s':''}`:''}`);G.fanToast=gain;
 }
 function bond(id,d){if(isFam(id)){famChange(id,d);return d?`${nameOf(id)} : complicité ${d>0?'+':''}${d}`:''}return relChange(id,d)}
 function checkPlans(){
@@ -1865,7 +1966,9 @@ function sleepNow(){
  let n=G.min>=420?(1440-G.min)+420:420-G.min;const hours=n/60;
  closeSheet();G.asleep=true;advance(n);G.asleep=false;
  G.energy=clamp(G.energy+Math.round(hours*11),0,100);
- note(`Tu as dormi ${Math.round(hours)} h`);saveG();drawGame();toast(`☀️ ${DAYS[weekday()]} matin · énergie ${G.energy}`);flushPend();
+ note(`Tu as dormi ${Math.round(hours)} h`);saveG();drawGame();toast(`☀️ ${fmtDay(G.day,true)} · énergie ${G.energy}`);flushPend();
+ /* nouvelles de la nuit : potins et nouveaux abonnés */
+ const news=[G.incToast&&'👀 Potins : '+G.incToast.slice(0,70)+(G.incToast.length>70?'…':''),G.fanToast&&`📈 +${G.fanToast} abonné${G.fanToast>1?'s':''} sur Insta`].filter(Boolean);G.incToast=G.fanToast=null;news.forEach((t,i)=>setTimeout(()=>toast(t),2400*(i+1)));
 }
 
 /* ---------- musique de fond : boucle originale générée en direct (Web Audio) ---------- */
@@ -1915,7 +2018,7 @@ const SUN='<circle cx="16" cy="16" r="7" fill="#ffd23f"/><g stroke="#ffd23f" str
 const MOON='<path d="M21 4a12 12 0 1 0 7 17A10 10 0 0 1 21 4z" fill="#c9cdf5"/><circle cx="25" cy="8" r="1.4" fill="#fff"/><circle cx="8" cy="6" r="1" fill="#fff"/>';
 function drawClock(){
  const ph=phase(),day=G.min>=360&&G.min<1140;
- $('gSky').innerHTML=day?SUN:MOON;{const sd=schoolDay(G.day);$('gDay').innerHTML=G.yearDone||sdDone(G.day)>YEAR_DAYS?`Vacances<small>${DAYS[weekday()]}</small>`:sd?`Jour ${sd}/${YEAR_DAYS}<small>${DAYS[weekday()]} · T${triOf(sd)}</small>`:`Week-end<small>${DAYS[weekday()]} · T${curTri()}</small>`}
+ $('gSky').innerHTML=day?SUN:MOON;{const sd=schoolDay(G.day);const dl=dayLbl(G.day),short=G.yearDone||G.day>CAL_END?'Vacances':dl?(dl.startsWith('Férié')?'Férié':'Vacances'):'Week-end';$('gDay').innerHTML=sd?`Jour ${sd}/${YEAR_DAYS}<small>${fmtDay(G.day)} · T${triOf(sd)}</small>`:`${short}<small>${fmtDay(G.day)}${G.day>CAL_END?'':' · T'+curTri()}</small>`}
  $('gTime').textContent=fmtT(G.min);$('gPhase').textContent=ph.sub?SUBJ[ph.sub]:ph.lbl||PLABEL[ph.type];
  $('gPause').innerHTML=G.paused?'<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z" fill="currentColor"/></svg>';
  $('gPause').setAttribute('aria-label',G.paused?'Reprendre le temps':'Mettre le temps en pause');
@@ -2024,7 +2127,7 @@ function openComments(id){
 function startReply(cid){const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cid);if(!R)return;cm.re=cid;cm.stance='accord';cm.stanceSet=false;cm.rsugg=replySugg(R);openComments(p.id)}
 function sendComment(text,tone){
  const p=G.posts.find(x=>x.id===cm.id);if(!p||!text)return;
- const mine=mkC('me',text);p.comments.push(mine);G.st.comments++;let msg='Commentaire publié';
+ const mine=mkC('me',text);p.comments.push(mine);G.st.comments++;G.ig.act=(G.ig.act||0)+1;let msg='Commentaire publié';
  if(isNpc(p.by)&&!p.mine){const T=TONES[tone],ch=relChange(p.by,T.d,T.l);p.mine=true;p.comments.push(mkC(p.by,genderize(pickR(T.reply),p.by),{re:mine.id,to:'me'}));note(`Tu as commenté le post de ${WHO[p.by].name} (${T.label.toLowerCase()}) : ${ch}`);msg=ch||msg;
   /* le ou la critique habituel·le de l'auteur vient parfois te répondre : tu peux lui répondre à ton tour */
   const D=DEBATE[p.by];if(D&&TONES[tone].d>0&&Math.random()<.45)p.comments.push(mkC(D.critic,genderize(pickR(CRIT_ME),D.critic),{re:mine.id,to:'me',vs:'me'}))}
@@ -2034,7 +2137,7 @@ function sendComment(text,tone){
 function sendReply(text,stance){
  const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cm.re);if(!R||!text)return;
  const root=R.re||R.id,S=STANCES[stance]||STANCES.accord,parts=[];
- p.comments.push(mkC('me',text,{re:root,to:R.by,vs:stance==='desaccord'||stance==='mechant'?R.by:null}));G.st.comments++;G.st.replies=(G.st.replies||0)+1;
+ p.comments.push(mkC('me',text,{re:root,to:R.by,vs:stance==='desaccord'||stance==='mechant'?R.by:null}));G.st.comments++;G.ig.act=(G.ig.act||0)+1;G.st.replies=(G.st.replies||0)+1;
  if(isNpc(R.by)&&!R.answered){R.answered=1;
   const d=stance==='drole'?(FICHES[R.by].hum>.5?3:1):S.d,ch=relChange(R.by,d,0);if(ch)parts.push(ch);
   if(R.vs&&isNpc(R.vs)&&S.v){const c2=relChange(R.vs,S.v,0);if(c2)parts.push(c2)}
@@ -2151,10 +2254,11 @@ function drawInsta(){
  const disc=[...NPCS.map(n=>n.id),'potins'].filter(id=>!ig.following[id]);
  $('gView').innerHTML=`<div class="ig-top"><div class="ig-av">${avatarOf('me')}</div><div class="ig-stats">${igStat(c.posts,'publications')}${igStat(c.fol,'abonnés')}${igStat(c.ing,'abonnements')}</div></div>
  <div class="ig-id"><b>${esc(fullName(me())||'Moi')}</b><span class="muted">${myHandle()}${ig.priv?' · 🔒 compte privé':''}</span><p class="ig-bio">${ig.bio?fmtText(ig.bio):'<span class="muted">Pas encore de bio.</span>'}</p></div>
+ <p class="muted" style="margin:0 0 10px">Plus tu publies et commentes, plus des élèves du lycée s'abonnent à toi.</p>
  <div class="row" style="justify-content:flex-start"><button class="gbtn ghost" type="button" data-igbio>Modifier la bio</button><button class="gbtn ghost" type="button" data-igpriv>${ig.priv?'Passer en public':'Passer en privé'}</button><button class="gbtn" type="button" data-igcompose>Publier</button></div>
  ${ig.reqs.length?`<div class="card"><span class="eyebrow">Demandes d'abonnement · ${ig.reqs.length}</span>${ig.reqs.map(id=>`<div class="relrow"><button class="av avbtn" type="button" data-ig="${id}">${avatarOf(id)}</button><div class="info"><b>${esc(fullNameOf(id))}</b><span class="muted">${WHO[id].handle} · amitié ${G.rel[id].ami}</span></div><button class="gbtn" type="button" data-req="${id}" data-ok="1">Accepter</button><button class="gbtn ghost" type="button" data-req="${id}" data-ok="0" aria-label="Refuser">✕</button></div>`).join('')}</div>`:''}
  <div class="card"><span class="eyebrow">Amis · ${fr.length}</span>${fr.length?igPeople(fr):'<p class="muted">Tes amis sont les comptes qui te suivent et que tu suis en retour.</p>'}</div>
- <div class="card"><span class="eyebrow">Abonnés · ${fmtN(c.fol)}</span>${fol.length?igPeople(fol,id=>ig.following[id]?'ami·e':''):''}<p class="muted">${fol.length?`et ${ig.fans} autres élèves du lycée`:`${ig.fans} élèves du lycée te suivent. Tes camarades s'abonneront quand vous serez plus proches (amitié ${FOLLOW_AT}).`}</p></div>
+ <div class="card"><span class="eyebrow">Abonnés · ${fmtN(c.fol)}</span>${fol.length?igPeople(fol,id=>ig.following[id]?'ami·e':''):''}${(ig.newFans||[]).length?`<span class="muted">Derniers abonnés : ${ig.newFans.slice(0,6).map(h=>`<span class="mention">${esc(h)}</span>`).join(', ')}</span>`:''}<p class="muted">${fol.length?`et ${ig.fans} autres élèves du lycée`:`${ig.fans} élèves du lycée te suivent. Tes camarades s'abonneront quand vous serez plus proches (amitié ${FOLLOW_AT}).`}</p></div>
  <div class="card"><span class="eyebrow">Abonnements · ${ing.length}</span>${ing.length?igPeople(ing,id=>ig.followers[id]?'te suit':''):'<p class="muted">Tu ne suis encore personne.</p>'}</div>
  ${disc.length?`<div class="card"><span class="eyebrow">Comptes à découvrir</span>${disc.map(id=>`<div class="relrow"><button class="av avbtn" type="button" data-ig="${id}">${avatarOf(id)}</button><div class="info"><b>${esc(nameOf(id))}</b><span class="muted">${handleOf(id)} · ${fmtN(igCounts(id).fol)} abonnés</span></div><button class="gbtn" type="button" data-follow="${id}">S'abonner</button></div>`).join('')}</div>`:''}
  <div class="sec-title">Mes publications</div>${igGrid(G.posts.filter(p=>p.by==='me'))}`;
@@ -2193,14 +2297,14 @@ function drawNav(){
  $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='insta'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
 }
 function knowBars(only){return `<div class="kb">${(only||Object.keys(SUBJ)).map(k=>{const v=G.know[k],c=v>=60?'#3fcf8e':v>=45?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${SUBJ[k]}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}%</b></div>`}).join('')}</div>`}
-function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=175)return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
+function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=TRI_END[2])return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
 function schoolCard(){
  const sd=Math.min(sdDone(G.day),YEAR_DAYS),t=curTri(),ta=triAvg(t),left=BAC_DAYS[0]-sd,ne=nextEvalTxt(),r=G.bac.result;
  return `<div class="card"><div class="ph-top"><span class="eyebrow">Terminale · trimestre ${t}</span><span class="muted">jour ${sd}/${YEAR_DAYS}</span></div>
  <p class="muted">${r?P(`Bac : ${r.ok?'admis·e':'non admis·e'} (${fmtG(r.fin)}/20)`):left>0?`Bac dans ${left} jour${left>1?'s':''} de cours`:'Bac en cours'}${ne?` · prochaine évaluation ${ne}`:''} · moyenne du trimestre ${fmtG(ta)}/20</p></div>`}
 function ttHTML(){
  const wd=weekday(),sd=schoolDay(G.day);
- if(sd===null)return '<p class="muted">Pas de cours le week-end. Profite de ton temps libre pour réviser.</p>';
+ if(sd===null)return `<p class="muted">Pas de cours ${dayLbl(G.day)?'('+dayLbl(G.day).toLowerCase()+')':'le week-end'}. Profite de ton temps libre pour réviser.</p>`;
  if(sd>YEAR_DAYS||sd===REV_DAY||RES_DAYS.includes(sd))return `<p class="muted">${sd===REV_DAY?'Journée banalisée pour réviser le bac.':sd>YEAR_DAYS?"L'année est terminée.":'Pas de cours : résultats du bac.'}</p>`;
  const row=(st,lb,sm,now)=>`<div class="${now?'now':''}"><span>${fmtT(st)}</span><b>${lb}</b>${sm?`<small>${sm}</small>`:''}</div>`,m=G.min;
  if(BAC_DAYS.includes(sd)){const e=BAC_EP[sd];return `<div class="tt">${row(480,'Bac : '+e.am.map(k=>SUBJ[k]).join(', '),'',m>=480&&m<720)}${row(720,'Pause déjeuner','',m>=720&&m<840)}${row(840,'Bac : '+e.pm.map(k=>SUBJ[k]).join(', '),'',m>=840&&m<1020)}</div>`}
@@ -2218,7 +2322,7 @@ function neighborOf(ph){return NPCS[hash(G.day+'-'+ph.slot)%NPCS.length].id}
 function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
- let h=schoolCard()+objectivesCard();
+ const ft=feteToday();let h=(ft&&G.fete&&!G.fete.done?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span><b>${ft.ic} ${ft.n}</b><div class="row" style="justify-content:flex-start"><button class="gbtn" type="button" data-fetesheet>Participer</button></div></div>`:'')+schoolCard()+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
@@ -2233,7 +2337,7 @@ function drawDay(){
  }else if(ph.type==='eval'){
   h+=`<p class="story-text">Évaluation commune : toutes les matières sont évaluées. Tes notes dépendent de tes chances de réussite dans chaque matière. Résultats à 17h.</p>${knowBars()}</div>`;
  }else if(ph.type==='bac'){
-  h+=`<p class="story-text">Épreuves du bac : ${ph.subs.map(k=>SUBJ[k]).join(', ')}. Concentre-toi, les résultats tomberont le jour ${RES_DAYS[0]}.</p>${knowBars(ph.subs)}</div>`;
+  h+=`<p class="story-text">Épreuves du bac : ${ph.subs.map(k=>SUBJ[k]).join(', ')}. Concentre-toi, les résultats tomberont le ${fmtDay(schoolDayToCal(RES_DAYS[0]),true)}.</p>${knowBars(ph.subs)}</div>`;
  }else if(ph.type==='soir'){
   h+=placeBody(ph,'maison',{})+'</div>';
  }else{
@@ -2284,7 +2388,7 @@ function drawProfile(){
  <div class="sec-title">Chances de réussite à l'examen</div><div class="card">${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
  <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
  <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
- <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">jours ${BAC_DAYS.join(' et ')}</span>`}</div></div>
+ <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
  <div class="sec-title">Objectifs réussis</div><div class="card">${G.objDone.length?`<div class="objs">${G.objDone.map(id=>OBJ.find(o=>o.id===id)).map(o=>`<div class="obj done"><span class="chk">✓</span><span>${o.t}</span></div>`).join('')}</div>`:'<p class="muted">Aucun pour l\'instant.</p>'}</div>
  <div class="sec-title">Notifications</div>${G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>'}`;
  drawNav();saveG();
@@ -2485,6 +2589,7 @@ function publishCompose(){
   /* un·e ami·e prend ta défense si quelqu'un se moque de ton post */
   const mean=p.comments.find(c=>c.tone==='moqueur'),def=mean&&NPCS.find(n=>n.id!==mean.by&&G.rel[n.id].ami>=55);if(def)p.comments.push(mkC(def.id,genderize(pickR(DEF_ME),def.id),{re:mean.id,to:mean.by,vs:mean.by}));
   if(com.length)note(`${com.map(id=>WHO[id].name).join(', ')} ${com.length>1?'ont':'a'} commenté ton post`)}
+ G.ig.act=(G.ig.act||0)+(cp.kind==='story'?2:3);
  const kind=cp.kind;saveG();closeSheet();view='home';drawGame();checkObjectives();
  toast((kind==='story'?'Story publiée':'Post publié')+(changes.length?' · '+changes.join(' · '):''));
 }
@@ -2531,6 +2636,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(ch){const d=ch.dataset;
   if(d.ev!==undefined){resolve(+d.ev,+d.c);return}
   if(d.sg!==undefined){const s=cm.sugg[+d.sg];sendComment(s.text,s.t);return}
+  if(d.fete){feteChoice(d.fete,d.to);return}
   if(d.rs!==undefined){const s=cm.rsugg[+d.rs];sendReply(s.text,s.t);return}
   if(d.ntone){sendNote(d.ntone);return}
   if(d.rev){revise(d.rev);return}
@@ -2572,6 +2678,7 @@ $('gView').addEventListener('click',e=>{
  const t=e.target;let b;
  if(t.id==='gEdit'){showAtelier();return}
  if(igClick(t))return;
+ if(t.closest('[data-fetesheet]')){const f=feteToday();if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
  if(t.id==='gRestart'){askRestart();return}
  if(t.id==='gCompte'){window.CLOUD.open();return}
@@ -2632,7 +2739,7 @@ $('famGo').onclick=()=>{
  G.phaseKey=phase().key;G.lastPhase=phase();
  if(G.rel.ines&&G.rel.ines.ami>=60)pushMsg('ines','them',`Coucou ! C'est toi ${me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle'} ? Bienvenue au lycée ✨ si t'as besoin de quoi que ce soit, demande-moi 🥰`);
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
- note('Bienvenue au lycée ! Les cours commencent à 8h.');saveG();showGame();
+ note('Bienvenue au lycée ! Les cours commencent à 8h.');saveG();showGame();feteDay();saveG();
 };
 function showGame(){
  if(!G){showFamille(false);return}
