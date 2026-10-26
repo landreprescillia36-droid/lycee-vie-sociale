@@ -1677,12 +1677,17 @@ async function sendChat(text){
 function npcPing(){
  const h=G.min/60;if(h>=23||h<7)return;const ph=phase(),now=G.day*1440+G.min;
  NPCS.forEach(n=>{
-  const r=G.rel[n.id],last=G.lastPing[n.id]??-9999;if(r.ami<60||now-last<240)return;
-  let p=.03+r.ami/1500+r.amour/900;if(ph.type==='cours')p*=.4;if(Math.random()>p)return;G.lastPing[n.id]=now;
+  const r=G.rel[n.id],last=G.lastPing[n.id]??-9999;if(r.ami<30||now-last<240)return;
+  let p=.03+r.ami/1500+r.amour/900;if(ph.type==='cours')p*=.4;
+  /* sans réponse de ta part, il ou elle relance beaucoup moins */const th0=G.threads[n.id]||[];if(th0.length&&th0[th0.length-1].from!=='me')p*=.2;if(Math.random()>p)return;G.lastPing[n.id]=now;
   if(r.amour>=75&&r.ami>=45&&!G.partner&&!G.confessed[n.id]&&!coupleOf(n.id)){G.confessed[n.id]=1;pushMsg(n.id,'them',CONFESS[n.id],{kind:'confess'});note(`${n.name} t'a envoyé un message important 💌`);return}
   if(r.ami>=45&&Math.random()<.45&&h<20&&!G.plans.some(x=>x.by===n.id&&x.status==='pending')){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
   if(r.ami<25){pushMsg(n.id,'them',pickR(["T'as un problème avec moi ?","Je sais ce que t'as dit sur moi.","Évite-moi un peu, merci."]));return}
-  pushMsg(n.id,'them',pickR(VOICE[n.id].start));
+  /* pas encore fait connaissance : son premier message est une question de nouvelle */
+  if(!G.met[n.id]){G.met[n.id]=1;pushMsg(n.id,'them',introLine(n.id));return}
+  /* jamais deux fois de suite le même message */
+  const th=G.threads[n.id]||[],lastTxt=th.length?th[th.length-1].text:'',L=VOICE[n.id].start.filter(t=>genderize(t,n.id)!==lastTxt&&!th.slice(-4).some(m=>m.text===genderize(t,n.id)));
+  pushMsg(n.id,'them',pickR(L.length?L:VOICE[n.id].start.filter(t=>genderize(t,n.id)!==lastTxt)));
  });
 }
 function familyPing(){
