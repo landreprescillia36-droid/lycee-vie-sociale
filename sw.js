@@ -2,7 +2,7 @@
    Stratégie : on répond tout de suite avec la copie en cache, et on la met à jour en arrière-plan
    (les modifications apparaissent donc au lancement suivant).
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v7';
+const VERSION = 'v8';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
