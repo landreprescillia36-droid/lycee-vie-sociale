@@ -2003,23 +2003,25 @@ function openComments(id){
  if(!cm||cm.id!==id)cm={id,tone:'gentil',stance:'accord',re:null,sugg:['gentil','drole','moqueur','mechant'].map(t=>({t,text:pickR(TONES[t].lines).replace('{n}',nameOf(p.by))}))};
  const target=p.by==='me'?null:nameOf(p.by),R=cm.re&&p.comments.find(c=>c.id===cm.re);
  let form;
- if(R)form=`<div class="replyto"><span>Tu réponds à <b>${esc(nameOf(R.by))}</b></span><button class="gbtn ghost" type="button" data-cancelre>Annuler</button></div>
-  <div class="choices">${cm.rsugg.map((s,i)=>`<button class="choice" type="button" data-rs="${i}">${esc(s.text)}<small class="t-${STANCES[s.t].cls}">${STANCES[s.t].label}</small></button>`).join('')}</div>
-  <label class="muted" for="cTxt">Ou écris ta réponse</label><textarea id="cTxt" maxlength="160" placeholder="Ta réponse…" style="min-height:70px"></textarea>
-  <div class="chips" role="group" aria-label="Ton de la réponse">${Object.entries(STANCES).map(([k,t])=>`<button class="chip" type="button" data-stance="${k}" aria-pressed="${cm.stance===k}">${t.label}</button>`).join('')}</div>
-  <div class="row"><button class="gbtn" type="button" id="cSend">Répondre</button></div>`;
+ if(R)form=`<div class="replyto" id="cReplyTo"><span>Tu réponds à <b>${esc(nameOf(R.by))}</b></span><button class="gbtn ghost" type="button" data-cancelre>Annuler</button></div>
+  <label class="muted" for="cTxt">Écris ta réponse</label><textarea id="cTxt" maxlength="160" placeholder="Ta réponse à ${esc(nameOf(R.by))}…" style="min-height:80px"></textarea>
+  <span class="muted">Ton de ta réponse</span><div class="chips" role="group" aria-label="Ton de la réponse">${Object.entries(STANCES).map(([k,t])=>`<button class="chip" type="button" data-stance="${k}" aria-pressed="${cm.stance===k}">${t.label}</button>`).join('')}</div>
+  <div class="row"><button class="gbtn" type="button" id="cSend">Répondre</button></div>
+  <span class="muted">Ou choisis une réponse toute prête</span>
+  <div class="choices">${cm.rsugg.map((s,i)=>`<button class="choice" type="button" data-rs="${i}">${esc(s.text)}<small class="t-${STANCES[s.t].cls}">${STANCES[s.t].label}</small></button>`).join('')}</div>`;
  else if(p.by==='me')form='<p class="muted">C\'est ton post : appuie sur « Répondre » sous un commentaire pour discuter.</p>';
  else form=`<p class="muted">${isNpc(p.by)?(p.mine?`Tu as déjà commenté : ${target} a vu ta réaction. Tu peux encore répondre aux commentaires.`:`Ton commentaire changera ta relation avec ${target}.`):'Compte anonyme : ton commentaire sera vu de tous.'}</p>
- <div class="choices">${cm.sugg.map((s,i)=>`<button class="choice" type="button" data-sg="${i}">${esc(s.text)}<small class="t-${TONES[s.t].cls}">${TONES[s.t].label}</small></button>`).join('')}</div>
- <label class="muted" for="cTxt">Ou écris ton propre commentaire</label>
- <textarea id="cTxt" maxlength="160" placeholder="Ton commentaire…" style="min-height:70px"></textarea>
- <div class="chips" role="group" aria-label="Ton du commentaire">${Object.entries(TONES).map(([k,t])=>`<button class="chip" type="button" data-tone="${k}" aria-pressed="${cm.tone===k}">${t.label}</button>`).join('')}</div>
- <div class="row"><button class="gbtn" type="button" id="cSend">Commenter</button></div>`;
+ <label class="muted" for="cTxt">Écris ton commentaire</label>
+ <textarea id="cTxt" maxlength="160" placeholder="Ton commentaire…" style="min-height:80px"></textarea>
+ <span class="muted">Ton de ton commentaire</span><div class="chips" role="group" aria-label="Ton du commentaire">${Object.entries(TONES).map(([k,t])=>`<button class="chip" type="button" data-tone="${k}" aria-pressed="${cm.tone===k}">${t.label}</button>`).join('')}</div>
+ <div class="row"><button class="gbtn" type="button" id="cSend">Commenter</button></div>
+ <span class="muted">Ou choisis un commentaire tout prêt</span>
+ <div class="choices">${cm.sugg.map((s,i)=>`<button class="choice" type="button" data-sg="${i}">${esc(s.text)}<small class="t-${TONES[s.t].cls}">${TONES[s.t].label}</small></button>`).join('')}</div>`;
  openSheet(`<div class="who"><button class="av sm avbtn" type="button" data-ig="${p.by}" aria-label="Compte Insta">${avatarOf(p.by)}</button><div style="flex:1;min-width:0"><b>${esc(nameOf(p.by))}</b><p class="muted" style="margin:2px 0 0">${fmtText(p.text.length>90?p.text.slice(0,90)+'…':p.text)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="clist">${p.comments.length?threadHTML(p):'<p class="muted">Aucun commentaire pour l\'instant.</p>'}</div>${form}`);
- if(R){const el=document.querySelector(`[data-reply="${R.id}"]`);if(el)el.closest('.cm').scrollIntoView({block:'nearest'})}
+ if(R){const el=$('cReplyTo');if(el&&el.scrollIntoView)el.scrollIntoView({block:'start'});const t=$('cTxt');if(t&&t.focus)t.focus({preventScroll:true})}
 }
-function startReply(cid){const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cid);if(!R)return;cm.re=cid;cm.rsugg=replySugg(R);openComments(p.id)}
+function startReply(cid){const p=G.posts.find(x=>x.id===cm.id),R=p&&p.comments.find(c=>c.id===cid);if(!R)return;cm.re=cid;cm.stance='accord';cm.stanceSet=false;cm.rsugg=replySugg(R);openComments(p.id)}
 function sendComment(text,tone){
  const p=G.posts.find(x=>x.id===cm.id);if(!p||!text)return;
  const mine=mkC('me',text);p.comments.push(mine);G.st.comments++;let msg='Commentaire publié';
@@ -2538,8 +2540,8 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-tone]')){cm.tone=b.dataset.tone;document.querySelectorAll('[data-tone]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
  if(b=q('[data-reply]')){startReply(b.dataset.reply);return}
  if(q('[data-cancelre]')){cm.re=null;openComments(cm.id);return}
- if(b=q('[data-stance]')){cm.stance=b.dataset.stance;document.querySelectorAll('[data-stance]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
- if(t.id==='cSend'){const v=$('cTxt').value.trim();if(!v){toast('Écris un commentaire ou choisis une suggestion');return}cm.re?sendReply(v,cm.stance):sendComment(v,cm.tone);return}
+ if(b=q('[data-stance]')){cm.stance=b.dataset.stance;cm.stanceSet=true;document.querySelectorAll('[data-stance]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
+ if(t.id==='cSend'){const v=$('cTxt').value.trim();if(!v){toast('Écris un commentaire ou choisis une suggestion');return}cm.re?sendReply(v,cm.stanceSet?cm.stance:(sentiment(v)<0?'mechant':'accord')):sendComment(v,cm.tone);return}
  if(b=q('[data-sv]')){b.dataset.sv==='next'?nextStory():prevStory();return}
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
