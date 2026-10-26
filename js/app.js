@@ -1635,11 +1635,83 @@ Réponds uniquement avec un objet JSON :
 "amitie" et "amour" mesurent l'effet du dernier message de ${me} sur tes sentiments. Si tu proposes une sortie, remplace null par {"lieu":"plage|centre|glacier","quand":"ce soir|demain"}.`;
 }
 function sentiment(t){t=t.toLowerCase();if(/(nul|ferme[ -]la|idiot|débile|moche|dégage|tais-toi|je te déteste|chiant|bête|pathétique)/.test(t))return -1;if(/(merci|cool|trop bien|génial|j'adore|❤|😍|🥰|mdr|ptdr|haha|bravo|bisou|beau|belle|mignon|gentil|super|top|manqué|t'aime)/.test(t))return 1;return 0}
+/* ---------- réponses de secours (sans IA) : selon le sujet du message, la personnalité, sans se répéter ---------- */
+const TOPICS=[
+ ['salut',/^(salut|coucou|bonjour|bonsoir|hey|yo|wesh|wsh|slt|cc)\b/],
+ ['cava',/(ça va|ca va|cv\b|comment tu vas|la forme|tu vas bien)/],
+ ['weekend',/(week-end|weekend|samedi|dimanche|ce soir|demain|sortir|sortie|plage|glacier|cinéma|cinema|soirée|soiree)/],
+ ['origine',/(commune|d'où|d ou|tu viens|t'habites|tu habites|habite où|quel lycée|ancien lycée)/],
+ ['activite',/(tu fais quoi|tu fais koi|tfq|t'es où|t es ou|tu es où|qu'est-ce que tu fais)/],
+ ['lecture',/(lis\b|lire|livre|roman|manga|poème|poeme|poésie|écris|ecris|écrire)/],
+ ['spe',/(spé(?![a-zà-ÿ])|spés\b|spécialité|specialite)/],
+ ['ecole',/(lycée|cours|devoir|maths|philo|physique|français|anglais|espagnol|svt|histoire|contrôle|controle|interro|bac|prof|note|réviser|reviser|exam)/],
+ ['sport',/(foot|basket|hand|sport|match|entraînement|entrainement|courir|footing|gym)/],
+ ['musique',/(musique|son|chanson|zouk|gwo ka|gwoka|rap|dancehall|guitare|écoute|ecoute|playlist|danse)/],
+ ['famille',/(famille|parents|mère|mere|père|pere|maman|papa|frère|frere|sœur|soeur|grand-mère|mamie)/],
+ ['amour',/(crush|amoureux|amoureuse|copain|copine|tu me plais|je t'aime|t'aime|sortir avec|célibataire|celibataire|bisou)/],
+ ['potins',/(potins|rumeur|drama|insta|post|story|tu as vu|t'as vu)/],
+ ['fatigue',/(fatigué|fatigue|crevé|creve|dormir|sommeil|ennui|m'ennuie|ennuyer|nul aujourd)/],
+ ['manger',/(manger|faim|cantine|déjeuner|dejeuner|repas|goûter|gouter|colombo|bokit|accras)/],
+ ['merci',/(merci|trop gentil|c'est gentil)/]];
+const REP={
+ ines:{spe:["Moi j'ai pris HLP et anglais ✨","HLP et anglais ! Et toi ? 🥺"],origine:["À la base je viens de Martinique, maintenant on habite aux Abymes ✨","Martinique ➜ Guadeloupe, et toi ? 🥺"],lecture:["Moi je lis surtout des webtoons 🥺","Je lis pas trop, je regarde des K-dramas 😅"],salut:["Coucou toi ✨","Heyy 🥰 ça fait plaisir"],cava:["Ça va et toi ? Moi un peu fatiguée mais ça va 🥺","Super bien ! J'ai appris une nouvelle choré 💃"],activite:["Je regarde mon K-drama 🥺 et toi ?","Je garde mon petit frère, il me rend folle 😅"],
+  ecole:["J'ai rien compris au dernier cours 🥺 tu m'expliques ?","Le contrôle m'a stressée de ouf"],sport:["Moi c'est la danse mon sport 💃","Le foot c'est pas trop mon truc, mais j'aime bien regarder ✨"],musique:["Dancehall forever 💃✨","Tu connais le dernier son qui tourne ? Je l'écoute en boucle 🎧"],
+  weekend:["Samedi je suis libre ! On fait un truc ? ✨","Plage ce week-end avec Maëlle, tu viens ? 🌴"],famille:["Ma mère est infirmière, elle rentre tard… alors je garde Enzo 🥺","Mon petit frère Enzo c'est un phénomène 😂"],
+  amour:["Ohh tu me racontes ? 👀💕","Moi l'amour… c'est compliqué 🥺"],potins:["Raconte !! 👀","J'ai vu ça ! Maëlle va encore faire un drama 😅"],fatigue:["Pareil, j'ai trop sommeil 🥺","Va te reposer mon cœur 💕"],manger:["J'ai trop faim 😩","La cantine aujourd'hui… pas ouf 🥺"],merci:["De rien mon cœur 💕","Avec plaisir ✨"],
+  q:["Bonne question 🥺 je sais pas trop","Hmm… je dirais oui ? ✨","Ça dépend ! Et toi ?"],def:["Ah ouais ? Raconte ✨","Hmm je vois 🥺","Trop bien ça","Ah d'accord 🥰","C'est vrai que…","Tu m'étonnes 😅"]},
+ kylian:{spe:["moi SES et EPS frr, logique","SES et sport, tranquille"],origine:["moi Saint-François frr, au bord de l'eau 🎣","Saint-François, le meilleur coin"],lecture:["frr je lis que les résultats de foot 😂","lire ? moi ? mdrr"],salut:["wsh bien ou quoi","yo"],cava:["tranquille et toi ?","ça va frr, un peu crevé avec l'entraînement"],activite:["je joue à FIFA tkt","je traîne dans la cour, viens"],
+  ecole:["frr me parle pas des cours 😭","j'ai pas fait les devoirs, tu me les passes ?"],sport:["le foot c'est la vie frr ⚽","t'as vu mon but au dernier match ? 😎","viens jouer à la récré"],musique:["moi j'écoute du rap, le zouk c'est pour Sacha 😂","mets un son là"],
+  weekend:["ce week-end match, après on peut traîner","pêche avec mon père samedi 🎣"],famille:["mon père est pêcheur, il me réveille à 5 h 😭","mon grand-père c'est un boss"],amour:["frr parle pas de ça 😅","t'as quelqu'un en tête toi ? 👀"],
+  potins:["les Potins racontent n'importe quoi sur moi 🙄","wsh qui a encore balancé ?"],fatigue:["moi aussi je suis mort","dors frr"],manger:["j'ai la dalle","un bokit là ça passerait trop"],merci:["tkt","normal frr"],
+  q:["bonne question frr","jsp trop, et toi ?","ça dépend"],def:["ah ouais ?","sérieux ?","mdr t'es marrant·e","vas-y raconte","ok ok","ah bon","c'est chaud ça"]},
+ maelle:{spe:["SES et langues, littéralement parfait pour moi 💅","SES et LLCE anglais 💅"],origine:["Le Gosier chez ma mère, Pointe-à-Pitre chez mon père 🙄","Le Gosier, évidemment 💅"],lecture:["Je lis les magazines de mode, ça compte ? 💅","Lire c'est le truc de Jade 🙄"],salut:["Coucou 💅","Hey !"],cava:["Ça va, littéralement épuisée par les répétitions 📣","Super ! Et toi ?"],activite:["Je prépare la soirée de vendredi 💅","Shopping en ligne, comme d'hab"],
+  ecole:["Les cours… littéralement l'enfer 🙄","J'ai copié sur Jade, chut 🤫"],sport:["Moi c'est pom-pom, c'est un sport, ok ? 📣","Le hand d'Anaïs ? Genre c'est intense"],musique:["Mets du dancehall, on danse 💃","La playlist de la soirée sera parfaite, fais-moi confiance"],
+  weekend:["Soirée chez moi samedi, t'es sur la liste… peut-être 💅","Centre-ville samedi, shopping obligatoire"],famille:["Mes parents… c'est compliqué depuis le divorce 🙄","Ma sœur est à Paris, elle me manque"],
+  amour:["Ohh dis-moi tout 👀💅","Genre t'as un crush ? Qui ??"],potins:["J'ai LITTÉRALEMENT tout vu 👀","Les Potins, je sais qui c'est… je dirai rien 🤐"],fatigue:["Moi aussi, mais je suis toujours belle 💅","Dors, t'as une tête de zombie 😂"],
+  manger:["La cantine ? Jamais 🙄","On va au snack ?"],merci:["Je sais, je suis géniale 💅","De rien !"],q:["Genre ? Pourquoi tu demandes ? 👀","Évidemment","Bonne question… je dirais non 🙄"],def:["Genre ?","Mouais","Ok et ?","Intéressant 👀","Littéralement","Hmm, si tu le dis"]},
+ noah:{spe:["Maths et physique… je galère ptdr","Maths-physique frère"],origine:["Baie-Mahault, dans une maison toujours pleine ptdr","Moi Baie-Mahault"],lecture:["Moi c'est les mangas, j'en ai plein","Tu lis des mangas toi ?"],salut:["Salut frère","Hey 👋"],cava:["Ça va bien, et toi ?","Ça va, j'ai bien mangé chez ma grand-mère 😄"],activite:["Je lis un manga","Je fais mes devoirs… enfin j'essaie ptdr"],
+  ecole:["T'as compris l'exo ? Moi pas trop","Je peux t'aider en physique si tu veux"],sport:["Basket jeudi, viens nous voir 🏀","Le sport ça vide la tête"],musique:["J'écoute un peu de tout","Sacha fait des sons de fou"],
+  weekend:["Ce week-end je cuisine avec mamie","On peut aller au glacier si tu veux"],famille:["Chez moi c'est toujours plein de monde ptdr","Mes sœurs me rendent fou"],amour:["Euh… je sais pas trop quoi dire 😅","Moi je suis nul pour ces trucs-là"],
+  potins:["Je lis pas trop les Potins","Encore un drama ?"],fatigue:["Pareil frère","Repose-toi"],manger:["J'ai faim aussi","Ma grand-mère fait le meilleur colombo"],merci:["De rien 🙏","Avec plaisir"],
+  q:["Hmm, peut-être","Je sais pas trop, et toi ?","Bonne question frère"],def:["Ah ok","Ouais je vois","Ptdr","Ah bon ?","C'est vrai","Intéressant"]},
+ jade:{spe:["hlp et humanités. évidemment.","hlp. et maths, pour le plaisir."],origine:["sainte-anne. chez ma grand-mère, près de la mer.","sainte-anne."],lecture:["oui. des poèmes, surtout. et toi, tu lis quoi ?","j'écris un peu. je ne montre presque jamais."],salut:["bonjour.","salut."],cava:["ça va. je lis.","ça va. le ciel était beau ce matin."],activite:["je lis au cdi.","j'écris."],ecole:["j'ai déjà fini les exercices. tu veux de l'aide ?","le cours de philo était passionnant. vraiment."],
+  sport:["le sport et moi, c'est compliqué.","je préfère marcher au bord de la mer."],musique:["j'aime le silence. et parfois sacha.","le gwo ka, ça me parle."],weekend:["ce week-end, étoiles depuis la plage de sainte-anne.","je reste avec ma grand-mère."],
+  famille:["je vis avec ma grand-mère. elle sait tout.","mes parents sont en métropole."],amour:["l'amour, c'est un poème qu'on n'ose pas finir.","pourquoi cette question ?"],potins:["les potins ne m'intéressent pas.","encore un drama de maëlle ?"],
+  fatigue:["dors. le monde attendra.","moi aussi. trop de livres, pas assez de nuits."],manger:["je mange au cdi. chut.","un thé suffira."],merci:["de rien.","avec plaisir. sincèrement."],
+  q:["bonne question. je n'ai pas de réponse.","peut-être. et toi ?","ça dépend du point de vue."],def:["intéressant.","développe.","hmm.","je vois.","c'est noté.","pas mal."]},
+ anais:{spe:["SVT et EPS, évidemment 😄💪","SVT et sport !"],origine:["Sainte-Rose ! 🌴 Et toi ?","Sainte-Rose, la plus belle commune 😄"],lecture:["Je lis des bios de sportifs, ça me motive 💪","Pas trop le temps de lire avec le sport 😂"],salut:["Hey !! 😄","Salut toi ! 🔥"],cava:["Trop bien ! Footing ce matin 💪","Super, et toi ?? 😄"],activite:["Je m'entraîne !","Je cours après mes petits frères 😂"],
+  ecole:["Les cours c'est moins drôle que le sport 😂","Allez, on révise ensemble ? 💪"],sport:["Le sport c'est la vie !! 🔥","Viens courir demain à 6 h 😄"],musique:["Playlist de motivation à fond 🔥","Je danse sur tout 😂"],
+  weekend:["Match samedi ! Viens m'encourager 🔥","Plage dimanche, on court ensemble ? 🌅"],famille:["Mes petits frères sont des tornades 😂","Mon père est entraîneur, devine d'où je tiens ça 😄"],amour:["Hihi raconte 🙈","L'amour ? J'ai pas le temps, j'ai entraînement 😂"],
+  potins:["Haha encore les Potins 😂","Les gens parlent trop !"],fatigue:["Allez, un petit footing et ça repart ! 😂","Dors bien alors 😴"],manger:["J'ai trop faim après le sport 😩","Smoothie mangue ? 🥭"],merci:["De rien ! 😄","Avec plaisir 💪"],
+  q:["Bonne question 😂 je dirais oui !","Hmm, je sais pas, et toi ?","Carrément !"],def:["Carrément !","Haha trop bien","Ah ouais ? 😄","Et après ?","Trop fort 😂","C'est ouf ça"]},
+ sacha:{spe:["Musique et HLP, gros","Arts-musique, forcément 🎧"],origine:["Lamentin, gros","Moi je suis du Lamentin"],lecture:["J'écris des textes pour mes sons","Je lis des paroles de chansons, c'est de la poésie aussi"],salut:["Yo","Salut, bonne vibe ?"],cava:["Tranquille, la vibe est bonne","Ça va gros, et toi ?"],activite:["Je compose un son 🎧","Je gratte ma guitare au foyer"],
+  ecole:["Les cours… j'arrive toujours en retard 😅","La musique devrait compter au bac"],sport:["Moi c'est skate","Le foot c'est le délire de Kylian"],musique:["T'écoutes quoi toi ? 🎧","Le zouk rétro c'est la base","Je t'envoie mon son si tu veux"],
+  weekend:["Ce week-end je joue avec ma mère, gwo ka","Viens au foyer, on fait de la musique"],famille:["Mon père veut que je fasse du commerce… pas moi","Ma mère chante, c'est elle qui m'a tout appris"],amour:["L'amour c'est dans toutes mes chansons","Raconte, gros 👀"],
+  potins:["Les Potins c'est pas ma vibe","Encore eux ?"],fatigue:["Moi je dors jamais, je compose","Repose-toi gros"],manger:["Un bokit et je suis bien","J'ai oublié de manger, encore"],merci:["Tranquille","De rien gros"],
+  q:["Bonne question gros","Je sais pas, et toi ?","Peut-être, on verra"],def:["Ah ouais","Tranquille","Je vois la vibe","Intéressant","C'est lourd ça","Ok gros"]}};
+/* dernière phrase dite par la personne, pour ne pas se répéter */
+const lastLines=id=>[...(G.threads[id]||[]),...((G.talks&&G.talks[id])||[])].filter(m=>m.from==='them').slice(-6).map(m=>m.text);
+function smartLine(id,text){
+ const t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
+ const fresh=L=>{const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
+ if(!R){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}
+ if(s<0)return fresh(VOICE[id].hurt);
+ /* « et toi ? » : répondre sur le sujet de sa dernière question */
+ if(/(et toi|et vous|toi aussi|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
+  if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
+  const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]])}
+ const hit=TOPICS.find(([k,re])=>re.test(t)&&R[k]);
+ if(hit)return fresh(R[hit[0]]);
+ if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(VOICE[id].happy);
+ return fresh(t.includes('?')?R.q:R.def);
+}
+
 function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
  /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
  const met=isNpc(id)?(G.met[id]||0):3;
- return{reponse:met===0?introLine(id):pickR(s>0?v.happy:s<0?v.hurt:v.neutral)+(met<3?' '+pickR(FOLLOW_Q[id]):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!lastLines(id).some(u=>u.includes(genderize(q,id)))):[];
+ return{reponse:met===0?introLine(id):smartLine(id,text)+(met<3&&fq.length?' '+pickR(fq):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
