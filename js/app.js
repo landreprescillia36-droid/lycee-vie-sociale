@@ -1601,6 +1601,15 @@ let view='home';
 /* ---------- IA ---------- */
 let SAMPLE=null;
 (async()=>{try{SAMPLE=(window.claude&&window.claude.use)?await window.claude.use('sample'):null}catch(e){SAMPLE=null}})();
+/* hors de claude.ai : serveur IA (serveur-ia/, Cloudflare) si son adresse est dans js/config.js */
+const aiUrl=()=>(window.LYCEE_CONFIG&&LYCEE_CONFIG.aiUrl)||'';
+const hasAI=()=>!!(SAMPLE||aiUrl());
+async function askAI(prompt){
+ if(SAMPLE){try{return await SAMPLE.json(prompt,{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;return null}}
+ if(aiUrl()&&navigator.onLine!==false){const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),25000);
+  try{const r=await fetch(aiUrl(),{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({prompt}),signal:ctl.signal});return r.ok?await r.json():null}catch(e){return null}finally{clearTimeout(t)}}
+ await new Promise(r=>setTimeout(r,800+Math.random()*800));return null;
+}
 function persona(id){
  if(isFam(id)){const f=famById(id);return `Tu es ${f.name}${me().nom?' '+me().nom:''}, ${f.role.toLowerCase()} de ${nameOf('me')} (${P('lycéen·ne')} en Guadeloupe). Caractère : ${f.trait}. Tu écris comme un membre de la famille, avec affection et selon ton caractère. Complicité avec ${nameOf('me')} : ${G.famRel[id]}/100.`}
  const f=FICHES[id],n=WHO[id],r=G.rel[id],c=coupleOf(id);
@@ -1759,8 +1768,7 @@ async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
  pushMsg(id,'me',text);G.st.msgs++;if(isFam(id))G.st.famTalks++;busyId=id;drawChatMsgs();
  let out=null;
- if(SAMPLE){try{out=await SAMPLE.json(buildPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
- else await new Promise(r=>setTimeout(r,900+Math.random()*900));
+ out=await askAI(buildPrompt(id));
  if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=fallbackReply(id,text);
  if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
  busyId=null;
@@ -2570,7 +2578,7 @@ function drawMates(){
 function drawMessages(){
  const ids=[...NPCS.map(n=>n.id),...G.family.map(f=>f.id)];
  ids.sort((a,b)=>((G.threads[b]||[]).slice(-1)[0]?.at??-1)-((G.threads[a]||[]).slice(-1)[0]?.at??-1));
- $('gView').innerHTML=`<div class="sec-title">Messages</div><p class="muted">${SAMPLE?'Tes camarades et ta famille te répondent avec leur propre personnalité.':'Les réponses utilisent la personnalité de chacun.'}</p><div class="list">${ids.map(id=>{const last=(G.threads[id]||[]).slice(-1)[0],u=G.unreadMsg[id]||0;
+ $('gView').innerHTML=`<div class="sec-title">Messages</div><p class="muted">${hasAI()?'Tes camarades et ta famille te répondent avec leur propre personnalité.':'Les réponses utilisent la personnalité de chacun.'}</p><div class="list">${ids.map(id=>{const last=(G.threads[id]||[]).slice(-1)[0],u=G.unreadMsg[id]||0;
   return `<button class="card thread" type="button" data-chat="${id}"><div class="relrow"><div class="av">${avatarOf(id)}</div><div class="info"><div class="top"><span>${esc(nameOf(id))}</span><small>${last?last.tm:isFam(id)?famById(id).role:''}</small></div><span class="muted prev">${last?(last.from==='me'?'Toi : ':'')+esc(last.text):'Commencer une conversation'}</span></div>${u?`<span class="badge">${u}</span>`:''}</div></button>`}).join('')}</div>`;
 }
 function drawProfile(){
@@ -2798,8 +2806,7 @@ async function sendTalk(text){
  text=(text||'').trim();if(!text||!talk||busyId)return;const id=talk.id;
  (G.talks[id]=G.talks[id]||[]).push({from:'me',text:genderize(text,'me')});busyId=id;drawTalk();
  let out=null;
- if(SAMPLE){try{out=await SAMPLE.json(buildTalkPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
- else await new Promise(r=>setTimeout(r,700+Math.random()*700));
+ out=await askAI(buildTalkPrompt(id));
  if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=talkFallback(id,text);
  busyId=null;if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
  G.talks[id].push({from:'them',text:genderize(out.reponse.trim().slice(0,300),id)});G.talks[id]=G.talks[id].slice(-60);

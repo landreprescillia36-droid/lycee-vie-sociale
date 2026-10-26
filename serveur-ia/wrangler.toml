@@ -1,0 +1,18 @@
+# Serveur IA du jeu : reçoit le texte préparé par le jeu, demande la réponse à Claude, renvoie le JSON.
+# La clé Anthropic se met dans Cloudflare (Settings → Variables and Secrets → ANTHROPIC_API_KEY), jamais ici.
+name = "lycee-ia"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+# Modèle utilisé : "claude-opus-5-5" (le meilleur) ou "claude-haiku-5-5" (bien moins cher)
+MODELE = "claude-opus-5-5"
+# Sites autorisés à appeler le serveur (séparés par des virgules)
+ORIGINES = "https://landreprescillia36-droid.github.io,http://localhost:5173"
+
+# Limite : 20 messages par minute et par personne (contre les abus)
+[[ratelimits]]
+name = "LIMITE"
+namespace_id = "1001"
+simple = { limit = 20, period = 60 }

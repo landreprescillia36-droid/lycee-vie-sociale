@@ -6,5 +6,8 @@
    la clé « service_role » / « secret ». */
 window.LYCEE_CONFIG = {
   supabaseUrl: '',
-  supabaseAnonKey: ''
+  supabaseAnonKey: '',
+  /* Adresse du serveur IA (dossier serveur-ia/, sur Cloudflare), ex. https://lycee-ia.xxx.workers.dev
+     Vide : les camarades répondent avec des phrases toutes faites. */
+  aiUrl: ''
 };

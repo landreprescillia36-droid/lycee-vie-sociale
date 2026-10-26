@@ -26,6 +26,7 @@ icons/              icônes de l'app, générées par tools/icones.js (portrait 
 fonts/, css/fonts.css  polices Baloo 2 et Nunito hébergées localement
 assets/chambres/    chambres des camarades (images créées par Prescillia, 900×600)
 docs/references/    modèles visuels de Prescillia : personnages, corps/épaules, agencement de l'atelier
+serveur-ia/          serveur IA (Cloudflare Worker) qui appelle Claude, voir serveur-ia/README.md
 tools/              simulate.js (test Node), captures.js (test Playwright), icones.js (icônes)
 ```
 
@@ -54,7 +55,11 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 
 ## IA des camarades
 
-Dans claude.ai, les réponses des camarades venaient de `window.claude.use('sample')` (voir section `IA`, fonctions `buildPrompt` et `sendChat`). **Hors de claude.ai cette API n'existe pas** : le jeu bascule automatiquement sur `fallbackReply` (réponses écrites selon la personnalité). Pour retrouver de vraies réponses, il faut un petit serveur qui appelle l'API Anthropic (clé gardée côté serveur, jamais dans le navigateur) et renvoie le même JSON `{reponse, amitie, amour, proposition}`.
+Les réponses passent par `askAI(prompt)` (section `IA`), utilisée par `sendChat` (`buildPrompt`) et `sendTalk` (`buildTalkPrompt`) :
+1. dans claude.ai : `window.claude.use('sample')` ;
+2. ailleurs : le serveur IA `serveur-ia/` (Cloudflare Worker, `@anthropic-ai/sdk`) si `aiUrl` est rempli dans `js/config.js` ; clé Anthropic en secret Cloudflare, jamais dans le navigateur ;
+3. sinon, ou en cas d'erreur : `fallbackReply` / `talkFallback` (réponses écrites selon la personnalité).
+Format attendu partout : `{reponse, amitie, amour, proposition}`. Modèle et sites autorisés : `serveur-ia/wrangler.toml`.
 
 ## Ce que la créatrice attend (à respecter)
 
