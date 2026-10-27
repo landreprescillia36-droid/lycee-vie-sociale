@@ -409,3 +409,15 @@ body.playing{background:var(--g-bg)}
 .say.me b{color:var(--g-blue)}
 .say .geste{color:#c6a8ff;font-style:italic}
 .talk-sep{align-self:center;color:var(--g-muted);font-size:12px;font-weight:700;background:#1b1d23;border-radius:999px;padding:3px 12px}
+/* mini-jeux */
+.mg-sec{font:800 18px var(--display,var(--body));color:var(--g-ink);min-width:44px;text-align:right}
+.mg-bar{height:8px}
+.mg-q{font-size:18px;font-weight:700}
+.choice.mg-good{border-color:#3fcf8e;background:#173827}
+.choice.mg-bad{border-color:#ff7a6b;background:#3a1d1b}
+.mg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mg-card{min-height:64px;border-radius:14px;border:1px solid #3a3d47;background:#262a35;color:var(--g-ink);font:800 15px var(--body);cursor:pointer;padding:6px}
+.mg-card.mg-open{background:#2d3b66;border-color:var(--g-blue)}
+.mg-card.mg-found{background:#173827;border-color:#3fcf8e;opacity:.75}
+.mg-zone{position:relative;height:340px;border-radius:16px;background:#1b1d23;border:1px solid #3a3d47;overflow:hidden}
+.mg-ball{position:absolute;width:56px;height:56px;border:0;border-radius:50%;background:transparent;font-size:44px;line-height:56px;padding:0;cursor:pointer;transform:translate(-0%,-0%)}

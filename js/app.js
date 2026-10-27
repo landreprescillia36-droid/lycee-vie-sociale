@@ -1619,7 +1619,7 @@ function newGame(fam){
   stories:START_STORIES.map((s,i)=>({id:'st'+i,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
-  objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{}},studied:{},pend:[]};
+  objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{},bonus:{}},evalBonus:{},studied:{},pend:[]};
  g.family.forEach(f=>g.famRel[f.id]=65);
  return g;
 }
@@ -1630,7 +1630,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -2076,7 +2076,7 @@ function evalSheet(e){return sheetHead(`Évaluation du jour ${e.sd}`,`Trimestre 
 function evalCatch(){const wd=weekday();let d=G.day;if(wd===4&&G.min<1020)d-=7;else if(wd!==4)d-=wd>4?wd-4:wd+3;const sd=d>=1?schoolDay(d):null;if(sd&&sd<=TRI_END[2]&&!G.evals.some(e=>e.sd===sd))runEval(sd)}
 function runEval(sdArg){
  const sd=sdArg||schoolDay(G.day);if(!sd||sd>TRI_END[2]||G.evals.some(e=>e.sd===sd))return;
- const grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=examGrade(k);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
+ const bon=(G.evalBonus||{})[schoolDayToCal(sd)]||{},grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=clamp(examGrade(k)+(bon[k]||0),0,20);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
  const e={sd,tri:triOf(sd),grades,glob:r2(mean(Object.values(grades)))};G.evals.push(e);
  note(`Évaluation du vendredi : ${fmtG(e.glob)}/20 de note globale`);if(!G.asleep)toast(`📝 Évaluation : ${fmtG(e.glob)}/20`);
  if(e.glob>=14)parentReact('bonne');else if(e.glob<9)parentReact('mauvaise');
@@ -2097,13 +2097,14 @@ function makeBulletin(t){
  note(`Bulletin du trimestre ${t} : ${fmtG(a)}/20 de moyenne`);if(!G.asleep)toast(`📄 Bulletin du trimestre ${t} : ${fmtG(a)}/20`);
  parentReact(b.ok?'bonne':'mauvaise');popSheet(bulletinSheet(b));
 }
-function runBacPart(ph){ph.subs.forEach(k=>{if(G.bac.scores[k]==null)G.bac.scores[k]=examGrade(k,2.8)});note(`Bac : épreuves de ${ph.subs.map(k=>SUBJ[k]).join(', ')} terminées`);saveG()}
+const bacGrade=k=>clamp(Math.round((examGrade(k,2.8)+((G.bac.bonus||{})[k]||0))*2)/2,0,20);
+function runBacPart(ph){ph.subs.forEach(k=>{if(G.bac.scores[k]==null)G.bac.scores[k]=bacGrade(k)});note(`Bac : épreuves de ${ph.subs.map(k=>SUBJ[k]).join(', ')} terminées`);saveG()}
 function bacSheet(r){return sheetHead('Résultats du bac',P(r.ok?`Admis·e${r.ment?' · mention '+r.ment:''} 🎉`:'Non admis·e 😔'))
  +`<div class="card"><div class="prof"><span>Épreuves finales (60 %)</span><b>${fmtG(r.ep)}/20</b></div><div class="prof"><span>Contrôle continu : moyenne des 3 trimestres (40 %)</span><b>${fmtG(r.cc)}/20</b></div><div class="prof"><span>Note finale</span><b>${fmtG(r.fin)}/20</b></div>${r.ratt?`<p class="muted">${P('Tu es passé·e')} par l'oral de rattrapage : ${r.ok?'réussi, tu obtiens ton bac !':'raté de peu.'}</p>`:''}</div>
  <div class="card list">${gradeRows(G.bac.scores)}</div>`}
 function computeBac(){
  if(G.bac.result)return;
- Object.keys(SUBJ).forEach(k=>{if(G.bac.scores[k]==null)G.bac.scores[k]=examGrade(k,2.8)});
+ Object.keys(SUBJ).forEach(k=>{if(G.bac.scores[k]==null)G.bac.scores[k]=bacGrade(k)});
  const ep=r2(mean(Object.values(G.bac.scores))),cc=r2(mean(G.bulletins.map(b=>b.avg))??ep),fin=r2(.6*ep+.4*cc);
  let ok=fin>=10,ratt=false;if(!ok&&fin>=8){ratt=true;ok=Math.random()<mean(Object.values(G.know))/100}
  const ment=!ok||ratt?null:fin>=16?'Très bien':fin>=14?'Bien':fin>=12?'Assez bien':null;
@@ -2721,7 +2722,7 @@ function objectivesCard(){
  ${open.length?`<div class="objs">${open.map(o=>`<div class="obj"><span class="chk"></span><span>${P(o.t)}</span><b>+${o.gems}</b></div>`).join('')}</div>`:`<p class="muted">Tous les objectifs du moment sont atteints. De nouveaux arrivent dans les prochains jours.</p>`}</div>`;
 }
 const ACTS={
- notes:{l:'Prendre des notes',e:4,risk:0,ico:'✏️'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Parler à ton voisin',e:2,risk:.12,ico:'💬'},
+ notes:{l:'Prendre des notes',e:4,risk:0,ico:'✏️'},exo:{l:"Faire l'exercice",e:3,risk:0,ico:'🧩'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Parler à ton voisin',e:2,risk:.12,ico:'💬'},
  mot:{l:'Écrire en cachette',e:2,risk:.15,ico:'📝'},dessin:{l:'Dessiner',e:0,risk:.06,ico:'🎨'},dormir:{l:'Dormir',e:0,risk:.18,ico:'😴'}};
 const riskLbl=(r,s)=>{const x=r*s;return x===0?['Sans risque','ok']:x<.2?['Risque faible','lo']:x<.4?['Risque moyen','mid']:['Risque élevé','hi']};
 function drawDay(){
@@ -2740,9 +2741,9 @@ function drawDay(){
   h+=`<div class="chips">${pls.map(p=>`<button class="chip" type="button" data-place="${p}" aria-pressed="${G.place===p}">${PLACES[p]}</button>`).join('')}</div>`;
   h+=placeBody(ph,G.place,map)+'</div>';
  }else if(ph.type==='eval'){
-  h+=`<p class="story-text">Évaluation commune : toutes les matières sont évaluées. Tes notes dépendent de tes chances de réussite dans chaque matière. Résultats à 17h.</p>${knowBars()}</div>`;
+  h+=`<p class="story-text">Évaluation commune : toutes les matières sont évaluées. Tes notes dépendent de tes chances de réussite dans chaque matière. Résultats à 17h.</p>${G.evalBonus[G.day]?'<p class="muted">✍️ Copie rendue : tes réponses compteront dans les notes.</p>':'<div class="row"><button class="gbtn" type="button" data-evalgame>✍️ Composer (une question par matière)</button></div>'}${knowBars()}</div>`;
  }else if(ph.type==='bac'){
-  h+=`<p class="story-text">Épreuves du bac : ${ph.subs.map(k=>SUBJ[k]).join(', ')}. Concentre-toi, les résultats tomberont le ${fmtDay(schoolDayToCal(RES_DAYS[0]),true)}.</p>${knowBars(ph.subs)}</div>`;
+  h+=`<p class="story-text">Épreuves du bac : ${ph.subs.map(k=>SUBJ[k]).join(', ')}. Concentre-toi, les résultats tomberont le ${fmtDay(schoolDayToCal(RES_DAYS[0]),true)}.</p><div class="acts two">${ph.subs.map(k=>`<button class="act" type="button" data-bacgame="${k}" ${G.bac.bonus[k]!=null?'disabled':''}><span class="ico">🎓</span><span>${SUBJ[k]}</span><small class="r-ok">${G.bac.bonus[k]!=null?'Épreuve passée':'Passer l\'épreuve'}</small></button>`).join('')}</div>${knowBars(ph.subs)}</div>`;
  }else if(ph.type==='soir'){
   h+=placeBody(ph,'maison',{})+'</div>';
  }else{
@@ -2808,7 +2809,7 @@ function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
 function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){clearTimeout(svTimer);const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
+function closeSheet(){clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
 function openFiche(id){
@@ -2857,6 +2858,7 @@ function classAct(k){
  const ph=phase();if(ph.type!=='cours'||G.acts<=0)return;const A=ACTS[k],s=ph.prof[1],nb=neighborOf(ph);
  if(G.energy<A.e){toast("Pas assez d'énergie");return}
  if(k==='mot'){openNote(ph);return}
+ if(k==='exo'){classGame(ph);return}
  G.acts--;G.energy=clamp(G.energy-A.e,0,100);
  let msg='';const caught=Math.random()<A.risk*s;
  if(k==='notes'){G.know[ph.sub]=clamp(G.know[ph.sub]+7,0,100);G.cb+=1;G.st.notes++;msg=`Tu prends des notes. Chances de réussite en ${SUBJ[ph.sub]} +7 %`}
@@ -2898,11 +2900,108 @@ function doAct(k){
  if(k==='sleep'){sleepNow();return}
  if(k==='eat'){if(G.ate)return;G.ate=true;G.energy=clamp(G.energy+15,0,100);toast('🍛 Bon appétit · +15 énergie')}
  if(k==='rest'){if(G.rested)return;G.rested=true;G.energy=clamp(G.energy+15,0,100);toast('🛋️ +15 énergie')}
- if(k==='revise'){openSheet(`<div class="who"><div style="flex:1"><h2>Réviser</h2><p class="muted" style="margin:2px 0 0">Quelle matière ?</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="choices">${Object.entries(SUBJ).map(([s,l])=>`<button class="choice" type="button" data-rev="${s}">${l}<small>Niveau ${G.know[s]}/100</small></button>`).join('')}</div>`);return}
+ if(k==='revise'){openSheet(`<div class="who"><div style="flex:1"><h2>Réviser</h2><p class="muted" style="margin:2px 0 0">Quelle matière ?</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="choices">${Object.entries(SUBJ).map(([s,l])=>`<button class="choice" type="button" data-rev="${s}">${l}<small>Niveau ${G.know[s]}/100 · ${MINI_NAME[MINI_KIND(s)]} : de +3 à +12 %</small></button>`).join('')}</div><p class="muted">Pas le temps de jouer ? <button class="linkbtn" type="button" data-revquick>Réviser vite</button> (+4 %, matière choisie au hasard parmi les plus faibles)</p>`);return}
  saveG();drawHUD();drawView();
 }
+/* ---------- mini-jeux : révisions, exercices en cours, évaluations et bac ---------- */
+/* chaque question : [énoncé, bonne réponse, mauvaise, mauvaise, mauvaise] */
+const QUIZ={
+ francais:[["Qui a écrit « Les Fleurs du mal » ?","Baudelaire","Victor Hugo","Molière","Rimbaud"],["« Cette obscure clarté » est…","un oxymore","une comparaison","une métaphore filée","une litote"],
+  ["Qui a écrit « Cahier d'un retour au pays natal » ?","Aimé Césaire","Léopold Senghor","Maryse Condé","Simone Schwarz-Bart"],["Un alexandrin compte…","12 syllabes","10 syllabes","8 syllabes","14 syllabes"],
+  ["Maryse Condé est née…","en Guadeloupe","en Martinique","en Haïti","au Sénégal"],["« Il est fort comme un lion » est…","une comparaison","une métaphore","une hyperbole","un oxymore"],
+  ["Qui a écrit « Les Misérables » ?","Victor Hugo","Émile Zola","Balzac","Flaubert"],["Le narrateur qui dit « je » et vit l'histoire est…","interne","externe","omniscient","absent"],
+  ["Molière a écrit…","Tartuffe","Phèdre","Le Cid","Candide"],["Qui a écrit « Pluie et vent sur Télumée Miracle » ?","Simone Schwarz-Bart","Aimé Césaire","Édouard Glissant","Patrick Chamoiseau"]],
+ histoire:[["L'esclavage est aboli en Guadeloupe en…","1848","1789","1802","1946"],["La Guadeloupe devient un département en…","1946","1848","1958","1983"],
+  ["La Seconde Guerre mondiale se termine en Europe en…","1945","1918","1939","1950"],["Le mur de Berlin tombe en…","1989","1961","1991","1975"],
+  ["La guerre froide oppose…","les États-Unis et l'URSS","la France et l'Allemagne","la Chine et le Japon","le Royaume-Uni et l'Espagne"],["Victor Schœlcher est connu pour…","l'abolition de l'esclavage","la Révolution française","la Ve République","le droit de vote des femmes"],
+  ["La Ve République commence en…","1958","1946","1968","1981"],["La préfecture de la Guadeloupe est…","Basse-Terre","Pointe-à-Pitre","Les Abymes","Le Gosier"],
+  ["Les femmes votent pour la première fois en France en…","1945","1918","1968","1936"],["Le traité de Maastricht (Union européenne) date de…","1992","1957","2002","1985"]],
+ svt:[["L'ADN se trouve surtout dans…","le noyau","la membrane","le cytoplasme seulement","les os"],["La photosynthèse produit…","du dioxygène","du dioxyde de carbone","de l'azote","du méthane"],
+  ["Une cellule humaine a…","46 chromosomes","23 chromosomes","48 chromosomes","92 chromosomes"],["La mitose donne…","2 cellules identiques","4 cellules différentes","1 seule cellule","des gamètes"],
+  ["Le volcan actif de la Guadeloupe est…","la Soufrière","la montagne Pelée","le Piton de la Fournaise","l'Etna"],["Les reins servent à…","filtrer le sang","digérer","respirer","produire des hormones de croissance"],
+  ["Les globules blancs servent à…","défendre l'organisme","transporter l'oxygène","coaguler le sang","digérer"],["La méiose produit…","les gamètes","les neurones","les globules rouges","les muscles"],
+  ["Les anticorps sont produits par…","les lymphocytes B","les globules rouges","les plaquettes","les neurones"],["Le gaz que l'on rejette en respirant est surtout…","le dioxyde de carbone","le dioxygène","l'hélium","l'azote pur"]],
+ physique:[["L'unité de la force est…","le newton","le joule","le watt","le pascal"],["La vitesse se calcule par…","v = d / t","v = d × t","v = t / d","v = m × a"],
+  ["Le symbole chimique du sodium est…","Na","So","S","Sd"],["Le pH d'une solution neutre (25 °C) est…","7","0","14","1"],
+  ["L'unité de l'énergie est…","le joule","le newton","le volt","l'ampère"],["La loi d'Ohm s'écrit…","U = R × I","U = R / I","P = U + I","I = U × R"],
+  ["La formule de l'eau est…","H₂O","CO₂","O₂","HO₂"],["L'intensité électrique se mesure en…","ampères","volts","ohms","watts"],
+  ["La lumière va à environ…","300 000 km/s","300 km/s","3 000 km/h","30 000 km/s"],["Une solution de pH 3 est…","acide","basique","neutre","salée"]],
+ philo:[["« Je pense, donc je suis » est de…","Descartes","Platon","Sartre","Kant"],["L'allégorie de la caverne est de…","Platon","Aristote","Nietzsche","Rousseau"],
+  ["« L'homme est condamné à être libre » est de…","Sartre","Descartes","Pascal","Spinoza"],["« Connais-toi toi-même » est associé à…","Socrate","Kant","Hegel","Marx"],
+  ["L'impératif catégorique est une idée de…","Kant","Épicure","Hume","Platon"],["Pour Épicure, le bonheur vient…","de plaisirs simples et modérés","de la richesse","de la gloire","de la souffrance"],
+  ["Rousseau a écrit…","Du contrat social","Le Prince","Les Méditations","L'Éthique"],["Le doute méthodique est une démarche de…","Descartes","Sartre","Freud","Bergson"],
+  ["Pour Freud, une grande partie du psychisme est…","inconsciente","toujours consciente","divine","inexistante"],["Aristote était l'élève de…","Platon","Socrate directement","Kant","Descartes"]],
+ eps:[["Un match de foot dure…","90 minutes","60 minutes","120 minutes","45 minutes"],["Au handball, une équipe a sur le terrain…","7 joueurs","5 joueurs","11 joueurs","6 joueurs"],
+  ["Au volley, une équipe a sur le terrain…","6 joueurs","5 joueurs","7 joueurs","9 joueurs"],["Un marathon fait…","42,195 km","21 km","50 km","10 km"],
+  ["L'échauffement sert à…","préparer muscles et cœur","se fatiguer avant","perdre du poids","rien du tout"],["Au basket, un panier loin de la ligne vaut…","3 points","2 points","1 point","4 points"],
+  ["Après l'effort, on doit surtout…","s'hydrater et s'étirer doucement","manger très sucré","s'arrêter net sans rien faire","courir plus vite"],["Le cœur au repos bat environ…","70 fois par minute","20 fois par minute","150 fois par minute","5 fois par minute"]]};
+const PAIRS={anglais:[["beach","plage"],["tomorrow","demain"],["friend","ami"],["book","livre"],["always","toujours"],["weather","météo"],["to learn","apprendre"],["happy","heureux"],["school","école"],["house","maison"],["sea","mer"],["to win","gagner"]],
+ espagnol:[["playa","plage"],["mañana","demain"],["amigo","ami"],["libro","livre"],["siempre","toujours"],["casa","maison"],["agua","eau"],["feliz","heureux"],["escuela","école"],["mar","mer"],["ganar","gagner"],["tiempo","temps"]]};
+const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+/* calcul mental (maths) : questions tirées au hasard */
+function mathQ(){const r=n=>Math.floor(Math.random()*n),k=r(7);
+ const opts=(ok,f)=>{const s=new Set([ok]);let g=0;while(s.size<4&&g++<40){const v=f();if(v!==ok)s.add(v)}return [...s].map(String)};
+ if(k===0){const a=6+r(7),b=6+r(7);return [`${a} × ${b} = ?`,...opts(a*b,()=>a*b+(r(2)?1:-1)*(1+r(12)))]}
+ if(k===1){const a=20+r(60),b=15+r(50);return [`${a} + ${b} = ?`,...opts(a+b,()=>a+b+(r(2)?1:-1)*(1+r(11)))]}
+ if(k===2){const x=2+r(8),a=2+r(5),b=1+r(15);return [`Résous : ${a}x + ${b} = ${a*x+b}`,...opts(x,()=>x+(r(2)?1:-1)*(1+r(4))).map(v=>'x = '+v)]}
+ if(k===3){const p=[10,20,25,50][r(4)],n=[40,60,80,120,200][r(5)];return [`${p} % de ${n} = ?`,...opts(n*p/100,()=>n*p/100+(r(2)?1:-1)*(2+r(10)))]}
+ if(k===4){const n=[2,3,4,5][r(4)];return [`Dérivée de x${'⁰¹²³⁴⁵'[n]} ?`,...[`${n}x${n-1>1?'⁰¹²³⁴⁵'[n-1]:''}`,`x${'⁰¹²³⁴⁵'[n-1]}`,`${n}x${'⁰¹²³⁴⁵'[n]}`,`${n+1}x${'⁰¹²³⁴⁵'[n]}`]]}
+ if(k===5){const n=[4,5,6,7,8,9,11,12][r(8)];return [`√${n*n} = ?`,...opts(n,()=>n+(r(2)?1:-1)*(1+r(3)))]}
+ const a=4+r(8)*2,b=a+2*(1+r(4)),c=b+(b-a);return [`Moyenne de ${a}, ${b} et ${c} ?`,...opts(b,()=>b+(r(2)?1:-1)*(1+r(3)))]}
+function quizFor(sub,n){if(sub==='maths')return Array.from({length:n},mathQ);
+ if(PAIRS[sub]){const L=shuf(PAIRS[sub]).slice(0,n);return L.map(([w,t])=>[`Traduis « ${w} »`,t,...shuf(PAIRS[sub].filter(p=>p[1]!==t)).slice(0,3).map(p=>p[1])])}
+ return shuf(QUIZ[sub]||QUIZ.francais).slice(0,n)}
+const MINI_KIND=sub=>PAIRS[sub]?'memoire':sub==='eps'?'reflexes':'quiz';
+const MINI_NAME={quiz:'Quiz',memoire:'Memory',reflexes:'Réflexes'};
+/* mg = partie en cours : {kind, sub|subs, t (secondes), left, timer, done(score 0..1)} */
+let mg=null;
+function miniStop(){if(mg){clearInterval(mg.timer);mg=null}}
+function miniEnd(score){if(!mg)return;const m=mg;clearInterval(m.timer);mg=null;m.done(clamp(score,0,1),m)}
+function miniTick(){if(!mg)return;mg.left-=.1;const b=$('mgBar');if(b)b.style.width=Math.max(0,mg.left/mg.t*100)+'%';const n=$('mgSec');if(n)n.textContent=Math.ceil(Math.max(0,mg.left))+' s';
+ if(mg.left<=0){mg.kind==='quiz'?miniEnd(mg.ok/mg.Q.length):mg.kind==='memoire'?miniEnd(mg.found/mg.P.length*.9):miniEnd(mg.hits/mg.goal)}}
+const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div><b id="mgSec" class="mg-sec"></b></div><div class="bar mg-bar"><i id="mgBar" style="width:100%"></i></div>`;
+/* opts : {sub, subs (évaluation : une question par matière), title, n, t} */
+function playMini(o,done){miniStop();const subs=o.subs||[o.sub],kind=o.subs?'quiz':MINI_KIND(o.sub);
+ mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub};mg.left=mg.t;
+ if(kind==='quiz'){mg.Q=o.subs?subs.map(s=>{const q=quizFor(s,1)[0];q.sub=s;return q}):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
+ else if(kind==='memoire'){const P=shuf(PAIRS[o.sub]).slice(0,6);mg.P=P;mg.cards=shuf(P.flatMap((p,i)=>[{i,t:p[0]},{i,t:p[1]}]));mg.open=[];mg.found=0;mg.tries=0;drawMemo()}
+ else{mg.hits=0;mg.goal=10;drawReflex()}
+ mg.timer=setInterval(miniTick,100);miniTick()}
+function drawQuiz(){const q=mg.Q[mg.i],ans=shuf(q.slice(1));mg.cur={ok:q[1],sub:q.sub};
+ openSheet(mgHead(mg.title,`${MINI_NAME.quiz}${q.sub?' · '+SUBJ[q.sub]:''} · question ${mg.i+1}/${mg.Q.length}`)+`<p class="story-text mg-q">${q[0]}</p><div class="choices">${ans.map(a=>`<button class="choice" type="button" data-mgq="${esc(a)}">${esc(a)}</button>`).join('')}</div>`,true)}
+function quizPick(a,btn){if(!mg||mg.kind!=='quiz'||mg.lock)return;const good=a===mg.cur.ok;if(good)mg.ok++;mg.res.push({sub:mg.cur.sub,good});mg.lock=true;
+ $('sheetBody').querySelectorAll('[data-mgq]').forEach(b=>{if(b.dataset.mgq===mg.cur.ok)b.classList.add('mg-good');else if(b===btn)b.classList.add('mg-bad');b.disabled=true});
+ setTimeout(()=>{if(!mg)return;mg.lock=false;mg.i++;if(mg.i>=mg.Q.length)miniEnd(mg.ok/mg.Q.length*(.85+.15*mg.left/mg.t));else drawQuiz()},good?450:900)}
+function drawMemo(){openSheet(mgHead(mg.title,`${MINI_NAME.memoire} · ${SUBJ[mg.sub]} · retrouve chaque mot et sa traduction (${mg.found}/${mg.P.length})`)+`<div class="mg-grid">${mg.cards.map((c,k)=>`<button class="mg-card${c.f?' mg-found':mg.open.includes(k)?' mg-open':''}" type="button" data-mgc="${k}" ${c.f?'disabled':''}>${c.f||mg.open.includes(k)?esc(c.t):'?'}</button>`).join('')}</div>`,true)}
+function memoPick(k){if(!mg||mg.kind!=='memoire'||mg.lock)return;const c=mg.cards[k];if(c.f||mg.open.includes(k))return;mg.open.push(k);drawMemo();miniTick();
+ if(mg.open.length<2)return;mg.tries++;const [a,b]=mg.open.map(x=>mg.cards[x]);
+ if(a.i===b.i){a.f=b.f=1;mg.found++;mg.open=[];setTimeout(()=>{if(!mg)return;if(mg.found>=mg.P.length)miniEnd(.75+.25*mg.left/mg.t);else{drawMemo();miniTick()}},250)}
+ else{mg.lock=true;setTimeout(()=>{if(!mg)return;mg.lock=false;mg.open=[];drawMemo();miniTick()},700)}}
+function drawReflex(){const x=8+Math.random()*76,y=8+Math.random()*70;
+ openSheet(mgHead(mg.title,`${MINI_NAME.reflexes} · ${SUBJ.eps} · touche le ballon ${mg.goal} fois (${mg.hits}/${mg.goal})`)+`<div class="mg-zone"><button class="mg-ball" type="button" data-mgball style="left:${x}%;top:${y}%" aria-label="Ballon">🏀</button></div>`,true)}
+function reflexHit(){if(!mg||mg.kind!=='reflexes')return;mg.hits++;if(mg.hits>=mg.goal)miniEnd(.8+.2*mg.left/mg.t);else{drawReflex();miniTick()}}
+const scoreLbl=s=>s>=.85?'Excellent ! 🌟':s>=.65?'Bien joué 👍':s>=.4?'Pas mal':'Il faudra retravailler ça 😅';
+function miniResult(title,line,extra){openSheet(sheetHead(title,line)+(extra||'')+`<div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`)}
+/* révisions : le mini-jeu remplace le +8 fixe (de +3 à +12 selon le score) */
+function reviseGame(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
+ G.energy=clamp(G.energy-cost,0,100);G.studied[s]=1;saveG();drawHUD();
+ playMini({sub:s,title:'Révisions de '+SUBJ[s]},sc=>{const g=3+Math.round(9*sc);G.know[s]=clamp(G.know[s]+g,0,100);G.st.games=(G.st.games||0)+1;note(`Révisions de ${SUBJ[s]} (mini-jeu : ${Math.round(sc*100)} %)`);
+  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[s]} +${g} % de chances de réussite (${G.know[s]} %)`);saveG();drawHUD();drawView()})}
+/* exercice en cours : 3 questions, de +1 à +8 */
+function classGame(ph){G.acts--;G.energy=clamp(G.energy-ACTS.exo.e,0,100);G.cb+=.5;saveG();
+ playMini({sub:ph.sub,n:3,t:MINI_KIND(ph.sub)==='quiz'?25:undefined,title:`Exercice de ${SUBJ[ph.sub]}`},sc=>{const g=1+Math.round(7*sc);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);if(sc>=.65)G.cb+=.5;
+  const msg=sc>=.65?gtxt(`${ph.prof[0]} est content·e de ton exercice !`,profSex(ph.prof[0])):'Exercice difficile… tu as quand même appris des choses.';note(msg);
+  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} +${g} %`,`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})}
+/* évaluation du vendredi : une question par matière ; bonne réponse +1,5 sur la note, mauvaise −0,5 */
+function evalGame(){if(G.evalBonus[G.day]){toast('Tu as déjà rendu ta copie');return}
+ playMini({subs:Object.keys(SUBJ),t:75,title:'Évaluation commune'},(sc,m)=>{const b={};(m.res||[]).forEach(r=>{b[r.sub]=r.good?1.5:-.5});G.evalBonus[G.day]=b;
+  miniResult('Copie rendue ✍️',`${m.ok}/${m.Q.length} bonnes réponses`,`<p class="muted">Chaque bonne réponse ajoute 1,5 point à la note de la matière, chaque erreur en retire 0,5. Résultats à 17h.</p>`);saveG();drawView()})}
+/* bac : une épreuve par matière ; le score déplace la note de −2 à +2 */
+function bacGame(k){if(G.bac.bonus[k]!=null){toast('Épreuve déjà passée');return}
+ playMini({sub:k,n:6,t:MINI_KIND(k)==='quiz'?45:undefined,title:'Bac · '+SUBJ[k]},sc=>{G.bac.bonus[k]=r2((sc-.5)*4);
+  miniResult(scoreLbl(sc),`Épreuve de ${SUBJ[k]} terminée · score ${Math.round(sc*100)} %`,`<p class="muted">Ton résultat compte dans la note de l'épreuve (de −2 à +2 points).</p>`);saveG();drawView()})}
 function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
- G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+8,0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
+ G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+4,0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
 function startOuting(p){if(p.fam){startFamOuting(p);return}
  openSheet(`<div class="who"><div class="av">${avatarOf(p.by)}</div><div><h2>Sortie ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[p.by].name} · ${fmtT(G.min)}</p></div></div>
  <p class="story-text">${WHO[p.by].name} t'attend ${PLACE_OUT[p.place]}. Qu'est-ce que vous faites ?</p>
@@ -3152,6 +3251,8 @@ $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
  if(igClick(t))return;
+ {let m;if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
+  if(t.closest('[data-revquick]')){const w=Object.keys(SUBJ).sort((a,b)=>G.know[a]-G.know[b]).slice(0,3);revise(pickR(w));return}}
  const ch=t.closest('.choice');
  if(ch){const d=ch.dataset;
   if(d.ev!==undefined){resolve(+d.ev,+d.c);return}
@@ -3159,7 +3260,7 @@ $('sheetBody').addEventListener('click',e=>{
   if(d.fact){const [fid,i]=d.fact.split(':');feteAct(fid,+i,d.to);return}
   if(d.rs!==undefined){const s=cm.rsugg[+d.rs];sendReply(s.text,s.t);return}
   if(d.ntone){sendNote(d.ntone);return}
-  if(d.rev){revise(d.rev);return}
+  if(d.rev){reviseGame(d.rev);return}
   if(d.out){d.out.startsWith('f_')?famOuting(d.out,d.pl):outing(d.out,d.pl);return}}
  const q=s=>t.closest(s);
  let b;
@@ -3213,6 +3314,8 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-bul]')){const x=G.bulletins.find(y=>y.tri===+b.dataset.bul);if(x)openSheet(bulletinSheet(x),true);return}
  if(b=t.closest('[data-bacres]')){openSheet(bacSheet(G.bac.result),true);return}
  if(b=t.closest('[data-ca]')){classAct(b.dataset.ca);return}
+ if(t.closest('[data-evalgame]')){evalGame();return}
+ if(b=t.closest('[data-bacgame]')){bacGame(b.dataset.bacgame);return}
  if(b=t.closest('[data-place]')){G.place=b.dataset.place;drawView();return}
  if(b=t.closest('[data-person]')){openPerson(b.dataset.person);return}
  if(b=t.closest('[data-do]')){doAct(b.dataset.do);return}
