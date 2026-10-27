@@ -271,7 +271,7 @@ function armD(G,k,yEnd,ext,yTop){
 }
 function handD(G,k){const w=armPts(G,k).wx,Y=v=>fx(AY(v));return `M${fx(w-k*8.5)},${Y(442)} C${fx(w-k*13)},${Y(470)} ${fx(w-k*10)},${Y(510)} ${fx(w+k*1)},${Y(520)} C${fx(w+k*10)},${Y(512)} ${fx(w+k*12)},${Y(472)} ${fx(w+k*8.5)},${Y(442)}Z`}
 function legD(G,k,foot){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
- return `M${x(H)},432 C${x(H+1)},480 ${x(60)},525 ${x(59)},563 C${x(57)},595 ${x(50)},640 ${x(48)},661 C${x(49)},680 ${x(51)},695 ${x(50.6)},705 C${x(51)},730 ${x(50)},745 ${x(49.5)},750 C${x(48)},770 ${x(46)},780 ${x(44)},795 C${x(42)},808 ${x(36)},822 ${x(33)},${foot?`836 C${x(38)},838 ${x(42)},844 ${x(43)},866 L${x(3)},866 C${x(4)},844 ${x(8)},838 ${x(12)},836`:`840 L${x(12)},840`} C${x(12)},822 ${x(12)},808 ${x(12)},795 C${x(11.5)},780 ${x(10.5)},760 ${x(10)},750 C${x(9)},730 ${x(8.5)},715 ${x(8.5)},705 C${x(8.5)},690 ${x(8.5)},670 ${x(8.5)},661 C${x(7)},640 ${x(6)},625 ${x(5.8)},616 C${x(4)},595 ${x(2)},575 ${x(2)},563 C${x(2)},530 ${x(1)},500 ${x(0)},478Z`}
+ return `M${x(H)},432 C${x(H+1)},480 ${x(60)},525 ${x(59)},563 C${x(57)},595 ${x(50)},640 ${x(48)},661 C${x(49)},680 ${x(51)},695 ${x(50.6)},705 C${x(51)},730 ${x(50)},745 ${x(49.5)},750 C${x(48)},770 ${x(46)},780 ${x(44)},795 C${x(42)},808 ${x(37)},822 ${x(35)},${foot?`838 C${x(36)},841 ${x(44)},846 ${x(46)},866 L${x(0)},866 C${x(1)},846 ${x(9)},841 ${x(11.5)},838`:`840 L${x(11.5)},840`} C${x(11.5)},822 ${x(11.8)},808 ${x(12)},795 C${x(11.5)},780 ${x(10.5)},760 ${x(10)},750 C${x(9)},730 ${x(8.5)},715 ${x(8.5)},705 C${x(8.5)},690 ${x(8.5)},670 ${x(8.5)},661 C${x(7)},640 ${x(6)},625 ${x(5.8)},616 C${x(4)},595 ${x(2)},575 ${x(2)},563 C${x(2)},530 ${x(1)},500 ${x(0)},478Z`}
 const BOTTOMS=['droit','large','flare','cordon','jogging','yoga','short','jupe','jupejean','cycliste'];
 function pantsLegD(G,k,t){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
  switch(t){
@@ -327,10 +327,13 @@ const SHOES=['basses','montantes','running','retro','sabots','bottes','fourrees'
 /* chaussures décalquées sur le modèle de Prescillia (js/chaussures-art.js, tools/traceur-chaussures.py) :
    la couleur du modèle est rendue telle quelle ; une autre couleur teinte le dessus et garde semelle, lacets et coutures */
 const SHOE_MODEL={basses:[['basses','#f4f1ea']],running:[['epaisses','#f4f1ea'],['running_noire','#1f2127'],['running','#b8b6b0']],retro:[['retro_creme','#e9dfc8'],['retro','#6b2a2e']],sabots:[['sabots','#c49a6c']],ballerines:[['ballerines','#f2c6d3']]};
-function shoeArt(t,c,sk){if(typeof SHOE_ART==='undefined'||!SHOE_MODEL[t])return '';
+function shoeArt(t,c,sk,skFill){if(typeof SHOE_ART==='undefined'||!SHOE_MODEL[t])return '';
  const L=SHOE_MODEL[t],hit=L.find(m=>m[1]===c),pick=hit||(lum(c)>.8?L[0]:L[L.length-1]),A=SHOE_ART[pick[0]];if(!A)return '';
  /* couleur du modèle : on affiche le dessin de Prescillia lui-même (assets/chaussures), le pied à la couleur de peau */
- if(hit&&A.img){const [ix,iy,iw,ih]=A.img;return `<image href="assets/chaussures/${pick[0]}.png" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/>`}
+ if(hit&&A.img){const [ix,iy,iw,ih]=A.img,sk0=A.layers.find(l=>l[0]==='skin');
+  /* dessus du pied (ballerines) : forme du modèle, ombrée comme la jambe, qui part de la largeur de la cheville */
+  const foot=sk0&&t!=='ballerines'?`<path d="${sk0[1]}" fill="${skFill||sk}" stroke="none"/>`:'';
+  return foot+`<image href="assets/chaussures/${pick[0]}.png" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/>`}
  const lm=lum(A.main),tint=f=>{if(hit)return f;const dc=Math.hypot(...rgb(f).map((v,i)=>v-rgb(A.main)[i]));return dc<45?shade(c,Math.max(-.6,Math.min(.6,(lum(f)-lm)*1.6))):f};
  return `<g stroke="none">`+A.layers.map(([k,d,f,cy])=>`<path d="${d}" fill="${k==='skin'?sk:k==='sil'?tint(f):(cy!=null&&cy>25&&!hit&&lum(A.main)>.8)?f:tint(f)}"/>`).join('')+`<path d="${A.layers.find(l=>l[0]==='sil')[1]}" fill="none" stroke="${hit?A.edge:shade(c,-.45)}" stroke-width=".8" stroke-linejoin="round" opacity=".8"/></g>`}
 /* chaussures vues de face (modèle de Prescillia, docs/references/chaussures.png) : x local > 0 = côté intérieur du pied */
@@ -364,7 +367,16 @@ function shoeSVG(t,c,sk){const art=shoeArt(t,c,sk);if(art)return art;const d=sha
    return P(COLLAR,shade(c,-.14))+P(UPPER,c)+P(TONGUE,shade(c,.06))+P(TOE,shade(c,-.03))+LN('M-21,7 C-12,1 12,1 21,7',shade(c,-.2),1.3,.6)
     +LN('M-19,-6 C-15,0 -15,8 -17,12 M19,-6 C15,0 15,8 17,12',shade(c,-.2),1,.45,'2 2')+laces(light?'#ffffff':shade(c,.3),3,-21)+shine+sole(W,13)+P('M-20,24 C-12,27 12,27 20,24 L19,29 C10,31 -10,31 -19,29Z',WD,' opacity=".55"');
  }}
-function shoesSVG(s,sk){const g=shoeSVG(s.shoes,s.shoesColor,sk),art=typeof SHOE_ART!=='undefined'&&!!SHOE_MODEL[s.shoes],lk=(CORP[s.corpulence]||CORP.moyenne).lk,w=['bottes','fourrees'].includes(s.shoes)?lk:1+(lk-1)*.4;return `<g stroke-opacity=".18">`+[-1,1].map(k=>`<g transform="translate(${200+k*(art?23:24.5)},838) scale(${fx(-k*w*(art?1.12:1))},${+((art?1.12:1)/BODY_K).toFixed(3)})" stroke="#000" stroke-width="1.2">${g}</g>`).join('')+'</g>'}
+function shoesSVG(s,sk,G,skD,skL,p){const art=typeof SHOE_ART!=='undefined'&&!!SHOE_MODEL[s.shoes],lk=(CORP[s.corpulence]||CORP.moyenne).lk,w=['bottes','fourrees'].includes(s.shoes)?lk:1+(lk-1)*.4,sc=w*(art?1.12:1),g0=art?null:shoeSVG(s.shoes,s.shoesColor,sk);
+ return `<g stroke-opacity=".18">`+[-1,1].map(k=>{const T=200+k*(art?23:24.5);let g=g0;
+  if(art){/* la peau de la cheville dans la chaussure reprend exactement le dégradé de la jambe */
+   let a=1e9,b=-1e9;if(G)for(const m of legD(G,k).matchAll(/(-?[\d.]+),/g)){const v=+m[1];a=Math.min(a,v);b=Math.max(b,v)}
+   const L=x=>fx((x-T)/(-k*sc)),gid=(p||'')+'pd'+k,grad=G?`<defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${L(a)}" y1="0" x2="${L(b)}" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".45" stop-color="${skL}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></linearGradient></defs>`:'';
+   g=grad+shoeArt(s.shoes,s.shoesColor,sk,G?`url(#${gid})`:sk);
+   /* ballerines : le pied prolonge la jambe (même forme, même dégradé), découpé par l'ouverture de la chaussure */
+   const A=SHOE_ART.ballerines,op=s.shoes==='ballerines'&&G&&A&&A.layers.find(l=>l[0]==='skin');
+   if(op){const sy=+((1.12)/BODY_K).toFixed(3),cid=(p||'')+'bo'+k;g=`<defs><clipPath id="${cid}"><path d="${op[1]}${A.layers.find(l=>l[0]==='sil')[1]}M-30,-60 L30,-60 L30,${fx(A.top+3)} L-30,${fx(A.top+3)}Z"/></clipPath><linearGradient id="${cid}g" gradientUnits="userSpaceOnUse" x1="${fx(a)}" y1="0" x2="${fx(b)}" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".45" stop-color="${skL}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></linearGradient></defs><g clip-path="url(#${cid})" stroke="none"><path transform="scale(${fx(1/(-k*sc))},${fx(1/sy)}) translate(${-T},-838)" d="${legD(G,k,1)}" fill="url(#${cid}g)"/></g>`+g}}
+  return `<g transform="translate(${T},838) scale(${fx(-k*sc)},${+((art?1.12:1)/BODY_K).toFixed(3)})" stroke="#000" stroke-width="1.2">${g}</g>`}).join('')+'</g>'}
 const DR={longue:{hem:812,flare:46,neck:'square',strap:6,print:1,seam:1},nuisette:{hem:700,flare:20,neck:'strap',strap:2.5,satin:1},tshirtdress:{hem:600,flare:16,neck:'crew',sl:302,sx:6,ext:6},
  portefeuille:{hem:620,flare:30,neck:'deepv',sl:400,sx:4,wrap:1,ext:2,seam:1},bretelles:{hem:590,flare:44,neck:'square',strap:11,print:1,seam:1},
  madras:{hem:780,flare:64,neck:'off',sl:300,sx:7,madras:1,seam:1},pull:{hem:560,flare:4,neck:'turtle',sl:446,sx:3,rib:1,ext:3}};
@@ -477,17 +489,16 @@ function body(s,p,sk,skD,skDD,skL){
  <pattern id="${p}flo" width="22" height="22" patternUnits="userSpaceOnUse"><g fill="#fff" opacity=".75"><circle cx="6" cy="6" r="2"/><circle cx="3.5" cy="6" r="1.4"/><circle cx="8.5" cy="6" r="1.4"/><circle cx="6" cy="3.5" r="1.4"/><circle cx="6" cy="8.5" r="1.4"/></g><circle cx="6" cy="6" r="1" fill="#f2c230"/><circle cx="17" cy="16" r="1.6" fill="#fff" opacity=".6"/></pattern>
  <pattern id="${p}qlt" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0,0 H20 M0,0 V20" stroke="#000" stroke-opacity=".2" stroke-width="1.4"/></pattern></defs>`;
  let o=`<ellipse cx="200" cy="878" rx="80" ry="9" fill="#000" opacity=".13"/>`;
- /* dans les ballerines le dessus du pied se voit : la jambe continue jusqu'au bout de la chaussure */
- o+=[-1,1].map(k=>`<path d="${legD(G,k,s.shoes==='ballerines')}" fill="${LM}"/>`).join('');
+  o+=[-1,1].map(k=>`<path d="${legD(G,k)}" fill="${LM}"/>`).join('');
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M160,222 C150,186 172,160 200,160 C228,160 250,186 240,222Z" fill="${dk}"/>`;
  o+=`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="190" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
- if(!boot)o+=shoesSVG(s,sk);
+ if(!boot)o+=shoesSVG(s,sk,G,skD,skL,p);
  if(!(s.dress&&s.dress!=='aucune'&&DR[s.dress]))o+=bottomsSVG(G,s,p);
- if(boot)o+=shoesSVG(s,sk);
+ if(boot)o+=shoesSVG(s,sk,G,skD,skL,p);
  o+=topSVG(G,T,s,p,{TF,LM,c,dk,lt,cont,sk,skDD,h});
  o+=accSVG(G,s);
  return d+o;
