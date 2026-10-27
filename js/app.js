@@ -1360,6 +1360,8 @@ const isNpc=id=>!!(id&&FICHES[id]);
 const ilElle=id=>FICHES[id]?.g==='f'?'elle':'il';
 function relChange(id,da=0,dl=0){
  if(!isNpc(id))return'';const r=G.rel[id];da=Math.round(da);dl=Math.round(dl);
+ if(da>0&&G.rancune&&G.rancune[id]&&G.rancune[id].until>G.day)da=Math.ceil(da/2);/* une rancune ralentit le rapprochement */
+ if(Math.abs(da)>=3&&G.links&&Math.random()<.4){/* bouche-à-oreille dans le groupe d'amis */const grp=cliques().find(g=>g.includes(id));if(grp){const o=pickR(grp.filter(x=>x!==id));G.rel[o].ami=clamp(G.rel[o].ami+(da>0?1:-1),-30,100)}}
  if(dl>0&&!npcLikesMe(id))dl=0;r.ami=clamp(r.ami+da,-30,100);r.amour=clamp(r.amour+dl,0,100);
  const p=[];if(da)p.push(`amitié ${da>0?'+':''}${da}`);if(dl)p.push(`amour ${dl>0?'+':''}${dl}`);
  return p.length?`${WHO[id].name} : ${p.join(', ')}`:'';
@@ -1383,6 +1385,7 @@ function ressenti(id){
  else if(r.amour>=75)b=" Pense à toi tout le temps et rougit quand tu passes 💘";
  else if(r.amour>=50)b=P(" Te trouve vraiment mignon·ne, sans oser te le dire.");
  else if(r.amour>=25)b=" Il y a peut-être un petit quelque chose…";
+ if(G.rancune&&G.rancune[id]&&G.rancune[id].until>G.day)b+=` Te garde rancune (${G.rancune[id].why}).`;
  const mem=G.log.slice().reverse().find(l=>l.t.includes(n));
  return a+b+(mem?` Se souvient : « ${mem.t} »`:'');
 }
@@ -1600,6 +1603,12 @@ const OBJ=[
  {id:'igfollow',day:2,t:"Abonne-toi à 3 comptes Insta",gems:3,c:()=>Object.keys(G.ig.following).length>=3},
  {id:'igreply',day:2,t:"Réponds à un commentaire sous un post",gems:3,c:()=>(G.st.replies||0)>=1},
  {id:'igfans',day:5,t:"Fais-toi suivre par 3 camarades sur Insta",gems:6,c:()=>igFollowers().length>=3},
+ {id:'club',day:3,t:"Rejoins un club du lycée",gems:6,c:()=>!!G.club},
+ {id:'quiz',day:2,t:"Réussis un quiz de révision sans faute",gems:8,c:()=>(G.st.quizPerfect||0)>=1},
+ {id:'dilemme',day:8,t:"Règle un dilemme entre camarades",gems:5,c:()=>(G.st.dil||0)>=1},
+ {id:'projet',day:15,t:"Mène à bien un projet de classe",gems:20,c:()=>!!(G.proj&&G.proj.done)},
+ {id:'paix',day:15,t:"Fais la paix avec quelqu'un qui t'en voulait",gems:10,c:()=>(G.st.paix||0)>=1},
+ {id:'club3',day:30,t:"Atteins le niveau 3 dans ton club",gems:15,c:()=>clubLevel()>=3},
  {id:'bac',day:236,t:"Décroche ton bac",gems:60,c:()=>!!(G.bac.result&&G.bac.result.ok)}];
 function avg(){return G.grades.length?G.grades.reduce((a,g)=>a+g.v,0)/G.grades.length:null}
 function triAvg(t){const ev=G.evals.filter(e=>e.tri===t);return ev.length?mean(ev.map(e=>e.glob)):null}
@@ -1621,6 +1630,7 @@ function newGame(fam){
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
   objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{}},studied:{},pend:[]};
  g.family.forEach(f=>g.famRel[f.id]=65);
+ extraDefaults(g);
  return g;
 }
 let G=(()=>{try{const v=localStorage.getItem(GKEY);return v?JSON.parse(v):null}catch(e){return null}})();
@@ -1630,7 +1640,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.studied=G.studied||{};G.pend=G.pend||[];extraDefaults(G)}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -1952,6 +1962,7 @@ function pushMsg(id,from,text,extra){
  (G.threads[id]=G.threads[id]||[]).push(Object.assign({from,text,at:G.day*1440+G.min,tm:fmtT(G.min)},extra||{}));
  if(from!=='me'){if(!(chat&&chat.id===id)){G.unreadMsg[id]=(G.unreadMsg[id]||0)+1;if(!$('game').hidden)toast(`💬 ${nameOf(id)} : ${text.slice(0,48)}${text.length>48?'…':''}`)}}
  if(chat&&chat.id===id)drawChatMsgs();
+ if(from!=='me')notifyMsg(id,text);
  drawNav();if(view==='messages'&&!chat)drawView();
 }
 function makePlan(by,when){
@@ -2063,6 +2074,7 @@ function onPhaseChange(prev,ph){
  if(ph.type==='cours'){G.acts=3;G.cb=0;G.st.schoolToday=true;if(!G.asleep)toast(`🔔 Cours de ${SUBJ[ph.sub]} avec ${ph.prof[0]}`)}
  if(['recre','dej','matin','weekend','soir'].includes(ph.type)){presence(ph);autoStep(ph);G.place=placesFor(ph.type)[0];G.placeKey=ph.key;if(!G.asleep&&ph.type!=='matin')toast(`🔔 ${ph.lbl||PLABEL[ph.type]} : choisis où aller`)}
  if(ph.type==='nuit'&&ph.start===1320&&!G.asleep)toast('🌙 22h : il est l\'heure de dormir');
+ if(ph.type==='soir'&&weekday()===4&&schoolDay(G.day)&&schoolDay(G.day)<REV_DAY)weeklyRecap();
  if(view==='day')drawView();
 }
 function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1}
@@ -2111,14 +2123,14 @@ function computeBac(){
  note(P(`Résultats du bac : ${ok?'admis·e':'non admis·e'} (${fmtG(fin)}/20)`));parentReact(ok?'bonne':'mauvaise');popSheet(bacSheet(G.bac.result));checkObjectives();
 }
 function endYearSheet(){const r=G.bac.result||{};return sheetHead("Fin de l'année de terminale",r.ok?'Bac en poche 🎓':'Année terminée')
- +`<div class="card list">${G.bulletins.map(b=>`<div class="prof"><span>Trimestre ${b.tri}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'}</b></div>`).join('')}<div class="prof"><span>Bac</span><b>${r.fin!=null?P(fmtG(r.fin)+'/20 · '+(r.ok?'admis·e':'non admis·e')):'–'}</b></div></div><p class="muted">Les vacances commencent : tu peux continuer à profiter de tes amis et de ta famille.</p>`}
+ +endingCard()+`<div class="card list">${G.bulletins.map(b=>`<div class="prof"><span>Trimestre ${b.tri}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'}</b></div>`).join('')}<div class="prof"><span>Bac</span><b>${r.fin!=null?P(fmtG(r.fin)+'/20 · '+(r.ok?'admis·e':'non admis·e')):'–'}</b></div></div><p class="muted">Les vacances commencent : tu peux continuer à profiter de tes amis et de ta famille.</p>`}
 function onNewDay(){
  fanDay();
  Object.keys(SUBJ).forEach(k=>{if(!G.studied[k]&&G.know[k]>15)G.know[k]=G.know[k]-1});G.studied={};
  {const sd=schoolDay(G.day);if(sd===RES_DAYS[0])computeBac();if(!G.yearDone&&sdDone(G.day)>=YEAR_DAYS&&schoolDay(G.day)===null&&G.day>schoolDayToCal(YEAR_DAYS)){G.yearDone=true;popSheet(endYearSheet())}}
  if(G.st.schoolToday&&!G.st.caughtToday)G.st.cleanDays++;
  G.st.caughtToday=false;G.st.schoolToday=false;G.ate=false;G.rested=false;G.done={};
- dailyContent();incidentDay();feteDay();
+ dailyContent();incidentDay();feteDay();extraDay();
  const fresh=OBJ.filter(o=>objOk(o)&&o.day===G.day);if(fresh.length){note(`Nouveaux objectifs : ${fresh.map(o=>o.t).join(' · ')}`);if(!G.asleep)toast('🎯 Nouveaux objectifs disponibles')}
  G.plans=G.plans.filter(p=>p.day>=G.day-1);
 }
@@ -2226,6 +2238,31 @@ const FETES=[
   {l:"Danser un slow avec quelqu'un",sm:'Amour',pick:'love',e:3,fx:to=>likesBack(to,35)?joinFx([`Un slow avec ${WHO[to].name}… le temps s'arrête 💞`,relChange(to,2,8),jealous(to)]):joinFx([`Un slow un peu gênant avec ${WHO[to].name} 😅`,relChange(to,1)])},
   {l:'Photo de groupe avec tes amis',sm:'Beaucoup d\'abonnés',e:0,fx:f=>'Photo souvenir de la terminale 📸 · '+fPhoto(f,best(3),'🥂 Bal des terminales avec mes amis ✨',8+Math.floor(Math.random()*6))},
   {l:'Tenter d\'être élu·e roi ou reine du bal',sm:'Dépend de ta popularité',e:0,fx:()=>{const ch=Math.min(.8,.1+G.ig.fans/600+igFriends().length*.06);if(Math.random()<ch){G.gems+=10;fPotins(`${myHandle()} est ${me().sexe==='f'?'la reine':me().sexe==='m'?'le roi':'élu·e souverain·e'} du bal 👑`);return P('Tu es élu·e ')+(me().sexe==='f'?'reine':me().sexe==='m'?'roi':'souverain·e')+' du bal 👑 · +10 gemmes'}return "Pas élu·e cette fois, mais quelle soirée".replace('élu·e',P('élu·e'))}}]}];
+/* fêtes locales et vie du lycée ajoutées : cyclone, Toussaint, gwoka, tournoi inter-lycées, sortie plage */
+FETES.push(
+ {id:'cyclone',date:'2026-09-17',n:'Alerte cyclone',ic:'🌀',scene:'couloir',post:"[Officiel] 🌀 Alerte cyclone orange : la préfecture demande de se préparer. Le lycée fermera plus tôt, soyez prudents et restez informés.",info:"Un cyclone approche : le lycée fait un point de sécurité et chacun prépare sa maison.",acts:[
+  {l:"Faire les provisions avec ta famille",sm:"Complicité en famille",e:3,fx:()=>{G.family.forEach(f=>famChange(f.id,3));return 'Eau, piles, conserves : toute la famille est prête 🔦'}},
+  {l:"Aider un camarade à se préparer",sm:"Amitié",pick:'any',e:3,fx:to=>joinFx([`Tu aides ${WHO[to].name} à ranger et sécuriser sa maison`,relChange(to,6)])},
+  {l:"Rassurer quelqu'un d'inquiet",sm:"Amitié",pick:'any',e:2,fx:to=>joinFx([`Tu rassures ${WHO[to].name} : ça va bien se passer`,relChange(to,4)])},
+  {l:"Partager les consignes de sécurité sur Insta",sm:"Abonnés",e:1,fx:()=>{const g=3+Math.floor(Math.random()*4);G.ig.fans+=g;return `Ton post est très partagé · +${g} abonnés`}}]},
+ {id:'toussaint',date:'2026-11-01',n:'Toussaint : chrysanthèmes',ic:'🕯️',scene:'cour',post:"[Officiel] 🕯️ Avant les vacances de la Toussaint, la cour du lycée se couvre de chrysanthèmes en souvenir des proches disparus. Moment de recueillement.",info:"Avant les vacances, le lycée rend hommage aux proches disparus : on dépose des chrysanthèmes dans la cour.",acts:[
+  {l:"Déposer un chrysanthème pour un proche",sm:"Complicité en famille",e:0,fx:()=>{G.family.forEach(f=>famChange(f.id,2));return 'Tu penses à ceux qui ne sont plus là 🌼'}},
+  {l:"Partager un souvenir de famille avec quelqu'un",sm:"Amitié, confiance",pick:'any',e:0,fx:to=>joinFx([`Tu racontes un souvenir de famille à ${WHO[to].name}`,relChange(to,5)])},
+  {l:"Aider à fleurir la cour avec Noah",sm:"Amitié avec Noah",e:3,fx:()=>joinFx(['Vous disposez les fleurs avec soin',relChange('noah',4)])}]},
+ {id:'gwoka',date:'2026-11-27',n:'Journée du gwoka',ic:'🥁',scene:'cour',post:"[Officiel] 🥁 Journée du gwoka au lycée : atelier de ka, danse et rencontre avec des anciens. Venez nombreux !",info:"Atelier de ka, démonstration de danse et rencontre avec des anciens qui racontent le gwoka.",acts:[
+  {l:"Apprendre les rythmes du ka avec Sacha",sm:"Amitié avec Sacha",e:4,fx:()=>joinFx(['Sacha te montre le rythme du toumblak 🥁',relChange('sacha',6)])},
+  {l:"Danser le gwoka avec quelqu'un",sm:"Amitié, et plus si affinités",pick:'any',e:5,fx:to=>joinFx([`Tu danses le gwoka avec ${WHO[to].name} 💃`,relChange(to,4,likesBack(to,30)?3:0)])},
+  {l:"Écouter les anciens raconter",sm:"Histoire-Géo +3 %",e:0,fx:()=>{G.know.histoire=clamp(G.know.histoire+3,0,100);return 'Les anciens racontent la vie des quartiers et la naissance du gwoka · Histoire-Géo +3 %'}},
+  {l:"Filmer la démonstration pour Insta",sm:"Abonnés",e:1,fx:()=>{const g=4+Math.floor(Math.random()*5);G.ig.fans+=g;return `Ta vidéo plaît beaucoup · +${g} abonnés`}}]},
+ {id:'tournoi',date:'2027-01-22',n:'Tournoi inter-lycées',ic:'🏆',scene:'basket',post:"[Officiel] 🏆 Tournoi inter-lycées au gymnase aujourd'hui ! Notre lycée a besoin de supporters ET de joueurs.",info:"Les lycées de l'île s'affrontent au gymnase : sport, danse et musique, selon les clubs.",acts:[
+  {l:"Représenter ton club",sm:"Gemmes si ton club est solide",e:8,fx:f=>{if(!G.club)return "Tu n'as pas de club : rejoins-en un pour participer la prochaine fois";const ch=.25+clubLevel()*.12;if(Math.random()<ch){G.gems+=8;G.clubXp+=10;mem('Ton club a brillé au tournoi inter-lycées.');return `Ton ${CLUB[G.club]} brille au tournoi 🏆 · +8 gemmes, +10 points de club`}G.clubXp+=5;return 'Pas de victoire, mais ton club progresse · +5 points de club'}},
+  {l:"Supporter l'équipe du lycée",sm:"Amitiés",e:3,fx:()=>joinFx(['Tu cries à t\'en casser la voix 📣',...rndNpc(3).map(id=>relChange(id,2))])},
+  {l:"Faire une photo avec l'équipe",sm:"Abonnés",e:0,fx:f=>'Photo de l\'équipe 📸 · '+fPhoto(f,best(2),'🏆 Tournoi inter-lycées, on est fiers !',4+Math.floor(Math.random()*5))}]},
+ {id:'plage',date:'2027-05-21',n:'Sortie plage de la classe',ic:'🏖️',scene:'plage',post:"[Officiel] 🏖️ Sortie plage de la classe aujourd'hui, pique-nique et volley ! N'oubliez pas la crème solaire ☀️",info:"Toute la classe passe la journée à la plage : baignade, volley et pique-nique.",acts:[
+  {l:"Se baigner avec quelqu'un",sm:"Amitié",pick:'any',e:5,fx:to=>joinFx([`Tu te baignes avec ${WHO[to].name} 🌊`,relChange(to,5)])},
+  {l:"Jouer au volley",sm:"Amitiés",e:7,fx:()=>joinFx(['Une partie de volley mémorable 🏐',...rndNpc(2).map(id=>relChange(id,3))])},
+  {l:"Pique-niquer ensemble",sm:"+10 énergie",e:0,fx:()=>{G.energy=clamp(G.energy+10,0,100);return joinFx(['Un pique-nique créole sur le sable 🍉 · +10 énergie',...rndNpc(2).map(id=>relChange(id,2))])}},
+  {l:"Photo de groupe sur la plage",sm:"Abonnés",e:0,fx:f=>'Photo de groupe 📸 · '+fPhoto(f,best(3),'🏖️ Sortie plage avec la classe ☀️',5+Math.floor(Math.random()*5))}]});
 /* jour de la fête = la vraie date si c'est un jour de cours, sinon le dernier jour de cours avant */
 const feteDayOf=k=>{let d=CAL.findIndex(c=>c&&c.k===k);if(d<1)d=CAL_END;while(d>1&&!CAL[d].sd)d--;return d};
 const FETE_ON={};FETES.forEach(f=>{f.day=feteDayOf(f.date);(FETE_ON[f.day]=FETE_ON[f.day]||[]).push(f)});
@@ -2412,7 +2449,7 @@ function musStep(st,t){
  const m=M_MEL[Math.floor(st/32)%2][i];if(m&&!calm)musTone(NOTEF(m),t,e*1.8,'sine',night?.045:.07,.02,.3,true);
 }
 function musTick(){const c=MUS.ctx;while(MUS.next<c.currentTime+.15){musStep(MUS.step,MUS.next);MUS.next+=60/84/2;MUS.step=(MUS.step+1)%64}}
-function musStart(){if(!musInit())return;const c=MUS.ctx;if(c.state==='suspended')c.resume();if(MUS.on)return;MUS.on=true;MUS.next=c.currentTime+.1;MUS.step=0;MUS.master.gain.cancelScheduledValues(c.currentTime);MUS.master.gain.setValueAtTime(.001,c.currentTime);MUS.master.gain.linearRampToValueAtTime(.32,c.currentTime+1.5);MUS.timer=setInterval(musTick,25);drawMusicBtn()}
+function musStart(){if(!musInit())return;const c=MUS.ctx;if(c.state==='suspended')c.resume();if(MUS.on)return;MUS.on=true;MUS.next=c.currentTime+.1;MUS.step=0;MUS.master.gain.cancelScheduledValues(c.currentTime);MUS.master.gain.setValueAtTime(.001,c.currentTime);MUS.master.gain.linearRampToValueAtTime(.32*PREF.vol+.0001,c.currentTime+1.5);MUS.timer=setInterval(musTick,25);drawMusicBtn()}
 function musStop(){if(!MUS.on)return;MUS.on=false;clearInterval(MUS.timer);if(MUS.ctx){const c=MUS.ctx;MUS.master.gain.cancelScheduledValues(c.currentTime);MUS.master.gain.setValueAtTime(MUS.master.gain.value,c.currentTime);MUS.master.gain.linearRampToValueAtTime(.001,c.currentTime+.4)}drawMusicBtn()}
 function musAuto(){if(musPref())musStart();else drawMusicBtn()}
 function drawMusicBtn(){const b=$('gMusic');if(!b)return;const on=MUS.on;b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>${on?'':'<path d="M3 3l18 18"/>'}</svg>`;b.setAttribute('aria-label',on?'Couper la musique':'Activer la musique');b.setAttribute('aria-pressed',on)}
@@ -2445,7 +2482,7 @@ function hudTick(){
  if(!ad.dataset.busy){ad.disabled=left>0;ad.innerHTML=left>0?`Pub dans ${left} s`:'<span class="adlong">Regarder une pub </span><span class="adshort">Pub </span><b>+5 ⚡</b><span class="dot"></span>'}
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(1)},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&(!document.hidden||PREF.notif))advance(1)},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -2728,6 +2765,7 @@ function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
  const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
+ h+=lifeCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
@@ -2772,7 +2810,7 @@ function placeBody(ph,place,map){
 }
 function drawMates(){
  $('gView').innerHTML=`<div class="sec-title">Camarades</div><div class="list">${NPCS.map(n=>`<button class="card mate" type="button" data-mate="${n.id}"><div class="relrow"><div class="av">${avatarOf(n.id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(n.id))}</span><small>${statusOf(n.id)}</small></div>${gaugesHTML(n.id)}<span class="muted">${esc(ressentiShort(n.id))}</span></div></div></button>`).join('')}</div>
- <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
+ ${groupsCard()}<div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
 }
 function drawMessages(){
  const ids=[...NPCS.map(n=>n.id),...G.family.map(f=>f.id)];
@@ -2788,12 +2826,13 @@ function drawProfile(){
   <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px"><p class="muted">${SEXC[me().sexe]} · ${oriLabel(me().orient,me().sexe)}</p><p class="muted">Niveau ${G.objDone.length} · Jour ${G.day} · ${G.partner?'En couple avec '+WHO[G.partner].name+' 💞':'Célibataire'}</p>
   <div class="gg"><span>Énergie</span><div class="bar"><i style="width:${G.energy}%;background:#ffd23f"></i></div><b>${G.energy}</b></div>
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
-  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button></div></div></div>
+  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gPrefs">Réglages</button><button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button></div></div></div>
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
  <div class="sec-title">Chances de réussite à l'examen</div><div class="card">${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
  <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
  <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
  <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
+ ${memCard()}
  <div class="sec-title">Objectifs réussis</div><div class="card">${G.objDone.length?`<div class="objs">${G.objDone.map(id=>OBJ.find(o=>o.id===id)).map(o=>`<div class="obj done"><span class="chk">✓</span><span>${o.t}</span></div>`).join('')}</div>`:'<p class="muted">Aucun pour l\'instant.</p>'}</div>
  <div class="sec-title">Notifications</div>${G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>'}`;
  drawNav();saveG();
@@ -2901,7 +2940,8 @@ function doAct(k){
  if(k==='revise'){openSheet(`<div class="who"><div style="flex:1"><h2>Réviser</h2><p class="muted" style="margin:2px 0 0">Quelle matière ?</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="choices">${Object.entries(SUBJ).map(([s,l])=>`<button class="choice" type="button" data-rev="${s}">${l}<small>Niveau ${G.know[s]}/100</small></button>`).join('')}</div>`);return}
  saveG();drawHUD();drawView();
 }
-function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
+function revise(s){if(G.energy<mgCost()){toast("Pas assez d'énergie pour réviser");return}openSheet(reviseModeSheet(s))}
+function reviseNow(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
  G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+8,0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
 function startOuting(p){if(p.fam){startFamOuting(p);return}
  openSheet(`<div class="who"><div class="av">${avatarOf(p.by)}</div><div><h2>Sortie ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[p.by].name} · ${fmtT(G.min)}</p></div></div>
@@ -3147,6 +3187,309 @@ function resolve(ei,ci){
  saveG();closeSheet();drawGame();checkObjectives();toast(parts.length?parts.join(' · '):'Choix enregistré');
 }
 
+/* ---------- réglages de confort : texte, contraste, volume, notifications ---------- */
+const PREFKEY='lycee-reglages';
+const PREF=(()=>{const d={gros:false,contraste:false,vol:1,notif:false};try{return Object.assign(d,JSON.parse(localStorage.getItem(PREFKEY)||'{}'))}catch(e){return d}})();
+const savePref=()=>{try{localStorage.setItem(PREFKEY,JSON.stringify(PREF))}catch(e){}};
+function applyPref(){
+ const r=document.documentElement;if(r&&r.classList){r.classList.toggle('gros',!!PREF.gros);r.classList.toggle('contraste',!!PREF.contraste)}
+ if(MUS.ctx&&MUS.on)MUS.master.gain.value=.32*PREF.vol;
+}
+const notifOk=()=>typeof Notification!=='undefined';
+function prefSheet(){
+ const sw=(k,l,sm)=>`<button class="choice" type="button" data-x="pref:${k}" aria-pressed="${!!PREF[k]}">${l} : <b>${PREF[k]?'activé':'désactivé'}</b><small>${sm}</small></button>`;
+ return sheetHead('Réglages','Confort de jeu')
+  +`<div class="choices">${sw('gros','Texte plus grand','Agrandit tout le jeu')}${sw('contraste','Contraste renforcé','Textes plus lisibles, bordures plus marquées')}
+  ${notifOk()?sw('notif','Notifications de messages',PREF.notif?"Tu es prévenu·e quand un camarade t'écrit et que le jeu est en arrière-plan. Le temps continue alors de passer doucement.":"Prévient quand un camarade t'écrit pendant que le jeu est en arrière-plan"):'<p class="muted">Les notifications ne sont pas disponibles sur cet appareil.</p>'}</div>
+  <div class="card"><label class="muted" for="prefVol">Volume de la musique</label><input id="prefVol" type="range" min="0" max="100" value="${Math.round(PREF.vol*100)}" style="width:100%"></div>
+  <div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`;
+}
+function prefToggle(k){
+ if(k==='notif'&&!PREF.notif){
+  if(!notifOk()){toast('Notifications non disponibles ici');return}
+  Notification.requestPermission().then(p=>{PREF.notif=p==='granted';savePref();toast(PREF.notif?'🔔 Notifications activées':'Notifications refusées : autorise-les dans les réglages du navigateur');openSheet(prefSheet())}).catch(()=>{});
+  return;
+ }
+ PREF[k]=!PREF[k];savePref();applyPref();openSheet(prefSheet());
+}
+function notifyMsg(id,text){
+ if(!PREF.notif||!document.hidden||!notifOk()||Notification.permission!=='granted')return;
+ const o={body:text.slice(0,120),icon:'icons/icon-192.png',badge:'icons/favicon-32.png',tag:'msg-'+id,renotify:true,vibrate:[120,60,120]};
+ const direct=()=>{try{new Notification(nameOf(id),o)}catch(e){}};
+ try{if(navigator.serviceWorker&&navigator.serviceWorker.ready)navigator.serviceWorker.ready.then(r=>r.showNotification(nameOf(id),o)).catch(direct);else direct()}catch(e){direct()}
+}
+applyPref();
+
+/* ---------- données de la vie du lycée : club, projet, dilemmes, bilan (valeurs par défaut + migration) ---------- */
+function extraDefaults(g){g.club=g.club||null;g.clubXp=g.clubXp||0;g.clubWk=g.clubWk??null;g.proj=g.proj||null;g.rancune=g.rancune||{};g.mem=g.mem||[];g.dil=g.dil||null;g.dilUsed=g.dilUsed||[];g.dilWk=g.dilWk??null;g.wk=g.wk||null;g.wkShown=g.wkShown??null;g.ending=g.ending||null}
+const weekKey=d=>d-wdOf(d);
+const popSheetQ=html=>{if(G.asleep||$('game').hidden||!$('sheet').hidden)G.pend.push(html);else openSheet(html,true)};
+const nn=id=>WHO[id].name;
+const dn=id=>/^[AEIOUÉÈ]/.test(WHO[id].name)?"d'"+WHO[id].name:'de '+WHO[id].name;
+function mem(t){t=P(t);G.mem.push({day:G.day,t});G.mem=G.mem.slice(-30);note(t)}
+function rancune(id,days,why){G.rancune[id]={until:G.day+days,why}}
+const hasRancune=id=>!!(G.rancune&&G.rancune[id]&&G.rancune[id].until>G.day);
+
+/* ---------- groupes d'amis : des camarades qui s'apprécient entre eux (tous liés par une amitié ≥ 65 entre eux) ---------- */
+function cliques(){
+ const seen={},out=[],ok=(a,b)=>G.links[a][b].ami>=65&&G.links[b][a].ami>=65;
+ NPCS.forEach(n=>{if(seen[n.id])return;const g=[n.id];seen[n.id]=1;
+  NPCS.forEach(m=>{if(!seen[m.id]&&g.every(x=>ok(x,m.id))){seen[m.id]=1;g.push(m.id)}});
+  out.push(g)});
+ return out.filter(g=>g.length>1);
+}
+function groupsCard(){
+ const gs=cliques();
+ if(!gs.length)return `<div class="sec-title">Groupes d'amis</div><div class="card"><p class="muted">Pas encore de vrai groupe d'amis dans ta classe. Ça se forme avec le temps.</p></div>`;
+ return `<div class="sec-title">Groupes d'amis</div><div class="card list">${gs.map(g=>{const mine=g.filter(id=>G.rel[id].ami>=55).length,avg=Math.round(mean(g.map(id=>G.rel[id].ami)));
+  return `<div class="bul"><div class="prof"><span>${g.map(nn).join(', ')}</span><b>${mine>=2?'Tu en fais partie 🤝':avg>=25?'Tu es proche 🙂':'Tu es à l\'écart'}</b></div><small class="muted">Quand tu te rapproches de l'un·e, les autres l'apprennent. Quand tu te disputes avec l'un·e, ça se sait aussi.</small></div>`}).join('')}</div>`;
+}
+
+/* ---------- dilemmes : chaque semaine, deux camarades te demandent de choisir. Les choix laissent des traces (rancunes, groupes) ---------- */
+function side(w,l,o){o=o||{};const a=relChange(w,o.a||8,o.dl||0),b=relChange(l,-(o.b||9));
+ rancune(l,o.days||14,`tu as pris le parti ${dn(w)}`);
+ G.links[w][l].ami=clamp(G.links[w][l].ami-6,-30,100);G.links[l][w].ami=clamp(G.links[l][w].ami-6,-30,100);
+ mem(`Tu as pris le parti ${dn(w)} contre ${nn(l)}.`);
+ return joinFx([a,b,`${nn(l)} t'en veut`]);
+}
+const DILS=[
+ {id:'cantine',n:'Dispute à la cantine',x:(A,B)=>`${nn(A)} et ${nn(B)} se disputent la dernière place près de la fenêtre. Tout le monde regarde, et ils te demandent de trancher.`,
+  c:(A,B)=>[[`Donner raison à ${nn(A)}`,'Un allié, mais une rancune de l\'autre côté',()=>side(A,B)],[`Donner raison à ${nn(B)}`,'Un allié, mais une rancune de l\'autre côté',()=>side(B,A)],
+   ['Proposer de partager la table','Ça peut marcher… ou pas',()=>{if(Math.random()<.6){mem(`Tu as réconcilié ${nn(A)} et ${nn(B)}.`);return joinFx(['Ils éclatent de rire et acceptent',relChange(A,3),relChange(B,3)])}return joinFx(['Personne ne veut céder, ça tourne court',relChange(A,-1),relChange(B,-1)])}]]},
+ {id:'secret',n:'Un secret révélé',x:(A,B)=>`${nn(A)} découvre que ${nn(B)} a révélé un secret à tout le monde. Le couloir ne parle que de ça, et ${nn(A)} veut savoir de quel côté tu es.`,
+  c:(A,B)=>[[`Soutenir ${nn(A)}`,'Tu prends position',()=>side(A,B,{a:9,b:10})],[`Défendre ${nn(B)} : ce n'était pas voulu`,'Tu prends position',()=>side(B,A,{a:9,b:10})],
+   ['Ne rien dire','Tu restes à l\'écart',()=>{mem('Tu n\'as pris parti ni pour l\'un ni pour l\'autre dans l\'affaire du secret.');return joinFx([relChange(A,-2),relChange(B,-2)])}]]},
+ {id:'invit',n:'Deux invitations',x:(A,B)=>`${nn(A)} et ${nn(B)} organisent chacun·e une sortie le même samedi. Tu ne peux pas être aux deux endroits.`,
+  c:(A,B)=>[[`Aller chez ${nn(A)}`,`${nn(B)} le prendra mal`,()=>side(A,B,{a:6,b:5,days:7})],[`Aller chez ${nn(B)}`,`${nn(A)} le prendra mal`,()=>side(B,A,{a:6,b:5,days:7})],
+   ['Passer chez les deux (−10 énergie)','Fatigant, et ça se voit',()=>{G.energy=clamp(G.energy-10,0,100);if(Math.random()<.4){mem('Tu as couru entre deux sorties et ça s\'est vu.');return joinFx(["On t'a vu·e partir trop tôt",relChange(A,-3),relChange(B,-3)])}return joinFx(['Tu réussis à faire plaisir aux deux',relChange(A,2),relChange(B,2)])}]]},
+ {id:'copie',n:'Un devoir à copier',x:(A,B)=>`${nn(A)} te demande ton devoir de maths pour le copier avant le cours. ${nn(B)} a tout vu depuis le fond de la classe.`,
+  c:(A,B)=>[['Le prêter','Risqué si le prof s\'en rend compte',()=>{G.know.maths=clamp(G.know.maths-2,0,100);if(Math.random()<.3){G.st.caughtToday=true;mem(`Le devoir copié par ${nn(A)} a été repéré : tu as été convoqué·e.`);return joinFx(['Le prof a repéré les deux copies identiques 😬',relChange(A,3),relChange(B,-2)])}mem(`Tu as prêté ton devoir à ${nn(A)}.`);return joinFx([`${nn(A)} te remercie`,relChange(A,7),relChange(B,-2)])}],
+   ['Refuser','Tu restes net·te',()=>{rancune(A,7,'tu as refusé de prêter ton devoir');mem(`Tu as refusé de prêter ton devoir à ${nn(A)}.`);return joinFx([relChange(A,-5),relChange(B,3)])}],
+   ['Proposer de réviser ensemble (−4 énergie)','Maths +4 %',()=>{G.energy=clamp(G.energy-4,0,100);G.know.maths=clamp(G.know.maths+4,0,100);mem(`Tu as révisé les maths avec ${nn(A)}.`);return joinFx(['Vous révisez ensemble au CDI',relChange(A,4),relChange(B,1)])}]]},
+ {id:'rumeur',n:'Une rumeur dans le lycée',x:(A,B)=>`Une rumeur circule sur ${nn(A)}, et tout le monde dit que ça vient de ${nn(B)}. ${nn(A)} t'attend à la sortie des cours.`,
+  c:(A,B)=>[[`Défendre ${nn(A)} publiquement`,`Rancune de ${nn(B)}`,()=>{G.ig.fans+=3;return side(A,B,{a:9,b:9})}],['Rester neutre',"Tu ne te fais pas d'ennemi·e",()=>{mem(`Tu es resté·e neutre pendant la rumeur sur ${nn(A)}.`);return joinFx([relChange(A,-3),relChange(B,0)])}],
+   [`Demander à ${nn(B)} d'arrêter, en privé`,'Ça demande du courage',()=>{if(Math.random()<.55){mem(`${nn(B)} a arrêté la rumeur grâce à toi.`);return joinFx([`${nn(B)} arrête la rumeur`,relChange(A,6),relChange(B,1)])}rancune(B,7,'tu lui as fait la leçon');return joinFx([`${nn(B)} se braque`,relChange(A,2),relChange(B,-5)])}]]},
+ {id:'soiree',n:'La soirée',x:(A,B)=>`${nn(A)} organise une soirée samedi sans inviter ${nn(B)}. ${nn(B)} te demande de ne pas y aller.`,
+  c:(A,B)=>[['Y aller quand même','Ça va lui faire de la peine',()=>side(A,B,{a:7,b:6,days:10})],[`Rester avec ${nn(B)}`,`${nn(A)} le prendra mal`,()=>side(B,A,{a:7,b:5,days:7})],
+   [`Y aller et emmener ${nn(B)}`,'Ça passe ou ça casse',()=>{if(Math.random()<.5){mem(`Tu as réuni ${nn(A)} et ${nn(B)} à la même soirée.`);return joinFx(['Ambiance parfaite, tout le monde s\'entend bien',relChange(A,3),relChange(B,3)])}return joinFx(['L\'ambiance est tendue toute la soirée',relChange(A,-4),relChange(B,0)])}]]}];
+function startDilemma(){
+ const fresh=DILS.filter(d=>!G.dilUsed.includes(d.id)),def=pickR(fresh.length?fresh:DILS);if(!fresh.length)G.dilUsed=[];
+ const pair=NPCS.slice().sort(()=>Math.random()-.5).slice(0,2);
+ G.dil={id:def.id,A:pair[0].id,B:pair[1].id,day:G.day};G.dilUsed.push(def.id);
+ note(`⚖️ Dilemme : ${def.n}`);popSheetQ(dilSheet());
+}
+function dilSheet(){
+ const d=G.dil;if(!d)return '';const def=DILS.find(x=>x.id===d.id);
+ return sheetHead('⚖️ '+def.n,'Un dilemme entre camarades')+`<p class="story-text">${esc(P(def.x(d.A,d.B)))}</p><div class="choices">${def.c(d.A,d.B).map((c,i)=>`<button class="choice" type="button" data-x="dil:c:${i}">${esc(P(c[0]))}<small>${esc(P(c[1]))}</small></button>`).join('')}</div><div class="row"><button class="gbtn ghost" type="button" data-close>Décider plus tard</button></div>`;
+}
+function dilChoose(i){
+ const d=G.dil;if(!d){closeSheet();return}
+ const def=DILS.find(x=>x.id===d.id),c=def.c(d.A,d.B)[i];if(!c)return;
+ const msg=c[2]();G.dil=null;G.st.dil=(G.st.dil||0)+1;
+ checkObjectives();saveG();drawHUD();
+ openSheet(sheetHead('⚖️ '+def.n,'Ton choix')+`<div class="card felt"><p style="margin:0">${esc(P(c[0]))}</p></div><p class="story-text">${esc(P(msg))}</p><p class="muted">Ce choix laisse une trace : regarde les rancunes et les groupes d'amis.</p><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`);
+}
+function makeAmends(id){
+ if(!hasRancune(id))return;if(G.energy<6){toast('Pas assez d\'énergie (6)');return}
+ G.energy=clamp(G.energy-6,0,100);const p=clamp(.35+Math.max(0,G.rel[id].ami)/200+(G.rel[id].ami>=40?.1:0),.25,.85);
+ if(Math.random()<p){delete G.rancune[id];G.st.paix=(G.st.paix||0)+1;mem(`Tu as fait la paix avec ${nn(id)}.`);toast(`🕊️ ${nn(id)} te pardonne`);relChange(id,4)}
+ else{G.rancune[id].until+=5;relChange(id,-1);toast(`${nn(id)} n'est pas encore prêt·e à te pardonner`.replace('prêt·e',S(id,'prêt·e')))}
+ checkObjectives();saveG();drawHUD();drawView();
+}
+
+/* ---------- clubs et sport : une séance par semaine, un niveau qui monte ---------- */
+const CLUBTYPE={ines:'art',kylian:'sport',maelle:'art',noah:'sport',jade:'art',anais:'sport',sacha:'art'};
+const CLUBACT={sport:[['Entraînement','Amitié, niveau du club',6],['Match amical','Gemmes si ton équipe est prête',10],['Aider à organiser la saison','Un peu de tout',4]],
+ art:[['Répétition','Amitié, niveau du club',6],['Représentation devant le lycée','Abonnés et gemmes si tu es prêt·e',10],["Atelier d'idées",'Un peu de tout',4]]};
+const clubLevel=()=>G.club?1+Math.floor((G.clubXp||0)/30):0;
+const clubFree=()=>{const t=phase().type;return t==='soir'||t==='weekend'};
+function clubSheet(){
+ if(!G.club)return sheetHead('Rejoindre un club','Une séance par semaine, hors cours')+`<div class="choices">${NPCS.map(n=>`<button class="choice" type="button" data-x="club:set:${n.id}">${esc(CLUB[n.id][0].toUpperCase()+CLUB[n.id].slice(1))}<small>${CLUBTYPE[n.id]==='sport'?'Sport':'Art'} · avec ${nn(n.id)} · amitié ${G.rel[n.id].ami}</small></button>`).join('')}</div>`;
+ const t=CLUBTYPE[G.club],done=G.clubWk===weekKey(G.day);
+ return sheetHead(CLUB[G.club][0].toUpperCase()+CLUB[G.club].slice(1),`Niveau ${clubLevel()} · ${G.clubXp} points`)
+  +(done?'<p class="muted">Tu as déjà fait ta séance cette semaine. La prochaine arrive lundi.</p>':!clubFree()?'<p class="muted">Les séances ont lieu le soir ou le week-end, pas pendant les cours.</p>':`<span class="eyebrow">Que fais-tu ce soir ?</span><div class="choices">${CLUBACT[t].map((a,i)=>`<button class="choice" type="button" data-x="club:act:${i}">${esc(P(a[0]))}<small>${esc(P(a[1]))} · −${a[2]} énergie</small></button>`).join('')}</div>`)
+  +`<div class="row"><button class="gbtn ghost" type="button" data-x="club:change">Changer de club</button><button class="gbtn" type="button" data-close>Fermer</button></div>`;
+}
+function clubAct(i){
+ if(!G.club||G.clubWk===weekKey(G.day)||!clubFree()){toast('Pas de séance maintenant');return}
+ const t=CLUBTYPE[G.club],a=CLUBACT[t][i],lead=G.club;if(!a)return;
+ if(G.energy<a[2]){toast(`Pas assez d'énergie : il faut ${a[2]}`);return}
+ G.energy=clamp(G.energy-a[2],0,100);G.clubWk=weekKey(G.day);const other=pickR(NPCS.filter(n=>n.id!==lead)).id,before=clubLevel();let msg;
+ if(i===0){G.clubXp+=8;msg=joinFx([`Séance ${t==='sport'?"d'entraînement":'de répétition'} avec ${nn(lead)}`,relChange(lead,4),relChange(other,1)])}
+ else if(i===1){const win=Math.random()<.35+G.clubXp/200;
+  if(win){G.clubXp+=14;G.gems+=3;const g=t==='art'?4+Math.floor(Math.random()*4):0;G.ig.fans+=g;msg=joinFx([t==='sport'?'Ton équipe gagne le match 🏆 +3 gemmes':'La représentation est un succès 👏 +3 gemmes'+(g?`, +${g} abonnés`:''),relChange(lead,6)]);if(t==='sport')fPotins(`${myHandle()} et le ${CLUB[lead]} ont gagné ce soir 🏆`)}
+  else{G.clubXp+=6;msg=joinFx(['Pas cette fois, mais vous avez progressé 💪',relChange(lead,3)])}}
+ else{G.clubXp+=6;G.gems+=1;msg=joinFx(["Ton idée plaît à tout le club 💡 +1 gemme",relChange(lead,3),relChange(other,2)])}
+ const lv=clubLevel();if(lv>before){msg+=` · Ton club passe niveau ${lv} !`;mem(`Ton club est passé niveau ${lv}.`)}
+ note(`Club : ${msg}`);checkObjectives();saveG();drawHUD();openSheet(sheetHead(CLUB[G.club][0].toUpperCase()+CLUB[G.club].slice(1),`Niveau ${clubLevel()} · ${G.clubXp} points`)+`<div class="card felt"><p style="margin:0">${esc(msg)}</p></div><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`);
+}
+
+/* ---------- projet de classe : on avance un peu chaque jour, il se termine à 100 % ---------- */
+const PROJS=[{id:'spectacle',n:"Spectacle de fin d'année",ic:'🎭',co:'ines',d:"Danse, chant et sketchs sur la scène du lycée, avec Inès."},
+ {id:'journal',n:'Journal du lycée',ic:'📰',co:'jade',d:"Articles, interviews et photos, avec Jade."},
+ {id:'voyage',n:'Voyage de classe (collecte)',ic:'🚌',co:'noah',d:"Ventes de gâteaux et lavages de voitures pour financer le voyage, avec Noah."}];
+function projSheet(){
+ if(!G.proj)return sheetHead('Projet de classe','Choisis un projet pour toute l\'année')+`<div class="choices">${PROJS.map(p=>`<button class="choice" type="button" data-x="proj:set:${p.id}">${p.ic} ${esc(p.n)}<small>${esc(p.d)}</small></button>`).join('')}</div>`;
+ const p=PROJS.find(x=>x.id===G.proj.id);
+ return sheetHead(`${p.ic} ${p.n}`,G.proj.done?'Terminé 🎉':`Avancement ${G.proj.pct} %`)+`<div class="bar"><i style="width:${G.proj.pct}%"></i></div><p class="muted">Avec ${nn(p.co)}. Une séance de travail par pause ou par soirée.</p><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`;
+}
+function projWork(){
+ const p=G.proj;if(!p||p.done)return;const ph=phase();
+ if(ph.type==='cours'||ph.type==='eval'||ph.type==='bac'||ph.type==='nuit'){toast('Pas pendant les cours : réessaie à la pause ou le soir');return}
+ if(p.last===ph.key){toast('Tu as déjà travaillé dessus pendant cette période');return}
+ if(G.energy<4){toast('Pas assez d\'énergie (4)');return}
+ const def=PROJS.find(x=>x.id===p.id),co=def.co;G.energy=clamp(G.energy-4,0,100);p.last=ph.key;
+ const gain=6+Math.floor(Math.random()*5)+(G.rel[co].ami>=50?3:0);p.pct=Math.min(100,p.pct+gain);
+ let msg=joinFx([`Tu avances sur le projet : +${gain} %`,relChange(co,3)]);
+ if(p.pct>=100){p.done=true;G.gems+=20;G.ig.fans+=10;fPotins(`${myHandle()} et la classe ont terminé "${def.n}" 👏`);mem(`Tu as mené à bien le projet "${def.n}".`);msg+=` · 🎉 Projet terminé ! +20 gemmes, +10 abonnés`}
+ note(msg);toast(msg);checkObjectives();saveG();drawHUD();drawView();
+}
+
+/* ---------- la vie du lycée dans la Journée ---------- */
+function lifeCard(){
+ let h='';
+ if(G.dil)h+=`<div class="prof"><b>⚖️ ${esc(DILS.find(x=>x.id===G.dil.id).n)}</b><button class="gbtn" type="button" data-x="dil:open">Décider</button></div>`;
+ Object.keys(G.rancune).filter(hasRancune).forEach(id=>{h+=`<div class="prof"><span>😒 ${nn(id)} t'en veut encore<small class="muted"> · ${esc(G.rancune[id].why)}</small></span><button class="gbtn ghost" type="button" data-x="paix:${id}">Faire la paix</button></div>`});
+ h+=G.club?`<div class="prof"><span>${esc(CLUB[G.club])} · niveau ${clubLevel()}</span><button class="gbtn ghost" type="button" data-x="club:open">${G.clubWk===weekKey(G.day)?'Voir':'Séance'}</button></div>`:`<div class="prof"><span class="muted">Aucun club</span><button class="gbtn ghost" type="button" data-x="club:open">Rejoindre</button></div>`;
+ if(G.day>=8||G.proj)h+=G.proj?`<div class="prof"><span>${PROJS.find(x=>x.id===G.proj.id).ic} ${esc(PROJS.find(x=>x.id===G.proj.id).n)} · ${G.proj.done?'terminé ✅':G.proj.pct+' %'}</span>${G.proj.done?'':'<button class="gbtn ghost" type="button" data-x="proj:work">Y travailler</button>'}</div>`:`<div class="prof"><span class="muted">Projet de classe</span><button class="gbtn ghost" type="button" data-x="proj:open">Choisir</button></div>`;
+ return `<div class="card"><span class="eyebrow">Vie du lycée</span>${h}</div>`;
+}
+function memCard(){
+ return `<div class="sec-title">Ce que tu laisses derrière toi</div><div class="card">${G.mem.length?G.mem.slice().reverse().slice(0,8).map(m=>`<p style="margin:0 0 6px">${esc(m.t)} <span class="muted">· jour ${m.day}</span></p>`).join(''):'<p class="muted">Tes choix du lycée laisseront des traces ici : alliances, rancunes, projets réussis.</p>'}${G.ending?`<p style="margin:10px 0 0"><b>${esc(P(G.ending.t))}</b></p>`:''}</div>`;
+}
+
+/* ---------- bilan de la semaine (chaque vendredi soir) ---------- */
+const wkSnap=()=>({key:weekKey(G.day),ami:Object.fromEntries(NPCS.map(n=>[n.id,G.rel[n.id].ami])),fol:igCounts('me').fol,gems:G.gems,obj:G.objDone.length,know:{...G.know},club:G.clubXp||0});
+function extraDay(){
+ const k=weekKey(G.day);if(!G.wk||G.wk.key!==k)G.wk=wkSnap();
+ Object.keys(G.rancune).forEach(id=>{if(G.rancune[id].until<=G.day)delete G.rancune[id]});
+ const sd=schoolDay(G.day);
+ if(sd&&sd<=TRI_END[2]&&G.dilWk!==k){G.dilWk=k;if(!G.dil&&Math.random()<.85)startDilemma()}
+}
+function weeklyRecap(){
+ const k=weekKey(G.day);if(G.wkShown===k)return;G.wkShown=k;
+ const b=G.wk&&G.wk.key===k?G.wk:{ami:{},fol:0,gems:45,obj:0,know:{},club:0};
+ const ev=G.evals.filter(e=>{const c=schoolDayToCal(e.sd);return c>0&&weekKey(c)===k}).slice(-1)[0];
+ const am=NPCS.map(n=>[n.id,G.rel[n.id].ami-(b.ami[n.id]??0)]).filter(x=>Math.abs(x[1])>=3).sort((x,y)=>y[1]-x[1]);
+ const kd=Object.keys(SUBJ).map(s=>[s,G.know[s]-(b.know[s]??40)]).sort((x,y)=>y[1]-x[1]);
+ const low=Object.keys(SUBJ).sort((x,y)=>G.know[x]-G.know[y])[0],fol=igCounts('me').fol-b.fol,newObj=G.objDone.length-b.obj;
+ const rows=[];
+ rows.push(`<div class="prof"><span>Note de l'évaluation du vendredi</span><b>${ev?fmtG(ev.glob)+'/20':'–'}</b></div><div class="prof"><span>Moyenne générale</span><b>${fmtG(avg())}/20</b></div>`);
+ rows.push(`<div class="prof"><span>Matière qui a le plus progressé</span><b>${kd[0][1]>0?SUBJ[kd[0][0]]+' +'+kd[0][1]+' %':'aucune'}</b></div><div class="prof"><span>À travailler en priorité</span><b>${SUBJ[low]} (${G.know[low]} %)</b></div>`);
+ const frs=am.length?am.slice(0,3).map(([id,d])=>`<div class="prof"><span>${nn(id)}</span><b>${d>0?'+':''}${d}</b></div>`).join('')+(am.length>3?am.slice(-1).map(([id,d])=>`<div class="prof"><span>${nn(id)}</span><b>${d}</b></div>`).join(''):''):'<p class="muted">Peu de changement dans tes amitiés cette semaine.</p>';
+ const gs=cliques().find(g=>g.filter(id=>G.rel[id].ami>=55).length>=2);
+ const week=G.log.filter(l=>l.day>=Math.max(1,k)).slice(-4).reverse();
+ popSheetQ(sheetHead('📅 Bilan de la semaine',`${fmtDay(Math.max(1,k))} → ${fmtDay(G.day)}`)
+  +`<div class="card list">${rows.join('')}</div>`
+  +`<div class="sec-title">Amitiés</div><div class="card list">${frs}${gs?`<p class="muted" style="margin:6px 0 0">Tu fais partie d'un groupe d'amis : ${gs.map(nn).join(', ')} 🤝</p>`:''}</div>`
+  +`<div class="card list"><div class="prof"><span>Nouveaux abonnés Insta</span><b>${fol>0?'+':''}${fol}</b></div><div class="prof"><span>Gemmes gagnées</span><b>${G.gems-b.gems>0?'+':''}${G.gems-b.gems}</b></div><div class="prof"><span>Objectifs atteints</span><b>${newObj}</b></div>${G.club?`<div class="prof"><span>Club</span><b>niveau ${clubLevel()} (+${(G.clubXp||0)-b.club} pts)</b></div>`:''}${G.proj&&!G.proj.done?`<div class="prof"><span>Projet de classe</span><b>${G.proj.pct} %</b></div>`:''}</div>`
+  +(week.length?`<div class="sec-title">Moments de la semaine</div><div class="card list">${week.map(l=>`<p style="margin:0 0 6px">${esc(l.t)}</p>`).join('')}</div>`:'')
+  +`<p class="muted">Conseil : ${low&&G.know[low]<50?`pense à réviser ${SUBJ[low]}, c'est ta matière la plus fragile.`:'continue comme ça, ton niveau est solide.'}</p><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`);
+ note(`📅 Bilan de la semaine : moyenne ${fmtG(avg())}/20`);
+}
+
+/* ---------- fins de l'année : plusieurs fins selon le bac, les amitiés, l'amour, Insta, le club et les choix ---------- */
+const ENDINGS={
+ etoile:{t:"⭐ L'étoile du lycée",x:"Tout le lycée connaît ton nom, tes amis t'entourent et tu pars avec le bac et une année mémorable. On parlera de toi longtemps."},
+ coeur:{t:'💞 Le bac et le cœur',x:"Tu quittes le lycée avec ton bac, et avec quelqu'un qui compte vraiment pour toi. Cette histoire ne s'arrête pas au portail."},
+ major:{t:'🧠 La tête dans les livres',x:"Une mention au bac, des profs fiers de toi. Tu as peu de très proches mais ton travail parle pour toi."},
+ ame:{t:"🎭 L'âme du club",x:"Ton club et ton projet de classe resteront ta marque. Les plus jeunes parleront de toi dans les couloirs."},
+ bande:{t:'🤝 Une bande pour la vie',x:"Tu as construit un vrai groupe d'amis, de ceux qu'on garde longtemps. Le bac en poche, vous avez déjà prévu de vous revoir."},
+ entoure:{t:'🌱 Raté, mais entouré·e',x:"Le bac n'est pas passé cette fois, mais tes amis sont là et tu as de quoi rebondir. Un rattrapage et une autre année peuvent tout changer."},
+ cicatrices:{t:'⚡ Des cicatrices au lycée',x:"Tes choix ont laissé des rancunes qui ne sont pas toutes réglées. Tu repars avec ton année, mais avec quelques histoires à rattraper."},
+ solitaire:{t:'🌙 Bac en poche, cœur discret',x:"Tu as ton bac mais tu es resté·e à l'écart. Il n'est jamais trop tard pour aller vers les autres."},
+ dure:{t:'🌧️ Une année difficile',x:"Le bac et les amitiés n'ont pas suivi cette année. Mais tu as appris beaucoup et la prochaine sera différente."},
+ classique:{t:'🎓 Une belle année de terminale',x:"Le bac, quelques amis, des souvenirs. Une année équilibrée, comme beaucoup de lycéens en rêvent."}};
+function computeEnding(){
+ if(G.ending)return G.ending;
+ const r=G.bac.result||{},ok=!!r.ok,fr=NPCS.filter(n=>G.rel[n.id].ami>=65).length,fol=igCounts('me').fol,ran=Object.keys(G.rancune).filter(hasRancune).length+G.mem.filter(m=>/pris le parti/.test(m.t)).length;
+ const lvl=clubLevel(),pj=!!(G.proj&&G.proj.done),love=!!(G.partner&&G.rel[G.partner].amour>=70),good=r.ment==='Bien'||r.ment==='Très bien';
+ const id=ok&&fr>=3&&fol>=60&&(r.ment||pj||lvl>=3)?'etoile':ok&&love?'coeur':ok&&good&&fr<=2?'major':lvl>=3&&pj?'ame':ran>=4?'cicatrices':ok&&fr>=4?'bande':!ok&&fr>=3?'entoure':ok&&fr<=1?'solitaire':!ok?'dure':'classique';
+ G.ending={id,t:ENDINGS[id].t,x:ENDINGS[id].x};return G.ending;
+}
+const endingCard=()=>{const e=computeEnding();return `<div class="card felt"><span class="eyebrow">Ta fin</span><p style="margin:2px 0"><b>${esc(P(e.t))}</b></p><p class="muted" style="margin:0">${esc(P(e.x))}</p></div>`};
+
+/* ---------- mini-jeux de révision : quiz éclair et jeu de mémoire ---------- */
+const QUIZ={
+ maths:[['Quelle est la dérivée de x² ?',['2x','x','x²','2']],['Que vaut ln(1) ?',['0','1','e','−1']],['Quelle est la limite de 1/x quand x tend vers +∞ ?',['0','1','+∞','−∞']],['Quelle est la dérivée de eˣ ?',['eˣ','x·eˣ⁻¹','1','ln x']],['Quelle est une primitive de 2x ?',['x²','2','x²/2','2x²']],['Si A et B sont incompatibles, P(A ∪ B) vaut :',['P(A) + P(B)','P(A) × P(B)','P(A) − P(B)','1']]],
+ francais:[['Qui a écrit « Les Fleurs du mal » ?',['Baudelaire','Hugo','Verlaine','Rimbaud']],['Qui a écrit « Cahier d\'un retour au pays natal » ?',['Aimé Césaire','Léopold Senghor','Frantz Fanon','Édouard Glissant']],['Qui a écrit « Je est un autre » ?',['Rimbaud','Verlaine','Apollinaire','Mallarmé']],['« Cette obscure clarté » est un exemple de :',['oxymore','métaphore','hyperbole','comparaison']],['Qui a écrit « Candide » ?',['Voltaire','Diderot','Rousseau','Montesquieu']],['Qui a écrit « Le Rouge et le Noir » ?',['Stendhal','Balzac','Flaubert','Zola']]],
+ histoire:[["En quelle année la France abolit-elle définitivement l'esclavage ?",['1848','1789','1794','1865']],['En quelle année se termine la Seconde Guerre mondiale en Europe ?',['1945','1939','1944','1950']],['En quelle année tombe le mur de Berlin ?',['1989','1961','1991','1975']],['En quelle année la Guadeloupe devient-elle un département ?',['1946','1848','1960','1982']],['Quel traité fonde l\'Union européenne en 1992 ?',['Maastricht','Rome','Lisbonne','Versailles']],['En quelle année Haïti proclame-t-elle son indépendance ?',['1804','1791','1848','1825']]],
+ svt:[['Quel organite réalise la photosynthèse ?',['Le chloroplaste','La mitochondrie','Le noyau','Le ribosome']],['Quelle molécule porte l\'information génétique ?',['L\'ADN','L\'ATP','L\'hémoglobine','La glycémie']],['Combien de chromosomes dans une cellule humaine ?',['46','23','44','48']],['Quelle division produit les gamètes ?',['La méiose','La mitose','La fécondation','La différenciation']],['Quelle molécule transporte le dioxygène dans le sang ?',["L'hémoglobine",'Le glucose','Le collagène','La kératine']],['Une dorsale océanique est une zone de :',["formation de lithosphère océanique","disparition de lithosphère","formation de montagnes","volcans de point chaud uniquement"]]],
+ anglais:[['What is the past tense of "go" ?',['went','goed','gone','going']],['Choose the right sentence :',['I have lived here since 2020.','I live here since 2020.','I am living here since 2020.','I lived here since 2020.']],['The opposite of "increase" is :',['decrease','improve','extend','arrive']],['"Although" means :',['bien que','parce que','donc','pendant']],['"Unless" means :',['à moins que','tandis que','puisque','avant que']],['Which sentence is correct ?',['She doesn\'t like coffee.','She don\'t like coffee.','She not likes coffee.','She doesn\'t likes coffee.']]],
+ physique:[["Quelle est l'unité de force ?",['Le newton','Le joule','Le watt','Le pascal']],['Quelle est la vitesse de la lumière dans le vide ?',['≈ 3×10⁸ m/s','≈ 3×10⁶ m/s','≈ 340 m/s','≈ 3×10¹⁰ m/s']],["Quelle est l'unité de puissance ?",['Le watt','Le joule','Le newton','Le volt']],["Quel est le pH d'une solution neutre à 25 °C ?",['7','0','10','14']],["L'énergie cinétique vaut :",['½ m v²','m v','m g h','½ m v']],['Dans un circuit, que mesure un ampèremètre ?',["L'intensité",'La tension','La résistance','La puissance']]],
+ philo:[['Qui a écrit « Je pense, donc je suis » ?',['Descartes','Pascal','Spinoza','Kant']],['Qui dit « L\'existence précède l\'essence » ?',['Sartre','Camus','Platon','Nietzsche']],['Qui est l\'auteur du « Contrat social » ?',['Rousseau','Hobbes','Locke','Montesquieu']],["L'allégorie de la caverne est de :",['Platon','Aristote','Épicure','Socrate']],['Qui a écrit « Critique de la raison pure » ?',['Kant','Hegel','Descartes','Hume']],['« L\'homme est un loup pour l\'homme » est associé à :',['Hobbes','Rousseau','Voltaire','Kierkegaard']]],
+ eps:[["Quelle est l'utilité principale de l'échauffement ?",['Prévenir les blessures','Gagner du poids','Se reposer','Perdre du temps']],["Quelle filière énergétique domine dans un effort long et modéré ?",['Aérobie','Anaérobie alactique','Anaérobie lactique','Aucune']],["Que signifie VMA ?",['Vitesse maximale aérobie','Volume moyen d\'activité','Vitesse minimale athlétique','Vitalité musculaire accrue']],['Pendant un effort prolongé, il faut :',['Boire régulièrement','Ne pas boire','Boire en une seule fois','Manger très gras']],["Combien de joueurs par équipe sur le terrain au handball ?",['7','5','6','11']],["Au repos, la fréquence cardiaque d'un adulte est en moyenne :",['entre 60 et 80 bpm','entre 120 et 140 bpm','entre 30 et 40 bpm','autour de 200 bpm']]],
+ espagnol:[['« Madrid ___ la capital de España » :',['es','está','son','hay']],['« Yo ___ diecisiete años » :',['tengo','soy','estoy','hago']],['Comment dit-on « merci beaucoup » ?',['Muchas gracias','Buenos días','De nada','Hasta luego']],['« Ayer ___ al cine » (verbe ir) :',['fui','voy','iba','iré']],['Bogotá est la capitale de :',['la Colombie','le Pérou','le Chili','le Mexique']],['« Hace calor » signifie :',['Il fait chaud','Il fait froid','Il pleut','Il y a du vent']]]};
+let MG=null;
+const mgCost=()=>G.place==='cdi'&&phase().type!=='soir'?4:6;
+function reviseModeSheet(s){
+ return sheetHead(`Réviser · ${SUBJ[s]}`,`Chances de réussite : ${G.know[s]} %`)+`<div class="choices">
+  <button class="choice" type="button" data-x="rv:${s}:calme">📚 Réviser tranquillement<small class="t-pos">+8 % · −${mgCost()} énergie</small></button>
+  <button class="choice" type="button" data-x="rv:${s}:quiz">🎮 Quiz éclair (5 questions)<small class="t-pos">De +2 à +14 % selon ton score · −${mgCost()} énergie</small></button>
+  <button class="choice" type="button" data-x="rv:${s}:mem">🧠 Jeu de mémoire<small class="t-pos">De +6 à +12 % selon ta rapidité · −${mgCost()} énergie</small></button></div>`;
+}
+function mgStart(s,kind){
+ if(G.energy<mgCost()){toast("Pas assez d'énergie pour réviser");return}
+ if(kind==='quiz'){const qs=QUIZ[s].slice().sort(()=>Math.random()-.5).slice(0,5).map(q=>({q:q[0],o:q[1].slice().sort(()=>Math.random()-.5),a:q[1][0]}));MG={k:'quiz',s,qs,i:0,ok:0,ans:null};openSheet(quizSheet())}
+ else{const pool=['➗','📖','🏛️','🌿','🇬🇧','⚛️','🦉','🏃','🌮','🎓'].sort(()=>Math.random()-.5).slice(0,6);MG={k:'mem',s,cards:[...pool,...pool].sort(()=>Math.random()-.5),shown:[],done:[],moves:0};openSheet(memSheet())}
+}
+function quizSheet(){
+ const q=MG.qs[MG.i];
+ const head=sheetHead(`🎮 Quiz · ${SUBJ[MG.s]}`,`Question ${MG.i+1}/5 · ${MG.ok} bonne${MG.ok>1?'s':''} réponse${MG.ok>1?'s':''}`);
+ if(MG.ans==null)return head+`<p class="story-text">${esc(q.q)}</p><div class="choices">${q.o.map((t,j)=>`<button class="choice" type="button" data-x="qa:${j}">${esc(t)}</button>`).join('')}</div>`;
+ const good=q.o[MG.ans]===q.a;
+ return head+`<p class="story-text">${esc(q.q)}</p><div class="card felt"><p style="margin:0">${good?'✅ Bonne réponse !':'❌ Raté. La bonne réponse : <b>'+esc(q.a)+'</b>'}</p></div><div class="row"><button class="gbtn" type="button" data-x="qn">${MG.i>=4?'Voir mon score':'Question suivante'}</button></div>`;
+}
+function mgFinish(gainBase,label){
+ const s=MG.s,cost=mgCost();G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+gainBase,0,100);G.studied[s]=1;
+ note(`${label} en ${SUBJ[s]} : +${gainBase} %`);toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);
+ return gainBase;
+}
+function quizNext(){
+ if(!MG||MG.k!=='quiz'||MG.ans==null)return;
+ if(MG.i<4){MG.i++;MG.ans=null;openSheet(quizSheet());return}
+ const ok=MG.ok,gain=[2,4,6,8,11,14][ok];mgFinish(gain,`Quiz éclair (${ok}/5)`);
+ let extra='';if(ok===5){G.gems+=2;G.st.quizPerfect=(G.st.quizPerfect||0)+1;extra=' Sans faute : +2 gemmes 💎'}
+ const s=MG.s;MG=null;checkObjectives();saveG();drawHUD();drawView();
+ openSheet(sheetHead('🎮 Quiz terminé','Score')+`<div class="card felt"><p style="margin:0"><b>${ok}/5</b> · ${SUBJ[s]} +${gain} %.${extra}</p></div><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`);
+}
+function memSheet(){
+ return sheetHead(`🧠 Mémoire · ${SUBJ[MG.s]}`,`Trouve les 6 paires · ${MG.moves} essai${MG.moves>1?'s':''}`)
+  +`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">${MG.cards.map((c,i)=>{const open=MG.shown.includes(i)||MG.done.includes(i);return `<button class="choice" type="button" style="text-align:center;font-size:26px;padding:14px 0" data-x="mc:${i}" aria-label="${open?'Carte '+c:'Carte cachée'}" ${MG.done.includes(i)?'disabled':''}>${open?c:'❓'}</button>`}).join('')}</div>`;
+}
+function memFlip(i){
+ if(!MG||MG.k!=='mem'||MG.done.includes(i)||MG.shown.includes(i))return;
+ if(MG.shown.length>=2)MG.shown=[];
+ MG.shown.push(i);
+ if(MG.shown.length===2){MG.moves++;const[a,b]=MG.shown;if(MG.cards[a]===MG.cards[b]){MG.done.push(a,b);MG.shown=[]}}
+ if(MG.done.length===MG.cards.length){const m=MG.moves,gain=m<=8?12:m<=11?10:m<=15?8:6,s=MG.s;mgFinish(gain,`Jeu de mémoire (${m} essais)`);MG=null;saveG();drawHUD();drawView();
+  openSheet(sheetHead('🧠 Bravo','Jeu de mémoire terminé')+`<div class="card felt"><p style="margin:0">Terminé en ${m} essais · ${SUBJ[s]} +${gain} %.</p></div><div class="row"><button class="gbtn" type="button" data-close>Fermer</button></div>`);return}
+ openSheet(memSheet());
+}
+
+/* ---------- un seul point d'entrée pour tous les boutons data-x de la vie du lycée ---------- */
+function extraClick(b){
+ const [a,x,y]=b.dataset.x.split(':');
+ if(a==='pref'){prefToggle(x);return}
+ if(a==='rv'){if(y==='calme')reviseNow(x);else mgStart(x,y);return}
+ if(a==='qa'){if(MG&&MG.k==='quiz'&&MG.ans==null){MG.ans=+x;const q=MG.qs[MG.i];if(q.o[MG.ans]===q.a)MG.ok++;openSheet(quizSheet())}return}
+ if(a==='qn'){quizNext();return}
+ if(a==='mc'){memFlip(+x);return}
+ if(a==='dil'){if(x==='open')openSheet(dilSheet());else dilChoose(+y);return}
+ if(a==='paix'){makeAmends(x);return}
+ if(a==='club'){
+  if(x==='open')openSheet(clubSheet());
+  else if(x==='change'){G.club=null;G.clubXp=Math.floor((G.clubXp||0)/2);saveG();openSheet(clubSheet())}
+  else if(x==='set'){if(!CLUB[y])return;G.club=y;const ch=relChange(y,5);note(`Tu rejoins le ${CLUB[y]}${ch?' : '+ch.split(' : ')[1]:''}`);checkObjectives();saveG();drawView();openSheet(clubSheet())}
+  else if(x==='act')clubAct(+y);
+  return}
+ if(a==='proj'){
+  if(x==='open')openSheet(projSheet());
+  else if(x==='set'){const p=PROJS.find(z=>z.id===y);if(!p||G.proj)return;G.proj={id:p.id,pct:0,done:false,last:null};mem(`Tu lances le projet "${p.n}" avec ${nn(p.co)}.`);saveG();drawView();openSheet(projSheet())}
+  else if(x==='work')projWork();
+ }
+}
+
 /* ---------- écouteurs ---------- */
 $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
@@ -3163,6 +3506,7 @@ $('sheetBody').addEventListener('click',e=>{
   if(d.out){d.out.startsWith('f_')?famOuting(d.out,d.pl):outing(d.out,d.pl);return}}
  const q=s=>t.closest(s);
  let b;
+ if(b=q('[data-x]')){extraClick(b);return}
  if(b=q('[data-tone]')){cm.tone=b.dataset.tone;document.querySelectorAll('[data-tone]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
  if(b=q('[data-fend]')){feteEnd(b.dataset.fend);return}
  if(b=q('[data-fback]')){const f=FETES.find(x=>x.id===b.dataset.fback);if(f)openSheet(feteSheet(f));return}
@@ -3192,7 +3536,7 @@ $('sheetBody').addEventListener('click',e=>{
  }
 });
 $('sheetBody').addEventListener('submit',e=>{if(e.target.id==='chatForm'){e.preventDefault();const i=$('chatIn');const v=i.value;i.value='';sendChat(v)}if(e.target.id==='talkForm'){e.preventDefault();const i=$('talkIn');const v=i.value;i.value='';sendTalk(v)}});
-$('sheetBody').addEventListener('input',e=>{if(e.target.id==='cpTxt'&&cp&&cp.kind==='story'&&cp.mode==='text')updatePreview()});
+$('sheetBody').addEventListener('input',e=>{if(e.target.id==='prefVol'){PREF.vol=+e.target.value/100;savePref();applyPref();return}if(e.target.id==='cpTxt'&&cp&&cp.kind==='story'&&cp.mode==='text')updatePreview()});
 $('gStories').addEventListener('click',e=>{
  if(e.target.closest('[data-add]')){openCompose('story');return}
  const b=e.target.closest('[data-who]');if(!b)return;const w=b.dataset.who;
@@ -3207,6 +3551,8 @@ $('gView').addEventListener('click',e=>{
  if(t.closest('[data-feedmore]')){G.feedN=(G.feedN||30)+30;drawView();return}
  if(b=t.closest('[data-fetesheet]')){const f=FETES.find(x=>x.id===b.dataset.fetesheet);if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
+ if(t.id==='gPrefs'){openSheet(prefSheet());return}
+ if(b=t.closest('[data-x]')){extraClick(b);return}
  if(t.id==='gRestart'){askRestart();return}
  if(t.id==='gCompte'){window.CLOUD.open();return}
  if(b=t.closest('[data-evsd]')){const e=G.evals.find(x=>x.sd===+b.dataset.evsd);if(e)openSheet(evalSheet(e),true);return}

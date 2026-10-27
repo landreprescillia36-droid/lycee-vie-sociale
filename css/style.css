@@ -409,3 +409,11 @@ body.playing{background:var(--g-bg)}
 .say.me b{color:var(--g-blue)}
 .say .geste{color:#c6a8ff;font-style:italic}
 .talk-sep{align-self:center;color:var(--g-muted);font-size:12px;font-weight:700;background:#1b1d23;border-radius:999px;padding:3px 12px}
+
+/* réglages de confort (Réglages dans le profil) */
+html.gros #game,html.gros .sheet,html.gros .toast,html.gros .fabs{zoom:1.18}
+html.contraste{--g-muted:#d4d7e3;--g-line:#6b7080;--muted:#232744;--line:#8a90b0}
+html.contraste .muted,html.contraste small{color:var(--g-ink)}
+html.contraste #atelier .muted,html.contraste #atelier small,html.contraste #famille .muted{color:var(--ink)}
+.choice[aria-pressed="true"]{border-color:var(--g-blue)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}

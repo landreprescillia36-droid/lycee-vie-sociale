@@ -31,3 +31,7 @@ Chaque étape laisse le jeu jouable. Après chacune : `npm test` et `npm run cap
 - Chambre du personnage joueur, nouveaux décors (glacier, centre-ville, cinéma, restaurant créole).
 - Nouvelles pièces de vêtements, ensembles, catalogue garçons à enrichir.
 - Personnages de la famille et compte « Potins du lycée » à refaire d'après les modèles de Prescillia.
+
+## 7. Vie du lycée ✅ fait (voir CLAUDE.md)
+- Mini-jeux de révision (quiz, mémoire), événements locaux (cyclone, Toussaint, gwoka, tournoi, plage), clubs, projet de classe, dilemmes avec rancunes et groupes d'amis, bilan de la semaine, plusieurs fins, réglages (texte, contraste, volume, notifications).
+- Reste à faire : notifications jeu fermé (Web Push, demande un serveur), plus de mini-jeux, plus de dilemmes.

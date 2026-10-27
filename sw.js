@@ -2,7 +2,7 @@
    Stratégie : on répond tout de suite avec la copie en cache, et on la met à jour en arrière-plan
    (les modifications apparaissent donc au lancement suivant).
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v11';
+const VERSION = 'v12';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
@@ -31,5 +31,14 @@ self.addEventListener('fetch', e => {
     const reseau = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
     if (enCache) { e.waitUntil(reseau); return enCache; }
     return (await reseau) || (req.mode === 'navigate' ? c.match('index.html') : Response.error());
+  }));
+});
+
+/* notification de message touchée : on ramène le jeu au premier plan */
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const ouvert = list.find(c => 'focus' in c);
+    return ouvert ? ouvert.focus() : self.clients.openWindow('./');
   }));
 });

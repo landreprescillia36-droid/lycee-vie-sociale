@@ -40,6 +40,19 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 7. **Catalogue filles / garçons** : chaque article a `g:'f'`, `g:'m'` ou rien (mixte) ; `wearVis()` filtre selon le sexe ; non-binaire = tout.
 8. **Moteur du jeu** : `NPCS` + `NPC_LOOK` (apparence), `NPC_NOM` (noms de famille), `FICHES` (personnalités), `LINKS0` (relations entre camarades), `VOICE`/`CONFESS` (répliques), `SUBJ`/`PROFS`/`TT` (emploi du temps), année scolaire, famille, photos (`sceneSVG`, `SCENES`, `ROOMS`), fil, **Insta** (`NPC_POSTS` posts selon la personnalité, `DEBATE` qui critique/défend qui, `debateThread`, `npcPost`, commentaires en fils `mkC` {id, re, to, vs}, réponses `STANCES`/`sendReply`, abonnements `G.ig` + `followTick`/`igFollow`/`igRequest`, onglet `drawInsta`, profils `openInsta`), objectifs, état `G` (`newGame`, `saveG`), IA, messages, autonomie des camarades, horloge, musique (Web Audio), HUD, vues, fiches, discussion, création de post, événements, écouteurs.
 
+## Vie du lycée (ajouts : réglages, dilemmes, clubs, projet, mini-jeux, bilan, fins)
+
+Section `réglages de confort` à `mini-jeux de révision` de `js/app.js`, juste avant `écouteurs`. Tous les boutons de cette partie portent `data-x="action:arg:arg"` et passent par `extraClick`.
+
+- **Réglages** (`PREF`, clé `lycee-reglages`, bouton « Réglages » du profil) : texte plus grand et contraste (classes `gros` / `contraste` sur `<html>`, voir fin de `css/style.css`), volume de la musique, notifications. Les notifications ne partent que si le jeu est en arrière-plan ; quand elles sont activées, le temps de jeu continue en arrière-plan (sans elles, il s'arrête). De vraies notifications jeu fermé demanderaient un serveur (Web Push).
+- **Dilemmes** (`DILS`, `startDilemma`, `dilChoose`) : un par semaine, au premier jour de cours. Les choix créent des **rancunes** (`G.rancune`, avec date de fin ; elles divisent par deux les gains d'amitié dans `relChange`) et des souvenirs (`G.mem`, affichés dans le profil). `makeAmends` pour faire la paix.
+- **Groupes d'amis** (`cliques`) : camarades tous liés à ≥ 65 entre eux ; `relChange` propage ±1 d'amitié aux autres membres (bouche-à-oreille).
+- **Club** (`G.club`, `G.clubXp`, `clubAct`) : une séance par semaine (soir ou week-end), niveau = 1 + points/30. **Projet de classe** (`G.proj`, `projWork`) jusqu'à 100 %. Les deux sont dans la carte « Vie du lycée » de la Journée (`lifeCard`).
+- **Mini-jeux** : `revise(s)` propose réviser / quiz (`QUIZ`, la bonne réponse est toujours la première du tableau, mélangée à l'affichage) / mémoire. `reviseNow` garde l'ancien comportement (+8 %).
+- **Bilan de la semaine** (`weeklyRecap`, vendredi soir) et **fins** (`ENDINGS`, `computeEnding`, dans `endYearSheet`).
+- **Fêtes locales** ajoutées via `FETES.push(…)` : cyclone, Toussaint, journée du gwoka, tournoi inter-lycées, sortie plage.
+- Toute nouvelle donnée de partie est initialisée dans `extraDefaults` (nouvelle partie **et** migration).
+
 ## Règles du code
 
 - **Hors ligne (service worker)** : tout nouveau fichier chargé par le jeu (image, script, police) doit être ajouté à `FICHIERS` dans `sw.js`, et `VERSION` augmentée à chaque mise en ligne qui change la liste. Le service worker ne marche qu'en https ou sur `localhost`, pas en ouvrant `index.html` directement.
