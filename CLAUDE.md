@@ -61,6 +61,7 @@ Dans claude.ai, les réponses des camarades venaient de `window.claude.use('samp
 - Fidélité à **ses** images de référence (`docs/references/`), traits et ombres compris. Elle signale vite ce qui n'est pas fidèle ; corriger précisément ce qu'elle montre.
 - Ses images sont générées par elle : pas de problème de droits. En revanche **ne jamais recopier ni intégrer d'images de banques d'images** (Shutterstock, etc.) ; proposer une création originale ou lui demander sa propre image.
 - Les images qu'elle fournit (ex. chambres) s'intègrent **telles quelles** (juste recadrées, étiquettes retirées).
+- **Forme du corps = `docs/references/personnage-style-realiste.png`** (silhouette mesurée point par point : `BODY_K`, `GEO`, `sideX`, `shProf`, `armPts`, `legD`, `handD`, `bustSVG`). Pour vérifier, superposer le rendu sur l'image (tête alignée : 2,163 px par unité, centre x = 427, menton y = 560).
 - Épaules arrondies et reliées au corps, sur toutes les tenues. Poitrine : trait qui descend de l'aisselle puis tourne sous la poitrine + ombre douce dessous.
 - Cheveux crépus : contours et ombres seulement, pas de boucles ni de vagues dessinées. Pas de trou entre la tête et les cheveux.
 - Catalogues de vêtements séparés filles / garçons.

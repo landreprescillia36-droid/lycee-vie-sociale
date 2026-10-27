@@ -231,7 +231,7 @@ const GEO={f:{SH:70,WH:50,HH:59,au:15,f:1},m:{SH:80,WH:58,HH:58,au:18,f:0},nb:{S
 const lerp=(a,b,t)=>a+(b-a)*t;
 const fx=n=>(+n).toFixed(1);
 const pts=a=>a.map(q=>fx(q[0])+','+fx(q[1])).join(' L');
-function sideX(G,y){const P=G.f?[[206,16],[214,G.SH-20],[222,G.SH-2],[234,G.SH],[266,G.SH-13],[290,G.SH-16],[318,G.WH],[348,G.WH-3],[378,G.WH-3],[392,G.WH],[402,G.HH-4],[432,G.HH],[480,G.HH-1]]:[[206,16],[214,G.SH-20],[222,G.SH-2],[234,G.SH],[266,G.SH-5],[316,G.WH+7],[372,G.WH],[432,G.HH],[480,G.HH-1]];
+function sideX(G,y){const P=G.f?[[206,16],[214,G.SH-20],[222,G.SH-2],[234,G.SH],[266,G.SH-14],[280,G.SH-14.5],[300,G.SH-13],[316,G.SH-15],[330,G.WH-2],[348,G.WH-4],[363,G.WH-6],[380,G.WH-4],[392,G.WH],[402,G.HH-4],[432,G.HH],[480,G.HH-1]]:[[206,16],[214,G.SH-20],[222,G.SH-2],[234,G.SH],[266,G.SH-5],[316,G.WH+7],[372,G.WH],[432,G.HH],[480,G.HH-1]];
  if(y<=P[0][0])return P[0][1];for(let i=1;i<P.length;i++)if(y<=P[i][0]){const [y0,x0]=P[i-1],[y1,x1]=P[i];return lerp(x0,x1,(y-y0)/(y1-y0))}return P[P.length-1][1]}
 function sidePts(G,y0,h,ext){const L=[],R=[];for(let y=y0;y<h;y+=8){const e=ext*Math.min(1,Math.max(0,(y-222)/80)),x=sideX(G,y)+e;L.push([200-x,y]);R.push([200+x,y])}const x=sideX(G,h)+ext;L.push([200-x,h]);R.push([200+x,h]);return [L,R]}
 /* profil de l'épaule (cou → bras), partagé par le corps, les bras et tous les vêtements :
@@ -246,7 +246,7 @@ function shY(G,k,x,ox){const P=shProf(G,k,ox),X=k*(x-200);if(X<=16)return 206;fo
 const profTo=(G,k,lim,ox)=>shProf(G,k,ox).filter(q=>k*(q[0]-200)<=lim+.01);
 function torsoD(G,h,ext,neck){
  ext=ext||0;neck=neck||'crew';
- if(neck==='cami'){const [L,R]=sidePts(G,266,h,ext);return `M${fx(L[0][0])},266 Q200,310 ${fx(R[0][0])},266 L${pts(R)} L${pts(L.slice().reverse())}Z`}
+ if(neck==='cami'){const [L,R]=sidePts(G,274,h,ext);return `M155,266 Q200,310 245,266 L${pts(R)} L${pts(L.slice().reverse())}Z`}
  if(neck==='off'){const [L,R]=sidePts(G,244,h,ext),sh=sideX(G,240)+ext*.3+3;return `M${fx(200-sh)},240 Q200,252 ${fx(200+sh)},240 L${pts(R)} L${pts(L.slice().reverse())}Z`}
  const [L,R]=sidePts(G,222,h,ext),sh=sideX(G,222);
  const Lf=L.filter(q=>q[1]>=244),Rf=R.filter(q=>q[1]>=244);
@@ -444,7 +444,7 @@ function body(s,p,sk,skD,skDD,skL){
  let d=`<defs><linearGradient id="${p}lm" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".45" stop-color="${skL}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></linearGradient>
  <linearGradient id="${p}lmL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".42" stop-color="${skL}"/><stop offset="1" stop-color="${sk}"/></linearGradient><linearGradient id="${p}lmR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${sk}"/><stop offset=".58" stop-color="${skL}"/><stop offset="1" stop-color="${skD}"/></linearGradient>
  <linearGradient id="${p}tpL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,-.22)}"/><stop offset=".45" stop-color="${shade(c,.06)}"/><stop offset="1" stop-color="${shade(c,-.18)}"/></linearGradient><linearGradient id="${p}tpR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,-.18)}"/><stop offset=".55" stop-color="${shade(c,.06)}"/><stop offset="1" stop-color="${shade(c,-.22)}"/></linearGradient>
- <linearGradient id="${p}tp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,-.2)}"/><stop offset=".4" stop-color="${shade(c,.08)}"/><stop offset=".65" stop-color="${c}"/><stop offset="1" stop-color="${shade(c,-.2)}"/></linearGradient>
+ <linearGradient id="${p}tp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,T.fit?-.13:-.2)}"/><stop offset="${T.fit?.18:.4}" stop-color="${shade(c,.06)}"/><stop offset=".65" stop-color="${c}"/><stop offset="${T.fit?.86:1}" stop-color="${shade(c,T.fit?-.02:-.2)}"/><stop offset="1" stop-color="${shade(c,T.fit?-.14:-.2)}"/></linearGradient>
  <pattern id="${p}rib" width="5" height="10" patternUnits="userSpaceOnUse"><path d="M2.5,0 V10" stroke="#000" stroke-opacity=".13" stroke-width="1.3"/></pattern>
  <pattern id="${p}cab" width="24" height="26" patternUnits="userSpaceOnUse"><path d="M6,0 C14,6 14,7 6,13 C-2,19 -2,20 6,26 M18,0 C10,6 10,7 18,13 C26,19 26,20 18,26" fill="none" stroke="#000" stroke-opacity=".15" stroke-width="2"/><path d="M12,0 V26 M0,0 V26" stroke="#000" stroke-opacity=".08" stroke-width="1"/></pattern>
  <pattern id="${p}tw2" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V5" stroke="#000" stroke-opacity=".08" stroke-width="1.4"/></pattern>
@@ -496,16 +496,17 @@ const SL_L=[[0,-.22],[.45,.06],[1,-.18]],SL_R=[[0,-.18],[.55,.06],[1,-.22]],TOR=
    2) un trait de contour de chaque côté : il descend le long de la manche depuis l'aisselle puis tourne vers l'intérieur sous la poitrine */
 function bustSVG(p,c,k,clip){const q=p+'bs',d=shade(c,-.5),L=lum(c),o=L>.45?1:L>.25?.8:.65,oh=L>.45?1:L>.25?.5:.2;
  /* ombre sous chaque sein : un croissant flou qui part du crochet du contour et va vers le centre */
- const cres=x=>{const m=x<200?1:-1;return `M${200-m*46},280 C${200-m*40},293 ${200-m*22},298 ${200-m*5},292 C${200-m*20},304 ${200-m*42},302 ${200-m*49},286Z`};
+ const cres=x=>{const m=x<200?1:-1;return `M${200-m*55},312 C${200-m*49},328 ${200-m*26},334 ${200-m*4},329 C${200-m*22},343 ${200-m*50},338 ${200-m*58},316Z`};
  return `<defs><clipPath id="${q}c"><path d="${clip}"/></clipPath><filter id="${q}f" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="2.6"/></filter>
- <radialGradient id="${q}h"><stop offset="0" stop-color="#fff" stop-opacity="${fx(.12*k*oh)}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
- <g clip-path="url(#${q}c)"><ellipse cx="178" cy="270" rx="22" ry="17" fill="url(#${q}h)"/><ellipse cx="222" cy="270" rx="22" ry="17" fill="url(#${q}h)"/>
- <g filter="url(#${q}f)" fill="${d}" opacity="${fx(.30*k*o)}"><path d="${cres(150)}"/><path d="${cres(250)}"/></g>
- <ellipse cx="200" cy="296" rx="44" ry="7" fill="${d}" opacity="${fx(.06*k*o)}" filter="url(#${q}f)"/></g>`}
+ <radialGradient id="${q}h"><stop offset="0" stop-color="#fff" stop-opacity="${fx(.12*k*oh)}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+ <radialGradient id="${q}r" cx="50%" cy="30%" r="70%"><stop offset=".62" stop-color="${d}" stop-opacity="0"/><stop offset=".92" stop-color="${d}" stop-opacity="${fx(.08*k*o)}"/><stop offset="1" stop-color="${d}" stop-opacity="0"/></radialGradient></defs>
+ <g clip-path="url(#${q}c)"><g filter="url(#${q}f)"><ellipse cx="171" cy="304" rx="29" ry="27" fill="url(#${q}r)"/><ellipse cx="229" cy="304" rx="29" ry="27" fill="url(#${q}r)"/></g><ellipse cx="174" cy="300" rx="20" ry="17" fill="url(#${q}h)"/><ellipse cx="226" cy="300" rx="20" ry="17" fill="url(#${q}h)"/>
+ <g filter="url(#${q}f)" fill="${d}" opacity="${fx(.4*k*o)}"><path d="${cres(150)}"/><path d="${cres(250)}"/></g>
+ <ellipse cx="200" cy="314" rx="3" ry="13" fill="${d}" opacity="${fx(.05*k*o)}" filter="url(#${q}f)"/><ellipse cx="200" cy="330" rx="46" ry="7" fill="${d}" opacity="${fx(.06*k*o)}" filter="url(#${q}f)"/></g>`}
 function bustLine(G,k,c,ex,y0){/* trait de contour : suit le bord intérieur de la manche puis fait un crochet sous la poitrine */
  const A=armPts(G,k),e=y=>(typeof ex==='function'?ex(y):ex||0),X=Y=>{const y=Math.max(272,236+(Y-236)/ARMK);return edge(A.I,y)-k*e(y)};
- const a=X(272),b=X(276),m=X(284);
- return LN(`M${fx(a+k*.5)},${y0} L${fx(b)},276 C${fx(b)},282 ${fx(m-k*1)},286 ${fx(m-k*6)},290`,shade(c,-.34),1.7,.5)}
+ const a=X(272),b=X(304),m=X(312);
+ return LN(`M${fx(a+k*.5)},${y0} L${fx(b)},304 C${fx(b)},310 ${fx(m-k*1)},314 ${fx(m-k*6)},318`,shade(c,-.34),1.7,.5)}
 function yokeSVG(G,p,sk,yBot,fade){
  const skD=mix(sk,'#5a2412',.2),skL=mix(sk,'#ffd9b8',.22),skDD=mix(sk,'#3a140a',.4);
  const side=k=>{const sx=200+k*(G.SH-9),ox=sx+k*G.au,A=armPts(G,k),ob=edge(A.O,yBot);
@@ -553,8 +554,8 @@ function topSVG(G,T,s,p,K){
  else if(T.neck==='deepv')o+=LN('M185,217 L200,294 L215,217',dk,2.4,.7);
  else if(T.neck==='cardi'){o+=LN('M185,217 L200,330 M215,217 L200,330',dk,4,.5)+LN(`M200,330 L200,${h}`,dk,1.5,.5);for(let y=346;y<h-14;y+=34)o+=`<circle cx="205" cy="${y}" r="4.2" fill="${shade(c,-.4)}"/>`;
   [-1,1].forEach(k=>{o+=`<path d="M${200+k*16},${h-78} L${200+k*50},${h-78} L${200+k*50},${h-30} L${200+k*16},${h-30}Z" fill="none" stroke="${dk}" stroke-width="2" opacity=".45"/>`})}
- else if(T.neck==='cami')o+=LN(`M${fx(200-sideX(G,266))},266 Q200,310 ${fx(200+sideX(G,266))},266`,lt,2.4,.8);
- if(G.f&&T.neck==='cami')o+=LN('M193,276 Q198,282 199,288 M207,276 Q202,282 201,288',skDD,1.4,.28);
+ else if(T.neck==='cami')o+=LN('M155,266 Q200,310 245,266',lt,2.4,.8);
+ if(G.f&&T.neck==='cami')o+=LN('M190,274 Q197,280 200,287 M210,274 Q203,280 200,287',skDD,1.8,.24);
  else if(T.neck!=='asym'&&!T.collar&&!T.turtle)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
  if(T.neck==='asym')o+=LN(`M185,217 Q${fx(200+30)},246 ${fx(200+sideX(G,272))},272`,dk,2.4,.6);
  if(T.collar){const cc=T.zip?shade(c,-.1):lt;o+=`<path d="M184,204 L200,228 L190,244 L172,214Z" fill="${cc}"/><path d="M216,204 L200,228 L210,244 L228,214Z" fill="${cc}"/>`;
@@ -566,7 +567,7 @@ function topSVG(G,T,s,p,K){
  if(T.bib){const b=s.bottomColor,bd=shade(b,-.3);o+=`<path d="M166,300 L234,300 L240,410 L160,410Z" fill="${b}"/><path d="M180,320 L220,320 L220,354 L180,354Z" fill="none" stroke="#d6a35c" stroke-width="1.4" stroke-dasharray="3 2"/>`+LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')+`<circle cx="170" cy="304" r="4.5" fill="#c8a24a"/><circle cx="230" cy="304" r="4.5" fill="#c8a24a"/>`+LN('M166,300 L234,300',bd,2,.4)}
  if(T.band)o+=hemBand(h,T.neck==='off'?lt:shade(c,-.06),T.ext);
  if(h<390&&!T.band)o+=LN(`M${fx(200-sideX(G,h))},${h-3} L${fx(200+sideX(G,h))},${h-3}`,dk,3,.4);
- const stD=`M154,277 L153,${fx(shY(G,-1,153)+1.5)} M246,277 L247,${fx(shY(G,1,247)+1.5)}`,camiStraps=LN(stD,c,3)+LN(stD,dk,1,.35),hasJk=!!(s.jacket&&JK[s.jacket]);
+ const stD=`M155,267 L153,${fx(shY(G,-1,153)+1.5)} M245,267 L247,${fx(shY(G,1,247)+1.5)}`,camiStraps=LN(stD,c,3)+LN(stD,dk,1,.35),hasJk=!!(s.jacket&&JK[s.jacket]);
  if(T.neck==='cami'&&hasJk)o+=camiStraps;
  o+=J.torso;
  if(T.neck!=='off'&&T.neck!=='asym')o+=arms();
