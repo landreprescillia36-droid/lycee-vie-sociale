@@ -108,9 +108,9 @@ const FRECK=(()=>{let a=7;const r=()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a
  const pts=[];for(let i=0;i<44;i++){const side=i%2?1:-1;const ang=r()*Math.PI*2,rad=Math.sqrt(r());pts.push([200+side*(40+Math.cos(ang)*rad*32),242+Math.sin(ang)*rad*13,1.1+r()*1.4])}return pts})();
 
 /* ---------- rendu ---------- */
-const HS=.55,HX=90,HY=19.2,HT=`translate(${HX},${HY}) scale(${HS})`;
+const HS=.55,HX=90,HY=25.2,HT=`translate(${HX},${HY}) scale(${HS})`;
 const hv=vb=>{const [x,y,w,h]=vb.split(' ').map(Number);return [HX+x*HS,HY+y*HS,w*HS,h*HS].map(v=>+v.toFixed(1)).join(' ')};
-const AVB='104 22 192 192',PVB='80 14 240 240',FVB='26 -52 348 940',PHB='66 8 268 268';
+const AVB='104 28 192 192',PVB='80 20 240 240',FVB='26 -52 348 940',PHB='66 14 268 268';
 /* taille et corpulence */
 const TAILLE={petite:.9,moyenne:1,grande:1.1},TAILLE_F={grande:1.05},CORP={mince:{w:.93,WH:-3,HH:-2,au:-1,lk:.9,ak:.92},moyenne:{w:1,WH:0,HH:0,au:0,lk:1,ak:1},ronde:{w:1.06,WH:11,HH:6,au:3,lk:1.13,ak:1.12},forte:{w:1.12,WH:21,HH:11,au:5,lk:1.26,ak:1.24}};
 /* épaisseur des jambes : on élargit chaque jambe autour de son axe, sans dépasser les hanches */
@@ -416,7 +416,7 @@ function jacketParts(G,s,p,sx){
 function accSVG(G,s){let o='';const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
  if(s.necklace==='perles')for(let i=0;i<=14;i++){const t=i/14,x=(1-t)*(1-t)*184+2*(1-t)*t*200+t*t*216,y=(1-t)*(1-t)*212+2*(1-t)*t*256+t*t*212;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="2.7" fill="#f6f1e6" stroke="#c9bfa9" stroke-width=".6"/>`}
- if(s.necklace==='rasdecou')o+=`<path d="M186,192 Q200,198 214,192 L214,199 Q200,205 186,199Z" fill="#1f2127"/>`;
+ if(s.necklace==='rasdecou')o+=`<path d="M186,198 Q200,204 214,198 L214,205 Q200,211 186,205Z" fill="#1f2127"/>`;
  if(s.bag==='bandouliere'){const x=200+G.HH;o+=LN(`M${200-G.SH+14},216 L${x-4},408`,bd,4)+`<rect x="${x-18}" y="398" width="44" height="34" rx="7" fill="${bc}"/>`+LN(`M${x-18},409 L${x+26},409`,bd,2)+`<circle cx="${x+4}" cy="415" r="2.4" fill="#d4af37"/>`}
  if(s.bag==='tote'){const x=200-G.SH-4;o+=LN(`M${x+14},218 C${x+4},260 ${x-4},300 ${x-8},330 M${x+22},220 C${x+20},260 ${x+18},300 ${x+16},330`,bd,3.4)+`<path d="M${x-26},330 L${x+30},330 L${x+36},412 L${x-32},412Z" fill="${bc}"/>`+LN(`M${x-26},342 L${x+30},342`,bd,1.4,.5)}
  if(s.bag==='banane')o+=LN(`M${200-G.SH+12},218 L${200+G.WH+4},372`,bd,5)+`<path d="M168,268 Q200,256 232,276 Q236,300 224,304 Q196,300 166,292Z" fill="${bc}"/>`+LN('M170,282 Q200,276 228,290',bd,1.6,.8,'2 2');
@@ -456,7 +456,7 @@ function body(s,p,sk,skD,skDD,skL){
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M160,222 C150,186 172,160 200,160 C228,160 250,186 240,222Z" fill="${dk}"/>`;
- o+=`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="184" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
+ o+=`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="190" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
  if(!boot)o+=shoesSVG(s,sk);
