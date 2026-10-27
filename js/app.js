@@ -1359,7 +1359,7 @@ const handleOf=id=>id==='me'?myHandle():isFam(id)?famById(id).role:WHO[id].handl
 const isNpc=id=>!!(id&&FICHES[id]);
 const ilElle=id=>FICHES[id]?.g==='f'?'elle':'il';
 function relChange(id,da=0,dl=0){
- if(!isNpc(id))return'';const r=G.rel[id];da=Math.round(da);dl=Math.round(dl);
+ if(!isNpc(id))return'';const r=G.rel[id];da=Math.round(da*markFactor(id,da));dl=Math.round(dl*(hasMark(id,'trahison')&&dl>0?.4:1));
  if(dl>0&&!npcLikesMe(id))dl=0;r.ami=clamp(r.ami+da,-30,100);r.amour=clamp(r.amour+dl,0,100);
  const p=[];if(da)p.push(`amitié ${da>0?'+':''}${da}`);if(dl)p.push(`amour ${dl>0?'+':''}${dl}`);
  return p.length?`${WHO[id].name} : ${p.join(', ')}`:'';
@@ -1619,7 +1619,7 @@ function newGame(fam){
   stories:START_STORIES.map((s,i)=>({id:'st'+i,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
-  objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{},bonus:{}},evalBonus:{},studied:{},pend:[]};
+  objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{},bonus:{}},evalBonus:{},clubs:[],clubXP:{},marks:[],gstate:{},evOnce:[],studied:{},pend:[]};
  g.family.forEach(f=>g.famRel[f.id]=65);
  return g;
 }
@@ -1630,7 +1630,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -1650,7 +1650,7 @@ Qualités : ${f.qualites}. Défauts : ${f.defauts}.
 Peurs : ${f.peurs}. Passions : ${f.passions}.
 Façon de parler : ${f.parle}.
 Genre : ${f.g==='f'?'fille':'garçon'}. Orientation : ${oriLabel(f.o,f.g)}.
-Relations : ${f.relations}. Situation amoureuse : ${c==='me'?'en couple avec '+nameOf('me'):c?'en couple avec '+WHO[c].name:'célibataire'}.
+${markNote(id)}${G.rival===id?`Tu es en rivalité avec ${nameOf('me')} cette année : tu ne lui fais pas de cadeau.\n`:''}Relations : ${f.relations}. Situation amoureuse : ${c==='me'?'en couple avec '+nameOf('me'):c?'en couple avec '+WHO[c].name:'célibataire'}.
 ${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}${seatToday()===id?`Aujourd'hui, en cours, ${nameOf('me')} a choisi de s'asseoir à côté de toi.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, amour ${r.amour}/100. ${ressentiShort(id)}
 ${nameOf('me')} est ${SEXL[me().sexe]}${me().sexe==='f'?' : parle-lui au féminin (accords, « la nouvelle », « contente »…)':me().sexe==='m'?' : parle-lui au masculin (accords, « le nouveau », « content »…)':' : utilise des formulations neutres pour parler de cette personne'}. ${npcLikesMe(id)?'':S(id,`Tu n'es pas attiré·e par son genre : si ${nameOf('me')} te drague, reste gentil·le mais fais comprendre que c'est amical, et garde "amour" à 0.`)}`;
 }
@@ -1981,7 +1981,7 @@ async function sendChat(text){
 function npcPing(){
  const h=G.min/60;if(h>=23||h<7)return;const ph=phase(),now=G.day*1440+G.min;
  NPCS.forEach(n=>{
-  const r=G.rel[n.id],last=G.lastPing[n.id]??-9999;if(r.ami<30||now-last<240)return;
+  const r=G.rel[n.id],last=G.lastPing[n.id]??-9999;if(r.ami<30||now-last<240||hasMark(n.id,'trahison'))return;
   let p=.03+r.ami/1500+r.amour/900;if(ph.type==='cours')p*=.4;
   /* sans réponse de ta part, il ou elle relance beaucoup moins */const th0=G.threads[n.id]||[];if(th0.length&&th0[th0.length-1].from!=='me')p*=.2;if(Math.random()>p)return;G.lastPing[n.id]=now;
   if(r.amour>=75&&r.ami>=45&&!G.partner&&!G.confessed[n.id]&&!coupleOf(n.id)){G.confessed[n.id]=1;pushMsg(n.id,'them',CONFESS[n.id],{kind:'confess'});note(`${n.name} t'a envoyé un message important 💌`);return}
@@ -2114,9 +2114,9 @@ function computeBac(){
 function endYearSheet(){const r=G.bac.result||{};return sheetHead("Fin de l'année de terminale",r.ok?'Bac en poche 🎓':'Année terminée')
  +`<div class="card list">${G.bulletins.map(b=>`<div class="prof"><span>Trimestre ${b.tri}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'}</b></div>`).join('')}<div class="prof"><span>Bac</span><b>${r.fin!=null?P(fmtG(r.fin)+'/20 · '+(r.ok?'admis·e':'non admis·e')):'–'}</b></div></div><p class="muted">Les vacances commencent : tu peux continuer à profiter de tes amis et de ta famille.</p>`}
 function onNewDay(){
- fanDay();
+ fanDay();groupTick();weekTick();
  Object.keys(SUBJ).forEach(k=>{if(!G.studied[k]&&G.know[k]>15)G.know[k]=G.know[k]-1});G.studied={};
- {const sd=schoolDay(G.day);if(sd===RES_DAYS[0])computeBac();if(!G.yearDone&&sdDone(G.day)>=YEAR_DAYS&&schoolDay(G.day)===null&&G.day>schoolDayToCal(YEAR_DAYS)){G.yearDone=true;popSheet(endYearSheet())}}
+ {const sd=schoolDay(G.day);if(sd===RES_DAYS[0])computeBac();if(!G.yearDone&&sdDone(G.day)>=YEAR_DAYS&&schoolDay(G.day)===null&&G.day>schoolDayToCal(YEAR_DAYS)){G.yearDone=true;popSheet(endingSheet())}}
  if(G.st.schoolToday&&!G.st.caughtToday)G.st.cleanDays++;
  G.st.caughtToday=false;G.st.schoolToday=false;G.ate=false;G.rested=false;G.done={};
  dailyContent();incidentDay();feteDay();
@@ -2173,10 +2173,31 @@ const LOVE={
 const COSTUMES=['vampire 🧛','sorcière 🧙','zombie 🧟','soukougnan 🔥','chat noir 🐈‍⬛','squelette 💀'];
 const CARNAVAL=['madras et foulard 🌺','diable rouge 😈','pierrot 🤡','super-héros 🦸','marin ⚓'];
 const FETES=[
+ /* événements locaux : free = à la vraie date, même sans cours */
+ {id:'cyclone',date:'2026-09-15',n:'Alerte cyclone orange',ic:'🌀',scene:'chambre',post:"[Officiel] 🌀 Alerte orange cyclone : cours suspendus à midi. Rentrez chez vous, faites des réserves d'eau et restez à l'abri. Prenez soin de vous 🙏",info:"Météo-France place la Guadeloupe en alerte orange. Les cours s'arrêtent à midi et tout le monde rentre se mettre à l'abri.",acts:[
+  {l:'Aider ta famille à préparer la maison',sm:'Famille',e:6,fx:()=>{G.family.forEach(f=>famChange(f.id,6));return "Volets fermés, bidons d'eau remplis, bougies prêtes : ta famille est fière de toi · complicité familiale +6"}},
+  {l:"Envoyer un message rassurant à quelqu'un",sm:'Amitié',pick:'any',e:0,fx:to=>{pushMsg(to,'me',"Ça va chez toi ? Fais attention à toi pendant le cyclone 🙏");pushMsg(to,'them',pickR(["Merci, c'est gentil 🙏 On est à l'abri","Ça va, on a tout préparé. Merci d'avoir pensé à moi","Merci… ça me touche que tu m'écrives"]));return joinFx([`${WHO[to].name} est touché·e par ton message`.replace('touché·e',S(to,'touché·e')),relChange(to,6)])}},
+  {l:'Réviser à la lueur des bougies',sm:'Une matière +6 %',pick:'list',list:Object.values(SUBJ),e:4,fx:i=>{const k=Object.keys(SUBJ)[i];G.know[k]=clamp(G.know[k]+6,0,100);return `Coupure de courant, mais tu révises ${SUBJ[k]} à la bougie · +6 %`}},
+  {l:'Suivre les infos et dormir tôt',sm:'+15 énergie',e:0,fx:()=>{G.energy=clamp(G.energy+15,0,100);return "Le cyclone passe au large. Ouf ! · +15 énergie"}}],free:1},
+ {id:'plage1',date:'2026-09-26',n:'Journée à la plage de la Datcha',ic:'🏖️',scene:'plage',post:"[Anonyme] Demain toute la terminale à la Datcha 🏖️ Qui ramène la glacière ? 😎",info:"Samedi de soleil : la moitié de la classe se retrouve à la plage de la Datcha, au Gosier.",acts:[
+  {l:"Y aller avec quelqu'un",sm:'Grosse amitié',pick:'any',e:6,fx:(to,f)=>joinFx([`Baignade, bokits et fous rires avec ${WHO[to].name} 🌊`,relChange(to,7),fPhoto(f,[to],'Journée à la Datcha 🏖️☀️',4)])},
+  {l:'Faire un volley sur la plage',sm:'Amitié avec les sportifs',e:8,fx:()=>joinFx(["Match de beach-volley endiablé 🏐",relChange('kylian',3),relChange('anais',3),relChange('noah',2)])},
+  {l:'Aller à la plage en famille',sm:'Famille',e:3,fx:()=>{G.family.forEach(f=>famChange(f.id,5));return "Pique-nique en famille sous les raisins-bord-de-mer · complicité familiale +5"}},
+  {l:'Rester chez toi',sm:'+20 énergie',e:0,fx:()=>{G.energy=clamp(G.energy+20,0,100);return "Grasse matinée et série : tu recharges tes batteries · +20 énergie"}}],free:1},
+ {id:'toussaint',date:'2026-11-01',n:'Toussaint : les cimetières illuminés',ic:'🕯️',scene:'soiree',post:"[Officiel] 🕯️ Ce soir les cimetières de Guadeloupe s'illuminent. Pensées pour celles et ceux qui nous ont quittés 🤍",info:"Le soir de la Toussaint, les familles guadeloupéennes nettoient les tombes, allument des milliers de bougies et se retrouvent au cimetière jusque tard dans la nuit.",acts:[
+  {l:'Aller au cimetière avec ta famille',sm:'Famille',e:4,fx:()=>{G.family.forEach(f=>famChange(f.id,7));return "Vous allumez des bougies sur la tombe de tes arrière-grands-parents. Ta famille te raconte des souvenirs · complicité familiale +7"}},
+  {l:"Y retrouver quelqu'un",sm:'Amitié et confiance',pick:'any',e:3,fx:to=>joinFx([`Tu croises ${WHO[to].name} entre les bougies. Vous parlez longtemps de vos familles 🕯️`,relChange(to,6)])},
+  {l:'Prendre une photo des bougies',sm:'Abonnés',e:0,fx:f=>'Une mer de lumière 🕯️ · '+fPhoto(f,[],'Les cimetières illuminés de la Toussaint 🕯️🤍',5)},
+  {l:'Rester tranquille à la maison',sm:'+15 énergie',e:0,fx:()=>{G.energy=clamp(G.energy+15,0,100);return "Soirée calme · +15 énergie"}}],free:1},
+ {id:'expose',date:'2027-01-21',n:"Projet de classe : l'exposé d'histoire",ic:'📚',scene:'couloir',post:"[Officiel] 📚 Présentation des exposés d'histoire aujourd'hui : « La Guadeloupe d'hier à aujourd'hui ». Bonne chance à tous les groupes !",info:"Chaque groupe présente son exposé devant la classe. La note compte pour le trimestre.",acts:[
+  {l:"Présenter l'exposé avec quelqu'un",sm:'Note d\'histoire et amitié',pick:'any',e:4,fx:to=>{const v=clamp(Math.round((G.know.histoire/100*14+4+FICHES[to].stud*4+(G.rel[to].ami>=40?1:-1))*2)/2,0,20);G.grades.push({sub:'histoire',v,day:G.day,sd:schoolDay(G.day)});G.know.histoire=clamp(G.know.histoire+4,0,100);
+   return joinFx([`Exposé avec ${WHO[to].name} : ${fmtG(v)}/20`,v>=12?relChange(to,6):relChange(to,2)])}},
+  {l:'Faire tout le travail à la place du groupe',sm:'Bonne note, mais fatigue',e:12,fx:()=>{const v=clamp(Math.round((G.know.histoire/100*16+5)*2)/2,0,20);G.grades.push({sub:'histoire',v,day:G.day,sd:schoolDay(G.day)});return `Tu portes tout l'exposé : ${fmtG(v)}/20, mais tu es épuisé·e`.replace('épuisé·e',P('épuisé·e'))}},
+  {l:'Laisser les autres présenter',sm:'Risqué',pick:'any',e:0,fx:to=>joinFx([`${WHO[to].name} présente à ta place… et te le reproche après`,relChange(to,-8),G.rel[to].ami<20?(mark(to,'abandon'),''):''])}]},
  {id:'rentree',date:'2026-09-01',n:'Rentrée des terminales',ic:'🎒',scene:'cour',post:"[Officiel] Bienvenue aux terminales 🎒 Nouvelle année, nouveaux drames. On vous surveille 👀",info:"C'est ta première journée dans ce lycée : discours de la proviseure, visite, inscriptions aux clubs.",acts:[
   {l:"Te présenter à quelqu'un",sm:"Faire connaissance",pick:'any',e:0,fx:to=>{G.met[to]=Math.max(G.met[to]||0,1);return joinFx([`Tu te présentes à ${WHO[to].name}. ${WHO[to].name} : « ${introLine(to)} »`,relChange(to,3)])}},
   {l:"Visiter le lycée avec quelqu'un",sm:"Amitié",pick:'any',e:3,fx:to=>joinFx([`${WHO[to].name} te fait visiter le lycée`,relChange(to,5)])},
-  {l:"T'inscrire à un club",sm:"Grosse amitié avec un membre",pick:'club',e:0,fx:to=>{G.club=to;return joinFx([`Tu rejoins le ${CLUB[to]} avec ${WHO[to].name}`,relChange(to,6)])}},
+  {l:"T'inscrire à un club",sm:"Grosse amitié avec un membre",pick:'club',e:0,fx:to=>{G.club=to;const k=CLUB_OLD[to];if(!myClubs().includes(k)&&myClubs().length<CLUB_MAX)G.clubs=[...myClubs(),k];return joinFx([`Tu rejoins le ${CLUBS[k].n.toLowerCase()} avec ${WHO[to].name}`,relChange(to,6)])}},
   {l:"Écouter le discours de la proviseure",sm:"Connaître les règles",e:0,fx:()=>{const id=pickR(NPCS).id;return joinFx([`La proviseure rappelle les règles. ${WHO[id].name} te chuchote une blague pendant le discours 😂`,relChange(id,2)])}}]},
  {id:'halloween',date:'2026-10-31',n:'Soirée Halloween au foyer',ic:'🎃',scene:'soiree',post:"[Officiel] 🎃 Soirée Halloween au foyer ! Déguisement obligatoire, même pour les profs 👻 Qui sera le plus effrayant ?",info:"Soirée déguisée au foyer après les cours.",acts:[
   {l:"Choisir ton déguisement",sm:"Photo sur Insta",pick:'list',list:COSTUMES,e:2,fx:(i,f)=>{G.costume=COSTUMES[i];return `Déguisement de ${COSTUMES[i]} · `+fPhoto(f,best(2),`🎃 Mon déguisement de ${COSTUMES[i]} pour Halloween`,4+Math.floor(Math.random()*5))}},
@@ -2229,7 +2250,7 @@ const FETES=[
   {l:'Tenter d\'être élu·e roi ou reine du bal',sm:'Dépend de ta popularité',e:0,fx:()=>{const ch=Math.min(.8,.1+G.ig.fans/600+igFriends().length*.06);if(Math.random()<ch){G.gems+=10;fPotins(`${myHandle()} est ${me().sexe==='f'?'la reine':me().sexe==='m'?'le roi':'élu·e souverain·e'} du bal 👑`);return P('Tu es élu·e ')+(me().sexe==='f'?'reine':me().sexe==='m'?'roi':'souverain·e')+' du bal 👑 · +10 gemmes'}return "Pas élu·e cette fois, mais quelle soirée".replace('élu·e',P('élu·e'))}}]}];
 /* jour de la fête = la vraie date si c'est un jour de cours, sinon le dernier jour de cours avant */
 const feteDayOf=k=>{let d=CAL.findIndex(c=>c&&c.k===k);if(d<1)d=CAL_END;while(d>1&&!CAL[d].sd)d--;return d};
-const FETE_ON={};FETES.forEach(f=>{f.day=feteDayOf(f.date);(FETE_ON[f.day]=FETE_ON[f.day]||[]).push(f)});
+const FETE_ON={};FETES.forEach(f=>{f.day=f.free?CAL.findIndex(c=>c&&c.k===f.date):feteDayOf(f.date);(FETE_ON[f.day]=FETE_ON[f.day]||[]).push(f)});
 const fetesToday=()=>FETE_ON[G.day]||[];
 const fst=id=>(G.fetes=G.fetes||{})[id]||(G.fetes[id]={n:0,used:[],done:false});
 const fetesOpen=()=>fetesToday().filter(f=>!fst(f.id).done);
@@ -2237,14 +2258,14 @@ const fetesOpen=()=>fetesToday().filter(f=>!fst(f.id).done);
 function upcoming(n){const out=[];for(let d=G.day+1;d<=CAL_END&&out.length<n;d++){(FETE_ON[d]||[]).forEach(f=>out.push([d,f.ic+' '+f.n]));const v=VACS.find(x=>x[0]===CAL[d].k);if(v)out.push([d,'🌴 '+v[2]])}return out.slice(0,n)}
 const actOk=a=>a.pick!=='love'||(me().orient!=='ace'&&NPCS.some(n=>iLike(n.id)));
 function feteSheet(f,msg){
- const st=fst(f.id),left=FETE_MAX-st.n,shift=f.date!==CAL[G.day].k,acts=f.acts.map((a,i)=>[a,i]).filter(([a,i])=>actOk(a)&&!st.used.includes(i));
- return sheetHead(`${f.ic} ${f.n}`,`Aujourd'hui au lycée · ${fmtDay(G.day,true)}`)
+ const st=fst(f.id),left=FETE_MAX-st.n,shift=!f.free&&f.date!==CAL[G.day].k,acts=f.acts.map((a,i)=>[a,i]).filter(([a,i])=>actOk(a)&&!st.used.includes(i));
+ return sheetHead(`${f.ic} ${f.n}`,`${f.free?'Aujourd\'hui':'Aujourd\'hui au lycée'} · ${fmtDay(G.day,true)}`)
   +(shift?`<p class="muted" style="margin:0">Le vrai jour est le ${dateOf(CAL.findIndex(c=>c&&c.k===f.date)>0?CAL.findIndex(c=>c&&c.k===f.date):f.day).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} : il n'y a pas cours ce jour-là, la fête a donc lieu aujourd'hui.</p>`:'')
   +`<p class="story-text">${esc(f.info)}</p>`+(msg?`<div class="card felt"><p style="margin:0">${esc(msg)}</p></div>`:'')
   +(left>0&&acts.length&&!st.done?`<span class="eyebrow">Que fais-tu ? · ${left} action${left>1?'s':''} restante${left>1?'s':''}</span><div class="choices">${acts.map(([a,i])=>`<button class="choice" type="button" data-fact="${f.id}:${i}">${esc(P(a.l))}<small class="t-pos">${a.pick?'Choisis ensuite '+(a.pick==='list'?'une option':a.pick==='club'?'un club':'un personnage')+' · ':''}${esc(a.sm)}${a.e?' · −'+a.e+' énergie':''}</small></button>`).join('')}</div>`:`<p class="muted">${st.n?'Tu as bien profité de la fête !':'La fête est finie.'}</p>`)
   +`<div class="row"><button class="gbtn ${left>0&&!st.done?'ghost':''}" type="button" data-fend="${f.id}">${left>0&&!st.done?'Terminer la fête':'Fermer'}</button></div>`}
 function fetePick(f,i){const a=f.acts[i];
- const opts=a.pick==='list'?a.list.map((x,j)=>[j,x,'']):(a.pick==='love'?NPCS.filter(n=>iLike(n.id)):NPCS).map(n=>[n.id,a.pick==='club'?`${CLUB[n.id]} (${n.name})`:n.name,`amitié ${G.rel[n.id].ami}${npcLikesMe(n.id)&&a.pick==='love'?' · amour '+G.rel[n.id].amour:''}${G.partner===n.id?' · en couple 💞':''}`]);
+ const opts=a.pick==='list'?a.list.map((x,j)=>[j,x,'']):(a.pick==='love'?NPCS.filter(n=>iLike(n.id)):NPCS).map(n=>[n.id,a.pick==='club'?`${CLUBS[CLUB_OLD[n.id]].n} (${n.name})`:n.name,`amitié ${G.rel[n.id].ami}${npcLikesMe(n.id)&&a.pick==='love'?' · amour '+G.rel[n.id].amour:''}${G.partner===n.id?' · en couple 💞':''}`]);
  openSheet(sheetHead(`${f.ic} ${esc(P(a.l))}`,a.pick==='list'?'Choisis une option':a.pick==='club'?'Quel club ?':'Avec qui ?')+`<div class="choices">${opts.map(([v,l,sm])=>`<button class="choice" type="button" data-fact="${f.id}:${i}" data-to="${v}">${esc(l)}${sm?`<small>${esc(sm)}</small>`:''}</button>`).join('')}</div><div class="row"><button class="gbtn ghost" type="button" data-fback="${f.id}">Retour</button></div>`)}
 function feteAct(fid,i,to){
  const f=FETES.find(x=>x.id===fid),a=f&&f.acts[i],st=f&&fst(fid);if(!f||f.day!==G.day||st.done||st.used.includes(i)){closeSheet();return}
@@ -2729,6 +2750,7 @@ function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
  const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
+ h+=clubCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
@@ -2754,6 +2776,10 @@ function drawDay(){
  h+=`<div class="card"><span class="eyebrow">Emploi du temps · ${DAYS[weekday()]}</span>${ttHTML()}</div>`;
  v.innerHTML=h;
 }
+function clubCard(){const L=myClubs();if(!L.length)return `<div class="card"><span class="eyebrow">Clubs</span><div class="prof"><span class="muted">Théâtre, foot, journal du lycée… rejoins un club pour rencontrer du monde.</span><button class="gbtn" type="button" data-clubs>Voir</button></div></div>`;
+ const evening=G.min>=1020&&G.min<1320;
+ return `<div class="card"><span class="eyebrow">Tes clubs <button class="linkbtn" type="button" data-clubs>gérer</button></span>${L.map(k=>{const c=CLUBS[k],today=clubToday().includes(k),done=G.done[G.day+'club'+k];
+  return `<div class="prof"><span>${c.ic} <b>${c.n}</b> <small class="muted">${(G.clubXP[k]||0)} séance${(G.clubXP[k]||0)>1?'s':''} · ${DAYS[c.wd].toLowerCase()} soir</small></span>${today&&!done?(evening?`<button class="gbtn" type="button" data-clubgo="${k}">Y aller</button>`:G.min<1020?'<small class="muted">ce soir</small>':'<small class="muted">trop tard</small>'):done?'<small class="muted">fait ✅</small>':''}</div>`}).join('')}</div>`}
 function placeBody(ph,place,map){
  let h='';
  if(place==='maison'){
@@ -2772,7 +2798,7 @@ function placeBody(ph,place,map){
  return h;
 }
 function drawMates(){
- $('gView').innerHTML=`<div class="sec-title">Camarades</div><div class="list">${NPCS.map(n=>`<button class="card mate" type="button" data-mate="${n.id}"><div class="relrow"><div class="av">${avatarOf(n.id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(n.id))}</span><small>${statusOf(n.id)}</small></div>${gaugesHTML(n.id)}<span class="muted">${esc(ressentiShort(n.id))}</span></div></div></button>`).join('')}</div>
+ $('gView').innerHTML=`<div class="sec-title">Groupes</div>${groupsHTML()}<div class="sec-title">Camarades</div><div class="list">${NPCS.map(n=>`<button class="card mate" type="button" data-mate="${n.id}"><div class="relrow"><div class="av">${avatarOf(n.id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(n.id))}</span><small>${statusOf(n.id)}</small></div>${gaugesHTML(n.id)}<span class="muted">${esc(ressentiShort(n.id))}</span></div></div></button>`).join('')}</div>
  <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
 }
 function drawMessages(){
@@ -3233,7 +3259,7 @@ const EVENTS=[
   {t:"Je viens, on va tout donner",rel:{anais:9},post:{by:'anais',text:"footing avec {me} ce matin 🏃‍♀️ on a tout donné !",scene:'plage'}},{t:"Je viendrai plutôt t'encourager au match",rel:{anais:4}},{t:"6 h ? Hors de question",rel:{anais:-2}}]}];
 function playEvent(){
  if(G.energy<5){toast("Pas assez d'énergie : récupère ton bonus ou repose-toi");return}
- G.energy-=5;const ei=Math.floor(Math.random()*EVENTS.length),ev=EVENTS[ei];saveG();drawHUD();
+ G.energy-=5;const pool=EVENTS.map((e,i)=>i).filter(i=>!(G.evOnce||[]).includes(i)),ei=pickR(pool.length?pool:EVENTS.map((e,i)=>i)),ev=EVENTS[ei];saveG();drawHUD();
  openSheet(`<div class="who"><div class="av">${avatarOf(ev.who)}</div><div><h2>${WHO[ev.who].name}</h2><p class="muted">Événement · ${fmtT(G.min)}</p></div></div><p class="story-text">${esc(ev.text)}</p>
  <div class="choices">${ev.choices.map((c,i)=>`<button class="choice" type="button" data-ev="${ei}" data-c="${i}">${esc(c.t)}</button>`).join('')}</div>`);
 }
@@ -3241,10 +3267,136 @@ function resolve(ei,ci){
  const ev=EVENTS[ei],c=ev.choices[ci],parts=[];
  Object.entries(c.rel||{}).forEach(([k,d])=>{const s=relChange(k,d);if(s)parts.push(s)});
  if(c.gems){G.gems+=c.gems;parts.push(`+${c.gems} gemmes`)}
+ if(c.mark){mark(c.mark[0],c.mark[1]);parts.push(`${WHO[c.mark[0]].name} s'en souviendra`)}
+ if(c.potins)fPotins(c.potins);
+ Object.entries(c.know||{}).forEach(([k,v])=>{G.know[k]=clamp(G.know[k]+v,0,100)});
+ if(ev.choices.some(x=>x.mark))(G.evOnce=G.evOnce||[]).push(ei);groupTick();
  if(c.post){const by=c.post.by;G.posts.unshift(mkPost({by,text:c.post.text.replace('{me}',myHandle()),photo:c.post.scene?{scene:c.post.scene,people:[by,'me'],author:by}:null,c:Math.floor(Math.random()*30)+3,r:Math.floor(Math.random()*300)+10,l:Math.floor(Math.random()*6000)+200}));note(`${nameOf(by)} t'a identifié dans un post`)}
  G.events++;note(`${c.t} (${nameOf(ev.who)}) : ${parts.length?parts.join(', '):'aucun changement'}`);
  saveG();closeSheet();drawGame();checkObjectives();toast(parts.length?parts.join(' · '):'Choix enregistré');
 }
+
+/* ---------- clubs : séances le soir, projets et grands rendez-vous ---------- */
+const CLUBS={
+ foot:{n:'Équipe de foot',ic:'⚽',wd:1,m:['kylian','noah'],sub:'eps',game:'eps',big:"Match contre le lycée Baimbridge",won:"Victoire contre Baimbridge ⚽🔥",lost:"Défaite de justesse contre Baimbridge"},
+ hand:{n:'Équipe de hand',ic:'🤾',wd:3,m:['anais'],sub:'eps',game:'eps',big:"Tournoi de hand de l'académie",won:"Le lycée remporte le tournoi de hand 🏆",lost:"Le lycée sort en demi-finale du tournoi"},
+ basket:{n:'Équipe de basket',ic:'🏀',wd:3,m:['noah','kylian'],sub:'eps',game:'eps',big:"Finale du championnat de basket",won:"Champions de basket ! 🏀",lost:"Finale perdue, mais quelle saison"},
+ danse:{n:'Club de danse',ic:'💃',wd:0,m:['ines','maelle'],sub:'eps',game:'eps',big:"Spectacle de danse au foyer",won:"Standing ovation pour le club de danse 💃",lost:"Petit raté dans la choré, mais ambiance de folie"},
+ theatre:{n:'Club théâtre',ic:'🎭',wd:2,m:['jade','sacha'],sub:'francais',game:'francais',big:"Représentation de fin de trimestre",won:"La pièce du club théâtre fait salle comble 🎭",lost:"Trou de mémoire sur scène… le public a ri quand même"},
+ journal:{n:'Journal du lycée',ic:'📰',wd:1,m:['jade','maelle'],sub:'francais',game:'francais',big:"Numéro spécial du journal",won:"Le numéro spécial du journal s'arrache 📰",lost:"Le journal sort avec deux jours de retard"},
+ musique:{n:'Club de musique',ic:'🎸',wd:4,m:['sacha','ines'],sub:'anglais',game:'anglais',big:"Concert du club au foyer",won:"Le concert du club de musique enflamme le foyer 🎸",lost:"Coupure de son pendant le concert… mais tout le monde a chanté"}};
+const CLUB_OLD={ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'};
+const CLUB_MAX=2,CLUB_BIG=4;   /* 2 clubs au plus ; grand rendez-vous après 4 séances */
+const myClubs=()=>G.clubs||[];
+const clubToday=()=>myClubs().filter(c=>CLUBS[c].wd===weekday()&&schoolDay(G.day)!==null);
+function clubsSheet(msg){return sheetHead('🏅 Clubs du lycée',`Tu peux en rejoindre ${CLUB_MAX} · séances le soir après les cours`)+(msg?`<div class="card felt"><p style="margin:0">${esc(msg)}</p></div>`:'')
+ +`<div class="choices">${Object.entries(CLUBS).map(([k,c])=>{const inC=myClubs().includes(k);return `<button class="choice" type="button" data-club="${k}">${c.ic} ${c.n}${inC?' ✅':''}<small>${DAYS[c.wd]} soir · avec ${c.m.map(i=>WHO[i].name).join(' et ')} · ${inC?`${(G.clubXP[k]||0)} séance${(G.clubXP[k]||0)>1?'s':''} · touche pour quitter`:myClubs().length>=CLUB_MAX?'2 clubs maximum':'rejoindre'}</small></button>`}).join('')}</div>`}
+function clubToggle(k){const c=CLUBS[k];if(!c)return;let msg;
+ if(myClubs().includes(k)){G.clubs=myClubs().filter(x=>x!==k);msg=`Tu quittes le ${c.n.toLowerCase()}. `+c.m.map(i=>relChange(i,-3)).join(' · ');mark(c.m[0],'abandon')}
+ else if(myClubs().length>=CLUB_MAX)msg='Tu fais déjà partie de 2 clubs : quittes-en un avant.';
+ else{G.clubs=[...myClubs(),k];msg=joinFx([`Bienvenue au ${c.n.toLowerCase()} ! Séance chaque ${DAYS[c.wd].toLowerCase()} soir.`,...c.m.map(i=>relChange(i,4))]);note(`${c.ic} Tu rejoins : ${c.n}`)}
+ saveG();openSheet(clubsSheet(msg));drawView()}
+/* séance : −8 énergie, amitié avec les membres, progrès dans la matière ; la 4e séance lance le grand rendez-vous (mini-jeu) */
+const CLUB_LINES={foot:["Entraînement sous la pluie, tout le monde finit couvert de boue 😂","Exercices de passes avec {a}","Petit match entre vous, {a} marque un but incroyable"],
+ hand:["Entraînement de tirs avec {a}","Séance de cardio : {a} ne s'arrête jamais 🔥","Tactique au tableau, puis match"],basket:["Lancers francs avec {a}","Match à trois contre trois, {a} fait un dunk 😱","Séance de dribbles"],
+ danse:["Nouvelle choré dancehall avec {a} 💃","Répétition devant le miroir, {a} corrige tes pas","Vous inventez un passage ensemble"],theatre:["Lecture de la pièce avec {a}","Improvisations : {a} te fait pleurer de rire","Répétition de ta scène avec {a}"],
+ journal:["Conférence de rédaction : {a} veut un article sur la cantine","Tu écris un article avec {a}","Interview d'un prof avec {a}"],musique:["Répétition avec {a} 🎸","{a} t'apprend trois accords","Vous enregistrez une maquette au foyer"]};
+function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.done[G.day+'club'+k]){toast('Séance déjà faite aujourd\'hui');return}
+ if(G.energy<8){toast("Pas assez d'énergie pour la séance");return}
+ G.energy=clamp(G.energy-8,0,100);G.done[G.day+'club'+k]=1;G.clubXP[k]=(G.clubXP[k]||0)+1;
+ const a=pickR(c.m),line=pickR(CLUB_LINES[k]).replace('{a}',WHO[a].name);G.know[c.sub]=clamp(G.know[c.sub]+3,0,100);
+ const msg=joinFx([line,...c.m.map(i=>relChange(i,3)),`${SUBJ[c.sub]} +3 %`]);note(`${c.ic} ${c.n} : ${line}`);saveG();drawHUD();drawView();
+ if(G.clubXP[k]%CLUB_BIG===0)openSheet(sheetHead(`${c.ic} ${c.big}`,'Le grand rendez-vous du club')+`<p class="story-text">${esc(msg)}</p><p class="story-text">C'est le moment de montrer ce que vous valez. Tout le lycée regarde !</p><div class="row"><button class="gbtn" type="button" data-clubbig="${k}">C'est parti</button></div>`);
+ else openSheet(sheetHead(`${c.ic} ${c.n}`,`Séance n° ${G.clubXP[k]} · prochain grand rendez-vous dans ${CLUB_BIG-G.clubXP[k]%CLUB_BIG} séance${CLUB_BIG-G.clubXP[k]%CLUB_BIG>1?'s':''}`)+`<p class="story-text">${esc(msg)}</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`)}
+function clubBig(k){const c=CLUBS[k];playMini({sub:c.game,n:5,title:c.big},sc=>{const win=sc>=.6;
+ G.posts.unshift(mkPost({by:'potins',text:`[Officiel] ${win?c.won:c.lost} · bravo à ${[...c.m.map(i=>WHO[i].name),nameOf('me')].join(', ')} !`,c:20+Math.floor(Math.random()*30),r:300,l:6000+Math.floor(Math.random()*6000)}));
+ if(win){G.ig.fans+=15+Math.floor(sc*20);G.gems+=5}
+ const msg=joinFx([win?c.won:c.lost,...c.m.map(i=>relChange(i,win?6:3)),win?'+5 gemmes · nouveaux abonnés':'']);note(`${c.ic} ${c.big} : ${win?'réussi':'raté de peu'}`);
+ miniResult(win?'Grand succès ! 🎉':'Raté de peu…',`Score ${Math.round(sc*100)} %`,`<p class="story-text">${esc(msg)}</p>`);checkObjectives();saveG();drawHUD()})}
+
+/* ---------- traces durables : trahisons, confiance, rancunes ---------- */
+/* G.marks : [{id, k, day}] ; k = trahison (90 jours), confiance (120 j), rivalite (toute l'année), abandon (30 j) */
+var MARK_DAYS={trahison:90,confiance:120,rivalite:400,abandon:30};
+function mark(id,k){if(!isNpc(id))return;(G.marks=G.marks||[]).push({id,k,day:G.day});note(`${WHO[id].name} s'en souviendra (${MARK_LBL[k]})`)}
+const MARK_LBL={trahison:'trahison',confiance:'confiance',rivalite:'rivalité',abandon:'déception'};
+function marksOf(id){return (G.marks||[]).filter(m=>m.id===id&&G.day-m.day<=MARK_DAYS[m.k])}
+function hasMark(id,k){return marksOf(id).some(m=>m.k===k)}
+/* effet sur les gains d'amitié : une trahison freine fort, la confiance aide */
+function markFactor(id,da){if(da<=0)return 1;let f=1;if(hasMark(id,'trahison'))f*=.35;if(hasMark(id,'rivalite'))f*=.6;if(hasMark(id,'abandon'))f*=.8;if(hasMark(id,'confiance'))f*=1.25;return f}
+const markNote=id=>{const L=marksOf(id).map(m=>({trahison:`${nameOf('me')} t'a trahi·e (${fmtDay(m.day,true)}) : tu lui en veux encore et tu restes méfiant·e.`,confiance:`${nameOf('me')} a gardé ton secret : tu lui fais confiance.`,rivalite:`Tu es en rivalité avec ${nameOf('me')} : tu le ou la piques souvent.`,abandon:`${nameOf('me')} a quitté ton club : tu es un peu déçu·e.`})[m.k]);return L.length?'Souvenirs importants : '+[...new Set(L)].join(' ')+'\n':''};
+
+/* ---------- groupes d'amis : adopté·e ou rejeté·e ---------- */
+const GROUPS={pop:{n:'Les populaires',ic:'💅',m:['maelle','ines']},sport:{n:'Les sportifs',ic:'⚽',m:['kylian','noah','anais']},art:{n:'Les artistes',ic:'🎨',m:['jade','sacha']}};
+function groupState(g){const G0=GROUPS[g],a=mean(G0.m.map(i=>G.rel[i].ami)),tr=G0.m.filter(i=>hasMark(i,'trahison')).length;
+ return tr>=1&&a<45||a<0?'rejete':a>=55&&!tr?'adopte':'neutre'}
+const GSTATE={adopte:'Ils t\'ont adopté·e 💛',neutre:'Ils te connaissent',rejete:'Ils te tiennent à l\'écart ❄️'};
+function groupTick(){G.gstate=G.gstate||{};Object.keys(GROUPS).forEach(g=>{const s=groupState(g),old=G.gstate[g]||'neutre';if(s===old)return;G.gstate[g]=s;const G0=GROUPS[g];
+ if(s==='adopte'){note(P(`${G0.ic} ${G0.n} t'ont adopté·e`));G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : ${myHandle()} traîne avec ${G0.n.toLowerCase()} maintenant 👀`,c:12,r:120,l:3000}));popSheet(sheetHead(`${G0.ic} ${G0.n}`,P('Tu fais partie du groupe !'))+`<p class="story-text">${G0.m.map(i=>WHO[i].name).join(', ')} ${P("te gardent une place à leur table. Tu es invité·e à leurs sorties et ils te défendent dans les commentaires.")}</p><div class="row"><button class="gbtn" type="button" data-close>Trop bien</button></div>`)}
+ else if(s==='rejete'){note(`${G0.ic} ${G0.n} te tiennent à l'écart`);G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : ambiance glaciale entre ${myHandle()} et ${G0.n.toLowerCase()}… quelqu'un sait ce qui s'est passé ? 🥶`,c:25,r:300,l:7000}));popSheet(sheetHead(`${G0.ic} ${G0.n}`,'Le groupe te tourne le dos')+`<p class="story-text">${G0.m.map(i=>WHO[i].name).join(', ')} ne t'adressent presque plus la parole. Il faudra du temps (et de vrais efforts) pour regagner leur confiance.</p><div class="row"><button class="gbtn" type="button" data-close>D'accord</button></div>`)}})}
+/* chaque semaine : un groupe qui t'a adopté·e te garde proche, un groupe qui te rejette s'éloigne encore */
+function groupWeek(){Object.keys(GROUPS).forEach(g=>{const s=(G.gstate||{})[g];GROUPS[g].m.forEach(i=>{if(s==='adopte')G.rel[i].ami=clamp(G.rel[i].ami+1,-30,100);if(s==='rejete')G.rel[i].ami=clamp(G.rel[i].ami-2,-30,100)})})}
+const groupsHTML=()=>`<div class="card list">${Object.entries(GROUPS).map(([g,G0])=>`<div class="prof"><span>${G0.ic} <b>${G0.n}</b> <small class="muted">${G0.m.map(i=>WHO[i].name).join(', ')}</small></span><small>${P(GSTATE[(G.gstate||{})[g]||'neutre'])}</small></div>`).join('')}</div>`;
+
+/* nouveaux événements avec des conséquences qui durent */
+const EVENTS2=[
+ {who:'ines',text:"Inès te prend à part : « Je te dis un secret, mais tu le gardes pour toi… je crois que je craque pour Sacha. »",choices:[
+  {t:"Je garde le secret",rel:{ines:8},mark:['ines','confiance']},{t:"Je l'encourage à lui parler",rel:{ines:5,sacha:1}},{t:"Je le répète à Maëlle",rel:{ines:-14,maelle:4},mark:['ines','trahison'],potins:"Inès craquerait pour quelqu'un du club de musique… 🎸👀"}]},
+ {who:'noah',text:"Noah te montre en cachette qu'il a eu 6 en maths : « Ne dis rien à Kylian, il va se moquer. »",choices:[
+  {t:"Je ne dis rien et je propose de l'aider",rel:{noah:9},mark:['noah','confiance'],know:{maths:2}},{t:"Je le rassure",rel:{noah:5}},{t:"Je raconte tout à Kylian pour rigoler",rel:{noah:-12,kylian:3},mark:['noah','trahison']}]},
+ {who:'maelle',text:"Maëlle : « Choisis ton camp. Soit tu traînes avec nous, soit avec Jade. Pas les deux. »",choices:[
+  {t:"Je reste avec Maëlle",rel:{maelle:8,jade:-8},mark:['jade','abandon']},{t:"Je défends Jade",rel:{jade:10,maelle:-10},mark:['maelle','rivalite']},{t:"Je refuse de choisir",rel:{maelle:-3,jade:3}}]},
+ {who:'kylian',text:"Kylian a cassé la fenêtre du gymnase. La CPE cherche le coupable et te demande si tu as vu quelque chose.",choices:[
+  {t:"Je ne dis rien",rel:{kylian:9},mark:['kylian','confiance']},{t:"Je conseille à Kylian d'avouer",rel:{kylian:2}},{t:"Je le dénonce",rel:{kylian:-15,noah:-5},mark:['kylian','trahison'],potins:"Quelqu'un a balancé Kylian pour la fenêtre du gymnase 😬"}]},
+ {who:'jade',text:"Jade te fait lire un poème très personnel qu'elle n'a montré à personne.",choices:[
+  {t:"Je lui dis sincèrement ce que j'en pense",rel:{jade:9},mark:['jade','confiance']},{t:"Je lui dis que c'est très beau",rel:{jade:4}},{t:"Je le prends en photo pour le montrer",rel:{jade:-16},mark:['jade','trahison'],potins:"Un poème de Jade circule dans toute la classe… 📜"}]},
+ {who:'anais',text:"Anaïs s'est blessée au genou avant le tournoi. Elle te demande de ne pas le dire au coach.",choices:[
+  {t:"Je garde le secret mais je lui dis de se soigner",rel:{anais:7},mark:['anais','confiance']},{t:"Je préviens le coach pour la protéger",rel:{anais:-4}},{t:"Je le poste en story",rel:{anais:-14},mark:['anais','trahison']}]},
+ {who:'sacha',text:"Sacha t'avoue qu'il veut arrêter le lycée pour la musique, mais ses parents ne savent rien.",choices:[
+  {t:"Je l'écoute et je garde ça pour moi",rel:{sacha:8},mark:['sacha','confiance']},{t:"Je lui conseille d'en parler à ses parents",rel:{sacha:4}},{t:"J'en parle à tout le monde",rel:{sacha:-14},mark:['sacha','trahison'],potins:"Sacha quitterait le lycée ?! 🎤"}]}];
+/* une rivale ou un rival tiré·e au sort à chaque partie */
+function pickRival(){const id=pickR(NPCS).id;G.rival=id;(G.marks=G.marks||[]).push({id,k:'rivalite',day:1});return id}
+
+/* ---------- résumé de la semaine (chaque samedi matin) ---------- */
+function weekSnap(){return {day:G.day,rel:Object.fromEntries(NPCS.map(n=>[n.id,{...G.rel[n.id]}])),fam:{...G.famRel},ng:G.grades.length,fans:G.ig.fans,log:G.log.length}}
+function weekSheet(){const S0=G.wsnap||{day:1,rel:{},fam:{},ng:0,fans:G.ig.fans,log:0},ev=G.evals[G.evals.length-1];
+ const rows=NPCS.map(n=>{const a=G.rel[n.id],b=S0.rel[n.id]||{ami:0,amour:0},da=a.ami-b.ami,dl=a.amour-b.amour;return {n,a,da,dl}}).filter(x=>x.da||x.dl).sort((x,y)=>Math.abs(y.da)+Math.abs(y.dl)-Math.abs(x.da)-Math.abs(x.dl));
+ const sgn=v=>v>0?`<b class="t-pos">+${v}</b>`:`<b class="t-neg">${v}</b>`,love=NPCS.filter(n=>npcLikesMe(n.id)&&G.rel[n.id].amour>=40).sort((a,b)=>G.rel[b.id].amour-G.rel[a.id].amour);
+ const fam=G.family.map(f=>[f,(G.famRel[f.id]||0)-(S0.fam[f.id]??G.famRel[f.id])]).filter(x=>x[1]);
+ const evs=(G.log||[]).slice(S0.log).filter(l=>/[🎉🎭🎃💘⚽🏀🎸📰🌀🕯️🏖️💛✊🏾🎶🥂🎒🦀🖤🤾💃]/u.test(l.t)).slice(-4);
+ return sheetHead('📅 Ta semaine',`Semaine du ${fmtDay(S0.day||G.day,true)} au ${fmtDay(G.day-1,true)}`)
+  +`<div class="card"><span class="eyebrow">Notes</span>${ev&&G.grades.length>S0.ng?`<div class="prof"><span>Évaluation du vendredi</span><b>${fmtG(ev.glob)}/20</b></div>`:'<p class="muted">Pas d\'évaluation cette semaine.</p>'}${avg()!=null?`<div class="prof"><span>Moyenne de l'année</span><b>${fmtG(r2(avg()))}/20</b></div>`:''}</div>`
+  +`<div class="card"><span class="eyebrow">Amitiés</span>${rows.length?rows.slice(0,6).map(x=>`<div class="prof"><span>${x.n.name}</span><span>amitié ${sgn(x.da)}${x.dl?' · amour '+sgn(x.dl):''} <small class="muted">(${x.a.ami})</small></span></div>`).join(''):'<p class="muted">Rien n\'a bougé cette semaine.</p>'}</div>`
+  +`<div class="card"><span class="eyebrow">Histoires de cœur</span>${G.partner?`<p>En couple avec <b>${WHO[G.partner].name}</b> 💞</p>`:love.length?love.slice(0,2).map(n=>`<p style="margin:4px 0">${n.name} pense souvent à toi… 👀 <small class="muted">(amour ${G.rel[n.id].amour})</small></p>`).join(''):'<p class="muted">Rien de nouveau de ce côté-là.</p>'}</div>`
+  +(fam.length?`<div class="card"><span class="eyebrow">Famille</span>${fam.map(([f,d])=>`<div class="prof"><span>${esc(f.name)} <small class="muted">${f.role}</small></span><span>${sgn(d)}</span></div>`).join('')}</div>`:'')
+  +`<div class="card"><span class="eyebrow">Groupes</span>${groupsHTML()}${G.rival?`<p class="muted" style="margin:6px 0 0">Rivalité de l'année : <b>${WHO[G.rival].name}</b> (amitié ${G.rel[G.rival].ami})</p>`:''}</div>`
+  +(evs.length?`<div class="card"><span class="eyebrow">Moments forts</span>${evs.map(l=>`<p style="margin:4px 0">${esc(l.t)}</p>`).join('')}</div>`:'')
+  +`<div class="row"><span class="muted">Insta : ${G.ig.fans-S0.fans>=0?'+':''}${G.ig.fans-S0.fans} abonnés</span><button class="gbtn" type="button" data-close>Nouvelle semaine</button></div>`}
+function weekTick(){if(wdOf(G.day)!==5||G.day<3)return;groupWeek();popSheet(weekSheet());G.wsnap=weekSnap()}
+
+/* ---------- fins de l'année : selon le bac et les relations ---------- */
+function ending(){const r=G.bac.result||{},friends=NPCS.filter(n=>G.rel[n.id].ami>=60),close=friends.length,fam=mean(G.family.map(f=>G.famRel[f.id]||0))||0,adopt=Object.values(G.gstate||{}).filter(s=>s==='adopte').length,betr=(G.marks||[]).filter(m=>m.k==='trahison').length;
+ const bac=!r.ok?'rate':r.ment==='Très bien'?'tb':r.ment==='Bien'?'b':r.ment==='Assez bien'?'ab':r.ratt?'ratt':'admis';
+ const soc=close>=4||adopt>=2?'entoure':close>=2||G.partner?'proche':'seul';
+ const BAC={tb:'mention Très bien 🏅',b:'mention Bien',ab:'mention Assez bien',admis:'bac en poche, sans mention',ratt:"bac obtenu au rattrapage, de justesse",rate:'bac raté'};
+ const T={
+  'tb-entoure':["La légende de la promo",P("Mention très bien ET entouré·e de tes amis : tu as tout réussi. Ton nom restera dans les couloirs du lycée.")],
+  'tb-proche':["Brillant·e et bien accompagné·e",P("Une mention très bien et quelques amis en or : l'équilibre parfait pour la suite.")],
+  'tb-seul':["Major de promo… mais seul·e",P("Tu as la meilleure note du lycée, mais au moment de fêter ça, peu de monde autour de toi. Tes études commencent, il est temps d'ouvrir ton cœur.")],
+  'b-entoure':["Le duo parfait : travail et amitié",P("Mention bien et une bande d'amis soudée : cet été sera inoubliable.")],
+  'ab-entoure':["Bien entouré·e, bac assuré",P("Mention assez bien et des amis partout : tu as profité de ta terminale à fond.")],
+  'admis-entoure':["Le cœur avant tout",P("Pas de mention, mais tout le lycée t'adore. Tes amis sont ta plus belle réussite.")],
+  'ratt-entoure':["Sauvé·e par le gong",P("Le bac de justesse au rattrapage… et tes amis qui t'attendaient devant le lycée en criant. Quelle fin !")],
+  'rate-entoure':["Bac raté, mais pas seul·e",P("Le bac n'est pas passé cette fois. Mais tes amis et ta famille sont là, et l'an prochain tu reviendras plus fort·e.")],
+  'rate-proche':["Une année pour rebondir",P("Le bac est raté, mais quelques personnes comptent vraiment pour toi. Ensemble, vous préparez déjà la revanche.")],
+  'rate-seul':["Un nouveau départ",P("Bac raté et peu d'amis : cette année a été dure. Mais c'est aussi le début d'une nouvelle histoire, ailleurs, avec de nouvelles chances.")]};
+ const key=bac+'-'+soc,t=T[key]||T[(bac==='rate'?'rate':bac==='tb'?'tb':'admis')+'-'+soc]||[r.ok?"Une belle année":"Une année difficile",P(r.ok?"Tu as ton bac et des souvenirs plein la tête.":"Le bac n'est pas passé, mais l'histoire continue.")];
+ const epi=NPCS.map(n=>{const a=G.rel[n.id].ami,c=G.partner===n.id;return `<div class="prof"><span>${n.name}</span><small class="muted">${c?'part en vacances avec toi 💞':hasMark(n.id,'trahison')?P("ne t'a jamais pardonné·e"):a>=75?(FICHES[n.id].g==='f'?'reste ta meilleure amie':'reste ton meilleur ami'):a>=50?'te promet de garder contact':a>=20?'te souhaite bonne chance':P('t\'a déjà oublié·e')}</small></div>`}).join('');
+ return {key,title:t[0],text:t[1],bac:BAC[bac],epi,stats:{close,fam:Math.round(fam),adopt,betr}}}
+function endingSheet(){const e=ending(),r=G.bac.result||{};
+ return sheetHead('🎓 Fin de la terminale',e.bac)+`<div class="card felt"><h2 style="margin:0 0 6px">${esc(e.title)}</h2><p class="story-text" style="margin:0">${esc(e.text)}</p></div>`
+  +`<div class="card list"><div class="prof"><span>Bac</span><b>${r.fin!=null?fmtG(r.fin)+'/20':'–'}</b></div><div class="prof"><span>Amis proches</span><b>${e.stats.close}</b></div><div class="prof"><span>${P("Groupes qui t'ont adopté·e")}</span><b>${e.stats.adopt}</b></div><div class="prof"><span>Complicité familiale</span><b>${e.stats.fam}/100</b></div>${e.stats.betr?`<div class="prof"><span>Trahisons</span><b>${e.stats.betr}</b></div>`:''}</div>`
+  +`<div class="card"><span class="eyebrow">Et après ?</span>${e.epi}</div><p class="muted">Les vacances commencent : tu peux continuer à profiter de tes amis et de ta famille.</p>`}
+EVENTS.push(...EVENTS2);
 
 /* ---------- écouteurs ---------- */
 $('sheetBody').addEventListener('click',e=>{
@@ -3252,6 +3404,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(t.id==='gRestartOk'){restartGame();return}
  if(igClick(t))return;
  {let m;if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
+  if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
   if(t.closest('[data-revquick]')){const w=Object.keys(SUBJ).sort((a,b)=>G.know[a]-G.know[b]).slice(0,3);revise(pickR(w));return}}
  const ch=t.closest('.choice');
  if(ch){const d=ch.dataset;
@@ -3261,6 +3414,7 @@ $('sheetBody').addEventListener('click',e=>{
   if(d.rs!==undefined){const s=cm.rsugg[+d.rs];sendReply(s.text,s.t);return}
   if(d.ntone){sendNote(d.ntone);return}
   if(d.rev){reviseGame(d.rev);return}
+  if(d.club){clubToggle(d.club);return}
   if(d.out){d.out.startsWith('f_')?famOuting(d.out,d.pl):outing(d.out,d.pl);return}}
  const q=s=>t.closest(s);
  let b;
@@ -3315,6 +3469,8 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-bacres]')){openSheet(bacSheet(G.bac.result),true);return}
  if(b=t.closest('[data-ca]')){classAct(b.dataset.ca);return}
  if(t.closest('[data-evalgame]')){evalGame();return}
+ if(t.closest('[data-clubs]')){openSheet(clubsSheet());return}
+ if(b=t.closest('[data-clubgo]')){clubGo(b.dataset.clubgo);return}
  if(b=t.closest('[data-bacgame]')){bacGame(b.dataset.bacgame);return}
  if(b=t.closest('[data-place]')){G.place=b.dataset.place;drawView();return}
  if(b=t.closest('[data-person]')){openPerson(b.dataset.person);return}
@@ -3365,7 +3521,7 @@ $('famGo').onclick=()=>{
  try{localStorage.setItem(KEY,JSON.stringify(me()))}catch(e){}
  famDraft.forEach(f=>{f.name=(f.name||'').trim()||f.role});
  if(famEdit){G.family=famDraft.map((f,i)=>{const old=G.family.find(x=>x.id===f.id);const id=old?old.id:'fam'+Date.now()+i;if(G.famRel[id]==null)G.famRel[id]=65;return{role:f.role,name:f.name,trait:f.trait,id,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))}});saveG();showGame();return}
- G=newGame(famDraft);planPosts();
+ G=newGame(famDraft);planPosts();pickRival();G.wsnap=weekSnap();
  G.phaseKey=phase().key;G.lastPhase=phase();
  if(G.rel.ines&&G.rel.ines.ami>=60)pushMsg('ines','them',`Coucou ! C'est toi ${me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle'} ? Bienvenue au lycée ✨ si t'as besoin de quoi que ce soit, demande-moi 🥰`);
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
