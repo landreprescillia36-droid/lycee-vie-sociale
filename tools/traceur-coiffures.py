@@ -85,7 +85,21 @@ for hid, c in HAIRS.items():
             if d: res.append(['c', d, hexc(rgb[k])])
         return res
     box = np.zeros_like(M); box[by0 * UP:by1 * UP, bx0 * UP:bx1 * UP] = True   # à côté du cou : seulement derrière le corps
-    out[hid] = {'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
+    # les vrais pixels du dessin (texture des mèches), détourés, en PNG ×3 : assets/coiffures/<id>.png
+    os.makedirs('assets/coiffures', exist_ok=True)
+    F = M & ~box; S = 3
+    a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
+    sz = (bigim.shape[1] * S // UP, bigim.shape[0] * S // UP)
+    clean = cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 5, 5, 5, 15)[:, :, ::-1]   # enlève les blocs de la compression JPEG
+    px = cv2.resize(cv2.resize(clean, (bigim.shape[1], bigim.shape[0]), interpolation=cv2.INTER_CUBIC), sz, interpolation=cv2.INTER_AREA); al = cv2.resize(a, sz, interpolation=cv2.INTER_AREA)
+    ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
+    rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
+    cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+    u0 = toU(X0 * UP / S, Y0 * UP / S); u1 = toU(X1 * UP / S, Y1 * UP / S)
+    hl = lu[F] / 255
+    out_img = {'img': [round(u0[0], 2), round(u0[1], 2), round(u1[0] - u0[0], 2), round(u1[1] - u0[1], 2)],
+               'lum': [round(float(np.percentile(hl, 5)), 3), round(float(np.median(hl)), 3), round(float(np.percentile(hl, 98)), 3)]}
+    out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
     if dbg:
         v = np.zeros_like(bigim); v[:] = 235
         for k in range(K): v[L == k] = rgb[k]
