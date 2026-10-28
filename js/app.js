@@ -656,7 +656,8 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer></filter></defs>`}
   const img=`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`;
-  if(part==='back')return flt+img;
+  /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
+  if(part==='back')return `<path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.25:-.5)}"/>`+flt+img;
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
   return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z"/></clipPath></defs><g clip-path="url(#${cid})">${img}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
