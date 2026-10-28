@@ -650,7 +650,7 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
  const id=p+'ha'+part,sil=L[0][1];if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
-  +(part==='front'?`<path d="${sil}" fill="none" stroke="${shade(tint(L[0][2]),-.35)}" stroke-width="1.6" stroke-linejoin="round" opacity=".7"/>`:'')}
+  +`<path d="${A.edge||sil}" fill="none" stroke="${shade(tint(L[0][2]),-.35)}" stroke-width="1.6" stroke-linejoin="round" opacity=".7" clip-path="url(#${id}c)"/>`}
 function hairBack(s,p,hD){
  const f=`url(#${p}hr)`;
  switch(s.hair){

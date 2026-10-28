@@ -12,8 +12,8 @@ import sys, os, json, numpy as np, cv2
 
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
- 'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 165, 'face_row': 108, 'bottom': 286,
-           'cut': [(162, 182, 83, 123)], 'back': (140, 205, 74, 134), 'extend': 40},
+ 'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
+           'cut': [(211, 230, 97, 152)], 'back': (185, 258, 84, 166), 'extend': 50},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
@@ -26,7 +26,8 @@ for hid, c in HAIRS.items():
     cand[c['bottom']:] = False
     for y0, y1, x0, x1 in c['cut']: cand[y0:y1, x0:x1] = False
     n, lab, st, _ = cv2.connectedComponentsWithStats(cand.astype(np.uint8), 8)
-    big = [i for i in range(1, n) if st[i][4] > 400]
+    amax = max(st[i][4] for i in range(1, n))
+    big = [i for i in range(1, n) if st[i][4] > amax * .08]   # les cheveux, pas les yeux ni les sourcils
     hair = np.isin(lab, big)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool)
     # le dessin est coupé par le cadre : on prolonge les mèches (même profil, mêmes reflets) de « extend » pixels
@@ -83,7 +84,8 @@ for hid, c in HAIRS.items():
             d = paths(part & (L == k))
             if d: res.append(['c', d, hexc(rgb[k])])
         return res
-    out[hid] = {'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M)}
+    box = np.zeros_like(M); box[by0 * UP:by1 * UP, bx0 * UP:bx1 * UP] = True   # à côté du cou : seulement derrière le corps
+    out[hid] = {'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
     if dbg:
         v = np.zeros_like(bigim); v[:] = 235
         for k in range(K): v[L == k] = rgb[k]
