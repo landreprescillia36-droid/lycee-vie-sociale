@@ -150,6 +150,22 @@ for hid, c in HAIRS.items():
     px = np.median(np.stack([np.roll(px, k, 0) for k in range(-4, 5)]), 0).astype(np.uint8)
     al = cv2.morphologyEx(al, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))   # bouche les encoches du bord
     al = np.clip((cv2.GaussianBlur(al, (0, 0), 4) - .5) * 3 + .5, 0, 1)   # contour adouci et régulier (pas de bosses)
+    # contours extérieurs lisses sur les côtés (demandé par Prescillia) : sous les tempes, le bord gauche et le bord droit
+    # suivent une courbe moyenne ; les bosses sont coupées, les creux comblés avec les mèches voisines (en miroir)
+    rows_ = [y for y in range(al.shape[0]) if (al[y] > .5).any()]
+    if rows_:
+        y0_ = rows_[0] + int((rows_[-1] - rows_[0]) * .22)
+        Ys = [y for y in rows_ if y >= y0_]
+        Lx = np.array([np.where(al[y] > .5)[0].min() for y in Ys], float); Rx = np.array([np.where(al[y] > .5)[0].max() for y in Ys], float)
+        k = 45; sm = lambda v: np.convolve(np.pad(v, k, mode='edge'), np.ones(2 * k + 1) / (2 * k + 1), 'valid')
+        Ls, Rs = sm(sm(Lx)), sm(sm(Rx))
+        for y, l0, ls, r0, rs in zip(Ys, Lx, Ls, Rx, Rs):
+            l0, r0, ls, rs = int(l0), int(r0), int(round(ls)), int(round(rs))
+            if ls > l0: al[y, :ls] = 0
+            elif ls < l0: n_ = l0 - ls; px[y, ls:l0] = px[y, l0 + 1:l0 + 1 + n_][::-1]; al[y, ls:l0] = al[y, l0 + 2]
+            if rs < r0: al[y, rs + 1:] = 0
+            elif rs > r0: n_ = rs - r0; px[y, r0 + 1:rs + 1] = px[y, r0 - n_:r0][::-1]; al[y, r0 + 1:rs + 1] = al[y, r0 - 2]
+        al = np.clip((cv2.GaussianBlur(al, (0, 0), 1.5) - .5) * 2 + .5, 0, 1)
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
