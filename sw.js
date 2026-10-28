@@ -1,8 +1,8 @@
 /* Service worker : met le jeu en cache pour qu'il marche hors ligne une fois installé.
-   Stratégie : on répond tout de suite avec la copie en cache, et on la met à jour en arrière-plan
-   (les modifications apparaissent donc au lancement suivant).
+   Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
+   À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v14';
+const VERSION = 'v15';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
@@ -14,7 +14,7 @@ const FICHIERS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
@@ -27,9 +27,12 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
   e.respondWith(caches.open(CACHE).then(async c => {
-    const enCache = await c.match(req, { ignoreSearch: true });
-    const reseau = fetch(req).then(r => { if (r.ok) c.put(req, r.clone()); return r; }).catch(() => null);
-    if (enCache) { e.waitUntil(reseau); return enCache; }
-    return (await reseau) || (req.mode === 'navigate' ? c.match('index.html') : Response.error());
+    try {
+      const r = await fetch(req, { cache: 'no-cache' });   // revalide auprès du serveur : jamais de vieille copie
+      if (r.ok) c.put(req, r.clone());
+      return r;
+    } catch (_) {                                          // hors ligne : la copie en cache
+      return (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? c.match('index.html') : Response.error());
+    }
   }));
 });

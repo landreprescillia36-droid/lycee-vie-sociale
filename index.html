@@ -135,7 +135,13 @@
 <script src="js/cloud.js"></script>
 <script>
 /* application installable : le service worker n'existe qu'en https ou sur localhost (pas en ouvrant le fichier directement) */
-if('serviceWorker' in navigator && location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator && location.protocol!=='file:'){
+  /* nouvelle version installée : on recharge une fois pour l'afficher tout de suite */
+  const avant=!!navigator.serviceWorker.controller;let fait=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(avant&&!fait){fait=true;location.reload()}});
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)navigator.serviceWorker.getRegistration().then(r=>r&&r.update()).catch(()=>{})});
+}
 </script>
 </body>
 </html>
