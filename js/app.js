@@ -138,9 +138,9 @@ function render(s,vb,p,showBg){
  o+=`<g transform="translate(0,${fx(-up)})">`;
  /* fond de chevelure : bouche les trous entre la tête et les cheveux avec la couleur des cheveux */
  const GAPF='M97,214 C93,188 92,160 94,138 C98,98 140,70 200,70 C260,70 302,98 306,138 C308,160 307,188 303,214Z';
- o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${hairBack(s,p,hD)}</g>`;
+ o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
- o+=`<g transform="${HT}">`+hairMid(s,p,hD,hL);
+ o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
  const outl=mix(sk,'#6a2e14',.42);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=s.face==='naturel',rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="207" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="209" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${207-ry*.55} C${xx+6*k},${207-ry*.6} ${xx+8*k},${207+ry*.3} ${xx-2*k},${207+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  const blush={aucune:0,rose:.55,fort:1}[s.cheeks]??0;
@@ -172,7 +172,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eye(E,1,p,skDD)}</g><g transform="translate(${200-dx},${cy}) scale(${-sc},${sc})">${eye(E,-1,p,skDD)}</g>`;
  const bx=55+a.browsX, by=cy-47+a.browsY, bd=brow(s.brows,hD);
  o+=`<g transform="translate(${200+bx},${by})">${bd}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${bd}</g>`;
- o+=hairFront(s,p,hD,hL)+edgesSVG(s,hD)+earrings(s.earrings,F.ex)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -642,6 +642,15 @@ const CURLY_R=[[296,200],[316,240],[328,290],[336,340],[338,390],[332,440],[322,
 const CURLY_TOP=[[150,62],[196,50],[246,54],[286,76],[312,112],[322,156],[320,204],[306,248],[294,236],[284,206],[270,180],[248,160],[222,146],[198,136],[180,118],[166,98],[156,86],[140,108],[124,140],[112,176],[106,214],[100,180],[102,130],[120,90]];
 function hgrad(p,s,hD,y2){return `<defs><linearGradient id="${p}lfg" gradientUnits="userSpaceOnUse" x1="0" y1="50" x2="0" y2="${y2}"><stop offset="0" stop-color="${shade(s.hairColor,.22)}"/><stop offset=".3" stop-color="${s.hairColor}"/><stop offset="1" stop-color="${hD}"/></linearGradient></defs>`}
 const OUTL=(d,hD,w,op)=>`<path d="${d}" fill="none" stroke="${shade(hD,-.45)}" stroke-width="${w}" stroke-linejoin="round" opacity="${op}"/>`;
+/* coiffures décalquées sur les dessins de Prescillia (js/coiffures-art.js) : dans une autre couleur,
+   chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
+const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
+function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
+ const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
+ const id=p+'ha'+part,sil=L[0][1];if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.18)}"/>`;
+ return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
+  +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
+  +(part==='front'?`<path d="${sil}" fill="none" stroke="${shade(tint(L[0][2]),-.35)}" stroke-width="1.6" stroke-linejoin="round" opacity=".7"/>`:'')}
 function hairBack(s,p,hD){
  const f=`url(#${p}hr)`;
  switch(s.hair){
