@@ -649,11 +649,16 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
  /* devant : les vrais pixels du dessin ; dans une autre couleur, un filtre convertit la clarté de chaque pixel vers la nouvelle teinte */
- if(part==='front'&&A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf';
+ /* l'image est posée deux fois : derrière le corps (les cheveux de l'arrière passent derrière les épaules)
+    et devant, découpée pour ne garder que la tête et les mèches qui tombent sur la poitrine */
+ if(A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf'+part,cid=p+'hac';
   if(!same){const dk=shade(hc,-.62),lt=shade(hc,.5),N=16,tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer></filter></defs>`}
-  return flt+`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`}
+  const img=`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`;
+  if(part==='back')return flt+img;
+  const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z"/></clipPath></defs><g clip-path="url(#${cid})">${img}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
