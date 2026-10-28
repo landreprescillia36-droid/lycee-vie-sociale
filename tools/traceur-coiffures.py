@@ -13,7 +13,7 @@ import sys, os, json, numpy as np, cv2
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
-           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50},
+           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 7, 'tips': False},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
@@ -30,6 +30,7 @@ for hid, c in HAIRS.items():
     big = [i for i in range(1, n) if st[i][4] > amax * .08]   # les cheveux, pas les yeux ni les sourcils
     hair = np.isin(lab, big)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool)
+    hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_OPEN, np.ones((7, 1), np.uint8)).astype(bool)   # enlève les traits fins horizontaux (contour des épaules)
     # le dessin est coupé par le cadre : on prolonge les mèches (même profil, mêmes reflets) de « extend » pixels
     ext = c.get('extend', 0)
     if ext:
@@ -39,6 +40,40 @@ for hid, c in HAIRS.items():
         hair = np.vstack([hair[:yb], np.repeat(hair[yb - 1:yb], ext, 0), np.zeros((im.shape[0] - yb, im.shape[1]), bool)])
         im = np.vstack([im[:yb], np.vstack(reps)[:ext], im[yb:]])
         skin = np.vstack([skin, np.zeros((ext, skin.shape[1]), bool)])
+    # volume (demandé par Prescillia) : chaque mèche extérieure est étirée vers l'extérieur de « volume » pixels,
+    # progressivement depuis le sommet du crâne ; les reflets suivent puisque ce sont les mêmes pixels étirés
+    vol = c.get('volume', 0)
+    if vol:
+        t0 = np.where(hair.any(1))[0].min()
+        im2 = im.copy(); h2 = hair.copy(); W = hair.shape[1]
+        for y in range(t0, hair.shape[0]):
+            d = vol * min(1, (y - t0) / 28)
+            if d < .3: continue
+            row = hair[y]; xs_ = np.where(row)[0]
+            if not len(xs_): continue
+            for side in (0, 1):
+                if side == 0:
+                    a = xs_.min(); b = a
+                    while b + 1 < W and row[b + 1]: b += 1           # mèche de gauche : [a, b]
+                    tgt = np.arange(max(0, int(a - d)), b + 1); src = b - (b - tgt) * (b - a) / (b - a + d)
+                else:
+                    b = xs_.max(); a = b
+                    while a - 1 >= 0 and row[a - 1]: a -= 1          # mèche de droite : [a, b]
+                    tgt = np.arange(a, min(W, int(b + d) + 1)); src = a + (tgt - a) * (b - a) / (b - a + d)
+                si = np.clip(np.round(src).astype(int), 0, W - 1)
+                im2[y, tgt] = im[y, si]; h2[y, tgt] = hair[y, si]
+        im, hair = im2, h2
+        # contour extérieur lissé (pas de marche à la hauteur des épaules) : on comble avec les pixels du bord
+        rows = [y for y in range(hair.shape[0]) if hair[y].any()]
+        L_ = np.array([np.where(hair[y])[0].min() for y in rows], float); R_ = np.array([np.where(hair[y])[0].max() for y in rows], float)
+        # le bord extérieur ne peut rentrer que très lentement (0,15 px par ligne) : pas de marche aux épaules
+        Ls = L_.copy(); Rs = R_.copy()
+        for i in range(1, len(rows)):
+            if rows[i] >= t0 + 100: Ls[i] = min(L_[i], Ls[i - 1] + .15); Rs[i] = max(R_[i], Rs[i - 1] - .15)
+        for y, l0, ls, r0, rs in zip(rows, L_, Ls, R_, Rs):
+            l0, r0 = int(l0), int(r0); ls = int(round(ls)); rs = int(round(rs))
+            if ls < l0: n_ = l0 - ls; im[y, ls:l0] = im[y, l0 + 2:l0 + 2 + n_][::-1]; hair[y, ls:l0] = True   # mèches en miroir : même texture
+            if rs > r0: n_ = rs - r0; im[y, r0 + 1:rs + 1] = im[y, r0 - 1 - n_:r0 - 1][::-1]; hair[y, r0 + 1:rs + 1] = True
     ys, xs = np.where(hair); top = ys.min()
     row = skin[c['face_row']]; fx = np.where(row)[0]
     fl, fr = fx.min(), fx.max(); cx = (fl + fr + 1) / 2
@@ -90,10 +125,22 @@ for hid, c in HAIRS.items():
     # les vrais pixels du dessin (texture des mèches), détourés, en PNG ×3 : assets/coiffures/<id>.png
     os.makedirs('assets/coiffures', exist_ok=True)
     F = M & ~box; S = 3
-    a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
     sz = (bigim.shape[1] * S // UP, bigim.shape[0] * S // UP)
     clean = cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 5, 5, 5, 15)[:, :, ::-1]   # enlève les blocs de la compression JPEG
+    # trous dans les cheveux (là où le contour de l'épaule croisait les mèches) : bouchés et repeints avec les mèches voisines
+    hole = np.zeros_like(F0 := cv2.resize(F.astype(np.uint8), (im.shape[1], im.shape[0]), interpolation=cv2.INTER_NEAREST))
+    cs_, _ = cv2.findContours(F0, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE); cv2.drawContours(hole, cs_, -1, 1, -1); hole = hole & (1 - F0)
+    n_, lab_, st_, _ = cv2.connectedComponentsWithStats(hole, 8); hole = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] < 400]).astype(np.uint8)   # petits trous seulement
+    near = cv2.dilate(hole, np.ones((5, 5), np.uint8)).astype(bool)
+    lumc = (clean.astype(float) * [.299, .587, .114]).sum(-1)
+    sk_in = (((clean[..., 0].astype(int) - clean[..., 2] > 40) & (clean[..., 0] > 80)) | (near & (lumc > 55)) | hole.astype(bool)).astype(np.uint8)
+    F = F | (cv2.resize(hole, (F.shape[1], F.shape[0]), interpolation=cv2.INTER_NEAREST) > 0)   # restes de peau ou de contour orangé dans les cheveux
+    a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
+    if sk_in.any(): clean = cv2.inpaint(np.ascontiguousarray(clean[:, :, ::-1]), cv2.dilate(sk_in, np.ones((3, 3), np.uint8)), 3, cv2.INPAINT_TELEA)[:, :, ::-1]
     px = cv2.resize(cv2.resize(clean, (bigim.shape[1], bigim.shape[0]), interpolation=cv2.INTER_CUBIC), sz, interpolation=cv2.INTER_AREA); al = cv2.resize(a, sz, interpolation=cv2.INTER_AREA)
+    # mèches verticales : un filtre médian vertical efface les petits traits horizontaux sans toucher aux mèches
+    px = np.median(np.stack([np.roll(px, k, 0) for k in range(-4, 5)]), 0).astype(np.uint8)
+    al = cv2.morphologyEx(al, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))   # bouche les encoches du bord
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
