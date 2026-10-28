@@ -13,7 +13,7 @@ import sys, os, json, numpy as np, cv2
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 165, 'face_row': 108, 'bottom': 286,
-           'cut': [(162, 182, 83, 123)], 'back': (150, 205, 74, 134), 'extend': 40},
+           'cut': [(162, 182, 83, 123)], 'back': (140, 205, 74, 134), 'extend': 40},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None

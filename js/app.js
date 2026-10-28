@@ -647,7 +647,7 @@ const OUTL=(d,hD,w,op)=>`<path d="${d}" fill="none" stroke="${shade(hD,-.45)}" s
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
- const id=p+'ha'+part,sil=L[0][1];if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.18)}"/>`;
+ const id=p+'ha'+part,sil=L[0][1];if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
   +(part==='front'?`<path d="${sil}" fill="none" stroke="${shade(tint(L[0][2]),-.35)}" stroke-width="1.6" stroke-linejoin="round" opacity=".7"/>`:'')}
