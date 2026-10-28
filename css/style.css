@@ -421,3 +421,5 @@ body.playing{background:var(--g-bg)}
 .mg-card.mg-found{background:#173827;border-color:#3fcf8e;opacity:.75}
 .mg-zone{position:relative;height:340px;border-radius:16px;background:#1b1d23;border:1px solid #3a3d47;overflow:hidden}
 .mg-ball{position:absolute;width:56px;height:56px;border:0;border-radius:50%;background:transparent;font-size:44px;line-height:56px;padding:0;cursor:pointer;transform:translate(-0%,-0%)}
+.sq.sm.speed{font:800 13px var(--body);color:var(--g-ink)}
+.sq.sm.speed.on{background:var(--g-blue);color:#fff;border-color:var(--g-blue)}

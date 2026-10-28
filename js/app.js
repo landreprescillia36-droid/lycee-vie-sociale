@@ -1630,7 +1630,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -2450,6 +2450,7 @@ function drawClock(){
  $('gTime').textContent=fmtT(G.min);$('gPhase').textContent=ph.sub?SUBJ[ph.sub]:ph.lbl||PLABEL[ph.type];
  $('gPause').innerHTML=G.paused?'<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z" fill="currentColor"/></svg>';
  $('gPause').setAttribute('aria-label',G.paused?'Reprendre le temps':'Mettre le temps en pause');
+ $('gSpeed').textContent='×'+(G.speed||1);$('gSpeed').classList.toggle('on',(G.speed||1)>1);
  $('gEnergy').textContent=G.energy;$('gEnergy').classList.toggle('low',G.energy<25);
  const a=triAvg(curTri());$('gAvg').textContent=fmtG(a);
  const bar=$('phBar');if(bar)bar.style.width=(clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100)+'%';
@@ -2467,7 +2468,7 @@ function hudTick(){
  if(!ad.dataset.busy){ad.disabled=left>0;ad.innerHTML=left>0?`Pub dans ${left} s`:'<span class="adlong">Regarder une pub </span><span class="adshort">Pub </span><b>+5 ⚡</b><span class="dot"></span>'}
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(1)},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(mg?1:(G.speed||1))},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -3486,6 +3487,9 @@ $('gView').addEventListener('click',e=>{
 $('gEvent').onclick=playEvent;
 $('gCompose').onclick=()=>openCompose('post');
 $('gMusic').onclick=()=>{const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')};
+/* vitesse du temps : 1, 2, 5 ou 10 minutes de jeu par seconde (le temps repasse à ×1 pendant un mini-jeu) */
+const SPEEDS=[1,2,5,10];
+$('gSpeed').onclick=()=>{G.speed=SPEEDS[(SPEEDS.indexOf(G.speed||1)+1)%SPEEDS.length];drawClock();toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`);saveG()};
 $('gPause').onclick=()=>{G.paused=!G.paused;drawClock();toast(G.paused?'⏸ Temps en pause':'▶️ Le temps reprend');saveG()};
 $('gBonus').onclick=()=>{if(!G.bonus){toast('Ton bonus se recharge');return}const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE;saveG();drawHUD()};
 $('gEnergy').onclick=()=>toast(`Énergie ${G.energy}/100 : elle baisse avec le temps et les actions, remonte en dormant et en mangeant`);
