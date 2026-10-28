@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='16';
+const APP_VERSION='17';
 try{document.getElementById('atVers').textContent='Version '+APP_VERSION}catch(_){}
 /* mise à jour forcée : vide les copies en cache et le service worker, garde la partie (localStorage) */
 async function forceUpdate(){try{toast('⏳ Mise à jour…')}catch(_){}
@@ -912,12 +912,12 @@ const HAIRDB={
  degrade:{n:'Dégradé bouclé',c:'court boucle',r:'G2',x:"Masse de boucles sur le dessus, ligne frontale nette et droite, côtés courts en couleur pleine jusqu'au haut des oreilles, d'après ta planche."},
  lisseoreilles:{n:'Longs lisses derrière les oreilles',c:'long lisse',r:'L2',x:"Raie au milieu marquée, cheveux lisses et brillants qui passent derrière les oreilles puis tombent tout droit devant les épaules jusqu'à la poitrine, d'après ta planche (vue de face)."},
  lisselong:{n:'Longs lâchés, raie au milieu',c:'long lisse',r:'L3',x:"Raie au milieu bien visible, dessus plaqué près de la tête, front dégagé en arc, oreilles visibles devant les cheveux, longueurs lisses qui retombent devant les épaules, d'après ta planche (vue de face)."},
- longondule:{n:'Longs lisses, raie au milieu',c:'long lisse',r:null,x:"Version longue du carré ondulé, sans ondulations : même raie et mêmes ombres, longueurs lisses jusqu'à la poitrine."},
+ longondule:{n:'Longs lisses (dessin simple)',c:'long lisse',r:null,x:"Version longue du carré ondulé, sans ondulations : même raie et mêmes ombres, longueurs lisses jusqu'à la poitrine."},
  carreondule:{n:'Carré ondulé',c:'mi ondule boucle',r:'F',x:"Volume, raie et longueur respectés ; contour ondulé plus régulier que les mèches de la référence."},
  demichignon:{n:'Demi-chignon haut, longueurs lisses',c:'long lisse chignon attache',r:'F',x:"Chignon sur le dessus et longueurs lisses respectés."},
  queuehaute:{n:'Queue haute avec chouchou',c:'long ondule queue attache',r:'F',x:"Chouchou orange, queue ondulée sur l'épaule et mèche du visage reprises ; la queue est un peu plus courte."},
  carreplongeant:{n:'Carré lisse, mèche balayée',c:'mi lisse',r:'F',x:"Pointes nettes et mèche de côté respectées ; effilage des pointes simplifié."},
- longs:{n:'Longs lisses, raie au milieu',c:'long lisse',r:'I',x:"Coiffure d'Inès reprise à l'identique de ta capture."},
+ longs:{n:'Cheveux longs lisses',c:'long lisse',r:'I',x:"Reprise de ton dessin : vrais pixels, raie au milieu, cheveux de l'arrière derrière les épaules."},
  ondulescote:{n:'Longs ondulés ramenés sur le côté',c:'long ondule',r:'F',x:"Grande mèche ondulée sur l'épaule respectée ; boucle finale plus simple."},
  longsondules:{n:'Longs ondulés',c:'long ondule',r:'F',x:"Ondulations régulières, un peu moins marquées que la référence."},
  longboucle:{n:'Longs bouclés volumineux',c:'long boucle',r:'D',x:"Gros volume, ligne des cheveux ondulée, boucles qui descendent jusqu'à la poitrine et retombent devant les épaules près du cou, d'après ton dessin."},
@@ -953,7 +953,7 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
+const HAIR_ALL=['longs','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
