@@ -173,7 +173,7 @@ function render(s,vb,p,showBg){
  const bx=55+a.browsX, by=cy-47+a.browsY, bd=brow(s.brows,hD);
  o+=`<g transform="translate(${200+bx},${by})">${bd}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${bd}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)?11:0))+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)?11:0),HART(s)?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -849,14 +849,14 @@ function hairFront(s,p,hD,hL){
   case 'nattes':{let r=`<path d="${SLICK}" fill="${mix(s.hairColor,s.skin,.4)}"/>`;[120,146,172,200,228,254,280].forEach(x=>{const D=`M${x},${(106+Math.abs(x-200)*.55).toFixed(1)} Q${(200+(x-200)*.85).toFixed(1)},80 ${(200+(x-200)*.45).toFixed(1)},64`;r+=`<path d="${D}" stroke="${s.hairColor}" stroke-width="15" fill="none" stroke-linecap="round"/><path d="${D}" stroke="${hD}" stroke-width="15" fill="none" stroke-dasharray="3 4" opacity=".55"/>`});return r}
   default:return '';
  }}
-function earrings(t,ex){
- const xs=[ex-2,400-ex+2];
- switch(t){
+function earrings(t,ex,dy){
+ const xs=[ex-2,400-ex+2];dy=dy||0;
+ const o=(()=>{switch(t){
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
   case 'perles':return xs.map(x=>`<circle cx="${x}" cy="234" r="5.5" fill="#fbf7ef" stroke="#d9cfbd" stroke-width="1"/><circle cx="${x-1.5}" cy="232.5" r="1.6" fill="#fff"/>`).join('');
   case 'etoiles':return xs.map(x=>`<path transform="translate(${x},240)" d="M0,-9 L2.6,-2.8 9,-2.8 3.8,1.2 5.6,7.6 0,3.8 -5.6,7.6 -3.8,1.2 -9,-2.8 -2.6,-2.8Z" fill="#f2c230" stroke="#b9861b" stroke-width="1"/>`).join('');
   default:return '';
- }}
+ }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){
  if(t==='aucune') return '';
  const L=200-dx,R=200+dx,r=36*sc, fr='#2b2320';
