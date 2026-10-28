@@ -172,7 +172,8 @@ function render(s,vb,p,showBg){
  o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eye(E,1,p,skDD)}</g><g transform="translate(${200-dx},${cy}) scale(${-sc},${sc})">${eye(E,-1,p,skDD)}</g>`;
  const bx=55+a.browsX, by=cy-47+a.browsY, bd=brow(s.brows,hD);
  o+=`<g transform="translate(${200+bx},${by})">${bd}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${bd}</g>`;
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)?11:0))+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
