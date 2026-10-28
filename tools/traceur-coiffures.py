@@ -13,7 +13,7 @@ import sys, os, json, numpy as np, cv2
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
-           'cut': [(211, 230, 97, 152)], 'back': (185, 258, 84, 166), 'extend': 50},
+           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
@@ -33,14 +33,16 @@ for hid, c in HAIRS.items():
     # le dessin est coupé par le cadre : on prolonge les mèches (même profil, mêmes reflets) de « extend » pixels
     ext = c.get('extend', 0)
     if ext:
-        yb = np.where(hair.any(1))[0].max()
-        hair = np.vstack([hair[:yb + 1], np.repeat(hair[yb - 1:yb], ext, 0), np.zeros((im.shape[0] - yb - 1, im.shape[1]), bool)])[:im.shape[0] + ext]
-        im = np.vstack([im[:yb + 1], np.repeat(im[yb - 6:yb], -(-ext // 6), 0)[:ext], im[yb + 1:]])
+        yb = np.where(hair.any(1))[0].max() - 4          # les dernières lignes touchent le bord du cadre
+        band = im[yb - 28:yb]; reps = []                  # bande de 28 lignes répétée en miroir : pas de raccord visible
+        while sum(len(x) for x in reps) < ext: reps.append(band[::-1] if len(reps) % 2 == 0 else band)
+        hair = np.vstack([hair[:yb], np.repeat(hair[yb - 1:yb], ext, 0), np.zeros((im.shape[0] - yb, im.shape[1]), bool)])
+        im = np.vstack([im[:yb], np.vstack(reps)[:ext], im[yb:]])
         skin = np.vstack([skin, np.zeros((ext, skin.shape[1]), bool)])
     ys, xs = np.where(hair); top = ys.min()
     row = skin[c['face_row']]; fx = np.where(row)[0]
     fl, fr = fx.min(), fx.max(); cx = (fl + fr + 1) / 2
-    sx = 188 / (fr - fl + 1); sy = (312 - 56) / (c['chin'] - top)
+    sy = (312 - 56) / (c["chin"] - top); sx = sy   # même échelle en largeur et en hauteur : la forme du dessin est gardée telle quelle
     toU = lambda px, py: (200 + (px / UP - cx) * sx, 56 + (py / UP - top) * sy)
     bigim = cv2.resize(im.astype(np.uint8), None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
     M = cv2.GaussianBlur(cv2.resize(hair.astype(np.float32), None, fx=UP, fy=UP, interpolation=cv2.INTER_LINEAR), (41, 41), 0) > .5
@@ -84,7 +86,7 @@ for hid, c in HAIRS.items():
             d = paths(part & (L == k))
             if d: res.append(['c', d, hexc(rgb[k])])
         return res
-    box = np.zeros_like(M); box[by0 * UP:by1 * UP, bx0 * UP:bx1 * UP] = True   # à côté du cou : seulement derrière le corps
+    box = np.zeros_like(M)   # tout est dessiné devant : le dessin montre déjà les cheveux derrière le cou
     # les vrais pixels du dessin (texture des mèches), détourés, en PNG ×3 : assets/coiffures/<id>.png
     os.makedirs('assets/coiffures', exist_ok=True)
     F = M & ~box; S = 3
