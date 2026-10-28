@@ -13,13 +13,18 @@ import sys, os, json, numpy as np, cv2
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
-           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 7, 'tips': False},
+           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 7, 'tips': False, 'mirror': 'right'},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
 out = {}
 for hid, c in HAIRS.items():
     im = cv2.imread(c['src'])[:, :, ::-1].astype(int)
+    if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
+        sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
+        xs0 = np.arange(im.shape[1]); src = np.clip(np.round(2 * cx0 - 1 - xs0).astype(int), 0, im.shape[1] - 1)
+        side = xs0 < cx0 if c['mirror'] == 'right' else xs0 >= cx0
+        im = im.copy(); im[:, side] = im[:, src[side]]
     lum = (im * [.299, .587, .114]).sum(-1); r, g, b = im[..., 0], im[..., 1], im[..., 2]
     skin = (r - b > 45) & (r > 120)
     cand = ((lum < 95) | ((lum < 130) & (abs(r - b) < 25))) & ~skin
