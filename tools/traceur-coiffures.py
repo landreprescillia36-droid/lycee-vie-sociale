@@ -13,7 +13,7 @@ import sys, os, json, numpy as np, cv2
 HAIRS = {
  # id du jeu : image, rangée du menton, rangée de mesure de la largeur du visage, zones à retirer, zone « derrière le cou »
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
-           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 7, 'tips': False, 'mirror': 'right'},
+           'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 0, 'tips': False, 'mirror': 'right', 'fcut': [345, 136]},
 }
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
@@ -22,6 +22,9 @@ for hid, c in HAIRS.items():
     im = cv2.imread(c['src'])[:, :, ::-1].astype(int)
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
         sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
+        # axe = la raie (colonne la plus claire en haut du crâne), pour ne pas doubler la raie
+        lu0 = (im * [.299, .587, .114]).sum(-1); dk = np.where((lu0 < 70).any(1))[0][0]
+        cols = np.arange(int(cx0) - 10, int(cx0) + 11); cx0 = cols[np.argmax(lu0[dk + 4:dk + 22, cols].mean(0))] + .5
         xs0 = np.arange(im.shape[1]); src = np.clip(np.round(2 * cx0 - 1 - xs0).astype(int), 0, im.shape[1] - 1)
         side = xs0 < cx0 if c['mirror'] == 'right' else xs0 >= cx0
         im = im.copy(); im[:, side] = im[:, src[side]]
@@ -146,6 +149,7 @@ for hid, c in HAIRS.items():
     # mèches verticales : un filtre médian vertical efface les petits traits horizontaux sans toucher aux mèches
     px = np.median(np.stack([np.roll(px, k, 0) for k in range(-4, 5)]), 0).astype(np.uint8)
     al = cv2.morphologyEx(al, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))   # bouche les encoches du bord
+    al = np.clip((cv2.GaussianBlur(al, (0, 0), 4) - .5) * 3 + .5, 0, 1)   # contour adouci et régulier (pas de bosses)
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
@@ -153,6 +157,7 @@ for hid, c in HAIRS.items():
     hl = lu[F] / 255
     out_img = {'img': [round(u0[0], 2), round(u0[1], 2), round(u1[0] - u0[0], 2), round(u1[1] - u0[1], 2)],
                'lum': [round(float(np.percentile(hl, 5)), 3), round(float(np.median(hl)), 3), round(float(np.percentile(hl, 98)), 3)]}
+    if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
     if dbg:
         v = np.zeros_like(bigim); v[:] = 235
