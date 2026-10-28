@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v15';
+const VERSION = 'v16';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',

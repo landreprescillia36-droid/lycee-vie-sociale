@@ -1,3 +1,11 @@
+/* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
+const APP_VERSION='16';
+try{document.getElementById('atVers').textContent='Version '+APP_VERSION}catch(_){}
+/* mise à jour forcée : vide les copies en cache et le service worker, garde la partie (localStorage) */
+async function forceUpdate(){try{toast('⏳ Mise à jour…')}catch(_){}
+ try{if(window.caches)for(const k of await caches.keys())await caches.delete(k)}catch(_){}
+ try{if(navigator.serviceWorker)for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister()}catch(_){}
+ location.replace(location.pathname+'?v='+Date.now())}
 /* ---------- couleurs ---------- */
 function rgb(h){h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.substr(i,2),16))}
 function mix(a,b,t){const A=rgb(a),B=rgb(b);return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join('')}
@@ -2852,7 +2860,7 @@ function drawProfile(){
   <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px"><p class="muted">${SEXC[me().sexe]} · ${oriLabel(me().orient,me().sexe)}</p><p class="muted">Niveau ${G.objDone.length} · Jour ${G.day} · ${G.partner?'En couple avec '+WHO[G.partner].name+' 💞':'Célibataire'}</p>
   <div class="gg"><span>Énergie</span><div class="bar"><i style="width:${G.energy}%;background:#ffd23f"></i></div><b>${G.energy}</b></div>
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
-  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button></div></div></div>
+  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button><button class="gbtn ghost" type="button" id="gMaj">🔄 Mettre à jour l'appli</button></div><p class="muted" style="margin:0">Version ${APP_VERSION}</p></div></div>
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
  <div class="sec-title">Chances de réussite à l'examen</div><div class="card">${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
  <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
@@ -3500,6 +3508,7 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-fetesheet]')){const f=FETES.find(x=>x.id===b.dataset.fetesheet);if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
  if(t.id==='gRestart'){askRestart();return}
+ if(t.id==='gMaj'){forceUpdate();return}
  if(t.id==='gCompte'){window.CLOUD.open();return}
  if(b=t.closest('[data-evsd]')){const e=G.evals.find(x=>x.sd===+b.dataset.evsd);if(e)openSheet(evalSheet(e),true);return}
  if(b=t.closest('[data-bul]')){const x=G.bulletins.find(y=>y.tri===+b.dataset.bul);if(x)openSheet(bulletinSheet(x),true);return}
