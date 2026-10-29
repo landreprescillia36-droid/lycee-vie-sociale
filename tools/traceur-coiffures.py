@@ -30,22 +30,34 @@ HAIRS.update({
 })
 # planche des coiffures bouclées et crépues (docs/references/coiffures/planche-bouclees.png) : autre modèle de visage,
 # un peu plus grand (×1,033 d'après l'écart des yeux et la hauteur yeux-menton) ; rangées : étiquette du nom en bas de chaque case
-ROW_B = [268, 236, 219, 204]
+# Prescillia l'a refaite de face, avec le visage du jeu (planche-bouclees-face.png) : c'est celle-ci qui est décalquée ;
+# l'ancienne (têtes de trois quarts, dossier bouclees/) reste pour mémoire
+ROW_B = [274, 256, 251, 204]
 def boucle(nom, rang, back=False, **kw):
-    return {'src': f'docs/references/coiffures/bouclees/{nom}.png', 'match': 'b', 'bottom': ROW_B[rang], 'back': back, 'tips': False, 'smooth': False, 'bord': 13, **kw}
+    return {'src': f'docs/references/coiffures/bouclees-face/{nom}.png', 'match': 'c', 'bottom': ROW_B[rang], 'back': back, 'tips': False, 'smooth': False, 'bord': 13, **kw}
 for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['bbox', 'bcollees', 'bdemiqueue', 'bqueue', 'blongs'],
                          ['bchignonhaut', 'bchignonbas', 'btwists', 'bchignonmeches', 'bwashgo'], ['bfoulard', 'btressesboucles', 'bcourt', 'bqueuehaute', 'btressesarriere']]):
-    for k in ids: HAIRS[k] = boucle(k, i)
-HAIRS['bbox']['bottom'] = 222
+    for k in ids: HAIRS[k] = boucle(k, i, combler='gd')   # trous entre les cheveux et le visage (oreille du dessin) bouchés
 HAIRS['bfoulard']['accessoire'] = 'foulard'
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bchignonhaut', 'bchignonmeches', 'bfoulard', 'bcourt', 'bchignonbas']: HAIRS[k]['oreilles'] = True
 for k in ['bqueue', 'bqueuehaute', 'btressesarriere']: HAIRS[k].update(oreilles=True, combler='gd')
-for k, v in {'bchignonhaut': (-71, 51), 'bchignonbas': (-86, 57), 'bchignonmeches': (-75, 52), 'bqueue': (-75, 57),
-             'btressesarriere': (-70, 47), 'bqueuehaute': (-72, 50)}.items(): HAIRS[k]['face3q'] = v   # bords du crâne (px, depuis l'axe des yeux)
-HAIRS['bchignonhaut']['chignon'] = (20, 60, 95); HAIRS['bchignonmeches']['chignon'] = (22, 50, 85)
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
+K_LONGS, CHIN_U = 1.785, 308.5
+def _bez(d):   # contour du visage « ovale » du jeu (FACES.ovale dans js/app.js), en points
+    n = [float(t) for t in d.replace('M', ' ').replace('C', ' ').replace('Z', ' ').replace(',', ' ').split()]
+    P = [(n[0], n[1])]; pts = []
+    for i in range(2, len(n), 6):
+        p1, p2, p3 = (n[i], n[i + 1]), (n[i + 2], n[i + 3]), (n[i + 4], n[i + 5]); p0 = P[-1]
+        for t in np.linspace(0, 1, 30):
+            pts.append([(1 - t) ** 3 * p0[k] + 3 * (1 - t) ** 2 * t * p1[k] + 3 * (1 - t) * t * t * p2[k] + t ** 3 * p3[k] for k in (0, 1)])
+        P.append(p3)
+    return np.array(pts, np.float32)
+FACE_OV = _bez('M200,312 C140,312 106,262 106,190 C106,112 148,70 200,70 C252,70 294,112 294,190 C294,262 260,312 200,312Z')
 FACES_T = {True: (cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138], 34, 25.5, 80, 1.0),
-           'b': (cv2.imread('docs/references/coiffures/bouclees/bcarre.png')[116:186, 82:162], 39.25, 27, 82.75, 1.033)}
+           'b': (cv2.imread('docs/references/coiffures/bouclees/bcarre.png')[116:186, 82:162], 39.25, 27, 82.75, 1.033),
+           # visage du jeu dessiné par Prescillia : yeux à ±30 px et 59 px au-dessus du menton = yeux du jeu (±52, y 205) et menton (y 312)
+           'c': (cv2.imread('docs/references/coiffures/bouclees-face/bcarre.png')[118:194, 95:191], 48, 30, 89.5, K_LONGS / 1.77)}
+EYES_T = {True: (26.25, 54.5), 'b': (27.1, 56.3), 'c': (30, 59.5)}   # écart des yeux au centre et hauteur yeux-menton, en px du modèle (taille 1)
 def visage(img, m=True):
     T, ex, ey_, ch, k = FACES_T[m]; best = None
     for s in np.arange(.8, 1.45, .01):
@@ -55,11 +67,12 @@ def visage(img, m=True):
     v, s, (x, y) = best
     return s * k, x + ex * s, y + ch * s
 # repère du dessin « longs » : 1,785 unité de tête par pixel du modèle, menton du modèle en y = 308,5
-K_LONGS, CHIN_U = 1.785, 308.5
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
 out = {}
+ONLY = os.environ.get("ONLY", "").split(",") if os.environ.get("ONLY") else None
 for hid, c in HAIRS.items():
+    if ONLY and hid not in ONLY: continue
     im = cv2.imread(c['src'])[:, :, ::-1].astype(int)
     if c.get('match'):
         fs, fcx, fch = visage(cv2.imread(c['src']), c['match'])
@@ -78,8 +91,10 @@ for hid, c in HAIRS.items():
                 mx -= (S_ * np.clip((y1_ - ys_) / (y1_ - y0_), 0, 1))[:, None]
             im = cv2.remap(im.astype(np.uint8), mx, my, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).astype(int)
         c['cut'] = [(int(fch + 4 * fs), int(fch + 22 * fs), int(fcx - 24 * fs), int(fcx + 24 * fs))]   # ras-de-cou
-        ey = fch - 54.5 * fs   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
-        c['cut'] += [(int(ey - 10 * fs), int(ey + 10 * fs), int(fcx + dx * fs - 15 * fs), int(fcx + dx * fs + 15 * fs)) for dx in (-26.25, 26.25)]
+        ex_, ey_ = EYES_T[c['match']]; sc_ = fs / FACES_T[c['match']][4]   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
+        ey = fch - ey_ * sc_
+        mh, mw = (10, 15) if c['match'] is True else (11, 16)
+        c['cut'] += [(int(ey - mh * sc_), int(ey + mh * sc_), int(fcx + dx * sc_ - mw * sc_), int(fcx + dx * sc_ + mw * sc_)) for dx in (-ex_, ex_)]
         c['back'] = (int(fch - 6 * fs), c['bottom'], 0, im.shape[1]) if c['back'] else None
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
         sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
@@ -173,13 +188,18 @@ for hid, c in HAIRS.items():
         for y, x in zip(*np.where(c.get('perle', fill))):   # contour sombre des perles retirées : rebouché en cheveux s'il est hors du visage du jeu
             u, v = toU(x * UP, y * UP)
             if ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
-        for y in range(top, int(c['chin'] - 28 * c['face'][0]) if c.get('combler') else top):   # jusqu'au bas de l'oreille
+        exact = c.get('match') == 'c'   # planche au visage du jeu : contour exact du visage ovale, des tempes jusqu'au menton
+        y1_ = int(c['chin']) if exact else int(c['chin'] - 28 * c['face'][0])
+        for y in range(top, y1_ if c.get('combler') else top):   # jusqu'au bas de l'oreille
             xs_ = np.where(hair[y])[0]
             if len(xs_) < 2: continue
-            for x in range(xs_.min(), xs_.max()):
+            for x in (range(hair.shape[1]) if exact else range(xs_.min(), xs_.max())):
                 if hair[y, x]: continue
                 u, v = toU(x * UP, y * UP)
-                if (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+                if exact:   # entre les cheveux (du côté extérieur) et le bord du visage, sur une bande de 22 unités : l'oreille du dessin est rebouchée
+                    if not (140 < v < 245 and (xs_.min() < x if u < 200 else xs_.max() > x)): continue   # hauteur de l'oreille seulement
+                    if -22 < cv2.pointPolygonTest(FACE_OV, (float(u), float(v)), True) < 4: fill[y, x] = True   # 4 unités sur le bord du visage : pas de liseré clair
+                elif (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
         n_, lab_, st_, _ = cv2.connectedComponentsWithStats(fill.astype(np.uint8), 8)
         fill = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > 6])
         # couleur unie des cheveux voisins (moyenne des seuls pixels de cheveux, très floutée) : pas de peau, pas de motif
@@ -254,7 +274,7 @@ for hid, c in HAIRS.items():
     near = cv2.dilate(hole, np.ones((5, 5), np.uint8)).astype(bool)
     lumc = (clean.astype(float) * [.299, .587, .114]).sum(-1)
     sk_in = (((clean[..., 0].astype(int) - clean[..., 2] > 40) & (clean[..., 0] > 80)) | (near & (lumc > 55)) | hole.astype(bool)).astype(np.uint8)
-    if c.get('match') == 'b':   # bretelles blanches du débardeur et fond clair coincés entre les boucles ou les tresses : repeints en cheveux
+    if c.get('match') in ('b', 'c'):   # bretelles blanches du débardeur et fond clair coincés entre les boucles ou les tresses : repeints en cheveux
         sk_in |= ((lumc > 140) & (abs(clean[..., 0].astype(int) - clean[..., 2]) < 45)).astype(np.uint8)
     if c.get('accessoire'): sk_in[cv2.dilate(hole, np.ones((5, 5), np.uint8)) > 0] = 0   # barrette : gardée telle quelle, pas repeinte en cheveux
     F = F | (cv2.resize(hole, (F.shape[1], F.shape[0]), interpolation=cv2.INTER_NEAREST) > 0)   # restes de peau ou de contour orangé dans les cheveux

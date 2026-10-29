@@ -663,7 +663,7 @@ function neckZone(face,FY){const k=face+FY;if(NZ[k])return NZ[k];const d=(FACES[
    chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
-function earHoles(s){const ex=(FACES[s.face]||FACES.joufflu).ex,big=s.face==='naturel',rx=(big?21:17)+1,ry=(big?31:27)+1;
+function earHoles(s){const ex=(FACES[s.face]||FACES.joufflu).ex,big=s.face==='naturel',rx=(big?21:17)-1.5,ry=(big?31:27)-1.5;
  return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},207 a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
