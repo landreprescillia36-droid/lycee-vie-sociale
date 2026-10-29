@@ -22,9 +22,9 @@ ROW_BOTTOM = [298, 286, 268]   # au-dessous : étiquette du nom (une par rangée
 def case(nom, rang, back=True, **kw):
     return {'src': f'docs/references/coiffures/{nom}.png', 'match': True, 'bottom': ROW_BOTTOM[rang], 'back': back, 'tips': False, 'smooth': False, **kw}
 HAIRS.update({
- 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False), 
+ 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False, combler='gd'), 
  'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
- 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd', front=True),
+ 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd'),
  'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
  'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd'),
 })
