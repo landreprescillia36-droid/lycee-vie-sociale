@@ -929,14 +929,11 @@ const HAIRDB={
  longs:{n:'Cheveux longs lisses',c:'long lisse',r:'I',x:"Reprise de ton dessin : vrais pixels, raie au milieu, cheveux de l'arrière derrière les épaules."},
  carrelisse:{n:"Carré lisse",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  queuehaute2:{n:"Queue de cheval haute",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
- demiqueue:{n:"Demi-queue",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
- chignonbas:{n:"Chignon bas",c:'chignon attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  mechesdevant:{n:"Mèches devant",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  frangedroite:{n:"Frange droite",c:'long lisse frange',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  chignonhaut2:{n:"Chignon haut",c:'chignon attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  raiecotel:{n:"Raie sur le côté",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  deuxtresses:{n:"Deux tresses",c:'long tresse attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
- queuebasse:{n:"Queue de cheval basse",c:'mi lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  serretete:{n:"Avec serre-tête",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  barrette:{n:"Avec barrette",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  raiemilieu:{n:"Raie au milieu avec mèches",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
@@ -976,7 +973,7 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['longs','carrelisse','queuehaute2','demiqueue','chignonbas','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','queuebasse','serretete','barrette','raiemilieu','queuelisse','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
+const HAIR_ALL=['longs','carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";

@@ -22,11 +22,11 @@ ROW_BOTTOM = [298, 286, 268]   # au-dessous : étiquette du nom (une par rangée
 def case(nom, rang, back=True, **kw):
     return {'src': f'docs/references/coiffures/{nom}.png', 'match': True, 'bottom': ROW_BOTTOM[rang], 'back': back, 'tips': False, 'smooth': False, **kw}
 HAIRS.update({
- 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False), 'demiqueue': case('demiqueue', 0),
- 'chignonbas': case('chignonbas', 0, False, combler=True), 'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
- 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False),
- 'queuebasse': case('queuebasse', 2, False, combler=True), 'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
- 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, False),
+ 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False, combler='gd', front=True), 
+ 'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
+ 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd', front=True),
+ 'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
+ 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd', front=True),
 })
 FACE_T = cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138]   # sourcils -> bouche ; centre des yeux (34, 25.5), menton à +80
 def visage(img):
@@ -138,17 +138,28 @@ for hid, c in HAIRS.items():
             for x in range(xs_.min(), xs_.max()):
                 if hair[y, x]: continue
                 u, v = toU(x * UP, y * UP)
-                if u < 200 and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+                if (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
         n_, lab_, st_, _ = cv2.connectedComponentsWithStats(fill.astype(np.uint8), 8)
         fill = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > 6])
         im = im.copy()
-        for y, x in zip(*np.where(fill)):   # mèches voisines de gauche recopiées en miroir (même texture, pas de couleur de peau)
+        for y, x in zip(*np.where(fill)):   # mèches voisines recopiées en miroir (même texture, pas de couleur de peau)
+            u = toU(x * UP, y * UP)[0]; d = -1 if u < 200 else 1   # côté gauche : mèche de gauche ; côté droit : mèche de droite
             xl = x
-            while xl > 0 and not hair[y, xl]: xl -= 1
+            while 0 < xl < hair.shape[1] - 1 and not hair[y, xl]: xl += d
             xa = xl
-            while xa > 0 and hair[y, xa - 1]: xa -= 1
-            im[y, x] = im[y, xl - (x - xl - 1) % (xl - xa + 1)]   # pris seulement dans la mèche de gauche
+            while 0 < xa < hair.shape[1] - 1 and hair[y, xa + d]: xa += d
+            im[y, x] = im[y, xl + d * ((abs(x - xl) - 1) % (abs(xl - xa) + 1))]   # pris seulement dans cette mèche
         hair |= fill
+    if c.get('front'):   # ligne du front : les petites encoches (petits cheveux du dessin) sont bouchées avec la mèche juste au-dessus
+        ey = int(c['chin'] - 62 * c['face'][0])
+        cl = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))).astype(bool)
+        cl[ey:] = False; new = cl & ~hair
+        im = im.copy()
+        for y, x in sorted(zip(*np.where(new))):
+            ya = y
+            while ya > 0 and not hair[ya, x]: ya -= 1
+            im[y, x] = im[max(0, ya - (y - ya)), x]
+        hair |= new
     n_, lab_, st_, _ = cv2.connectedComponentsWithStats(hair.astype(np.uint8), 8)   # petites taches isolées retirées
     hair = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > st_[1:, 4].max() * .01])
     bigim = cv2.resize(im.astype(np.uint8), None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
@@ -212,7 +223,7 @@ for hid, c in HAIRS.items():
     # la raie (ligne de peau entre les deux côtés, en haut du crâne) est gardée telle quelle
     fy0 = np.where(skin[:, int(cx)])[0]; fy0 = fy0[fy0 > top + 3].min() if len(fy0[fy0 > top + 3]) else top + 30
     sk_in[:fy0, max(0, int(cx) - 3):int(cx) + 4] = 0
-    sk_in[:int(c['chin'] * .55)] = 0
+    if not c.get('front'): sk_in[:int(c['chin'] * .55)] = 0   # front : les petits cheveux orangés du dessin (couleur de peau) sont repeints en mèches
     if sk_in.any(): clean = cv2.inpaint(np.ascontiguousarray(clean[:, :, ::-1]), cv2.dilate(sk_in, np.ones((3, 3), np.uint8)), 3, cv2.INPAINT_TELEA)[:, :, ::-1]
     px = cv2.resize(cv2.resize(clean, (bigim.shape[1], bigim.shape[0]), interpolation=cv2.INTER_CUBIC), sz, interpolation=cv2.INTER_AREA); al = cv2.resize(a, sz, interpolation=cv2.INTER_AREA)
     # mèches verticales : un filtre médian vertical efface les petits traits horizontaux sans toucher aux mèches
