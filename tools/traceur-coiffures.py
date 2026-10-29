@@ -134,7 +134,7 @@ for hid, c in HAIRS.items():
     os.makedirs('assets/coiffures', exist_ok=True)
     F = M & ~box; S = 3
     sz = (bigim.shape[1] * S // UP, bigim.shape[0] * S // UP)
-    clean = cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 2, 2, 5, 15)[:, :, ::-1]   # enlève les blocs de la compression JPEG
+    clean = cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 1, 1, 3, 7)[:, :, ::-1]   # enlève les blocs de la compression JPEG
     # trous dans les cheveux (là où le contour de l'épaule croisait les mèches) : bouchés et repeints avec les mèches voisines
     hole = np.zeros_like(F0 := cv2.resize(F.astype(np.uint8), (im.shape[1], im.shape[0]), interpolation=cv2.INTER_NEAREST))
     cs_, _ = cv2.findContours(F0, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE); cv2.drawContours(hole, cs_, -1, 1, -1); hole = hole & (1 - F0)
@@ -144,14 +144,17 @@ for hid, c in HAIRS.items():
     sk_in = (((clean[..., 0].astype(int) - clean[..., 2] > 40) & (clean[..., 0] > 80)) | (near & (lumc > 55)) | hole.astype(bool)).astype(np.uint8)
     F = F | (cv2.resize(hole, (F.shape[1], F.shape[0]), interpolation=cv2.INTER_NEAREST) > 0)   # restes de peau ou de contour orangé dans les cheveux
     a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
+    # la raie (ligne de peau entre les deux côtés, en haut du crâne) est gardée telle quelle
+    fy0 = np.where(skin[:, int(cx)])[0]; fy0 = fy0[fy0 > top + 3].min() if len(fy0[fy0 > top + 3]) else top + 30
+    sk_in[:fy0, max(0, int(cx) - 3):int(cx) + 4] = 0
+    sk_in[:int(c['chin'] * .55)] = 0
     if sk_in.any(): clean = cv2.inpaint(np.ascontiguousarray(clean[:, :, ::-1]), cv2.dilate(sk_in, np.ones((3, 3), np.uint8)), 3, cv2.INPAINT_TELEA)[:, :, ::-1]
     px = cv2.resize(cv2.resize(clean, (bigim.shape[1], bigim.shape[0]), interpolation=cv2.INTER_CUBIC), sz, interpolation=cv2.INTER_AREA); al = cv2.resize(a, sz, interpolation=cv2.INTER_AREA)
     # mèches verticales : un filtre médian vertical efface les petits traits horizontaux sans toucher aux mèches
-    px = np.median(np.stack([np.roll(px, k, 0) for k in range(-2, 3)]), 0).astype(np.uint8)
     # lumière : les reflets du dessin sont renforcés (contraste local sur la clarté, net dans le sens des mèches)
     lab_ = cv2.cvtColor(px[:, :, ::-1], cv2.COLOR_BGR2LAB); Lc = lab_[..., 0].astype(np.float32)
     blur = cv2.GaussianBlur(Lc, (0, 0), sigmaX=9, sigmaY=25)
-    Lc = np.clip(blur + (Lc - blur) * c.get('gloss', 1.4), 0, 255)
+    Lc = np.clip(blur + (Lc - blur) * c.get('gloss', 1.0), 0, 255)
     lab_[..., 0] = Lc.astype(np.uint8); px = cv2.cvtColor(lab_, cv2.COLOR_LAB2BGR)[:, :, ::-1]
     al = cv2.morphologyEx(al, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))   # bouche les encoches du bord
     al = np.clip((cv2.GaussianBlur(al, (0, 0), 4) - .5) * 3 + .5, 0, 1)   # contour adouci et régulier (pas de bosses)
