@@ -6,7 +6,7 @@ const VERSION = 'v25';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
-  'css/style.css', 'css/fonts.css', 'js/chaussures-art.js', 'js/coiffures-art.js', 'assets/coiffures/longs.png',
+  'css/style.css', 'css/fonts.css', 'js/chaussures-art.js', 'js/coiffures-art.js', 'js/bouches-art.js', 'assets/bouches/fine.png', 'assets/bouches/moyenne.png', 'assets/bouches/pleine.png', 'assets/bouches/coeur.png', 'assets/bouches/rectangle.png', 'assets/bouches/ronde.png', 'assets/bouches/pulpeuse.png', 'assets/bouches/trespulpeuse.png', 'assets/bouches/asymetrique.png', 'assets/bouches/superfine.png', 'assets/bouches/inferieure.png', 'assets/bouches/tombante.png', 'assets/bouches/remontante.png', 'assets/bouches/entrouverte.png', 'assets/bouches/fermee.png', 'assets/bouches/glossy.png', 'assets/bouches/mat.png', 'assets/bouches/ombre.png', 'assets/bouches/glosscentre.png', 'assets/bouches/naturelle.png', 'assets/coiffures/longs.png',
   'assets/coiffures/carrelisse.png',
   'assets/coiffures/queuehaute2.png',
   'assets/coiffures/mechesdevant.png',
