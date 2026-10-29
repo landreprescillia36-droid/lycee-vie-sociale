@@ -247,6 +247,16 @@ for hid, c in HAIRS.items():
         # couleur unie des cheveux voisins (moyenne des seuls pixels de cheveux, très floutée) : pas de peau, pas de motif
         w_ = hair.astype(np.float32); sm_ = cv2.GaussianBlur(im.astype(np.float32) * w_[..., None], (0, 0), 6) / np.maximum(cv2.GaussianBlur(w_, (0, 0), 6), 1e-3)[..., None]
         im = im.copy(); im[fill] = (sm_[fill] * .85).astype(int)   # un peu plus foncé : ombre derrière l'oreille
+        if c.get('cou'):   # texture de la coiffure : chaque pixel comblé reprend, en miroir, la mèche voisine (côté extérieur)
+            W_ = hair.shape[1]; src_im = im.copy()
+            for y, x in zip(*np.where(fill)):
+                d = -1 if toU(x * UP, y * UP)[0] < 200 else 1
+                xi = x
+                while 0 <= xi < W_ and not hair[y, xi]: xi += d
+                if not (0 <= xi < W_): continue
+                xs = xi + d * abs(x - xi)
+                while 0 <= xs < W_ and not hair[y, xs]: xs += d
+                if 0 <= xs < W_: im[y, x] = (src_im[y, xs] * .92).astype(int)
         if c.get('trous') or c.get('fermer') or c.get('cou'):   # bord des zones rebouchées : même couleur sur 2 px, pour qu'aucun pixel du fond ne reste au bord
             ring = cv2.dilate(fill.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & ~hair & ~fill
             im[ring] = (sm_[ring] * .85).astype(int)
