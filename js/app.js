@@ -239,14 +239,7 @@ function browArt(B,c,id){
  o+=`<path d="${a0}" stroke="${dk}" stroke-width="${sw}" stroke-linecap="round" opacity="${net?.3:.5}" fill="none"/>`;   /* début : les poils dépassent (fondu) */
  o+=`<g clip-path="url(#${id}c)"><path d="${a1}" stroke="${dk}" stroke-width="${sw}" stroke-linecap="round" opacity="${net?.4:.6}" fill="none"/><path d="${a2}" stroke="${lt}" stroke-width="${sw*.8}" stroke-linecap="round" opacity=".3" fill="none"/></g>`;
  return o}
-function brow(t,c,id){
- if(BROWS[t])return browArt(BROWS[t],c,id);
- const st=(d,w)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
- switch(t){
-  case 'fronces':return st('M-28,9 C-8,2 12,-5 30,-8',7);
-  case 'inquiets':return st('M-28,-9 C-10,-7 10,0 28,6',6);
-  default:return `<path d="M-30,7 C-18,-9 12,-13 31,-2 C14,-4 -14,-1 -30,11Z" fill="${c}"/>`;
- }}
+function brow(t,c,id){return browArt(BROWS[t]||BROWS.naturels,c,id)}
 function nose(t,sk,skDD){
  const tip=mix(sk,'#e2766a',.22);
  switch(t){
@@ -928,7 +921,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'Cœur
  sourire:'Sourire',grand:'Grand sourire',neutre:'Neutre',surpris:'Surpris',malicieux:'Malicieux',moue:'Moue',
  fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
  grands:'Grands',brillants:'Brillants',amande:'Amande',ronds:'Petits ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
- naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',fronces:'Froncés',inquiets:'Inquiets',
+ naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',
  tresse:'Tresse',longs:'Longs',queue:'Queue de cheval',chignon:'Chignon',boucles:'Bouclés',court:'Courts',rase:'Rasés',
  salopette:'Salopette',tshirt:'T-shirt',capuche:'Sweat',chemise:'Chemise',colroule:'Col roulé',
  rondes:'Rondes',carrees:'Carrées',soleil:'Soleil',dorees:'Dorées',
@@ -1165,7 +1158,7 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}if(s.hair==='tresse')s.hair='longondule';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}if(s.hair==='tresse')s.hair='longondule';if(!BROWS[s.brows])s.brows='naturels';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
 let tab=0, sub=0;
 
