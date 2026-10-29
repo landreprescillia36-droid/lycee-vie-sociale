@@ -181,7 +181,7 @@ function render(s,vb,p,showBg){
  const bx=55+a.browsX, by=cy-47+a.browsY, bd=brow(s.brows,hD);
  o+=`<g transform="translate(${200+bx},${by})">${bd}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${bd}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)?11:0),HART(s)?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),HART(s)&&!HART(s).ears?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -662,6 +662,9 @@ function neckZone(face,FY){const k=face+FY;if(NZ[k])return NZ[k];const d=(FACES[
 /* coiffures décalquées sur les dessins de Prescillia (js/coiffures-art.js) : dans une autre couleur,
    chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
+/* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
+function earHoles(s){const ex=(FACES[s.face]||FACES.joufflu).ex,big=s.face==='naturel',rx=(big?21:17)+1,ry=(big?31:27)+1;
+ return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},207 a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
@@ -677,7 +680,7 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
   if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
-  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s.face,FY)}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${img}${A.acc?`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:''}</g>`}
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s.face,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${img}${A.acc?`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:''}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`

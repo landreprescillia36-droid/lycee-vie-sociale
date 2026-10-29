@@ -22,11 +22,11 @@ ROW_BOTTOM = [298, 286, 268]   # au-dessous : étiquette du nom (une par rangée
 def case(nom, rang, back=True, **kw):
     return {'src': f'docs/references/coiffures/{nom}.png', 'match': True, 'bottom': ROW_BOTTOM[rang], 'back': back, 'tips': False, 'smooth': False, **kw}
 HAIRS.update({
- 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False, combler='gd'), 
+ 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False, combler='gd', oreilles=True), 
  'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
- 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd'),
+ 'chignonhaut2': case('chignonhaut2', 1, False, oreilles=True), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd', oreilles=True),
  'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
- 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd'),
+ 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd', oreilles=True),
 })
 FACE_T = cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138]   # sourcils -> bouche ; centre des yeux (34, 25.5), menton à +80
 def visage(img):
@@ -70,6 +70,13 @@ for hid, c in HAIRS.items():
     hair = np.isin(lab, big)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_OPEN, np.ones((7, 1), np.uint8)).astype(bool)   # enlève les traits fins horizontaux (contour des épaules)
+    if c.get('match'):   # boucles d'oreilles du dessin (perles blanches cerclées de foncé) : retirées des cheveux, le trou sera bouché
+        fs_ = c['face'][0]; pe = (lum > 185) & (abs(r - b) < 40)
+        pe[:int(c['chin'] - 50 * fs_)] = False; pe[int(c['chin'] - 5 * fs_):] = False
+        n_, lab_, st_, _ = cv2.connectedComponentsWithStats(pe.astype(np.uint8), 8)
+        pe = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] < 80 * fs_ ** 2])
+        ring = cv2.dilate(pe.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))).astype(bool) & ~pe
+        c['perle'] = (ring & hair) | pe; hair &= ~cv2.dilate(pe.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))).astype(bool)
     accM = None
     if c.get('accessoire'):   # barrette (claire) ou serre-tête (noir neutre) : calque à part, jamais reteint avec les cheveux
         if c['accessoire'] == 'clair': acc = (lum > 120) & (r - b < 20) & cv2.dilate(hair.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
@@ -130,9 +137,12 @@ for hid, c in HAIRS.items():
         fs, cx, fch = c['face']; sx = sy = K_LONGS / fs
         toU = lambda px, py: (200 + (px / UP - cx) * sx, CHIN_U + (py / UP - fch) * sy)
     # visage de trois quarts : l'oreille du dessin laisse un trou entre les cheveux, hors du visage du jeu ; on le remplit de mèches
-    if c.get('combler'):
+    if c.get('combler') or c.get('perle') is not None and c['perle'].any():
         fill = np.zeros_like(hair)
-        for y in range(top, int(c['chin'] - 28 * c['face'][0])):   # jusqu'au bas de l'oreille, du côté gauche seulement
+        for y, x in zip(*np.where(c.get('perle', fill))):   # contour sombre des perles retirées : rebouché en cheveux s'il est hors du visage du jeu
+            u, v = toU(x * UP, y * UP)
+            if ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+        for y in range(top, int(c['chin'] - 28 * c['face'][0]) if c.get('combler') else top):   # jusqu'au bas de l'oreille
             xs_ = np.where(hair[y])[0]
             if len(xs_) < 2: continue
             for x in range(xs_.min(), xs_.max()):
@@ -141,14 +151,9 @@ for hid, c in HAIRS.items():
                 if (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
         n_, lab_, st_, _ = cv2.connectedComponentsWithStats(fill.astype(np.uint8), 8)
         fill = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > 6])
-        im = im.copy()
-        for y, x in zip(*np.where(fill)):   # mèches voisines recopiées en miroir (même texture, pas de couleur de peau)
-            u = toU(x * UP, y * UP)[0]; d = -1 if u < 200 else 1   # côté gauche : mèche de gauche ; côté droit : mèche de droite
-            xl = x
-            while 0 < xl < hair.shape[1] - 1 and not hair[y, xl]: xl += d
-            xa = xl
-            while 0 < xa < hair.shape[1] - 1 and hair[y, xa + d]: xa += d
-            im[y, x] = im[y, xl + d * ((abs(x - xl) - 1) % (abs(xl - xa) + 1))]   # pris seulement dans cette mèche
+        # couleur unie des cheveux voisins (moyenne des seuls pixels de cheveux, très floutée) : pas de peau, pas de motif
+        w_ = hair.astype(np.float32); sm_ = cv2.GaussianBlur(im.astype(np.float32) * w_[..., None], (0, 0), 6) / np.maximum(cv2.GaussianBlur(w_, (0, 0), 6), 1e-3)[..., None]
+        im = im.copy(); im[fill] = (sm_[fill] * .85).astype(int)   # un peu plus foncé : ombre derrière l'oreille
         hair |= fill
     if c.get('front'):   # ligne du front : les petites encoches (petits cheveux du dessin) sont bouchées avec la mèche juste au-dessus
         ey = int(c['chin'] - 62 * c['face'][0])
@@ -263,6 +268,7 @@ for hid, c in HAIRS.items():
     out_img = {'img': [round(u0[0], 2), round(u0[1], 2), round(u1[0] - u0[0], 2), round(u1[1] - u0[1], 2)],
                'lum': [round(float(np.percentile(hl, 5)), 3), round(float(np.median(hl)), 3), round(float(np.percentile(hl, 98)), 3)]}
     if accM is not None: out_img['acc'] = 1
+    if c.get('oreilles'): out_img['ears'] = 1   # oreilles du jeu visibles à travers les cheveux
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
     if dbg:
