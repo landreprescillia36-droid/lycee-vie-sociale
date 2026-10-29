@@ -651,6 +651,14 @@ const CURLY_R=[[296,200],[316,240],[328,290],[336,340],[338,390],[332,440],[322,
 const CURLY_TOP=[[150,62],[196,50],[246,54],[286,76],[312,112],[322,156],[320,204],[306,248],[294,236],[284,206],[270,180],[248,160],[222,146],[198,136],[180,118],[166,98],[156,86],[140,108],[124,140],[112,176],[106,214],[100,180],[102,130],[120,90]];
 function hgrad(p,s,hD,y2){return `<defs><linearGradient id="${p}lfg" gradientUnits="userSpaceOnUse" x1="0" y1="50" x2="0" y2="${y2}"><stop offset="0" stop-color="${shade(s.hairColor,.22)}"/><stop offset=".3" stop-color="${s.hairColor}"/><stop offset="1" stop-color="${hD}"/></linearGradient></defs>`}
 const OUTL=(d,hD,w,op)=>`<path d="${d}" fill="none" stroke="${shade(hD,-.45)}" stroke-width="${w}" stroke-linejoin="round" opacity="${op}"/>`;
+/* zone « bas du visage + cou » où les cheveux passent derrière : le contour suit la mâchoire du visage choisi
+   (au-dessus de y0 les cheveux restent devant le visage, en dessous le visage et le cou les recouvrent) */
+const NZ={};
+function neckZone(face,FY){const k=face+FY;if(NZ[k])return NZ[k];const d=(FACES[face]||FACES.joufflu).d,n=d.match(/-?[\d.]+/g).map(Number);
+ const P=[];let cx=n[0],cy=n[1];for(let i=2;i+5<n.length;i+=6){const [x1,y1,x2,y2,x3,y3]=n.slice(i,i+6);for(let t=0;t<=1;t+=.05){const u=1-t;P.push([u*u*u*cx+3*u*u*t*x1+3*u*t*t*x2+t*t*t*x3,u*u*u*cy+3*u*u*t*y1+3*u*t*t*y2+t*t*t*y3])}cx=x3;cy=y3}
+ const y0=240,X0=126,X1=274,low=P.filter(q=>q[1]>=y0),L=low.filter(q=>q[0]<200&&q[0]<=X0).sort((a,b)=>a[1]-b[1]),R=low.filter(q=>q[0]>200&&q[0]>=X1).sort((a,b)=>b[1]-a[1]);
+ const f=q=>q[0].toFixed(1)+','+q[1].toFixed(1);
+ return NZ[k]=`M${[...L.map(f),`${X0},${FY}`,`${X1},${FY}`,...R.map(f)].join(' L')}Z`}
 /* coiffures décalquées sur les dessins de Prescillia (js/coiffures-art.js) : dans une autre couleur,
    chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
@@ -666,9 +674,11 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer></filter></defs>`}
   const img=`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
-  if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="128" y="0" width="144" height="900"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.25:-.5)}" clip-path="url(#${cid}n)"/>`+flt+img;
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
-  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z"/></clipPath></defs><g clip-path="url(#${cid})">${img}</g>`}
+  if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
+  /* reflet brillant sur le haut de la tête, comme sur le dessin (bandes claires de chaque côté de la raie) */
+  const shine=`<defs><clipPath id="${cid}s"><path d="${A.front[0][1]}"/></clipPath><filter id="${cid}b" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter></defs><g clip-path="url(#${cid}s)" style="mix-blend-mode:screen" opacity="${same?.55:.4}"><g filter="url(#${cid}b)" fill="none" stroke="${same?'#8a7a72':shade(hc,.45)}" stroke-linecap="round"><path d="M186,70 C150,78 122,104 108,150" stroke-width="16"/><path d="M214,70 C250,78 278,104 292,150" stroke-width="16"/><path d="M96,190 C92,240 92,300 94,360" stroke-width="7" opacity=".6"/><path d="M304,190 C308,240 308,300 306,360" stroke-width="7" opacity=".6"/></g></g>`;
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s.face,FY)}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${img}${shine}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
