@@ -44,6 +44,8 @@ for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['
 HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
 HAIRS['bafro']['trous'] = HAIRS['bcarre']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]   # sous la mâchoire, entre les boucles et le cou
+HAIRS['bchignon']['fin'] = [(60, 128, 70, 205), (272, 340, 70, 205)]   # côtés, des tempes aux oreilles
+HAIRS['bpuffs']['fin'] = [(30, 112, 130, 300), (268, 345, 130, 300)]   # boucles qui pendent devant les oreilles
 HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FACE6: HAIRS[k]['oreilles'] = True
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
@@ -120,6 +122,14 @@ for hid, c in HAIRS.items():
     hair = np.isin(lab, big)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_OPEN, np.ones((7, 1), np.uint8)).astype(bool)   # enlève les traits fins horizontaux (contour des épaules)
+    Zfin = None
+    if c.get('fin'):   # zones affinées (montrées par Prescillia) : mèches fines et boucles qui pendent gardées telles quelles, sans épaississement
+        fs_, fcx_, fch_ = c['face']; k_ = K_LONGS / fs_
+        U_ = 200 + (np.arange(im.shape[1]) - fcx_) * k_; V_ = CHIN_U + (np.arange(im.shape[0]) - fch_) * k_
+        Zfin = np.zeros(hair.shape, bool)
+        for u0, u1, v0, v1 in c['fin']: Zfin |= ((V_ >= v0) & (V_ <= v1))[:, None] & ((U_ >= u0) & (U_ <= u1))[None, :]
+        n_, lab_, st_, _ = cv2.connectedComponentsWithStats((cand & Zfin).astype(np.uint8), 8)
+        hair = (hair & ~Zfin) | np.isin(lab_, [i for i in range(1, n_) if st_[i][4] >= 6])
     if c.get('match'):   # boucles d'oreilles du dessin (perles blanches cerclées de foncé) : retirées des cheveux, le trou sera bouché
         fs_ = c['face'][0]; pe = (lum > 185) & (abs(r - b) < 40)
         pe[:int(c['chin'] - 50 * fs_)] = False; pe[int(c['chin'] - 5 * fs_):] = False
@@ -319,6 +329,11 @@ for hid, c in HAIRS.items():
     lab_[..., 0] = Lc.astype(np.uint8); px = cv2.cvtColor(lab_, cv2.COLOR_LAB2BGR)[:, :, ::-1]
     al = cv2.morphologyEx(al, cv2.MORPH_CLOSE, np.ones((11, 11), np.uint8))   # bouche les encoches du bord
     al = np.clip((cv2.GaussianBlur(al, (0, 0), 4) - .5) * 3 + .5, 0, 1)   # contour adouci et régulier (pas de bosses)
+    if Zfin is not None:   # dans les zones affinées : contour fin du dessin (pas de bouchage ni de gros flou)
+        Fs = cv2.resize(F.astype(np.float32), sz, interpolation=cv2.INTER_AREA)
+        afin = np.clip((cv2.GaussianBlur(Fs, (0, 0), .8) - .5) * 2.5 + .5, 0, 1)
+        Zs = cv2.GaussianBlur(cv2.resize(Zfin.astype(np.float32), sz, interpolation=cv2.INTER_NEAREST), (0, 0), 3)
+        al = al * (1 - Zs) + afin * Zs
     # contours extérieurs lisses sur les côtés (demandé par Prescillia) : sous les tempes, le bord gauche et le bord droit
     # suivent une courbe moyenne ; les bosses sont coupées, les creux comblés avec les mèches voisines (en miroir)
     rows_ = [y for y in range(al.shape[0]) if (al[y] > .5).any()]
