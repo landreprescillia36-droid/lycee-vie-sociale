@@ -376,6 +376,31 @@ for hid, c in HAIRS.items():
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+    # dos (cheveux qui descendent sous les épaules) : copie posée derrière le corps où les vides entre les mèches, sous le menton,
+    # sont remplis avec la texture des mèches voisines (en miroir) : aucun trou ne se voit autour du cou et des épaules
+    ybot = toU(0, Y1 * UP / S)[1]
+    dos = c.get('match') and ybot > 350 and c.get('dos', True)
+    if dos:
+        P_ = rgba[..., :3].astype(np.float32); A_ = rgba[..., 3].astype(np.float32) / 255; H_ = A_ > .5
+        P2 = P_.copy(); A2 = A_.copy()
+        for yy in range(rgba.shape[0]):
+            if toU(0, (Y0 + yy) * UP / S)[1] < 300: continue
+            xs_ = np.where(H_[yy])[0]
+            if len(xs_) < 2: continue
+            row = H_[yy]; x = xs_[0]
+            while x <= xs_[-1]:
+                if row[x]: x += 1; continue
+                a0 = x
+                while x <= xs_[-1] and not row[x]: x += 1
+                a1 = x - 1; mid = (a0 + a1) / 2   # vide [a0, a1] entre deux mèches
+                for side, edge, d in ((0, a0 - 1, -1), (1, a1 + 1, 1)):
+                    e2 = edge                       # largeur de la mèche voisine
+                    while 0 <= e2 + d < len(row) and row[e2 + d]: e2 += d
+                    w_ = abs(e2 - edge) + 1
+                    for xx in (range(a0, int(mid) + 1) if side == 0 else range(int(mid) + 1, a1 + 1)):
+                        k = abs(xx - edge) - 1; k = k % (2 * w_); k = k if k < w_ else 2 * w_ - 1 - k   # aller-retour dans la mèche
+                        P2[yy, xx] = P_[yy, edge + d * k] * .82; A2[yy, xx] = 1
+        cv2.imwrite(f'assets/coiffures/{hid}-dos.png', np.dstack([P2, A2 * 255]).clip(0, 255).astype(np.uint8), [cv2.IMWRITE_PNG_COMPRESSION, 9])
     if accM is not None:
         aa = cv2.GaussianBlur(cv2.resize(accM.astype(np.float32), sz, interpolation=cv2.INTER_LINEAR), (0, 0), .8)
         aa = np.clip((aa - .5) * 2.5 + .5, 0, 1)
@@ -386,6 +411,7 @@ for hid, c in HAIRS.items():
     out_img = {'img': [round(u0[0], 2), round(u0[1], 2), round(u1[0] - u0[0], 2), round(u1[1] - u0[1], 2)],
                'lum': [round(float(np.percentile(hl, 5)), 3), round(float(np.median(hl)), 3), round(float(np.percentile(hl, 98)), 3)]}
     if accM is not None: out_img['acc'] = 1
+    if dos: out_img['dos'] = 1
     if c.get('oreilles'): out_img['ears'] = 1   # oreilles du jeu visibles à travers les cheveux
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
