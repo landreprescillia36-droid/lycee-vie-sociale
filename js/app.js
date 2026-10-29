@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='19';
+const APP_VERSION='20';
 try{document.getElementById('atVers').textContent='Version '+APP_VERSION}catch(_){}
 /* mise à jour forcée : vide les copies en cache et le service worker, garde la partie (localStorage) */
 async function forceUpdate(){try{toast('⏳ Mise à jour…')}catch(_){}
