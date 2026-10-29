@@ -929,6 +929,26 @@ const HAIRDB={
  demichignon:{n:'Demi-chignon haut, longueurs lisses',c:'long lisse chignon attache',r:'F',x:"Chignon sur le dessus et longueurs lisses respectés."},
  queuehaute:{n:'Queue haute avec chouchou',c:'long ondule queue attache',r:'F',x:"Chouchou orange, queue ondulée sur l'épaule et mèche du visage reprises ; la queue est un peu plus courte."},
  carreplongeant:{n:'Carré lisse, mèche balayée',c:'mi lisse',r:'F',x:"Pointes nettes et mèche de côté respectées ; effilage des pointes simplifié."},
+ bafro:{n:"Afro naturel",c:'mi crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bbantu:{n:"Bantu knots",c:'court crepu attache chignon',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bcarre:{n:"Carré bouclé",c:'mi boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bchignon:{n:"Chignon haut crépu",c:'chignon attache crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bpuffs:{n:"Deux puffs",c:'crepu attache chignon',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bbox:{n:"Tresses box braids (avec boucles)",c:'long tresse crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bcollees:{n:"Tresses collées",c:'long tresse attache crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bdemiqueue:{n:"Demi-queue bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bqueue:{n:"Queue de cheval bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ blongs:{n:"Cheveux longs bouclés",c:'long boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bchignonhaut:{n:"Chignon haut bouclé",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bchignonbas:{n:"Chignon bas bouclé",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ btwists:{n:"Twists",c:'long tresse crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bchignonmeches:{n:"Chignon avec bouclés",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bwashgo:{n:"Wash and go",c:'mi boucle crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bfoulard:{n:"Avec foulard",c:'court crepu attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ btressesboucles:{n:"Tresses + boucles",c:'long tresse boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bcourt:{n:"Court crépu",c:'court crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bqueuehaute:{n:"Queue de cheval haute bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ btressesarriere:{n:"Tresses en arrière",c:'mi tresse attache crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  longs:{n:'Cheveux longs lisses',c:'long lisse',r:'I',x:"Reprise de ton dessin : vrais pixels, raie au milieu, cheveux de l'arrière derrière les épaules."},
  carrelisse:{n:"Carré lisse",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  queuehaute2:{n:"Queue de cheval haute",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
@@ -976,7 +996,7 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['longs','carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
+const HAIR_ALL=['longs','carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bbantu','bcarre','bchignon','bpuffs','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','bchignonbas','btwists','bchignonmeches','bwashgo','bfoulard','btressesboucles','bcourt','bqueuehaute','btressesarriere','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
