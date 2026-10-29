@@ -40,6 +40,9 @@ HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bchignonhaut', 'bchignonmeches', 'bfoulard', 'bcourt', 'bchignonbas']: HAIRS[k]['oreilles'] = True
 for k in ['bqueue', 'bqueuehaute', 'btressesarriere']: HAIRS[k].update(oreilles=True, combler='gd')
+for k, v in {'bchignonhaut': (-71, 51), 'bchignonbas': (-86, 57), 'bchignonmeches': (-75, 52), 'bqueue': (-75, 57),
+             'btressesarriere': (-70, 47), 'bqueuehaute': (-72, 50)}.items(): HAIRS[k]['face3q'] = v   # bords du crâne (px, depuis l'axe des yeux)
+HAIRS['bchignonhaut']['chignon'] = (20, 60, 95); HAIRS['bchignonmeches']['chignon'] = (22, 50, 85)
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 FACES_T = {True: (cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138], 34, 25.5, 80, 1.0),
            'b': (cv2.imread('docs/references/coiffures/bouclees/bcarre.png')[116:186, 82:162], 39.25, 27, 82.75, 1.033)}
@@ -61,6 +64,19 @@ for hid, c in HAIRS.items():
     if c.get('match'):
         fs, fcx, fch = visage(cv2.imread(c['src']), c['match'])
         c['chin'] = int(fch); c['face'] = (fs, fcx, fch)
+        if c.get('face3q'):   # tête de trois quarts sur la planche : redressée de face. À hauteur des sourcils, le bord des cheveux à gauche (arrière
+            # du crâne, trop large) et à droite (côté visage, écrasé) est ramené à égale distance de l'axe des yeux ; repères mesurés sur chaque case
+            Lo, Ro = fcx + c['face3q'][0], fcx + c['face3q'][1]; W = (Ro - Lo) / 2
+            src_pts = [Lo, fcx, Ro]; dst_pts = [fcx - W, fcx, fcx + W]
+            xo = np.arange(im.shape[1], dtype=np.float32)
+            xs_ = np.interp(xo, dst_pts, src_pts).astype(np.float32)
+            xs_[xo < dst_pts[0]] = xo[xo < dst_pts[0]] - (dst_pts[0] - src_pts[0])   # queue, chignon : suivent le bord sans être déformés
+            xs_[xo > dst_pts[2]] = xo[xo > dst_pts[2]] - (dst_pts[2] - src_pts[2])
+            mx = np.tile(xs_, (im.shape[0], 1)); my = np.tile(np.arange(im.shape[0], dtype=np.float32)[:, None], (1, im.shape[1]))
+            if c.get('chignon'):   # chignon sur le dessus : décalé vers le milieu (fondu entre y0 et y1, au-dessus du crâne)
+                S_, y0_, y1_ = c['chignon']; ys_ = np.arange(im.shape[0], dtype=np.float32)
+                mx -= (S_ * np.clip((y1_ - ys_) / (y1_ - y0_), 0, 1))[:, None]
+            im = cv2.remap(im.astype(np.uint8), mx, my, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).astype(int)
         c['cut'] = [(int(fch + 4 * fs), int(fch + 22 * fs), int(fcx - 24 * fs), int(fcx + 24 * fs))]   # ras-de-cou
         ey = fch - 54.5 * fs   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
         c['cut'] += [(int(ey - 10 * fs), int(ey + 10 * fs), int(fcx + dx * fs - 15 * fs), int(fcx + dx * fs + 15 * fs)) for dx in (-26.25, 26.25)]
