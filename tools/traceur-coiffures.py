@@ -30,17 +30,20 @@ HAIRS.update({
 })
 # planche des coiffures bouclées et crépues (docs/references/coiffures/planche-bouclees.png) : autre modèle de visage,
 # un peu plus grand (×1,033 d'après l'écart des yeux et la hauteur yeux-menton) ; rangées : étiquette du nom en bas de chaque case
-# Prescillia l'a refaite de face, avec le visage du jeu (planche-bouclees-face.png) : c'est celle-ci qui est décalquée ;
-# l'ancienne (têtes de trois quarts, dossier bouclees/) reste pour mémoire
-ROW_B = [274, 256, 251, 204]
+# 14 coiffures décalquées sur la première planche (dossier bouclees/) ; les 6 qui y étaient dessinées de trois quarts
+# (chignons, queues, tresses en arrière) sont reprises de la planche refaite de face avec le visage du jeu (bouclees-face/)
+ROW_B, ROW_C = [268, 236, 219, 204], [274, 256, 251, 204]
+FACE6 = ['bchignonhaut', 'bchignonbas', 'bchignonmeches', 'bqueue', 'btressesarriere', 'bqueuehaute']
 def boucle(nom, rang, back=False, **kw):
-    return {'src': f'docs/references/coiffures/bouclees-face/{nom}.png', 'match': 'c', 'bottom': ROW_B[rang], 'back': back, 'tips': False, 'smooth': False, 'bord': 13, **kw}
+    if nom in FACE6:
+        return {'src': f'docs/references/coiffures/bouclees-face/{nom}.png', 'match': 'c', 'bottom': ROW_C[rang], 'back': back, 'tips': False, 'smooth': False, 'bord': 13, 'combler': 'gd', **kw}
+    return {'src': f'docs/references/coiffures/bouclees/{nom}.png', 'match': 'b', 'bottom': ROW_B[rang], 'back': back, 'tips': False, 'smooth': False, 'bord': 13, **kw}
 for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['bbox', 'bcollees', 'bdemiqueue', 'bqueue', 'blongs'],
                          ['bchignonhaut', 'bchignonbas', 'btwists', 'bchignonmeches', 'bwashgo'], ['bfoulard', 'btressesboucles', 'bcourt', 'bqueuehaute', 'btressesarriere']]):
-    for k in ids: HAIRS[k] = boucle(k, i, combler='gd')   # trous entre les cheveux et le visage (oreille du dessin) bouchés
+    for k in ids: HAIRS[k] = boucle(k, i)
+HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
-for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bchignonhaut', 'bchignonmeches', 'bfoulard', 'bcourt', 'bchignonbas']: HAIRS[k]['oreilles'] = True
-for k in ['bqueue', 'bqueuehaute', 'btressesarriere']: HAIRS[k].update(oreilles=True, combler='gd')
+for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FACE6: HAIRS[k]['oreilles'] = True
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 K_LONGS, CHIN_U = 1.785, 308.5
 def _bez(d):   # contour du visage « ovale » du jeu (FACES.ovale dans js/app.js), en points
@@ -93,7 +96,7 @@ for hid, c in HAIRS.items():
         c['cut'] = [(int(fch + 4 * fs), int(fch + 22 * fs), int(fcx - 24 * fs), int(fcx + 24 * fs))]   # ras-de-cou
         ex_, ey_ = EYES_T[c['match']]; sc_ = fs / FACES_T[c['match']][4]   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
         ey = fch - ey_ * sc_
-        mh, mw = (10, 15) if c['match'] is True else (11, 16)
+        mh, mw = {True: (10, 15), 'b': (10 * 1.033, 15 * 1.033), 'c': (11, 16)}[c['match']]
         c['cut'] += [(int(ey - mh * sc_), int(ey + mh * sc_), int(fcx + dx * sc_ - mw * sc_), int(fcx + dx * sc_ + mw * sc_)) for dx in (-ex_, ex_)]
         c['back'] = (int(fch - 6 * fs), c['bottom'], 0, im.shape[1]) if c['back'] else None
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
