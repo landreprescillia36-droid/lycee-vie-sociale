@@ -178,8 +178,8 @@ function render(s,vb,p,showBg){
  o+=`<g transform="translate(200,${252+a.noseY}) scale(${a.noseS})">${nose(s.nose,sk,skDD)}</g>`;
  o+=`<g transform="translate(200,${285+a.mouthY}) scale(${a.mouthS})">${mouth(s.mouth,lip,sk)}</g>`;
  o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eye(E,1,p,skDD)}</g><g transform="translate(${200-dx},${cy}) scale(${-sc},${sc})">${eye(E,-1,p,skDD)}</g>`;
- const bx=55+a.browsX, by=cy-47+a.browsY, bd=brow(s.brows,hD);
- o+=`<g transform="translate(${200+bx},${by})">${bd}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${bd}</g>`;
+ const bx=55+a.browsX, by=cy-47+a.browsY, bc=s.browColor||hD;
+ o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
  o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),HART(s)&&!HART(s).ears?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
@@ -207,11 +207,42 @@ function eye(E,m,p,skDD){
  if(E.w===BIG) s+=`<path d="M-24,22 C-10,34 14,34 26,20" fill="none" stroke="${skDD}" stroke-width="1.6" opacity=".55"/>`;
  return s;
 }
-function brow(t,c){
+/* sourcils d'après la planche de Prescillia : forme (début, sommet, queue), épaisseur, et texture de poils
+   (début fondu en petits poils obliques, corps dense, queue fine). Repère : début (côté nez) en x=-30, queue en x=31 */
+const BROWS={naturels:{pk:.56,h:5,hi:5,ht:2,w0:6,wm:6.8},legers:{pk:.6,h:7.5,hi:6,ht:5,w0:6,wm:7},arques:{pk:.62,h:11,hi:7,ht:8,w0:5.8,wm:6.8},
+ droits:{pk:.72,h:1.5,hi:2,ht:3.5,w0:6.4,wm:7},epais:{pk:.6,h:5.5,hi:5,ht:4,w0:9,wm:10},fins:{pk:.58,h:7,hi:5,ht:5,w0:3,wm:3.4},
+ moyens:{pk:.6,h:7.5,hi:6,ht:6,w0:5,wm:5.4},fournis:{pk:.55,h:8.5,hi:6,ht:7,w0:10.5,wm:11.5},angle:{pk:.66,h:10,hi:7,ht:9,w0:6,wm:7,ang:1},
+ clean:{pk:.64,h:9,hi:6,ht:8,w0:7.2,wm:8,ang:.6,net:1}};
+const BROWC=['#1e1714','#3d2a1f','#6b4630'];
+function browArt(B,c,id){
+ const N=24,X0=-30,X1=31,px=X0+(X1-X0)*B.pk,f=v=>v.toFixed(1);
+ /* ligne du milieu : monte du début au sommet, redescend jusqu'à la queue (arrondi, ou cassé pour « angle ») */
+ const cy=t=>{const x=X0+(X1-X0)*t;
+  if(x<=px){const u=(x-X0)/(px-X0),k=Math.sin(u*Math.PI/2);return B.hi+(-B.h-B.hi)*(B.ang?(1-B.ang)*k+B.ang*u:k)}
+  const u=(x-px)/(X1-px);return -B.h+(B.ht+B.h)*(B.ang?(1-B.ang)*(1-Math.cos(u*Math.PI/2))+B.ang*Math.pow(u,1.3):1-Math.cos(u*Math.PI/2))};
+ const w=t=>t<.22?B.w0+(B.wm-B.w0)*t/.22:t<B.pk?B.wm:B.wm*Math.max(.1,1-Math.pow((t-B.pk)/(1-B.pk),1.2)*.92);
+ const sl=t=>(cy(Math.min(1,t+.02))-cy(Math.max(0,t-.02)))/((X1-X0)*.04);
+ const P=[];for(let i=0;i<=N;i++){const t=i/N,dy=sl(t),l=Math.hypot(1,dy);P.push({t,x:X0+(X1-X0)*t,y:cy(t),nx:dy/l,ny:-1/l,w:w(t)})}
+ const up=P.map(q=>[q.x+q.nx*q.w*.58,q.y+q.ny*q.w*.58]),lo=P.map(q=>[q.x-q.nx*q.w*.42,q.y-q.ny*q.w*.42]).reverse();
+ const q0=P[0],hc=[q0.x-q0.w*.5,q0.y+q0.w*.1];   /* début arrondi */
+ const d='M'+up.concat([[X1+1.2,cy(1)+.5]],lo).map(q=>f(q[0])+','+f(q[1])).join(' L')+` Q${f(hc[0])},${f(hc[1])} ${f(up[0][0])},${f(up[0][1])}Z`;
+ const dk=shade(c,-.45),lt=shade(c,.3),net=B.net;
+ let o=`<defs><linearGradient id="${id}g" x1="${f(X0-B.w0*.5)}" x2="${X1}" y1="0" y2="0" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="${c}" stop-opacity="${net?.7:.05}"/><stop offset=".3" stop-color="${c}" stop-opacity="${net?.92:.72}"/><stop offset=".75" stop-color="${c}" stop-opacity="${net?.97:.85}"/><stop offset="1" stop-color="${c}" stop-opacity=".8"/></linearGradient>`
+  +`<clipPath id="${id}c"><path d="${d}"/></clipPath><filter id="${id}f" x="-10%" y="-40%" width="120%" height="180%"><feGaussianBlur stdDeviation="${net?.18:.38}"/></filter></defs>`;
+ o+=`<path d="${d}" fill="url(#${id}g)" filter="url(#${id}f)"/>`;
+ /* poils : traits fins dans le sens de la pousse (presque verticaux au début, couchés vers la queue), quelques-uns dépassent du bord */
+ let a0='',a1='',a2='';const R=(i,m,k)=>((i*m+k)%101)/101;
+ for(let i=0;i<120;i++){const t=Math.pow(R(i,37,5),1.15)*.97,q=P[Math.min(N,Math.round(t*N))],x0=X0+(X1-X0)*t,y0=cy(t),ww=w(t),
+  off=(R(i,53,29)-.55)*.9,bx=x0+q.nx*ww*off,by=y0+q.ny*ww*off,ang=Math.atan(sl(t))-(t<.25?.9-t*1.6:.38),Ln=(t<.25?ww*.7:1.8+ww*.3)*(.7+R(i,19,7)*.5);
+  const seg=`M${f(bx)},${f(by)} L${f(bx+Math.cos(ang)*Ln)},${f(by+Math.sin(ang)*Ln)} `;if(i%4==0)a2+=seg;else if(t<.22)a0+=seg;else a1+=seg}
+ const sw=B.w0<4?.32:.42;
+ o+=`<path d="${a0}" stroke="${dk}" stroke-width="${sw}" stroke-linecap="round" opacity="${net?.3:.5}" fill="none"/>`;   /* début : les poils dépassent (fondu) */
+ o+=`<g clip-path="url(#${id}c)"><path d="${a1}" stroke="${dk}" stroke-width="${sw}" stroke-linecap="round" opacity="${net?.4:.6}" fill="none"/><path d="${a2}" stroke="${lt}" stroke-width="${sw*.8}" stroke-linecap="round" opacity=".3" fill="none"/></g>`;
+ return o}
+function brow(t,c,id){
+ if(BROWS[t])return browArt(BROWS[t],c,id);
  const st=(d,w)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
  switch(t){
-  case 'fins':return st('M-26,4 C-10,-8 12,-8 28,0',4);
-  case 'arques':return st('M-28,8 C-14,-16 14,-18 30,4',6);
   case 'fronces':return st('M-28,9 C-8,2 12,-5 30,-8',7);
   case 'inquiets':return st('M-28,-9 C-10,-7 10,0 28,6',6);
   default:return `<path d="M-30,7 C-18,-9 12,-13 31,-2 C14,-4 -14,-1 -30,11Z" fill="${c}"/>`;
@@ -897,7 +928,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'Cœur
  sourire:'Sourire',grand:'Grand sourire',neutre:'Neutre',surpris:'Surpris',malicieux:'Malicieux',moue:'Moue',
  fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
  grands:'Grands',brillants:'Brillants',amande:'Amande',ronds:'Petits ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
- epais:'Épais',fins:'Fins',arques:'Arqués',fronces:'Froncés',inquiets:'Inquiets',
+ naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',fronces:'Froncés',inquiets:'Inquiets',
  tresse:'Tresse',longs:'Longs',queue:'Queue de cheval',chignon:'Chignon',boucles:'Bouclés',court:'Courts',rase:'Rasés',
  salopette:'Salopette',tshirt:'T-shirt',capuche:'Sweat',chemise:'Chemise',colroule:'Col roulé',
  rondes:'Rondes',carrees:'Carrées',soleil:'Soleil',dorees:'Dorées',
@@ -1105,7 +1136,8 @@ const TABS=[
  {label:'Yeux',subs:[
   {id:'eyes',label:'Forme',opts:Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
   {id:'iris',label:'Iris',cols:IRIS},
-  {id:'brows',label:'Sourcils',opts:['epais','fins','arques','fronces','inquiets'],vb:hv('112 128 176 100'),adj:'brows'}]},
+  {id:'brows',label:'Sourcils',opts:Object.keys(BROWS),vb:hv('112 128 176 100'),adj:'brows'},
+  {id:'browColor',label:'Couleur des sourcils',cols:BROWC}]},
  {label:'Cheveux',subs:CAT_H.filter(([k])=>k==='all'||HAIR_ALL.some(h=>HAIRDB[h].c.split(' ').includes(k))).map(([k,l])=>({label:l,hairCat:k})).concat([{id:'hairColor',label:'Couleur',cols:HAIR},{id:'edges',label:'Baby hairs',opts:['aucun','baby'],vb:hv('90 100 220 120')}])},
  {label:'Tenue',subs:Object.entries(WEAR).map(([k,W])=>({label:W.l,wear:k}))},
  {label:'Corps',subs:[
@@ -1129,7 +1161,7 @@ const ICON={
 
 const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',face:'ovale',skin:SKIN[2],nose:'rond',mouth:'sourire',cheeks:'rose',freckles:'legeres',
  eyes:'doux',iris:IRIS[1],brows:'epais',hair:'carreondule',hairColor:HAIR[7],top:'salopette',topColor:CLOTH[1],bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'bretelles',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
- glasses:'aucune',earrings:'aucune',bgPattern:'uni',bgColor:BGC[1],
+ glasses:'aucune',earrings:'aucune',browColor:'',bgPattern:'uni',bgColor:BGC[1],
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
