@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v20';
+const VERSION = 'v21';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
@@ -23,22 +23,6 @@ const FICHIERS = [
   'assets/coiffures/bcarre.png',
   'assets/coiffures/bchignon.png',
   'assets/coiffures/bpuffs.png',
-  'assets/coiffures/bbox.png',
-  'assets/coiffures/bcollees.png',
-  'assets/coiffures/bdemiqueue.png',
-  'assets/coiffures/bqueue.png',
-  'assets/coiffures/blongs.png',
-  'assets/coiffures/bchignonhaut.png',
-  'assets/coiffures/bchignonbas.png',
-  'assets/coiffures/btwists.png',
-  'assets/coiffures/bchignonmeches.png',
-  'assets/coiffures/bwashgo.png',
-  'assets/coiffures/bfoulard.png',
-  'assets/coiffures/btressesboucles.png',
-  'assets/coiffures/bcourt.png',
-  'assets/coiffures/bqueuehaute.png',
-  'assets/coiffures/btressesarriere.png',
-  'assets/coiffures/bfoulard-acc.png',
   'assets/coiffures/barrette-acc.png',
   'assets/coiffures/serretete-acc.png', 'assets/chaussures/ballerines.png', 'assets/chaussures/basses.png', 'assets/chaussures/epaisses.png', 'assets/chaussures/retro.png', 'assets/chaussures/retro_creme.png', 'assets/chaussures/running.png', 'assets/chaussures/running_noire.png', 'assets/chaussures/sabots.png', 'js/app.js', 'js/config.js', 'js/cloud.js', 'js/vendor/supabase.js',
   'fonts/baloo-2-latin-600-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
