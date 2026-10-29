@@ -43,7 +43,7 @@ for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['
     for k in ids: HAIRS[k] = boucle(k, i)
 HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
-HAIRS['bafro']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]   # sous la mâchoire, entre les boucles et le cou
+HAIRS['bafro']['trous'] = HAIRS['bcarre']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]   # sous la mâchoire, entre les boucles et le cou
 HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FACE6: HAIRS[k]['oreilles'] = True
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
