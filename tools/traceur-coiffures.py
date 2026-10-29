@@ -45,6 +45,8 @@ HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
 HAIRS['bcarre']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]
 HAIRS['bafro']['trous'] = HAIRS['bcarre']['trous'] + [(75, 125, 195, 280), (275, 325, 195, 280)]   # sous la mâchoire et sous les oreilles
+for k in ['bbox', 'bcollees', 'bdemiqueue', 'blongs']: HAIRS[k]['cou'] = [(85, 175, 195, 335), (225, 315, 195, 335)]   # des joues jusqu'au cou
+HAIRS['bqueue']['fcut'] = [335, 40]   # la queue passe derrière l'épaule gauche
 HAIRS['bchignon']['fin'] = [(60, 128, 70, 205), (272, 340, 70, 205)]   # côtés, des tempes aux oreilles
 HAIRS['bpuffs']['fin'] = [(30, 112, 130, 300), (268, 345, 130, 300)]   # boucles qui pendent devant les oreilles
 HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
@@ -199,7 +201,7 @@ for hid, c in HAIRS.items():
         fs, cx, fch = c['face']; sx = sy = K_LONGS / fs
         toU = lambda px, py: (200 + (px / UP - cx) * sx, CHIN_U + (py / UP - fch) * sy)
     # visage de trois quarts : l'oreille du dessin laisse un trou entre les cheveux, hors du visage du jeu ; on le remplit de mèches
-    if c.get('combler') or c.get('trous') or c.get('fermer') or c.get('perle') is not None and c['perle'].any():
+    if c.get('combler') or c.get('trous') or c.get('fermer') or c.get('cou') or c.get('perle') is not None and c['perle'].any():
         fill = np.zeros_like(hair)
         for y, x in zip(*np.where(c.get('perle', fill))):   # contour sombre des perles retirées : rebouché en cheveux s'il est hors du visage du jeu
             u, v = toU(x * UP, y * UP)
@@ -216,6 +218,16 @@ for hid, c in HAIRS.items():
                     if not (140 < v < 245 and (xs_.min() < x if u < 200 else xs_.max() > x)): continue   # hauteur de l'oreille seulement
                     if -22 < cv2.pointPolygonTest(FACE_OV, (float(u), float(v)), True) < 4: fill[y, x] = True   # 4 unités sur le bord du visage : pas de liseré clair
                 elif (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+        for u0, u1, v0, v1 in c.get('cou', []):   # entre la mèche la plus proche du visage et la mâchoire, jusqu'au cou (les écarts entre tresses restent)
+            for y in range(hair.shape[0]):
+                for x in range(hair.shape[1]):
+                    if hair[y, x]: continue
+                    u, v = toU(x * UP, y * UP)
+                    if not (u0 <= u <= u1 and v0 <= v <= v1) or cv2.pointPolygonTest(FACE_OV, (float(u), float(v)), True) >= 2: continue
+                    side = hair[y, :x] if u < 200 else hair[y, x + 1:]
+                    if not side.any(): continue
+                    xi = (np.where(side)[0].max() if u < 200 else x + 1 + np.where(side)[0].min())   # mèche la plus intérieure de ce côté
+                    if (u < 200 and toU(xi * UP, 0)[0] < 200) or (u >= 200 and toU(xi * UP, 0)[0] >= 200): fill[y, x] = True
         if c.get('fermer'):   # creux entre deux nœuds (ouvert vers l'extérieur) : refermé comme le dessin de l'autre côté
             cl = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))).astype(bool) & ~hair
             for y, x in zip(*np.where(cl)):
@@ -235,7 +247,7 @@ for hid, c in HAIRS.items():
         # couleur unie des cheveux voisins (moyenne des seuls pixels de cheveux, très floutée) : pas de peau, pas de motif
         w_ = hair.astype(np.float32); sm_ = cv2.GaussianBlur(im.astype(np.float32) * w_[..., None], (0, 0), 6) / np.maximum(cv2.GaussianBlur(w_, (0, 0), 6), 1e-3)[..., None]
         im = im.copy(); im[fill] = (sm_[fill] * .85).astype(int)   # un peu plus foncé : ombre derrière l'oreille
-        if c.get('trous') or c.get('fermer'):   # bord des zones rebouchées : même couleur sur 2 px, pour qu'aucun pixel du fond ne reste au bord
+        if c.get('trous') or c.get('fermer') or c.get('cou'):   # bord des zones rebouchées : même couleur sur 2 px, pour qu'aucun pixel du fond ne reste au bord
             ring = cv2.dilate(fill.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & ~hair & ~fill
             im[ring] = (sm_[ring] * .85).astype(int)
         hair |= fill
