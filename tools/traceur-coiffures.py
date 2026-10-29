@@ -43,6 +43,8 @@ for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['
     for k in ids: HAIRS[k] = boucle(k, i)
 HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
+HAIRS['bafro']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]   # sous la mâchoire, entre les boucles et le cou
+HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FACE6: HAIRS[k]['oreilles'] = True
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 K_LONGS, CHIN_U = 1.785, 308.5
@@ -186,7 +188,7 @@ for hid, c in HAIRS.items():
         fs, cx, fch = c['face']; sx = sy = K_LONGS / fs
         toU = lambda px, py: (200 + (px / UP - cx) * sx, CHIN_U + (py / UP - fch) * sy)
     # visage de trois quarts : l'oreille du dessin laisse un trou entre les cheveux, hors du visage du jeu ; on le remplit de mèches
-    if c.get('combler') or c.get('perle') is not None and c['perle'].any():
+    if c.get('combler') or c.get('trous') or c.get('fermer') or c.get('perle') is not None and c['perle'].any():
         fill = np.zeros_like(hair)
         for y, x in zip(*np.where(c.get('perle', fill))):   # contour sombre des perles retirées : rebouché en cheveux s'il est hors du visage du jeu
             u, v = toU(x * UP, y * UP)
@@ -203,11 +205,28 @@ for hid, c in HAIRS.items():
                     if not (140 < v < 245 and (xs_.min() < x if u < 200 else xs_.max() > x)): continue   # hauteur de l'oreille seulement
                     if -22 < cv2.pointPolygonTest(FACE_OV, (float(u), float(v)), True) < 4: fill[y, x] = True   # 4 unités sur le bord du visage : pas de liseré clair
                 elif (u < 200 if c['combler'] == 'g' else True) and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+        if c.get('fermer'):   # creux entre deux nœuds (ouvert vers l'extérieur) : refermé comme le dessin de l'autre côté
+            cl = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))).astype(bool) & ~hair
+            for y, x in zip(*np.where(cl)):
+                u, v = toU(x * UP, y * UP)
+                if any(u0 <= u <= u1 and v0 <= v <= v1 for u0, u1, v0, v1 in c['fermer']): fill[y, x] = True
+        for u0, u1, v0, v1 in c.get('trous', []):   # trous montrés par Prescillia (zones en unités de tête) : bouchés entre la mèche extérieure et le visage ou le cou
+            for y in range(hair.shape[0]):
+                xs_ = np.where(hair[y])[0]
+                if not len(xs_): continue
+                for x in range(hair.shape[1]):
+                    if hair[y, x]: continue
+                    u, v = toU(x * UP, y * UP)
+                    if u0 <= u <= u1 and v0 <= v <= v1 and (xs_.min() < x if u < 200 else xs_.max() > x) \
+                            and cv2.pointPolygonTest(FACE_OV, (float(u), float(v)), True) < 2: fill[y, x] = True
         n_, lab_, st_, _ = cv2.connectedComponentsWithStats(fill.astype(np.uint8), 8)
         fill = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > 6])
         # couleur unie des cheveux voisins (moyenne des seuls pixels de cheveux, très floutée) : pas de peau, pas de motif
         w_ = hair.astype(np.float32); sm_ = cv2.GaussianBlur(im.astype(np.float32) * w_[..., None], (0, 0), 6) / np.maximum(cv2.GaussianBlur(w_, (0, 0), 6), 1e-3)[..., None]
         im = im.copy(); im[fill] = (sm_[fill] * .85).astype(int)   # un peu plus foncé : ombre derrière l'oreille
+        if c.get('trous') or c.get('fermer'):   # bord des zones rebouchées : même couleur sur 2 px, pour qu'aucun pixel du fond ne reste au bord
+            ring = cv2.dilate(fill.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & ~hair & ~fill
+            im[ring] = (sm_[ring] * .85).astype(int)
         hair |= fill
     if c.get('front'):   # ligne du front : les petites encoches (petits cheveux du dessin) sont bouchées avec la mèche juste au-dessus
         ey = int(c['chin'] - 62 * c['face'][0])
@@ -286,6 +305,10 @@ for hid, c in HAIRS.items():
     fy0 = np.where(skin[:, int(cx)])[0]; fy0 = fy0[fy0 > top + 3].min() if len(fy0[fy0 > top + 3]) else top + 30
     sk_in[:fy0, max(0, int(cx) - 3):int(cx) + 4] = 0
     if not c.get('front'): sk_in[:int(c['chin'] * .55)] = 0   # front : les petits cheveux orangés du dessin (couleur de peau) sont repeints en mèches
+    for u0, u1, v0, v1 in c.get('fermer', []):   # dans les creux refermés : les pixels clairs du fond coincés entre les nœuds sont repeints
+        for y, x in zip(*np.where((lumc > 120) & (abs(clean[..., 0].astype(int) - clean[..., 2]) < 45))):
+            u, v = toU(x * UP, y * UP)
+            if u0 <= u <= u1 and v0 <= v <= v1: sk_in[y, x] = 1
     if sk_in.any(): clean = cv2.inpaint(np.ascontiguousarray(clean[:, :, ::-1]), cv2.dilate(sk_in, np.ones((3, 3), np.uint8)), 3, cv2.INPAINT_TELEA)[:, :, ::-1]
     px = cv2.resize(cv2.resize(clean, (bigim.shape[1], bigim.shape[0]), interpolation=cv2.INTER_CUBIC), sz, interpolation=cv2.INTER_AREA); al = cv2.resize(a, sz, interpolation=cv2.INTER_AREA)
     # mèches verticales : un filtre médian vertical efface les petits traits horizontaux sans toucher aux mèches
