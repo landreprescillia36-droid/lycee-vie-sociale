@@ -15,11 +15,42 @@ HAIRS = {
  'longs': {'src': 'docs/references/coiffures/longs-lisses.jpg', 'chin': 212, 'face_row': 145, 'bottom': 356,
            'cut': [(216, 230, 103, 148)], 'back': (206, 262, 80, 170), 'extend': 50, 'volume': 0, 'tips': False, 'mirror': 'right', 'fcut': [345, 136]},
 }
+# planche de 15 coiffures (docs/references/coiffures/planche-coiffures.jpg, découpée en cases) : le visage de chaque case
+# est retrouvé en le comparant à celui de la case « cheveux longs » (modele-visage.png), ce qui donne sa position et sa taille ;
+# la case est ensuite posée sur la tête du jeu avec la même échelle que « longs » (validée par Prescillia)
+ROW_BOTTOM = [298, 286, 268]   # au-dessous : étiquette du nom (une par rangée de la planche)
+def case(nom, rang, back=True, **kw):
+    return {'src': f'docs/references/coiffures/{nom}.png', 'match': True, 'bottom': ROW_BOTTOM[rang], 'back': back, 'tips': False, 'smooth': False, **kw}
+HAIRS.update({
+ 'carrelisse': case('carrelisse', 0, False), 'queuehaute2': case('queuehaute2', 0, False), 'demiqueue': case('demiqueue', 0),
+ 'chignonbas': case('chignonbas', 0, False, combler=True), 'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
+ 'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False),
+ 'queuebasse': case('queuebasse', 2, False, combler=True), 'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
+ 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, False),
+})
+FACE_T = cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138]   # sourcils -> bouche ; centre des yeux (34, 25.5), menton à +80
+def visage(img):
+    best = None
+    for s in np.arange(.8, 1.45, .01):
+        t = cv2.resize(FACE_T, None, fx=s, fy=s, interpolation=cv2.INTER_AREA)
+        r = cv2.matchTemplate(img, t, cv2.TM_CCOEFF_NORMED); _, v, _, loc = cv2.minMaxLoc(r)
+        if best is None or v > best[0]: best = (v, s, loc)
+    v, s, (x, y) = best
+    return s, x + 34 * s, y + 80 * s
+# repère du dessin « longs » : 1,785 unité de tête par pixel du modèle, menton du modèle en y = 308,5
+K_LONGS, CHIN_U = 1.785, 308.5
 UP = 8
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
 out = {}
 for hid, c in HAIRS.items():
     im = cv2.imread(c['src'])[:, :, ::-1].astype(int)
+    if c.get('match'):
+        fs, fcx, fch = visage(cv2.imread(c['src']))
+        c['chin'] = int(fch); c['face'] = (fs, fcx, fch)
+        c['cut'] = [(int(fch + 4 * fs), int(fch + 22 * fs), int(fcx - 24 * fs), int(fcx + 24 * fs))]   # ras-de-cou
+        ey = fch - 54.5 * fs   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
+        c['cut'] += [(int(ey - 10 * fs), int(ey + 10 * fs), int(fcx + dx * fs - 15 * fs), int(fcx + dx * fs + 15 * fs)) for dx in (-26.25, 26.25)]
+        c['back'] = (int(fch - 6 * fs), c['bottom'], 0, im.shape[1]) if c['back'] else None
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
         sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
         # axe = la raie (colonne la plus claire en haut du crâne), pour ne pas doubler la raie
@@ -39,6 +70,14 @@ for hid, c in HAIRS.items():
     hair = np.isin(lab, big)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)).astype(bool)
     hair = cv2.morphologyEx(hair.astype(np.uint8), cv2.MORPH_OPEN, np.ones((7, 1), np.uint8)).astype(bool)   # enlève les traits fins horizontaux (contour des épaules)
+    accM = None
+    if c.get('accessoire'):   # barrette (claire) ou serre-tête (noir neutre) : calque à part, jamais reteint avec les cheveux
+        if c['accessoire'] == 'clair': acc = (lum > 120) & (r - b < 20) & cv2.dilate(hair.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
+        else: acc = ((r - b) < 6) & (lum < 70)
+        acc[int(c['chin'] - 60 * c['face'][0]):] = False
+        acc = cv2.morphologyEx(acc.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+        n_, lab_, st_, _ = cv2.connectedComponentsWithStats(acc, 8); accM = lab_ == 1 + int(np.argmax(st_[1:, 4]))
+        hair |= accM
     # le dessin est coupé par le cadre : on prolonge les mèches (même profil, mêmes reflets) de « extend » pixels
     ext = c.get('extend', 0)
     if ext:
@@ -83,10 +122,35 @@ for hid, c in HAIRS.items():
             if ls < l0: n_ = l0 - ls; im[y, ls:l0] = im[y, l0 + 2:l0 + 2 + n_][::-1]; hair[y, ls:l0] = True   # mèches en miroir : même texture
             if rs > r0: n_ = rs - r0; im[y, r0 + 1:rs + 1] = im[y, r0 - 1 - n_:r0 - 1][::-1]; hair[y, r0 + 1:rs + 1] = True
     ys, xs = np.where(hair); top = ys.min()
-    row = skin[c['face_row']]; fx = np.where(row)[0]
+    row = skin[c.get('face_row', c['chin'] - 30)]; fx = np.where(row)[0]
     fl, fr = fx.min(), fx.max(); cx = (fl + fr + 1) / 2
     sy = (312 - 56) / (c["chin"] - top); sx = sy   # même échelle en largeur et en hauteur : la forme du dessin est gardée telle quelle
     toU = lambda px, py: (200 + (px / UP - cx) * sx, 56 + (py / UP - top) * sy)
+    if c.get('face'):
+        fs, cx, fch = c['face']; sx = sy = K_LONGS / fs
+        toU = lambda px, py: (200 + (px / UP - cx) * sx, CHIN_U + (py / UP - fch) * sy)
+    # visage de trois quarts : l'oreille du dessin laisse un trou entre les cheveux, hors du visage du jeu ; on le remplit de mèches
+    if c.get('combler'):
+        fill = np.zeros_like(hair)
+        for y in range(top, int(c['chin'] - 28 * c['face'][0])):   # jusqu'au bas de l'oreille, du côté gauche seulement
+            xs_ = np.where(hair[y])[0]
+            if len(xs_) < 2: continue
+            for x in range(xs_.min(), xs_.max()):
+                if hair[y, x]: continue
+                u, v = toU(x * UP, y * UP)
+                if u < 200 and ((u - 200) / 94) ** 2 + ((v - 190) / 122) ** 2 > 1: fill[y, x] = True
+        n_, lab_, st_, _ = cv2.connectedComponentsWithStats(fill.astype(np.uint8), 8)
+        fill = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > 6])
+        im = im.copy()
+        for y, x in zip(*np.where(fill)):   # mèches voisines de gauche recopiées en miroir (même texture, pas de couleur de peau)
+            xl = x
+            while xl > 0 and not hair[y, xl]: xl -= 1
+            xa = xl
+            while xa > 0 and hair[y, xa - 1]: xa -= 1
+            im[y, x] = im[y, xl - (x - xl - 1) % (xl - xa + 1)]   # pris seulement dans la mèche de gauche
+        hair |= fill
+    n_, lab_, st_, _ = cv2.connectedComponentsWithStats(hair.astype(np.uint8), 8)   # petites taches isolées retirées
+    hair = np.isin(lab_, [i for i in range(1, n_) if st_[i][4] > st_[1:, 4].max() * .01])
     bigim = cv2.resize(im.astype(np.uint8), None, fx=UP, fy=UP, interpolation=cv2.INTER_CUBIC)
     M = cv2.GaussianBlur(cv2.resize(hair.astype(np.float32), None, fx=UP, fy=UP, interpolation=cv2.INTER_LINEAR), (41, 41), 0) > .5
     # pointes : le dessin s'arrête au bord de l'image ; on finit les mèches en pointes douces (dents de 21 px, hauteur 12 px)
@@ -97,8 +161,8 @@ for hid, c in HAIRS.items():
             M[y, ((yb - y) < amp * tri ** .8)] = False
         M = cv2.GaussianBlur(M.astype(np.float32), (25, 25), 0) > .5
     # derrière le cou : on remplit tout l'espace entre les mèches (le cou du jeu passe devant)
-    by0, by1, bx0, bx1 = c['back']
     backR = np.zeros_like(M)
+    by0, by1, bx0, bx1 = c['back'] or (0, 0, 0, 0)
     for y in range(by0 * UP, by1 * UP):
         xs_ = np.where(M[y])[0]
         if len(xs_): backR[y, xs_.min():xs_.max() + 1] = True
@@ -142,6 +206,7 @@ for hid, c in HAIRS.items():
     near = cv2.dilate(hole, np.ones((5, 5), np.uint8)).astype(bool)
     lumc = (clean.astype(float) * [.299, .587, .114]).sum(-1)
     sk_in = (((clean[..., 0].astype(int) - clean[..., 2] > 40) & (clean[..., 0] > 80)) | (near & (lumc > 55)) | hole.astype(bool)).astype(np.uint8)
+    if c.get('accessoire'): sk_in[cv2.dilate(hole, np.ones((5, 5), np.uint8)) > 0] = 0   # barrette : gardée telle quelle, pas repeinte en cheveux
     F = F | (cv2.resize(hole, (F.shape[1], F.shape[0]), interpolation=cv2.INTER_NEAREST) > 0)   # restes de peau ou de contour orangé dans les cheveux
     a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
     # la raie (ligne de peau entre les deux côtés, en haut du crâne) est gardée telle quelle
@@ -161,7 +226,7 @@ for hid, c in HAIRS.items():
     # contours extérieurs lisses sur les côtés (demandé par Prescillia) : sous les tempes, le bord gauche et le bord droit
     # suivent une courbe moyenne ; les bosses sont coupées, les creux comblés avec les mèches voisines (en miroir)
     rows_ = [y for y in range(al.shape[0]) if (al[y] > .5).any()]
-    if rows_:
+    if rows_ and c.get('smooth', True):
         y0_ = rows_[0] + int((rows_[-1] - rows_[0]) * .22)
         Ys = [y for y in rows_ if y >= y0_]
         Lx = np.array([np.where(al[y] > .5)[0].min() for y in Ys], float); Rx = np.array([np.where(al[y] > .5)[0].max() for y in Ys], float)
@@ -177,10 +242,16 @@ for hid, c in HAIRS.items():
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
+    if accM is not None:
+        aa = cv2.GaussianBlur(cv2.resize(accM.astype(np.float32), sz, interpolation=cv2.INTER_LINEAR), (0, 0), .8)
+        aa = np.clip((aa - .5) * 2.5 + .5, 0, 1)
+        po = cv2.resize(im.astype(np.uint8), sz, interpolation=cv2.INTER_CUBIC)
+        cv2.imwrite(f'assets/coiffures/{hid}-acc.png', np.dstack([po[..., ::-1], (aa * 255).astype(np.uint8)])[Y0:Y1, X0:X1], [cv2.IMWRITE_PNG_COMPRESSION, 9])
     u0 = toU(X0 * UP / S, Y0 * UP / S); u1 = toU(X1 * UP / S, Y1 * UP / S)
     hl = lu[F] / 255
     out_img = {'img': [round(u0[0], 2), round(u0[1], 2), round(u1[0] - u0[0], 2), round(u1[1] - u0[1], 2)],
                'lum': [round(float(np.percentile(hl, 5)), 3), round(float(np.median(hl)), 3), round(float(np.percentile(hl, 98)), 3)]}
+    if accM is not None: out_img['acc'] = 1
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': layers(M & ~box), 'edge': paths(M)}
     if dbg:

@@ -152,7 +152,7 @@ function render(s,vb,p,showBg){
  const outl=mix(sk,'#6a2e14',.42);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=s.face==='naturel',rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="207" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="209" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${207-ry*.55} C${xx+6*k},${207-ry*.6} ${xx+8*k},${207+ry*.3} ${xx-2*k},${207+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  const blush={aucune:0,rose:.55,fort:1}[s.cheeks]??0;
- if(blush) o+=`<g opacity="${blush}"><ellipse cx="128" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/><ellipse cx="272" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/></g>`;
+ if(blush) o+=`<clipPath id="${p}fcb"><path d="${F.d}"/></clipPath><g opacity="${blush}" clip-path="url(#${p}fcb)"><ellipse cx="128" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/><ellipse cx="272" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/></g>`;
  const rk={fines:1,marquees:2}[s.rides]||0;
  if(rk){const ew=35*sc,R=200+dx+ew,Lx=200-dx-ew,n=252+a.noseY,mo=285+a.mouthY;
   let w=`M176,${n+6} Q164,${n+26} 171,${mo+10} M224,${n+6} Q236,${n+26} 229,${mo+10}`;
@@ -677,7 +677,7 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
   if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
-  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s.face,FY)}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${img}</g>`}
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s.face,FY)}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${img}${A.acc?`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:''}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
@@ -927,6 +927,20 @@ const HAIRDB={
  queuehaute:{n:'Queue haute avec chouchou',c:'long ondule queue attache',r:'F',x:"Chouchou orange, queue ondulée sur l'épaule et mèche du visage reprises ; la queue est un peu plus courte."},
  carreplongeant:{n:'Carré lisse, mèche balayée',c:'mi lisse',r:'F',x:"Pointes nettes et mèche de côté respectées ; effilage des pointes simplifié."},
  longs:{n:'Cheveux longs lisses',c:'long lisse',r:'I',x:"Reprise de ton dessin : vrais pixels, raie au milieu, cheveux de l'arrière derrière les épaules."},
+ carrelisse:{n:"Carré lisse",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ queuehaute2:{n:"Queue de cheval haute",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ demiqueue:{n:"Demi-queue",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ chignonbas:{n:"Chignon bas",c:'chignon attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ mechesdevant:{n:"Mèches devant",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ frangedroite:{n:"Frange droite",c:'long lisse frange',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ chignonhaut2:{n:"Chignon haut",c:'chignon attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ raiecotel:{n:"Raie sur le côté",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ deuxtresses:{n:"Deux tresses",c:'long tresse attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ queuebasse:{n:"Queue de cheval basse",c:'mi lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ serretete:{n:"Avec serre-tête",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ barrette:{n:"Avec barrette",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ raiemilieu:{n:"Raie au milieu avec mèches",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ queuelisse:{n:"Queue de cheval haute lisse",c:'long lisse queue attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  ondulescote:{n:'Longs ondulés ramenés sur le côté',c:'long ondule',r:'F',x:"Grande mèche ondulée sur l'épaule respectée ; boucle finale plus simple."},
  longsondules:{n:'Longs ondulés',c:'long ondule',r:'F',x:"Ondulations régulières, un peu moins marquées que la référence."},
  longboucle:{n:'Longs bouclés volumineux',c:'long boucle',r:'D',x:"Gros volume, ligne des cheveux ondulée, boucles qui descendent jusqu'à la poitrine et retombent devant les épaules près du cou, d'après ton dessin."},
@@ -962,7 +976,7 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['longs','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
+const HAIR_ALL=['longs','carrelisse','queuehaute2','demiqueue','chignonbas','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','queuebasse','serretete','barrette','raiemilieu','queuelisse','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
