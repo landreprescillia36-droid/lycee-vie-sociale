@@ -26,7 +26,7 @@ HAIRS.update({
  'mechesdevant': case('mechesdevant', 1), 'frangedroite': case('frangedroite', 1),
  'chignonhaut2': case('chignonhaut2', 1, False), 'raiecotel': case('raiecotel', 1), 'deuxtresses': case('deuxtresses', 1, False, combler='gd', front=True),
  'serretete': case('serretete', 2, accessoire='noir'), 'barrette': case('barrette', 2, accessoire='clair'),
- 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd', front=True),
+ 'raiemilieu': case('raiemilieu', 2), 'queuelisse': case('queuelisse', 2, True, combler='gd'),
 })
 FACE_T = cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138]   # sourcils -> bouche ; centre des yeux (34, 25.5), menton à +80
 def visage(img):
