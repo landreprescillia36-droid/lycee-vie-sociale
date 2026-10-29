@@ -1,4 +1,4 @@
-# Lycée · vie sociale
+# Novalya – dernière année de lycée
 
 Jeu de vie sociale en terminale dans un lycée de Guadeloupe, créé par Prescillia.
 

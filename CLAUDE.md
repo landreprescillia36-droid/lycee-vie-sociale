@@ -1,4 +1,6 @@
-# Lycée · vie sociale — guide pour Claude Code
+# Novalya – dernière année de lycée — guide pour Claude Code
+
+Nom du jeu : **Novalya – dernière année de lycée** (nom court « Novalya »). Le dépôt et l'adresse en ligne gardent le nom `lycee-vie-sociale` pour ne pas casser l'appli installée.
 
 Jeu de simulation de vie sociale en terminale, dans un lycée de Guadeloupe. Créatrice : Prescillia (francophone, Guadeloupe). Tout le texte du jeu et les échanges avec elle sont **en français**, réponses courtes et directes.
 
