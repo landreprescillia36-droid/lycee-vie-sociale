@@ -43,7 +43,8 @@ for i, ids in enumerate([['bafro', 'bbantu', 'bcarre', 'bchignon', 'bpuffs'], ['
     for k in ids: HAIRS[k] = boucle(k, i)
 HAIRS['bbox']['bottom'] = 222
 HAIRS['bfoulard']['accessoire'] = 'foulard'
-HAIRS['bafro']['trous'] = HAIRS['bcarre']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]   # sous la mâchoire, entre les boucles et le cou
+HAIRS['bcarre']['trous'] = [(140, 175, 280, 332), (225, 260, 280, 332)]
+HAIRS['bafro']['trous'] = HAIRS['bcarre']['trous'] + [(75, 125, 195, 280), (275, 325, 195, 280)]   # sous la mâchoire et sous les oreilles
 HAIRS['bchignon']['fin'] = [(60, 128, 70, 205), (272, 340, 70, 205)]   # côtés, des tempes aux oreilles
 HAIRS['bpuffs']['fin'] = [(30, 112, 130, 300), (268, 345, 130, 300)]   # boucles qui pendent devant les oreilles
 HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
