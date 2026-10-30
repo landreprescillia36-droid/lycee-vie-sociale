@@ -425,3 +425,6 @@ body.playing{background:var(--g-bg)}
 .fab-act span{font:400 30px var(--body);line-height:1;margin-top:-3px}
 #gMenuBody,#gMenuQuit{display:flex;flex-direction:column;gap:16px}
 #gMenuBody>p.muted{margin-top:-10px}
+.hspeed{width:58px}
+.hspeed b{font:800 17px var(--display);font-variant-numeric:tabular-nums;line-height:1.1}
+.hspeed.on{background:var(--g-blue)}.hspeed.on small{color:#dce8ff}

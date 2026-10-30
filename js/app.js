@@ -2568,7 +2568,8 @@ function drawClock(){
   $('gDay').textContent=sd?`Jour ${sd}`:short;$('gDayBtn').setAttribute('aria-label',`${sd?`Jour ${sd} sur ${YEAR_DAYS}`:short}, ${fmtDay(G.day)}, ${fmtT(G.min)}${G.paused?', temps en pause':''}`)}
  $('gTime').textContent=fmtT(G.min);$('gPhase').textContent=ph.sub?SUBJ[ph.sub]:ph.lbl||PLABEL[ph.type];
  /* pause et vitesse sont dans le menu ⚙ : l'en-tête rappelle seulement l'état */
- $('gState').textContent=G.paused?' ⏸':(G.speed||1)>1?` ×${G.speed}`:'';
+ $('gState').textContent=G.paused?' ⏸':'';
+ {const sp=G.speed||1;$('gSpeedN').textContent='×'+sp;$('gSpeed').classList.toggle('on',sp>1);$('gSpeed').setAttribute('aria-label',`Vitesse du temps ×${sp} : touche pour accélérer`)}
  $('gEnergyN').textContent=G.energy;$('gEnergy').classList.toggle('low',G.energy<25);$('gEnergy').setAttribute('aria-label',`Énergie ${G.energy} sur 100`);
  const bar=$('phBar');if(bar)bar.style.width=(clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100)+'%';
 }
@@ -3642,6 +3643,8 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
  else if(m==='back'){drawMenu();return}
  else if(m==='quitok'){$('sheetBody').onclick=null;saveG();showAtelier();return}
  saveG();drawHUD();drawMenu()}
+/* bouton « Vitesse » de l'en-tête : ×1 → ×2 → ×5 → ×10 → ×1 */
+$('gSpeed').onclick=()=>{G.speed=SPEEDS[(SPEEDS.indexOf(G.speed||1)+1)%SPEEDS.length];if(G.paused)G.paused=false;saveG();drawClock();toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)};
 $('gMenu').onclick=openMenu;
 $('gDayBtn').onclick=openMenu;
 $('gEnergy').onclick=()=>{if(G.bonus){menuClick({target:{closest:()=>({dataset:{m:'bonus'}})}});return}toast(`Énergie ${G.energy}/100 : elle baisse avec le temps et les actions, remonte en dormant et en mangeant`)};
