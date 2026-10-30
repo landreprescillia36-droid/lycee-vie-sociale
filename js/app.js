@@ -208,16 +208,19 @@ const EYE_OLD={grands:'grands',brillants:'grands',amande:'amande',ronds:'ronds',
 const EYE_REF='#5f3a23';
 const eyeKey=k=>typeof EYE_ART==='undefined'?k:EYE_ART[k]?k:(EYE_OLD[k]||'amande');
 const EYEART=s=>typeof EYE_ART!=='undefined'&&EYE_ART[eyeKey(s.eyes)];
-const LASH_STY={longs:{n:9,len:[4,9],w:1.5,curl:.45,u0:.3},epais:{n:15,len:[3,5.5],w:2.1,curl:.35,u0:.2},espaces:{n:5,len:[4,6.5],w:1.6,curl:.4,u0:.35},recourbes:{n:9,len:[4,7.5],w:1.6,curl:1.1,u0:.3}};
-/* cils dessinés le long de la paupière (P : 9 points du haut du trait, coin intérieur → extérieur), plus longs vers l'extérieur, effilés */
-function lashSVG(P,sty){const L=LASH_STY[sty];if(!L||!P)return '';let d='';const f=v=>v.toFixed(1);
- for(let i=0;i<L.n;i++){const u=L.u0+(1-L.u0)*i/(L.n-1),q=u*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j;
+/* styles de cils d'après la planche : brins fins et effilés, plus longs et plus couchés vers le coin extérieur, pointe recourbée vers l'extérieur */
+const LASH_STY={longs:{n:11,len:[3.5,10],w:1.05,tilt:[12,58],bend:.38,u0:.2},epais:{n:15,len:[3,7],w:1.55,tilt:[12,55],bend:.32,u0:.15},
+ espaces:{n:6,len:[4,8.5],w:1.15,tilt:[14,55],bend:.36,u0:.3},recourbes:{n:11,len:[3.5,8.5],w:1.1,tilt:[4,40],bend:.75,u0:.2}};
+function lashSVG(P,sty){const L=LASH_STY[sty];if(!L||!P)return '';let d='';const f=v=>v.toFixed(2);
+ for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(1,L.u0+(1-L.u0)*(i+jit*.35)/(L.n-1)),q=u*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j;
   const x=P[j][0]+(P[j+1][0]-P[j][0])*t,y=P[j][1]+(P[j+1][1]-P[j][1])*t;
   let tx=P[j+1][0]-P[j][0],ty=P[j+1][1]-P[j][1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;let nx=ty,ny=-tx;if(ny>0){nx=-nx;ny=-ny}
-  const len=L.len[0]+(L.len[1]-L.len[0])*u*u,c=L.curl*(.4+u*.8),bx=x-nx*1.4,by=y-ny*1.4,hw=L.w/2;
-  const ex=bx+nx*len+tx*len*c,ey=by+ny*len+ty*len*c*.5,mx=bx+nx*len*.7+tx*len*c*.15,my=by+ny*len*.7;
-  d+=`M${f(bx-tx*hw)},${f(by-ty*hw)} Q${f(mx-tx*hw*.6)},${f(my-ty*hw*.6)} ${f(ex)},${f(ey)} Q${f(mx+tx*hw*.6)},${f(my+ty*hw*.6)} ${f(bx+tx*hw)},${f(by+ty*hw)}Z`}
- return `<path d="${d}" fill="#161214"/>`}
+  const a=(L.tilt[0]+(L.tilt[1]-L.tilt[0])*u*u)*Math.PI/180,dx=nx*Math.cos(a)+tx*Math.sin(a),dy=ny*Math.cos(a)+ty*Math.sin(a);
+  const len=(L.len[0]+(L.len[1]-L.len[0])*Math.pow(u,1.6))*(1+jit*.18)+1.6,hw=L.w/2,bx=x-nx*2.8,by=y-ny*2.8;
+  const mx=bx+dx*len*.55,my=by+dy*len*.55,ex=mx+(dx*Math.cos(L.bend)+tx*Math.sin(L.bend))*len*.5,ey=my+(dy*Math.cos(L.bend)+ty*Math.sin(L.bend))*len*.5-len*.04;
+  const px=-dy*hw,py=dx*hw;
+  d+=`M${f(bx+px)},${f(by+py)} Q${f(mx+px*.45)},${f(my+py*.45)} ${f(ex)},${f(ey)} Q${f(mx-px*.45)},${f(my-py*.45)} ${f(bx-px)},${f(by-py)}Z`}
+ return `<path d="${d}" fill="#141012"/>`}
 function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7);
  const g=rgb(s.iris||EYE_REF).map((v,i)=>v/Math.max(1,rgb(EYE_REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
