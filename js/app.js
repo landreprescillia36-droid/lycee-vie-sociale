@@ -452,7 +452,7 @@ function shoesSVG(s,sk,G,skD,skL,p){const art=typeof SHOE_ART!=='undefined'&&!!S
    const A=SHOE_ART.ballerines,op=s.shoes==='ballerines'&&G&&A&&A.layers.find(l=>l[0]==='skin');
    if(op){const sy=+((1.12)/BODY_K).toFixed(3),cid=(p||'')+'bo'+k;g=`<defs><clipPath id="${cid}"><path d="${op[1]}${A.layers.find(l=>l[0]==='sil')[1]}M-30,-60 L30,-60 L30,${fx(A.top+3)} L-30,${fx(A.top+3)}Z"/></clipPath><linearGradient id="${cid}g" gradientUnits="userSpaceOnUse" x1="${fx(a)}" y1="0" x2="${fx(b)}" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".45" stop-color="${skL}"/><stop offset=".7" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></linearGradient></defs><g clip-path="url(#${cid})" stroke="none"><path transform="scale(${fx(1/(-k*sc))},${fx(1/sy)}) translate(${-T},-838)" d="${legD(G,k,1)}" fill="url(#${cid}g)"/></g>`+g}}
   return `<g transform="translate(${T},838) scale(${fx(-k*sc)},${+((art?1.12:1)/BODY_K).toFixed(3)})" stroke="#000" stroke-width="1.2">${g}</g>`}).join('')+'</g>'}
-const DR={fleurie:{hem:585,flare:40,neck:'sweet',strap:4,print:2,seam:1,ties:1},maxi:{hem:820,flare:10,neck:'strap',strap:2.6,slit:1},longue:{hem:812,flare:46,neck:'square',strap:6,print:1,seam:1},nuisette:{hem:700,flare:20,neck:'strap',strap:2.5,satin:1},tshirtdress:{hem:600,flare:16,neck:'crew',sl:302,sx:6,ext:6},
+const DR={fleurie:{hem:585,flare:40,neck:'sweet',cami:1,print:2,seam:1,ties:1},maxi:{hem:820,flare:10,neck:'strap',cami:1,slit:1},longue:{hem:812,flare:46,neck:'square',strap:6,print:1,seam:1},nuisette:{hem:700,flare:20,neck:'strap',strap:2.5,satin:1},tshirtdress:{hem:600,flare:16,neck:'crew',sl:302,sx:6,ext:6},
  portefeuille:{hem:620,flare:30,neck:'deepv',sl:400,sx:4,wrap:1,ext:2,seam:1},bretelles:{hem:590,flare:44,neck:'square',strap:11,print:1,seam:1},
  madras:{hem:780,flare:64,neck:'off',sl:300,sx:7,madras:1,seam:1},pull:{hem:560,flare:4,neck:'turtle',sl:446,sx:3,rib:1,ext:3}};
 function gownD(G,D){
@@ -496,7 +496,9 @@ function dressSVG(G,s,p,K,J){
  if(D.ties)o+=LN('M200,274 L196,284 M200,274 L204,284',shade(c,-.35),1.4,.8);
  if(D.slit){const x0=200+G.HH*.45;o+=`<path d="M${fx(x0-6)},${h} L${fx(x0)},${h-170} L${fx(x0+14)},${h}Z" fill="${shade(sk,-.06)}"/>`+LN(`M${fx(x0)},${h-170} L${fx(x0-6)},${h} M${fx(x0)},${h-170} L${fx(x0+14)},${h}`,dk,1.4,.5)}
  o+=J.torso+(bare?'':[-1,1].map(k=>`<path d="${armD(G,k)}" fill="url(#${p}lm${k<0?'L':'R'})"/>`).join(''));
- if(straps)o+=yokeSVG(G,p,sk,264,true);
+ if(straps)o+=yokeSVG(G,p,sk,D.cami?270:264,true);
+ /* bretelles comme le débardeur blanc : fines, verticales, du bord du buste jusqu'au haut de l'épaule */
+ if(D.cami){const stD=`M155,267 L153,${fx(shY(G,-1,153)+1.5)} M245,267 L247,${fx(shY(G,1,247)+1.5)}`;o+=LN(stD,c,3)+LN(stD,dk,1,.35)}
  if(D.strap)o+=LN(`M${D.neck==='square'||D.neck==='sweet'?172:178},262 L162,${fx(shY(G,-1,162)+1)} M${D.neck==='square'?228:222},262 L238,${fx(shY(G,1,238)+1)}`,c,D.strap);
  if(D.sl){const ex=()=>D.sx,yTop=D.neck==='off'?248:null;[-1,1].forEach(k=>{o+=`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}dr)"/>`+(D.madras?`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}mad)"/>`:'')+(D.rib?`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}rib)"/>`:'')+(yTop?'':capPatch(G,p,k,'dr'+k,c,JKS,JKS,Math.max(G.HH+D.flare,torHalf(G,372,D.ext||0)),D.sx,Math.min(262,D.sl-6)))})}
  if(G.f&&D.sl&&!(s.jacket&&JK[s.jacket]))[-1,1].forEach(k=>{o+=bustLine(G,k,c,D.sx,D.neck==='off'?254:258)});
