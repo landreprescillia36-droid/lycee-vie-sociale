@@ -209,10 +209,9 @@ for sid, (x, y, w, h) in SHAPES:
             cv2.imwrite(f'assets/yeux/{name}.png', rgba[Y0 * S:Y1 * S, X0 * S:X1 * S], [cv2.IMWRITE_PNG_COMPRESSION, 9])
         save(f'{sid}-iris-{side}', ia, cf)
         irisL.append(cf.mean(2)[iris])
-        save(f'{sid}-{side}', top, col)
         # ligne de la paupière (pour poser les cils des autres styles), du coin intérieur au coin extérieur
         # haut du trait d'eye-liner : haut de l'œil une fois les cils fins retirés (ouverture morphologique), lissé
-        Eo = cv2.morphologyEx((E & (a > .5)).astype(np.uint8), cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))).astype(bool) & (yy > cy - r * 1.45)
+        Eo = cv2.morphologyEx((E & (a > .5)).astype(np.uint8), cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))).astype(bool) & (yy > cy - r * 1.45)
         LX, LY = [], []
         for x_ in range(box[0], box[2] + 1):
             c_ = np.where(Eo[:, x_])[0]
@@ -221,6 +220,25 @@ for sid, (x, y, w, h) in SHAPES:
         LYs = median_filter(np.array(LY, float), 9, mode='nearest')
         cf2 = np.polyfit(LX, LYs, 4)
         P = [(float(x_), float(np.polyval(cf2, x_))) for x_ in np.linspace(box[0], box[2], 9)]
+        # limite de l'eye-liner (demande de Prescillia) : au-dessus du haut du trait, plus rien de la planche ;
+        # les cils sont redessinés nets par le jeu. Au-delà du coin extérieur, la queue suit la pente du trait (+ un peu de relevé).
+        # ouverture = parabole par le haut du blanc (hors iris) ; trait = épaisseur fine au coin intérieur, plus épaisse vers l'extérieur
+        OX, OY = [], []
+        for x_ in range(box[0], box[2] + 1):
+            c_ = np.where(inside[:, x_] & (cf.mean(2)[:, x_] > skL0[:, x_] * .8))[0]
+            if len(c_) and abs(x_ - cx) > r * 1.02: OX.append(x_); OY.append(c_.min())
+        cfo = np.polyfit(OX, OY, 2)
+        sgn = 1 if side == 'd' else -1; xi_ = box[0] if side == 'd' else box[2]; xo_ = box[2] if side == 'd' else box[0]
+        u_ = np.clip((xx - xi_) * sgn / max(1, box[2] - box[0]), 0, 1)
+        T = 1.3 + 4.2 * u_ ** 1.2
+        yo_ = np.polyval(cfo, xo_) - 4.2; sl = np.polyval(np.polyder(cfo), xo_)
+        inb = (xx >= box[0]) & (xx <= box[2])
+        limF = np.where(inb, np.polyval(cfo, np.clip(xx, box[0], box[2])) - T,
+                        np.where((xx - xo_) * sgn > 0, yo_ + sl * (xx - xo_) * .4 - .5 * np.abs(xx - xo_), -1))
+        P = [(float(x_), float(np.polyval(cfo, x_) - (1.3 + 4.2 * (((x_ - xi_) * sgn) / max(1, box[2] - box[0])) ** 1.2))) for x_ in np.linspace(box[0], box[2], 9)]
+        cut = (yy < limF) & ~inside
+        top = np.where(cut, 0, top)
+        save(f'{sid}-{side}', top, col)
         if side == 'g': P = P[::-1]
         lids[sid + side] = [[round((px - ex) * 1, 2), round((py - ey) * 1, 2)] for px, py in P]
         out.setdefault(sid, {})[side] = [X0 - ex, Y0 - ey, X1 - X0, Y1 - Y0, cx - ex, cy - ey, r]

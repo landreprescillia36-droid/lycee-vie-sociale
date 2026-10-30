@@ -209,7 +209,7 @@ const EYE_REF='#5f3a23';
 const eyeKey=k=>typeof EYE_ART==='undefined'?k:EYE_ART[k]?k:(EYE_OLD[k]||'amande');
 const EYEART=s=>typeof EYE_ART!=='undefined'&&EYE_ART[eyeKey(s.eyes)];
 /* styles de cils d'après la planche : brins fins et effilés, plus longs et plus couchés vers le coin extérieur, pointe recourbée vers l'extérieur */
-const LASH_STY={longs:{n:11,len:[3.5,10],w:1.05,tilt:[12,58],bend:.38,u0:.2},epais:{n:15,len:[3,7],w:1.55,tilt:[12,55],bend:.32,u0:.15},
+const LASH_STY={naturels:{n:11,len:[2.5,6.5],w:1,tilt:[10,55],bend:.42,u0:.2},longs:{n:11,len:[3.5,10],w:1.05,tilt:[12,58],bend:.38,u0:.2},epais:{n:15,len:[3,7],w:1.55,tilt:[12,55],bend:.32,u0:.15},
  espaces:{n:6,len:[4,8.5],w:1.15,tilt:[14,55],bend:.36,u0:.3},recourbes:{n:11,len:[3.5,8.5],w:1.1,tilt:[4,40],bend:.75,u0:.2}};
 function lashSVG(P,sty){const L=LASH_STY[sty];if(!L||!P)return '';let d='';const f=v=>v.toFixed(2);
  for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(1,L.u0+(1-L.u0)*(i+jit*.35)/(L.n-1)),q=u*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j;
