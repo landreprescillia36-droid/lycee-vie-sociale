@@ -207,6 +207,9 @@ for sid, (x, y, w, h) in SHAPES:
             A = clean(A)
             rgba = np.dstack([big(C), np.clip(big(A, cv2.INTER_LINEAR), 0, 1) * 255]).clip(0, 255).astype(np.uint8)
             cv2.imwrite(f'assets/yeux/{name}.png', rgba[Y0 * S:Y1 * S, X0 * S:X1 * S], [cv2.IMWRITE_PNG_COMPRESSION, 9])
+        skinlike = (np.linalg.norm(lab_ - skLab, axis=2) < 22) & (yy < cy)      # paupière couleur peau posée sur l'iris
+        ia = ia * ~cv2.dilate(skinlike.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+        top = top * ~skinlike
         save(f'{sid}-iris-{side}', ia, cf)
         irisL.append(cf.mean(2)[iris])
         # ligne de la paupière (pour poser les cils des autres styles), du coin intérieur au coin extérieur
@@ -234,7 +237,9 @@ for sid, (x, y, w, h) in SHAPES:
         yo_ = np.polyval(cfo, xo_) - 4.2; sl = np.polyval(np.polyder(cfo), xo_)
         inb = (xx >= box[0]) & (xx <= box[2])
         # tout le trait (haut et bas) est retiré de l'image : le jeu dessine l'eye-liner du haut, net ; pas de trait en bas
-        cut = ink & ~inside
+        hs_ = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        brownish = ~scl & ~inc0 & (hs_[..., 1] > 70) & (yy < cy + r * .3)          # peau/ombre brune restée sur le haut et les côtés
+        cut = (~inside & ((yy < cy) | ink)) | brownish   # au-dessus de l'œil : plus rien (ni trait, ni ombre, ni pli de paupière)
         AXs = np.where(inside.any(0))[0]; xa, xb = int(AXs.min()), int(AXs.max())
         P = [(float(x_), float(np.polyval(cfo, x_))) for x_ in np.linspace(xa + .5, xb - .5, 9)]
         top = np.where(cut, 0, top)
