@@ -130,7 +130,7 @@ for sid, (x, y, w, h) in SHAPES:
         yy, xx = np.mgrid[:a.shape[0], :a.shape[1]]
         ex, ey = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
         bw, bh = box[2] - box[0], box[3] - box[1]
-        ell = ((xx - ex) / (bw * .78)) ** 2 + ((yy - ey + bh * .25) / (bh * 1.25)) ** 2
+        ell = ((xx - ex) / (bw * .9)) ** 2 + ((yy - ey + bh * .1) / (bh * 1.35)) ** 2
         zone = np.clip((1.15 - ell) / .3, 0, 1)
         liner = liner & (yy > box[1] - bh * .35) & (zone > .5)        # le trait près de l'œil, pas le sourcil
         core = cv2.dilate((scl | liner).astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
@@ -164,10 +164,20 @@ for sid, (x, y, w, h) in SHAPES:
         sh = sh * np.clip(edge / 14, 0, 1)                         # rien de coupé net au bord de la case
         # ouverture de l'œil (blanc + iris + ombre de la paupière sur le blanc) : pleine, avec les vrais pixels
         from scipy.ndimage import binary_fill_holes
-        inside = (scl | (inc0 & (a > .5))) & (zone > .3)
+        hsv_ = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+        lab_ = cv2.cvtColor(crop, cv2.COLOR_BGR2LAB).astype(np.float32)
+        skLab = cv2.cvtColor(cv2.GaussianBlur(cv2.inpaint(crop, cv2.dilate((a > .4).astype(np.uint8), np.ones((5, 5), np.uint8)), 8, cv2.INPAINT_TELEA), (0, 0), 6), cv2.COLOR_BGR2LAB).astype(np.float32)
+        light = ((lab_[..., 0] - skLab[..., 0] > 6) | (lab_[..., 2] - skLab[..., 2] < -10)) & (zone > .3)   # blanc ombré, coin intérieur rosé
+        seed = (scl | (inc0 & (a > .5))) & (zone > .3)
+        light = light & cv2.dilate(seed.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))).astype(bool) & ~(yy < cy - r * 1.05)
+        n_, l_, _, _ = cv2.connectedComponentsWithStats((light | seed).astype(np.uint8), 8)
+        inside = np.isin(l_, [l for l in np.unique(l_[seed]) if l])
         inside = binary_fill_holes(cv2.morphologyEx(inside.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))))
         near = cv2.dilate(inside.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
-        darkn = (cf.mean(2) < skL0 * .72) & near & (zone > .3)      # trait et cils autour de l'ouverture (coin intérieur compris)
+        darkn = ((cf.mean(2) < skL0 * .72) | ((cf.mean(2) < skL0 * .9) & cv2.dilate(inside.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool))) & near & (zone > .3)      # trait et cils autour de l'ouverture (coin intérieur compris)
+        # tout ce qui est entouré par le trait de l'œil fait partie de l'œil (ombre du blanc sous la paupière comprise)
+        encl = binary_fill_holes(cv2.morphologyEx((darkn | inside).astype(np.uint8), cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8)))
+        inside = inside | (encl & ~darkn)
         E = (E & ((cf.mean(2) < skL0 * .72) | inside)) | darkn | inside
         a = np.where(inside, 1.0, a)
         col = np.where(inside[..., None], cf, col)
@@ -176,6 +186,7 @@ for sid, (x, y, w, h) in SHAPES:
         # iris : dans le cercle, ni peau, ni blanc (les reflets restent dans l'image du dessus)
         inc = (xx - cx) ** 2 + (yy - cy) ** 2 <= (r + .8) ** 2
         iris = inc & E & (a > .5) & ~white & (cf.mean(2) < 150)
+        iris = cv2.dilate(iris.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool) & inc
         ia = cv2.GaussianBlur(iris.astype(np.float32), (0, 0), .6)
         top = np.clip(a - ia, 0, 1)
         big = lambda v, i=cv2.INTER_CUBIC: cv2.resize(v, None, fx=S, fy=S, interpolation=i)
