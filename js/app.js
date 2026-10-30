@@ -2560,26 +2560,26 @@ const SUN='<circle cx="16" cy="16" r="7" fill="#ffd23f"/><g stroke="#ffd23f" str
 const MOON='<path d="M21 4a12 12 0 1 0 7 17A10 10 0 0 1 21 4z" fill="#c9cdf5"/><circle cx="25" cy="8" r="1.4" fill="#fff"/><circle cx="8" cy="6" r="1" fill="#fff"/>';
 function drawClock(){
  const ph=phase(),day=G.min>=360&&G.min<1140;
- $('gSky').innerHTML=day?SUN:MOON;{const sd=schoolDay(G.day);const dl=dayLbl(G.day),short=G.yearDone||G.day>CAL_END?'Vacances':dl?(dl.startsWith('Férié')?'Férié':'Vacances'):'Week-end';$('gDay').innerHTML=sd?`Jour ${sd}/${YEAR_DAYS}<small>${fmtDay(G.day)} · T${triOf(sd)}</small>`:`${short}<small>${fmtDay(G.day)}${G.day>CAL_END?'':' · T'+curTri()}</small>`}
+ $('gSky').innerHTML=day?SUN:MOON;{const sd=schoolDay(G.day);const dl=dayLbl(G.day),short=G.yearDone||G.day>CAL_END?'Vacances':dl?(dl.startsWith('Férié')?'Férié':'Vacances'):'Week-end';
+  $('gDay').textContent=sd?`Jour ${sd}`:short;$('gDayBtn').setAttribute('aria-label',`${sd?`Jour ${sd} sur ${YEAR_DAYS}`:short}, ${fmtDay(G.day)}, ${fmtT(G.min)}${G.paused?', temps en pause':''}`)}
  $('gTime').textContent=fmtT(G.min);$('gPhase').textContent=ph.sub?SUBJ[ph.sub]:ph.lbl||PLABEL[ph.type];
- $('gPause').innerHTML=G.paused?'<svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z" fill="currentColor"/></svg>';
- $('gPause').setAttribute('aria-label',G.paused?'Reprendre le temps':'Mettre le temps en pause');
- $('gSpeed').textContent='×'+(G.speed||1);$('gSpeed').classList.toggle('on',(G.speed||1)>1);
- $('gEnergy').textContent=G.energy;$('gEnergy').classList.toggle('low',G.energy<25);
- const a=triAvg(curTri());$('gAvg').textContent=fmtG(a);
+ /* pause et vitesse sont dans le menu ⚙ : l'en-tête rappelle seulement l'état */
+ $('gState').textContent=G.paused?' ⏸':(G.speed||1)>1?` ×${G.speed}`:'';
+ $('gEnergyN').textContent=G.energy;$('gEnergy').classList.toggle('low',G.energy<25);$('gEnergy').setAttribute('aria-label',`Énergie ${G.energy} sur 100`);
  const bar=$('phBar');if(bar)bar.style.width=(clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100)+'%';
 }
 function drawHUD(){
- $('gBonusTxt').textContent=G.bonus+'/'+BONUS_MAX;$('gBonusFill').style.width=(G.bonus/BONUS_MAX*100)+'%';$('gGems').textContent=G.gems;drawClock();
+ $('gBonusDot').hidden=!G.bonus;$('gGems').textContent=G.gems;drawClock();
+ if(!$('sheet').hidden&&$('gMenuBody'))drawMenu();
 }
 function hudTick(){
  if(!G)return;let changed=false;
  while(G.bonus<BONUS_MAX&&Date.now()>=G.nextAt){G.bonus++;G.nextAt+=RECHARGE;changed=true}
  if(G.bonus>=BONUS_MAX)G.nextAt=Date.now()+RECHARGE;
  const ms=Math.max(0,G.nextAt-Date.now()),m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;
- $('gRecharge').textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
+ const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
  const left=Math.ceil((G.adAt+30000-Date.now())/1000),ad=$('gAd');
- if(!ad.dataset.busy){ad.disabled=left>0;ad.innerHTML=left>0?`Pub dans ${left} s`:'<span class="adlong">Regarder une pub </span><span class="adshort">Pub </span><b>+5 ⚡</b><span class="dot"></span>'}
+ if(ad&&!ad.dataset.busy){ad.disabled=left>0;ad.textContent=left>0?`Pub dans ${left} s`:'Regarder une pub (+5 ⚡)'}
  if(changed)drawHUD();
 }
 setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(mg?1:(G.speed||1))},1000);
@@ -2950,7 +2950,7 @@ function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
 function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
+function closeSheet(){$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
 function openFiche(id){
@@ -3599,22 +3599,51 @@ $('gView').addEventListener('click',e=>{
  if(a==='l'){p.liked=!p.liked;if(p.liked&&isNpc(p.by)&&!p.likedOnce){p.likedOnce=true;relChange(p.by,1)}}
  if(a==='r')p.rt=!p.rt;if(a==='f')p.fav=!p.fav;saveG();refreshPost(p);
 });
-$('gEvent').onclick=playEvent;
-$('gCompose').onclick=()=>openCompose('post');
-$('gMusic').onclick=()=>{const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')};
+/* bouton flottant unique : événement du jour ou publication */
+$('gAct').onclick=()=>{openSheet(`<h2>Que veux-tu faire ?</h2><div class="menu-list"><button class="mrow" type="button" data-a="ev"><span class="mic">🎲</span><span><b>Lancer un événement</b><small>Une surprise au lycée ou à la maison</small></span></button><button class="mrow" type="button" data-a="post"><span class="mic">📸</span><span><b>Publier un post</b><small>Photo ou texte sur ton Insta</small></span></button></div><button class="gbtn ghost" type="button" data-a="x">Fermer</button>`);
+ $('sheetBody').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('sheetBody').onclick=null;if(a==='x'){closeSheet();return}closeSheet();a==='ev'?playEvent():openCompose('post')}};
 /* vitesse du temps : 1, 2, 5 ou 10 minutes de jeu par seconde (le temps repasse à ×1 pendant un mini-jeu) */
 const SPEEDS=[1,2,5,10];
-$('gSpeed').onclick=()=>{G.speed=SPEEDS[(SPEEDS.indexOf(G.speed||1)+1)%SPEEDS.length];drawClock();toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`);saveG()};
-$('gPause').onclick=()=>{G.paused=!G.paused;drawClock();toast(G.paused?'⏸ Temps en pause':'▶️ Le temps reprend');saveG()};
-$('gBonus').onclick=()=>{if(!G.bonus){toast('Ton bonus se recharge');return}const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE;saveG();drawHUD()};
-$('gEnergy').onclick=()=>toast(`Énergie ${G.energy}/100 : elle baisse avec le temps et les actions, remonte en dormant et en mangeant`);
+/* menu ⚙ : pause, vitesse, musique, notes, bonus d'énergie, boutique, quitter */
+function drawMenu(){
+ const sp=G.speed||1,avg=triAvg(curTri()),ms=Math.max(0,G.nextAt-Date.now());
+ $('sheetBody').innerHTML=`<div id="gMenuBody"><h2>Menu</h2>
+ <p class="muted">${fmtDay(G.day)} · ${fmtT(G.min)} · trimestre ${curTri()}</p>
+ <div class="mgroup"><span class="mlbl">Temps</span><div class="mline">
+  <button class="mbtn${G.paused?' on':''}" type="button" data-m="pause" aria-pressed="${!!G.paused}">${G.paused?'▶️ Reprendre':'⏸ Pause'}</button>
+  <div class="mseg" role="group" aria-label="Vitesse du temps">${SPEEDS.map(v=>`<button type="button" data-m="sp${v}" aria-pressed="${sp===v}" class="${sp===v?'on':''}">×${v}</button>`).join('')}</div></div></div>
+ <div class="mgroup"><span class="mlbl">Énergie ${G.energy}/100</span><div class="mline">
+  <button class="mbtn${G.bonus?' on':''}" type="button" data-m="bonus"${G.bonus?'':' disabled'}>⚡ Bonus ${G.bonus}/${BONUS_MAX}${G.bonus?` : +${G.bonus*5}`:''}</button><span class="muted" id="gRecharge">${G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${Math.floor(ms/60000)}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`}</span></div>
+  <div class="mline"><button class="mbtn" type="button" id="gAd" data-m="ad">Regarder une pub (+5 ⚡)</button></div></div>
+ <div class="menu-list">
+  <button class="mrow" type="button" data-m="music" aria-pressed="${MUS.on}"><span class="mic">${MUS.on?'🎵':'🔇'}</span><span><b>Musique</b><small>${MUS.on?'Activée : touche pour couper':'Coupée : touche pour activer'}</small></span></button>
+  <button class="mrow" type="button" data-m="notes"><span class="mic">📊</span><span><b>Mes notes</b><small>Moyenne du trimestre : ${fmtG(avg)}/20</small></span></button>
+  <button class="mrow" type="button" data-m="shop"><span class="mic">🛍️</span><span><b>Boutique</b><small>Bientôt disponible</small></span></button>
+  <button class="mrow danger" type="button" data-m="quit"><span class="mic">🚪</span><span><b>Quitter la partie</b><small>Retour à l'atelier, ta partie est sauvegardée</small></span></button>
+ </div><button class="gbtn ghost" type="button" data-m="x">Fermer</button></div>`;
+ hudTick();
+}
+function openMenu(){openSheet('');drawMenu();$('sheetBody').onclick=menuClick}
+function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)return;const m=b.dataset.m;
+ if(m==='x'){$('sheetBody').onclick=null;closeSheet();return}
+ if(m==='pause'){G.paused=!G.paused;toast(G.paused?'⏸ Temps en pause':'▶️ Le temps reprend')}
+ else if(m.startsWith('sp')){G.speed=+m.slice(2);toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)}
+ else if(m==='bonus'){const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE}
+ else if(m==='music'){const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')}
+ else if(m==='ad'){b.dataset.busy=1;b.disabled=true;let n=3;b.textContent=`Pub… ${n}`;
+  const iv=setInterval(()=>{n--;const ad=$('gAd');if(n>0){if(ad)ad.textContent=`Pub… ${n}`;return}clearInterval(iv);if(ad)delete ad.dataset.busy;G.energy=clamp(G.energy+5,0,100);G.adAt=Date.now();saveG();drawHUD();toast('+5 énergie')},1000);return}
+ else if(m==='notes'){$('sheetBody').onclick=null;closeSheet();view='profil';drawNav();drawView();window.scrollTo(0,0);return}
+ else if(m==='shop'){toast('La boutique arrive bientôt');return}
+ else if(m==='quit'){$('sheetBody').innerHTML=`<div id="gMenuQuit"><h2>Quitter la partie ?</h2><p class="muted">Tu reviens à l'atelier. Ta partie est sauvegardée : « Commencer la partie » te ramène là où tu en étais.</p><div class="mline"><button class="gbtn ghost" type="button" data-m="back">Rester</button><button class="gbtn red" type="button" data-m="quitok">Quitter</button></div></div>`;return}
+ else if(m==='back'){drawMenu();return}
+ else if(m==='quitok'){$('sheetBody').onclick=null;saveG();showAtelier();return}
+ saveG();drawHUD();drawMenu()}
+$('gMenu').onclick=openMenu;
+$('gDayBtn').onclick=openMenu;
+$('gEnergy').onclick=()=>{if(G.bonus){menuClick({target:{closest:()=>({dataset:{m:'bonus'}})}});return}toast(`Énergie ${G.energy}/100 : elle baisse avec le temps et les actions, remonte en dormant et en mangeant`)};
 $('gEnergyPlus').onclick=()=>{if(G.gems<10){toast('Il faut 10 gemmes pour 25 énergie');return}G.gems-=10;G.energy=clamp(G.energy+25,0,100);saveG();drawHUD();toast('+25 énergie contre 10 gemmes')};
+$('gGemsBtn').onclick=()=>toast(`${G.gems} gemmes : tu en gagnes en réussissant tes objectifs`);
 $('gGemPlus').onclick=()=>toast('La boutique de gemmes arrive bientôt');
-$('gShop').onclick=()=>toast('La boutique arrive bientôt');
-$('gAvgBtn').onclick=()=>{view='profil';drawNav();drawView();window.scrollTo(0,0)};
-$('gAd').onclick=()=>{const ad=$('gAd');ad.dataset.busy=1;ad.disabled=true;let n=3;ad.textContent=`Pub… ${n}`;
- const iv=setInterval(()=>{n--;if(n>0){ad.textContent=`Pub… ${n}`;return}clearInterval(iv);delete ad.dataset.busy;G.energy=clamp(G.energy+5,0,100);G.adAt=Date.now();saveG();drawHUD();toast('+5 énergie')},1000)};
-$('gExit').onclick=showAtelier;
 
 /* ---------- écrans : famille, jeu, atelier ---------- */
 let famDraft=null,famEdit=false;

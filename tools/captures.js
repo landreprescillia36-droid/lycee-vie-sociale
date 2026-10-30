@@ -1,6 +1,6 @@
 /* Vérification visuelle dans un vrai navigateur (Chromium via Playwright).
    - ouvre index.html, signale toute erreur JavaScript ;
-   - enregistre dans tools/captures/ : l'atelier (téléphone), tous les personnages en pied, les décors photo.
+   - enregistre dans tools/captures/ : l'atelier et le jeu (téléphone : en-tête, menu ⚙, bouton « Agir »), tous les personnages en pied, les décors photo.
    Prérequis une seule fois : npm install  puis  npx playwright install chromium
    Usage : npm run captures */
 const path = require('path');
@@ -22,6 +22,22 @@ const url = 'file://' + path.join(root, 'index.html');
   await phone.goto(url);
   await phone.waitForTimeout(600);
   await phone.screenshot({ path: path.join(out, 'atelier-telephone.png'), fullPage: true });
+
+  // 1 bis. écran du jeu au format téléphone (en-tête, stories, bouton « Agir »), puis le menu ⚙ et le choix « Agir »
+  phone.on('dialog', d => d.accept());
+  await phone.click('#bPlay');
+  await phone.waitForTimeout(400);
+  if (await phone.isVisible('#famGo')) await phone.click('#famGo');
+  await phone.waitForTimeout(800);
+  if (await phone.isVisible('#sheet')) await phone.evaluate(() => closeSheet());
+  await phone.screenshot({ path: path.join(out, 'jeu-telephone.png') });
+  await phone.click('#gMenu');
+  await phone.waitForTimeout(300);
+  await phone.screenshot({ path: path.join(out, 'jeu-menu.png') });
+  await phone.evaluate(() => closeSheet());
+  await phone.click('#gAct');
+  await phone.waitForTimeout(300);
+  await phone.screenshot({ path: path.join(out, 'jeu-agir.png') });
 
   // 2. galerie : le personnage du joueur + tous les camarades, en pied
   const page = await browser.newPage({ viewport: { width: 1600, height: 900 } });
