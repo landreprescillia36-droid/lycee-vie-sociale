@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='30';
+const APP_VERSION='31';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1179,11 +1179,13 @@ const WEAR={
 REFS.K='tes captures des personnages';REFS.V='ta planche « Hauts et robes »';
 WEAR.top.items.push({s:'top',v:'capuche',c:'#3d6fd8',n:'Sweat à capuche bleu',r:null,g:'m'},{s:'top',v:'tshirt',c:'#ece2cc',n:'T-shirt crème',r:null,g:'m'},{s:'top',v:'chemise',c:'#26314f',n:'Chemise marine',r:null,g:'m'});
 WEAR.top.items.unshift({s:'top',v:'debardeur',c:'#f4f1ea',n:'Débardeur à fines bretelles',r:null,g:'f',nw:1});
+/* hauts de la planche déjà publiés ; les autres sont dessinés (TOP2) mais pas encore dans le catalogue, en attente de son accord */
+const TOPS_PUB=['tbasic','camicote'];
 /* planche « Hauts et robes » de Prescillia (docs/references/vetements/planche-hauts-robes.png) — aperçu : 2 hauts, 2 robes */
 WEAR.top.items.unshift(...[['tbasic','#f4f1ea','T-shirt basique'],['tajuste','#1f2127','T-shirt ajusté'],['epaules2','#a9adb3','Haut épaules dénudées'],['camicote','#f4f1ea','Débardeur côtelé'],['bustier','#1f2127','Bustier'],
  ['chemcrop','#a8bce6','Chemise courte'],['mlrose','#f2c6d3','Haut manches longues rose'],['cardicrop','#ece2cc','Cardigan court'],['capuche','#2f5a3a','Sweat à capuche vert'],['polo','#f4f1ea','Polo'],
  ['mlnoir','#1f2127','Haut manches longues papillon'],['tcrop','#f2c6d3','T-shirt crop cœur'],['pullfin','#ece2cc','Pull fin'],['halter','#1f2127','Haut dos nu'],['tanksport','#f4f1ea','Débardeur sport'],['blousecrop','#9aa8e0','Blouse']]
- .map(([v,c,n])=>({s:'top',v,c,n,r:'V',g:'f',nw:1})));
+ .filter(([v])=>TOPS_PUB.includes(v)).map(([v,c,n])=>({s:'top',v,c,n,r:'V',g:'f',nw:1})));
 WEAR.dress.items.splice(1,0,...[['moulante','#1f2127','Robe moulante'],['fleurie','#86a6e0','Robe fleurie'],['maille','#c8b08a','Robe en maille'],['robecol','#1f2127','Robe col'],
  ['bretfleur','#f4f1ea','Robe à bretelles fleurie'],['boutonnee','#5a6b4a','Robe boutonnée'],['volants','#f2c6d3','Robe à volants'],['maxi','#1f2127','Robe longue fendue']]
  .map(([v,c,n])=>({s:'dress',v,c,n,r:'V',g:'f',nw:1})));
