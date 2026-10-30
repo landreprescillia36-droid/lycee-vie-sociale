@@ -18,7 +18,7 @@ Jeu de simulation de vie sociale en terminale, dans un lycée de Guadeloupe. Cr�
 ```
 index.html          structure HTML (atelier, écran famille, jeu, feuille modale, toast)
 css/style.css       tous les styles (atelier clair, jeu sombre)
-js/app.js           tout le code (~3 700 lignes, script classique, variables globales)
+js/app.js           tout le code (~4 050 lignes, script classique, variables globales)
 claude-page.html    version publiée sur claude.ai (même corps que index.html, sans en-tête ; à refaire si index.html change) : https://claude.ai/artifact/4XTD2xkAiVHspaZsdKfwvc
 manifest.webmanifest, sw.js   application installable (PWA) : manifeste et service worker (cache hors ligne)
 js/cloud.js         comptes et sauvegarde en ligne Supabase (inactif si js/config.js est vide) ; js/vendor/supabase.js = supabase-js 2.117.2 (UMD)
@@ -47,7 +47,7 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 ## En-tête du jeu (HUD)
 
 - Une seule rangée : jour/heure (`gDayBtn`, ouvre le menu ; ⏸ affiché si pause), énergie (`gEnergy`, point rouge = bonus à récupérer), **Vitesse** (`gSpeed`, ×1 → ×2 → ×5 → ×10), **Menu ⚙** (`gMenu`). Zones tactiles ≥ 44 px, chaque bouton a un libellé.
-- Menu ⚙ (`openMenu`/`drawMenu`/`menuClick`) : pause, vitesse, bonus d'énergie, pub (en attente de décision), musique, Mes notes, Boutique, Quitter (avec confirmation).
+- Menu ⚙ (`openMenu`/`drawMenu`/`menuClick`) : pause, vitesse, bonus d'énergie (plus de pub : chaque objectif atteint donne `OBJ_ENERGY` = +5 ⚡), musique, Mes notes, Boutique, Quitter (avec confirmation).
 - Un seul bouton flottant « + Agir » (`gAct`) : lancer un événement ou publier un post.
 - **Gemmes mises de côté** : `GEMS_ON=false` (haut de `js/app.js`). `G.gems` continue de compter en silence ; tout ce qui les montre, les coûte ou les annonce passe par `GEMS_ON` / `gemTxt()`. Ne pas en réafficher sans accord.
 - Sourcils (`BROWS`, `browArt`, couleurs `BROWC`) et bouches (`MOUTH_ART` + `assets/bouches/`, couleur des lèvres selon la peau) viennent des planches de Prescillia ; anciennes formes migrées dans `normalize()`.
@@ -59,6 +59,11 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 - **Année scolaire** : vrai calendrier du mardi 1er septembre 2026 au mercredi 30 juin 2027 (`CAL`, `VACS` vacances de Guadeloupe, `FERIES`). `G.day` = jour du calendrier, `schoolDay(d)` = numéro du jour de cours (182 jours). Trimestres : 18 déc., 26 mars, dernier vendredi avant le bac ; révisions, bac et résultats sur les 5 derniers jours de cours. Évaluation chaque vendredi de cours 14-17 h. Oubli de 1 %/jour des matières non révisées.
 - **Fêtes et potins** : `FETES` (date → manifestation : post du compte Potins, notification, choix de participer avec `feteChoice`), `INCIDENTS` (élève qui fait quelque chose d'inhabituel selon sa personnalité, 15 % des jours de cours), `fanDay` (abonnés inconnus selon l'activité Insta de la veille, `G.ig.act`).
 - **Mini-jeux** (section `mini-jeux`) : `playMini({sub|subs,n,t,title},done(score 0..1))` ; quiz (`QUIZ`, `mathQ` pour les maths), memory (`PAIRS` anglais/espagnol), réflexes (EPS). Utilisés par `reviseGame` (+3 à +12 %), `classGame` (action « Faire l'exercice »), `evalGame` (`G.evalBonus[jour]`, ±1,5 par matière) et `bacGame` (`G.bac.bonus`, ±2).
+  Le score d'un quiz = proportion exacte de bonnes réponses (3/3 = 100 %). `classGame` donne de −8 à +8 % (plafonné), modulé par `gainK`.
+- **Parcours du joueur** (atelier, sous « Attirance ») : `perso` (`PERSOS`, effet de départ dans `applyParcours`), `raison` (`RAISONS`), `ancien` (lycée d'avant), `niveau` (`NIVEAUX` : niveau de départ et vitesse de progression), `forts` (2 matières de facilité). `gainK(sub,g)` applique niveau et facilités à tous les gains (exercice, notes, main levée, révisions, cours de Jessica). L'IA connaît la personnalité, puis l'ancien lycée et la raison une fois le joueur rencontré.
+- **Cours particuliers de Jessica** : `TUTOR` (lundi et mercredi 17-19 h), inscription `G.tutor`, carte `tutorCard` dans Journée, quiz de 6 matières mélangées puis 2 échanges (`TUTOR_TALK`, `tutorTalkSheet`).
+- **Romance** (section `romance`) : actions « 💘 Romance » sur la fiche d'un·e camarade attirant·e (`romHTML`/`romAct`) : regard, mot doux, main, cadeau (`giftsFor`, un par jour, gemmes seulement si `GEMS_ON`), rendez-vous amoureux (`DATE_SPOTS`, plan `date:true`, `dateSheet`/`dateMoment`, 2 moments), déclaration (`declareTo`). Jalousie du ou de la partenaire : `seenFlirt`. Couple de départ : Kylian + Eva (`couples` dans `newGame`, migration `evaIn`).
+- **Camarades ajoutés** : Kenza Lacroix (populaire, danse), Meisha Belaire (sa meilleure amie, populaire, journal), Eva Clairville (artiste, atelier d'arts plastiques, en couple avec Kylian ; Kylian poste des photos de couple `KY_LOVE`), Noémie Gaspard (sportive, foot), Jessica Derosiers (très bonne élève, journal, cours particuliers). Un nouveau camarade doit être ajouté partout où figure `anais` (NPCS, NPC_NOM, NPC_LOOK, FICHES, LINKS0, VOICE, CONFESS, REP, LIKE, HATE, FAV, CLUB, CLUB_OLD ×2, INTRO_Q, FOLLOW_Q, INCIDENTS, BIO, FANS0, NPC_POSTS, DEBATE, DAILY, GROUPS, CLUBS) avec une migration `xxxIn` qui ajoute son premier post.
 - **Clubs** : `CLUBS` (jour de séance `wd`, membres `m`), `G.clubs` (2 max), `G.clubXP` ; séance le soir (`clubGo`), grand rendez-vous toutes les 4 séances (`clubBig`, mini-jeu).
 - **Traces durables** : `G.marks` [{id,k,day}] (`trahison`, `confiance`, `rivalite`, `abandon`) via `mark()` ; `markFactor` freine ou aide les gains d'amitié, `markNote` les rappelle à l'IA, pas de message spontané après une trahison. `EVENTS2` (secrets à garder ou à trahir, une seule fois chacun : `G.evOnce`). `G.rival` tiré au sort à chaque partie. Groupes `GROUPS` (populaires, sportifs, artistes) : `groupTick` adopte ou rejette, `groupWeek`.
 - **Résumé du samedi** : `weekTick`/`weekSheet` (comparaison avec `G.wsnap`). **Fins** : `ending()`/`endingSheet()` selon le bac (mention) et les relations.
@@ -80,6 +85,7 @@ Dans claude.ai, les réponses des camarades venaient de `window.claude.use('samp
 - Les images qu'elle fournit (ex. chambres) s'intègrent **telles quelles** (juste recadrées, étiquettes retirées).
 - **Forme du corps = `docs/references/personnage-style-realiste.png`** (silhouette mesurée point par point : `BODY_K`, `GEO`, `sideX`, `shProf`, `armPts`, `legD`, `handD`, `bustSVG`). Pour vérifier, superposer le rendu sur l'image (tête alignée : 2,163 px par unité, centre x = 427, menton y = 560).
 - Épaules arrondies et reliées au corps, sur toutes les tenues. Poitrine : trait qui descend de l'aisselle puis tourne sous la poitrine + ombre douce dessous.
+- Coiffures crépues/bouclées : les halos blancs du fond des planches ont été retirés à la main dans `assets/coiffures/b*.png`, les mèches pendantes des puffs supprimées et les tempes reliées au crâne, et `deuxtresses-dos.png` = `deuxtresses.png`. **Relancer `traceur-coiffures.py` écraserait ces retouches** : refaire le nettoyage ensuite.
 - Cheveux crépus : contours et ombres seulement, pas de boucles ni de vagues dessinées. Pas de trou entre la tête et les cheveux.
 - Catalogues de vêtements séparés filles / garçons.
 - Elle préfère voir un aperçu avant qu'une grosse nouveauté soit intégrée.

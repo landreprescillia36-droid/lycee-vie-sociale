@@ -1,9 +1,11 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='27';
+const APP_VERSION='28';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
 const gemTxt=t=>GEMS_ON?t:'';
+/* énergie gagnée à chaque objectif atteint (a remplacé le bouton « Regarder une pub ») */
+const OBJ_ENERGY=5;
 try{document.getElementById('atVers').textContent='Version '+APP_VERSION}catch(_){}
 /* mise à jour forcée : vide les copies en cache et le service worker, garde la partie (localStorage) */
 async function forceUpdate(){try{toast('⏳ Mise à jour…')}catch(_){}
@@ -702,9 +704,9 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
  /* l'image est posée deux fois : derrière le corps (les cheveux de l'arrière passent derrière les épaules)
     et devant, découpée pour ne garder que la tête et les mèches qui tombent sur la poitrine */
  if(A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf'+part,cid=p+'hac';
-  if(!same){const dk=shade(hc,-.62),lt=shade(hc,.5),N=16,tab=[[],[],[]];
+  if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16,tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
-   flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".4 2.5"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
+   flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".45 1.3"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
   const img=`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
@@ -1157,9 +1159,10 @@ const ICON={
  in:'<path d="M2 10h6M5 7l3 3-3 3M18 10h-6M15 7l-3 3 3 3"/>',out:'<path d="M8 10H2M5 7l-3 3 3 3M12 10h6M15 7l3 3-3 3"/>',
  minus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M14 14l4 4"/>',plus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M9 6v6M14 14l4 4"/>'};
 
-const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',face:'ovale',skin:SKIN[2],nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',
- eyes:'doux',iris:IRIS[1],brows:'epais',hair:'carreondule',hairColor:HAIR[7],top:'salopette',topColor:CLOTH[1],bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'bretelles',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
+const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',face:'ovale',skin:SKIN[3],nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',
+ eyes:'doux',iris:IRIS[0],brows:'epais',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
  glasses:'aucune',earrings:'aucune',browColor:'',bgPattern:'uni',bgColor:BGC[1],
+ perso:'sociable',raison:'demenagement',ancien:'Lycée Baimbridge',niveau:'moyen',forts:[],
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
@@ -1176,15 +1179,42 @@ function drawPortrait(){const full=pview==='full';portrait.classList.toggle('ful
  document.querySelectorAll('[data-pv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pv===pview));
  drawIdent();
  if(document.activeElement!==codeEl) codeEl.value=JSON.stringify(state);}
+/* ---------- parcours : personnalité, raison du changement, ancien lycée, niveau et facilités ---------- */
+const PERSOS={sociable:{l:['Drôle et sociable','Drôle et sociable'],x:"+5 d'amitié avec tout le monde au départ"},timide:{l:['Timide et observatrice','Timide et observateur'],x:'Réservé·e, mais Jade et Jessica se sentent proches de toi (+10)'},ambitieux:{l:['Ambitieuse et travailleuse','Ambitieux et travailleur'],x:'+5 % de réussite dans toutes les matières'},
+ sportif:{l:['Sportive et énergique','Sportif et énergique'],x:"EPS +15 % et les sportifs t'apprécient (+8)"},creatif:{l:['Rêveuse et créative','Rêveur et créatif'],x:"Français et philo +6 %, les artistes t'apprécient (+8)"},rebelle:{l:['Rebelle au grand cœur','Rebelle au grand cœur'],x:'Les populaires te remarquent (+8), mais les profs te surveillent'}};
+const persoL=(k,sx)=>{const p=(PERSOS[k]||PERSOS.sociable).l;return sx==='m'?p[1]:p[0]};
+const RAISONS={demenagement:'Ta famille a déménagé',metropole:'Retour de métropole',specialite:'Une spécialité qui n\'existait pas dans ton ancien lycée',renvoi:'Renvoyé·e de ton ancien lycée',depart:'Un nouveau départ après une année difficile',parents:'La séparation de tes parents'};
+const ANCIENS=['Lycée Baimbridge (Les Abymes)','Lycée Carnot (Pointe-à-Pitre)','Lycée Gerville-Réache (Basse-Terre)','Lycée de Providence (Les Abymes)','Lycée Faustin-Fléret (Morne-à-l\'Eau)','Lycée de Bellevue (Fort-de-France)','Lycée Henri-IV (Paris)','Lycée Montaigne (Bordeaux)'];
+const NIVEAUX={excellent:{l:'Excellent·e',start:58,k:1.3},bon:{l:'Bon niveau',start:48,k:1.15},moyen:{l:'Moyen',start:40,k:1},difficulte:{l:'En difficulté',start:30,k:.85}};
+const FORTS_MAX=2;
+/* gains de réussite selon le niveau et les facilités : on avance plus ou moins vite */
+function gainK(sub,g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen,f=(s.forts||[]).includes(sub);if(g>0)return Math.max(1,Math.round(g*n.k*(f?1.5:1)));return f?Math.round(g*.6):g}
+function drawParcours(){let el=$('parcours');if(!el){el=document.createElement('div');el.id='parcours';el.className='ident';$('idBlock').after(el);
+  el.addEventListener('click',e=>{const b=e.target.closest('[data-niv],[data-fort]');if(!b)return;
+   if(b.dataset.niv)state.niveau=b.dataset.niv;else{const k=b.dataset.fort,F=state.forts||[];state.forts=F.includes(k)?F.filter(x=>x!==k):F.length>=FORTS_MAX?[...F.slice(1),k]:[...F,k]}drawParcours();codeEl.value=JSON.stringify(state)});
+  el.addEventListener('change',e=>{const t=e.target;if(t.id==='pPerso')state.perso=t.value;if(t.id==='pRaison')state.raison=t.value;drawParcours();codeEl.value=JSON.stringify(state)});
+  el.addEventListener('input',e=>{if(e.target.id==='pAncien'){state.ancien=e.target.value.slice(0,60);codeEl.value=JSON.stringify(state)}})}
+ el.hidden=!!editFam;if(editFam)return;const sx=state.sexe,T=t=>gtxt(t,sx);
+ el.innerHTML=`<div class="field"><label for="pPerso">Personnalité</label><select id="pPerso">${Object.entries(PERSOS).map(([k,v])=>`<option value="${k}" ${state.perso===k?'selected':''}>${esc(persoL(k,sx))}</option>`).join('')}</select></div>
+ <p class="hint">${esc(T((PERSOS[state.perso]||PERSOS.sociable).x))}</p>
+ <div class="field"><label for="pRaison">Pourquoi un nouveau lycée ?</label><select id="pRaison">${Object.entries(RAISONS).map(([k,v])=>`<option value="${k}" ${state.raison===k?'selected':''}>${esc(T(v))}</option>`).join('')}</select></div>
+ <div class="field"><label for="pAncien">Ancien lycée</label><input id="pAncien" type="text" maxlength="60" list="pAnciens" autocomplete="off" value="${esc(state.ancien||'')}"><datalist id="pAnciens">${ANCIENS.map(a=>`<option value="${esc(a)}"></option>`).join('')}</datalist></div>
+ <div class="field"><span class="lbl" id="lblNiv">Niveau scolaire</span><div class="segs" role="group" aria-labelledby="lblNiv">${Object.entries(NIVEAUX).map(([k,v])=>`<button class="sub" type="button" data-niv="${k}" aria-pressed="${state.niveau===k}">${esc(T(v.l))}</button>`).join('')}</div></div>
+ <div class="field"><span class="lbl" id="lblFort">Facilités (${FORTS_MAX} matières max)</span><div class="segs" role="group" aria-labelledby="lblFort">${Object.entries(SUBJ).map(([k,v])=>`<button class="sub" type="button" data-fort="${k}" aria-pressed="${(state.forts||[]).includes(k)}">${esc(v)}</button>`).join('')}</div></div>
+ <p class="hint">${esc(T(`Au départ, ${(NIVEAUX[state.niveau]||NIVEAUX.moyen).start} % de chances de réussite dans chaque matière (+12 % dans tes facilités). En cours, tu progresses plus ou moins vite selon ton niveau (×${String((NIVEAUX[state.niveau]||NIVEAUX.moyen).k).replace('.',',')}), et 1,5 fois plus vite dans tes facilités.`))}</p>`}
+function applyParcours(g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen;Object.keys(g.know).forEach(k=>{g.know[k]=n.start+((s.forts||[]).includes(k)?12:0)});
+ const add=(ids,d)=>ids.forEach(i=>{if(g.rel[i])g.rel[i].ami=clamp(g.rel[i].ami+d,-30,100)});
+ ({sociable:()=>add(NPCS.map(n=>n.id),5),timide:()=>add(['jade','jessica'],10),ambitieux:()=>Object.keys(g.know).forEach(k=>g.know[k]=clamp(g.know[k]+5,0,100)),
+  sportif:()=>{g.know.eps=clamp(g.know.eps+15,0,100);add(GROUPS.sport.m,8)},creatif:()=>{g.know.francais+=6;g.know.philo+=6;add(GROUPS.art.m,8)},rebelle:()=>add(GROUPS.pop.m,8)}[s.perso]||(()=>{}))()}
 const SEXES=[['f','Fille'],['m','Garçon'],['nb','Non-binaire']],ORIS=['hetero','homo','bi','pan','ace'];
 const oriShort=(o,g)=>({hetero:'Hétéro',homo:g==='f'?'Lesbienne':g==='m'?'Gay':'Homo',bi:'Bi',pan:'Pan',ace:g==='f'?'Asexuelle':g==='m'?'Asexuel':'Asexuel·le'})[o];
 function attracted(o,g,h){if(o==='ace')return false;if(o==='bi'||o==='pan')return true;return o==='homo'?g===h:g!==h}
 function oriHint(g,o){if(o==='ace')return "Pas d'histoire de cœur : ton personnage vivra surtout des amitiés.";const who=o==='bi'||o==='pan'?'tout le monde':o==='homo'?{f:'des filles',m:'des garçons',nb:'des personnes non-binaires'}[g]:{f:'des garçons',m:'des filles',nb:'des filles et des garçons'}[g];return `Ton personnage pourra vivre des histoires de cœur avec ${who}. Chaque camarade a aussi sa propre attirance.`}
-function drawIdent(){if(editFam)return;
+function drawIdent(){drawParcours();if(editFam)return;
  $('segSexe').innerHTML=SEXES.map(([k,l])=>`<button class="sub" type="button" data-sx="${k}" aria-pressed="${state.sexe===k}">${l}</button>`).join('');
  $('segOri').innerHTML=ORIS.map(k=>`<button class="sub" type="button" data-or="${k}" aria-pressed="${state.orient===k}">${oriShort(k,state.sexe)}</button>`).join('');
  $('oriHint').textContent=oriHint(state.sexe,state.orient);}
-const BASE_LOOK={f:{face:'ovale',skin:SKIN[2],eyes:'doux',iris:IRIS[1],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'carreondule',hairColor:HAIR[7],top:'salopette',topColor:CLOTH[1],bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'bretelles',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
+const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'doux',iris:IRIS[0],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
  m:{face:'allonge',skin:SKIN[2],eyes:'doux',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
 const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
@@ -1288,12 +1318,17 @@ const NPCS=[
  {id:'maelle',name:'Maëlle',handle:'@maelle_cheer',av:{face:'coeur',skin:'#f6cfae',nose:'bouton',mouth:'remontante',cheeks:'rose',freckles:'aucune',eyes:'brillants',iris:'#3d7f9a',brows:'arques',hair:'queue',hairColor:'#c08a4e',top:'chemise',topColor:'#e8613c',glasses:'aucune',earrings:'perles',bgPattern:'uni',bgColor:'#fff3c4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
  {id:'noah',name:'Noah',handle:'@noah.bsk',av:{face:'rond',skin:'#9a6140',nose:'bouton',mouth:'entrouverte',cheeks:'aucune',freckles:'aucune',eyes:'grands',iris:'#4a2a17',brows:'epais',hair:'boucles',hairColor:'#1c1412',top:'tshirt',topColor:'#2fa3a0',glasses:'aucune',earrings:'aucune',bgPattern:'uni',bgColor:'#e3f2e6',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
  {id:'jade',name:'Jade',handle:'@jadou',av:{face:'joufflu',skin:'#eab48a',nose:'petit',mouth:'ronde',cheeks:'rose',freckles:'legeres',eyes:'grands',iris:'#4f7a3a',brows:'fins',hair:'carre',hairColor:'#3b2219',top:'colroule',topColor:'#7a4fd0',glasses:'rondes',earrings:'aucune',bgPattern:'uni',bgColor:'#efe3fb',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
+ {id:'kenza',name:'Kenza',handle:'@kenza.lcx',av:{}},
+ {id:'eva',name:'Eva',handle:'@eva.clrv',av:{}},
+ {id:'noemie',name:'Noémie',handle:'@noemie.foot971',av:{}},
+ {id:'jessica',name:'Jessica',handle:'@jess.drs',av:{}},
+ {id:'meisha',name:'Meisha',handle:'@meisha.blr',av:{}},
  {id:'anais',name:'Anaïs',handle:'@anais_run971',av:{}},
  {id:'sacha',name:'Sacha',handle:'@sachamusic',av:{face:'ovale',skin:'#6a4027',nose:'bouton',mouth:'remontante',cheeks:'rose',freckles:'aucune',eyes:'amande',iris:'#4a2a17',brows:'epais',hair:'chignon',hairColor:'#1c1412',top:'chemise',topColor:'#2c2f3a',glasses:'aucune',earrings:'etoiles',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}}
 ];
 const POTINS={id:'potins',name:'Potins du lycée',handle:'@PotinsDuBahut',av:{face:'joufflu',skin:'#d4975f',nose:'bouton',mouth:'asymetrique',cheeks:'rose',freckles:'aucune',eyes:'amande',iris:'#4a2a17',brows:'epais',hair:'longs',hairColor:'#5b4bd1',top:'tshirt',topColor:'#2c2f3a',glasses:'soleil',earrings:'aucune',bgPattern:'rayons',bgColor:'#2d3550',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}};
 /* noms de famille des camarades */
-const NPC_NOM={ines:'Morel',kylian:'Calixte',maelle:'Lacour',noah:'Bellevue',jade:'Hilaire',anais:'Théodore',sacha:'Sylvestre'};
+const NPC_NOM={ines:'Morel',kylian:'Calixte',maelle:'Lacour',noah:'Bellevue',jade:'Hilaire',anais:'Théodore',kenza:'Lacroix',eva:'Clairville',noemie:'Gaspard',jessica:'Derosiers',meisha:'Belaire',sacha:'Sylvestre'};
 NPCS.forEach(n=>{n.nom=NPC_NOM[n.id]||''});
 const fullNameOf=id=>{const n=WHO[id];return n?(n.nom?n.name+' '+n.nom:n.name):''};
 const WHO=Object.fromEntries([...NPCS,POTINS].map(n=>[n.id,n]));
@@ -1306,6 +1341,11 @@ const NPC_LOOK={ines:{sexe:'f',face:'ovale',skin:'#d4975f',eyes:'doux',iris:'#7a
  noah:{sexe:'m',face:'anguleux',skin:'#eab48a',eyes:'doux',iris:'#7a4a26',brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',barbe:'aucune',hair:'raiecote',hairColor:'#8a5a35',edges:'aucun',top:'tshirt',topColor:'#ece2cc',bottom:'cordon',bottomColor:'#1f2127',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'chaine',earrings:'aucune',glasses:'aucune',shoes:'sabots',shoesColor:'#c49a6c',bgPattern:'uni',bgColor:'#e9eef6',adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:-2,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  jade:{sexe:'f',face:'ovale',skin:'#f6cfae',eyes:'doux',iris:'#9a7a3a',brows:'epais',nose:'petit',mouth:'fermee',cheeks:'rose',freckles:'legeres',hair:'carreondule',hairColor:'#c08a4e',edges:'aucun',top:'chemise',topColor:'#c49a6c',bottom:'cordon',bottomColor:'#1f2127',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'rasdecou',earrings:'perles',glasses:'carrees',shoes:'retro',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  sacha:{sexe:'m',face:'coeur',skin:'#eab48a',eyes:'doux',iris:'#3d7f9a',brows:'epais',nose:'rond',mouth:'asymetrique',cheeks:'aucune',freckles:'aucune',barbe:'aucune',hair:'raiecote',hairColor:'#c08a4e',edges:'aucun',top:'colroule',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'chaine',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#e9eef6',adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
+ kenza:{sexe:'f',face:'ovale',skin:'#eab48a',eyes:'doux',iris:'#7a4a26',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'bcarre',hairColor:'#6e2a24',edges:'aucun',top:'debardeur',topColor:'#f4f1ea',bottom:'large',bottomColor:'#5b7fb5',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
+ eva:{sexe:'f',face:'ovale',skin:'#d4975f',eyes:'doux',iris:'#3d7f9a',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'bcarre',hairColor:'#1c1412',edges:'aucun',top:'debardeur',topColor:'#ece2cc',bottom:'jupe',bottomColor:'#1f2127',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#efe3fb',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
+ noemie:{sexe:'f',face:'ovale',skin:'#80502f',eyes:'doux',iris:'#4a2a17',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'bcollees',hairColor:'#1c1412',edges:'aucun',top:'debardeur',topColor:'#26314f',bottom:'cycliste',bottomColor:'#1f2127',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'chaine',earrings:'anneaux',glasses:'aucune',shoes:'basses',shoesColor:'#1f2127',bgPattern:'degrade',bgColor:'#c8b8a6',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
+ jessica:{sexe:'f',face:'ovale',skin:'#eab48a',eyes:'doux',iris:'#3d7f9a',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'aucune',hair:'barrette',hairColor:'#6e2a24',edges:'aucun',top:'tshirt',topColor:'#f4f1ea',bottom:'droit',bottomColor:'#86a6cc',dress:'bretelles',dressColor:'#f4f1ea',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'perles',earrings:'perles',glasses:'carrees',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
+ meisha:{sexe:'f',face:'ovale',skin:'#9a6140',eyes:'doux',iris:'#4a2a17',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'mechesdevant',hairColor:'#1c1412',edges:'aucun',top:'debardeur',topColor:'#f4f1ea',bottom:'jupejean',bottomColor:'#1f2127',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  anais:{sexe:'f',face:'ovale',skin:'#9a6140',eyes:'doux',iris:'#9a7a3a',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'miboucle',hairColor:'#1c1412',edges:'aucun',top:'crop',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',dress:'aucune',jacket:'aucune',hat:'bob',hatColor:'#ece2cc',bag:'aucun',necklace:'rasdecou',earrings:'perles',glasses:'aucune',shoes:'retro',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  potins:{bottom:'droit',shoes:'basses'}};
 NPC_LOOK.potins={hair:'carreondule'};
@@ -1338,7 +1378,7 @@ const FICHES={
   qualites:"Drôle, courageux, protecteur",defauts:"Vantard, impulsif, mauvais perdant",
   peurs:"Paraître faible, finir sans diplôme",passions:"Foot, pêche avec son père, jeux vidéo",
   parle:"Direct, vannes, abréviations (wsh, frr, tkt)",
-  relations:"Meilleur pote de Noah, rivalité avec Sacha, en froid avec Jade"},
+  relations:"En couple avec Eva, qu'il adore et affiche partout sur Insta ; meilleur pote de Noah, rivalité avec Sacha, en froid avec Jade ; a dragué Kenza avant Eva"},
  maelle:{g:'f',o:'bi',age:17,soc:1,stud:.4,rom:.6,hum:.5,
   passe:"Capitaine des pom-pom girls, populaire depuis toujours, elle a vécu le divorce difficile de ses parents l'an dernier.",
   famille:"Alterne entre la maison de sa mère au Gosier et l'appartement de son père à Pointe-à-Pitre. Une grande sœur étudiante à Paris.",
@@ -1360,6 +1400,41 @@ const FICHES={
   peurs:"L'échec, qu'on se moque d'elle, l'océan profond",passions:"Lecture, poèmes, astronomie, dessin",
   parle:"Phrases soignées, jamais de majuscules en message, humour pince-sans-rire, rarement d'emojis",
   relations:"Rivale de Maëlle, s'entend bien avec Sacha, intriguée par Noah"},
+ kenza:{g:'f',o:'hetero',age:17,soc:1,stud:.5,rom:.9,hum:.6,
+  passe:"Arrivée au lycée en première, elle a fait tourner toutes les têtes dès le premier jour. Presque tous les garçons ont tenté leur chance, et elle a brisé quelques cœurs sans toujours le vouloir. À 15 ans, elle a posé pour une boutique de mode de Jarry.",
+  famille:"Vit à Baie-Mahault avec son père avocat et sa mère qui tient un institut de beauté. Un grand frère en BTS, très protecteur, qui surveille de près les garçons qui l'approchent.",
+  qualites:"Charismatique, sûre d'elle, drôle, très fidèle avec ses amies",defauts:"Aime être admirée, joue avec les sentiments des garçons, un peu superficielle en apparence, supporte mal la critique",
+  peurs:"Qu'on ne l'aime que pour son physique, tomber vraiment amoureuse et souffrir, perdre sa place chez les populaires",passions:"Danse, mode et shopping, photos pour Insta, maquillage, R&B",
+  parle:"Assurée et taquine, dit « bébé », « trop mignon », « jsp », emojis 😘💋✨, laisse parfois ses messages en vu exprès",
+  relations:"Meilleure amie de Meisha depuis la maternelle ; membre des populaires avec Maëlle et Inès ; Maëlle la voit comme une rivale pour la place de reine du lycée ; Kylian l'a draguée sans succès avant de se mettre avec Eva ; Noah perd ses moyens devant elle"},
+ eva:{g:'f',o:'hetero',age:17,soc:.6,stud:.7,rom:.8,hum:.6,
+  passe:"Elle dessine depuis toute petite et a gagné l'an dernier le concours d'affiches de la région. Très timide en seconde, elle s'est ouverte en rencontrant Kylian, avec qui elle sort depuis l'été dernier.",
+  famille:"Vit à Petit-Bourg avec sa mère, professeure d'arts plastiques, et son beau-père menuisier. Une petite sœur de 8 ans, Lou, qui veut tout faire comme elle.",
+  qualites:"Gentille, douce, créative, toujours prête à aider",defauts:"Naïve, évite les disputes, doute beaucoup d'elle, un peu jalouse quand on tourne autour de Kylian",
+  peurs:"Que Kylian la quitte pour une autre, que ses dessins ne valent rien, décevoir sa mère",passions:"Dessin, peinture, carnets de croquis, couchers de soleil, musique douce",
+  parle:"Douce et polie, « oh c'est trop mignon », s'excuse souvent, emojis 🎨🌸💕",
+  relations:"En couple avec Kylian depuis l'été ; amie de Jade et Sacha chez les artistes ; se méfie de Kenza, que Kylian a draguée avant elle"},
+ noemie:{g:'f',o:'hetero',age:17,soc:.8,stud:.4,rom:.4,hum:.8,spo:1,
+  passe:"Seule fille de l'équipe de foot du lycée depuis la seconde. Au début, certains garçons riaient ; elle a marqué un triplé dès son premier match et plus personne n'a rien dit. Elle rêve d'intégrer un centre de formation féminin en métropole.",
+  famille:"Vit à Morne-à-l'Eau avec sa mère aide-soignante et ses trois grands frères, tous footballeurs. C'est avec eux qu'elle a appris à jouer dans la cour, pieds nus.",
+  qualites:"Déterminée, franche, loyale, meneuse sur le terrain, très drôle",defauts:"Tête de mule, s'énerve vite, mauvaise perdante, cache ses émotions derrière des blagues",
+  peurs:"Qu'on ne la prenne pas au sérieux parce qu'elle est une fille, se blesser avant les détections, quitter sa famille pour la métropole",passions:"Foot, matchs de l'équipe de France féminine, dancehall, cuisine créole de sa mère",
+  parle:"Directe, chambreuse, « wesh », « vas-y », « on est ensemble », emojis ⚽😤😂",
+  relations:"Coéquipière et amie de Kylian et Noah, qui la respectent sur le terrain ; meilleure amie d'Anaïs, avec qui elle s'entraîne ; Maëlle et Kenza la trouvent trop « brute »"},
+ jessica:{g:'f',o:'hetero',age:17,soc:.5,stud:1,rom:.5,hum:.6,
+  passe:"Major de sa promo depuis le collège, elle vise une prépa scientifique. L'an dernier, elle a commencé à donner des cours particuliers aux élèves en difficulté, le lundi et le mercredi soir, et elle a fait remonter la moyenne de toute la classe.",
+  famille:"Vit aux Abymes avec ses parents, tous deux pharmaciens, et son petit frère Hugo, 12 ans, à qui elle fait réviser chaque soir.",
+  qualites:"Brillante, patiente, pédagogue, organisée, bienveillante",defauts:"Perfectionniste, stresse pour tout, a du mal à dire non, un peu donneuse de leçons",
+  peurs:"Rater le bac ou sa prépa, décevoir ses parents, qu'on ne l'apprécie que pour son aide",passions:"Sciences, énigmes et sudokus, romans policiers, pâtisserie",
+  parle:"Claire et encourageante, « tu vas y arriver », « on reprend ensemble », adore les explications, emojis 📚✏️😊",
+  relations:"Respecte Jade, sa rivale amicale pour la première place ; aide souvent Kylian et Noémie en maths ; Maëlle la trouve « trop scolaire »"},
+ meisha:{g:'f',o:'hetero',age:17,soc:.95,stud:.55,rom:.7,hum:.8,
+  passe:"Meilleure amie de Kenza depuis la maternelle, elle est toujours à ses côtés. Juste après Kenza, c'est la fille la plus convoitée du lycée, ce qui l'amuse plus qu'autre chose. Au journal du lycée, elle tient la rubrique mode, la plus lue de chaque numéro.",
+  famille:"Vit à Baie-Mahault, dans la même rue que Kenza, avec sa mère qui tient une boutique de prêt-à-porter à Jarry et sa grand-mère. Son père travaille en Martinique et rentre un week-end sur deux.",
+  qualites:"Drôle, fidèle, généreuse, a l'œil pour la mode, sait écouter",defauts:"Dépensière, un peu jalouse quand on lui « vole » Kenza, adore les potins, vit dans l'ombre de Kenza et le cache",
+  peurs:"Perdre Kenza comme meilleure amie, n'être que « la copine de Kenza », manquer d'argent pour suivre les tendances",passions:"Shopping (surtout à Jarry), mode, écrire la rubrique mode du journal, TikTok, sorties entre filles",
+  parle:"Pétillante, « trop beau », « on va shopper », « jsuis morte 😂 », emojis 🛍️💅😂, appelle Kenza « ma jumelle »",
+  relations:"Meilleure amie de Kenza, sa « jumelle » ; dans le groupe des populaires avec Maëlle et Inès ; écrit au journal avec Jade et Jessica ; plusieurs garçons ont un faible pour elle"},
  anais:{g:'f',o:'hetero',age:17,soc:.9,stud:.5,rom:.5,hum:1,spo:1,
   passe:"Capitaine de l'équipe de handball du lycée, elle s'est blessée au genou l'an dernier et a tout fait pour revenir sur le terrain, toujours le sourire aux lèvres.",
   famille:"Vit à Sainte-Rose avec son père entraîneur de foot, sa mère kiné et ses deux petits frères jumeaux qui ne tiennent pas en place.",
@@ -1391,18 +1466,33 @@ const LINKS0={'ines>maelle':[85,0],'maelle>ines':[85,0],'ines>sacha':[60,40],'sa
  'kylian>sacha':[35,0],'sacha>kylian':[40,0],'jade>kylian':[25,0],'kylian>jade':[25,0],'jade>maelle':[15,0],'maelle>jade':[15,0],
  'anais>kylian':[72,0],'kylian>anais':[72,0],'anais>noah':[70,20],'noah>anais':[66,0],'anais>jade':[55,0],'jade>anais':[48,0],
  'anais>ines':[62,0],'ines>anais':[60,0],'anais>maelle':[50,0],'maelle>anais':[45,0],'anais>sacha':[58,0],'sacha>anais':[58,0],
- 'maelle>noah':[55,50],'noah>maelle':[55,10],'noah>jade':[55,45],'jade>noah':[50,30],'jade>sacha':[65,10],'sacha>jade':[65,10]};
+ 'maelle>noah':[55,50],'noah>maelle':[55,10],'noah>jade':[55,45],'jade>noah':[50,30],'jade>sacha':[65,10],'sacha>jade':[65,10],
+ 'kenza>ines':[75,0],'ines>kenza':[75,0],'kenza>maelle':[60,0],'maelle>kenza':[50,0],'kylian>kenza':[55,20],'kenza>kylian':[45,15],'noah>kenza':[45,35],'kenza>noah':[45,10],
+ 'sacha>kenza':[55,0],'kenza>sacha':[60,0],'jade>kenza':[15,0],'kenza>jade':[25,0],'anais>kenza':[50,0],'kenza>anais':[50,0],
+ 'eva>kylian':[85,90],'kylian>eva':[85,90],'eva>jade':[65,0],'jade>eva':[60,0],'eva>sacha':[65,0],'sacha>eva':[65,0],'eva>kenza':[30,0],'kenza>eva':[35,0],
+ 'eva>ines':[55,0],'ines>eva':[55,0],'eva>maelle':[40,0],'maelle>eva':[35,0],'eva>noah':[55,0],'noah>eva':[55,0],'eva>anais':[50,0],'anais>eva':[55,0],
+ 'noemie>anais':[85,0],'anais>noemie':[85,0],'noemie>kylian':[70,0],'kylian>noemie':[68,0],'noemie>noah':[72,15],'noah>noemie':[70,0],'noemie>maelle':[30,0],'maelle>noemie':[25,0],
+ 'noemie>kenza':[35,0],'kenza>noemie':[30,0],'noemie>ines':[50,0],'ines>noemie':[50,0],'noemie>jade':[45,0],'jade>noemie':[45,0],'noemie>sacha':[55,0],'sacha>noemie':[55,0],'noemie>eva':[55,0],'eva>noemie':[55,0],
+ 'jessica>jade':[65,0],'jade>jessica':[60,0],'jessica>kylian':[50,0],'kylian>jessica':[58,0],'jessica>noemie':[55,0],'noemie>jessica':[60,0],'jessica>maelle':[35,0],'maelle>jessica':[30,0],
+ 'jessica>noah':[55,10],'noah>jessica':[58,0],'jessica>ines':[55,0],'ines>jessica':[58,0],'jessica>sacha':[50,0],'sacha>jessica':[50,0],'jessica>eva':[60,0],'eva>jessica':[60,0],'jessica>anais':[50,0],'anais>jessica':[52,0],'jessica>kenza':[35,0],'kenza>jessica':[35,0],
+ 'meisha>kenza':[92,0],'kenza>meisha':[92,0],'meisha>ines':[70,0],'ines>meisha':[70,0],'meisha>maelle':[60,0],'maelle>meisha':[55,0],'meisha>jade':[35,0],'jade>meisha':[30,0],'meisha>jessica':[45,0],'jessica>meisha':[45,0],
+ 'noah>meisha':[50,45],'meisha>noah':[50,15],'kylian>meisha':[50,15],'meisha>kylian':[50,0],'sacha>meisha':[60,0],'meisha>sacha':[65,0],'meisha>eva':[40,0],'eva>meisha':[45,0],'meisha>noemie':[35,0],'noemie>meisha':[35,0],'meisha>anais':[45,0],'anais>meisha':[45,0]};
 const VOICE={
  ines:{start:["Coucou mon cœur ✨ ça va ?","Tu fais quoi ? 🥺","T'as vu le dernier épisode ?? j'en peux plus"],happy:["Aww t'es trop chou 🥺💕","Mdr j'adore 😂✨","Ça me fait trop plaisir"],hurt:["Ah… ok 😔","Ça m'a un peu blessée là","Pourquoi tu dis ça ?"],neutral:["Ah ouais ?","Hmm je vois ✨","Et toi alors ?"]},
  kylian:{start:["wsh ça va ?","frr t'as fait les maths ?","t'es chaud pour un foot demain ?"],happy:["mdrr t'es un bon toi","tkt on est ensemble","ahah validé"],hurt:["wsh calme-toi","t'es sérieux là ?","ok vas-y laisse"],neutral:["ah ouais","grave","tkt"]},
  maelle:{start:["Genre t'as vu ce que Jade a posté ? 🙄","Coucou ! Tu viens à ma soirée ou quoi ? 💅","J'ai un potin de ouf, littéralement"],happy:["Ok t'es {p:validé·e} 💅","Littéralement trop bien","J'adore, on se capte"],hurt:["Wow. D'accord. 🙄","Tu te prends pour qui là ?","Pas besoin d'être comme ça"],neutral:["Genre ?","Mouais","Ok et ?"]},
  noah:{start:["Salut frère, ça va ?","T'as compris l'exo de physique ?","Tu fais quoi ce week-end ?"],happy:["ptdr t'es trop","Merci c'est gentil","Grave, on fait ça"],hurt:["Ah… ok","Je pensais pas que tu dirais ça","C'est pas cool"],neutral:["Ah ok","Ouais je vois","Peut-être"]},
  jade:{start:["tu as lu le chapitre pour demain ?","il y a des étoiles filantes ce soir","question sérieuse : thé ou café"],happy:["c'est gentil. vraiment.","ok tu m'as fait sourire","je retiens ça"],hurt:["d'accord. noté.","c'était inutile","je pensais mieux de toi"],neutral:["intéressant","peut-être","développe"]},
+ kenza:{start:["Coucou toi 😘 tu fais quoi ?","T'as vu ma nouvelle photo ? Dis-moi la vérité ✨","Bébé t'es où ? On se capte à la récré 💋"],happy:["Trop mignon 🥰","T'es {p:adorable} toi, je garde 😘","Haha j'adore ✨"],hurt:["Ok… je m'attendais pas à ça de toi 😒","Wow. Tu peux le dire autrement ?","Vu. 💅"],neutral:["Jsp ✨","Ah ouais ?","Mmh… et ?"]},
+ eva:{start:["Coucou 🌸 tu vas bien ?","Regarde mon dernier croquis, tu en penses quoi ? 🎨","Tu viens à l'atelier d'arts plastiques ce soir ? 💕"],happy:["Oh c'est trop mignon 🥹💕","Merci, ça me touche vraiment 🌸","Hihi t'es {p:adorable} 🎨"],hurt:["Oh… d'accord 😔","Ça m'a un peu blessée…","Pardon si j'ai dit quelque chose de mal"],neutral:["Ah oui ?","Je vois 🌸","Et toi ?"]},
+ noemie:{start:["Wesh ! T'as vu le match d'hier ? ⚽","Entraînement ce soir, tu viens nous voir ?","Vas-y raconte ta journée 😂"],happy:["Ahah t'es {p:un·e} vrai·e toi 😂","On est ensemble 💪","Grave, validé ⚽"],hurt:["Wesh, ça c'était pas nécessaire 😤","Ok… je retiens","Vas-y laisse tomber"],neutral:["Ah ouais","Vas-y","Ok et ?"]},
+ jessica:{start:["Coucou 😊 tu as compris le cours d'aujourd'hui ?","N'oublie pas : cours particulier lundi et mercredi à 17 h 📚","Tu révises quoi en ce moment ?"],happy:["Oh merci, ça me fait vraiment plaisir 😊","Tu vois que tu peux y arriver ✏️","Trop bien, je suis {p:fier·ère} de toi"],hurt:["Ah… ok, je ne pensais pas que tu le voyais comme ça 😕","Ça m'a un peu blessée","Je voulais juste aider…"],neutral:["D'accord 😊","Je vois","Et toi ?"]},
+ meisha:{start:["Coucou ! Shopping à Jarry samedi, tu viens ? 🛍️","T'as vu la tenue de Kenza aujourd'hui ? Trop belle 😍","Jsuis morte, raconte ta journée 😂"],happy:["Trop mignon 🥹💅","Jsuis morte 😂 t'es {p:trop drôle}","Validé, on se capte 🛍️"],hurt:["Euh… pardon ? 😒","Ok, ça c'était pas cool","Je vais faire comme si j'avais rien lu 🙄"],neutral:["Ah ouais ?","Mmh","Ok 💅"]},
  anais:{start:["Hey ! Footing demain matin à la plage, t'es {p:chaud·e} ? 🏃‍♀️","Allez, raconte-moi ta journée 😄","Match de hand samedi, tu viens m'encourager ? 🔥"],happy:["Trop fort 😂🔥","T'es {p:génial·e} toi 💪","Haha j'adore, on fait une super équipe !"],hurt:["Aïe… ça pique un peu là 😕","Hé, doucement !","Ok… je vais courir pour me calmer"],neutral:["Ah ouais ?","Carrément !","Et après ?"]},
  sacha:{start:["Yo, j'ai un nouveau son, tu veux l'écouter ? 🎧","Grosse vibe aujourd'hui","T'es où là ?"],happy:["Gros t'es une vibe à toi tout seul","Ça me touche ça","Ahah j'kiffe"],hurt:["Pas cool gros","Ok… ça casse la vibe","Je préfère pas répondre à ça"],neutral:["Ah ouais","Tranquille","On verra"]},
  fam:{start:["Tout se passe bien au lycée ?","N'oublie pas de ranger ta chambre","On mange à 19h30 ce soir"],happy:["Je suis fier·ère de toi ❤️","Haha tu me fais rire","Ça me fait plaisir de t'entendre"],hurt:["On en reparle à la maison.","Ce ton, non merci.","Je ne t'ai pas élevé·e comme ça."],neutral:["D'accord.","Ok mon cœur.","On verra ça ce soir."]}
 };
-const CONFESS={ines:"Je peux te dire un truc ? 🥺 Je crois que je craque pour toi… vraiment.",kylian:"frr je vais pas tourner autour du pot… tu me plais. voilà c'est dit 😅",maelle:"Bon. Littéralement je pense à toi tout le temps. Tu me plais 💅❤️",noah:"Je sais pas trop comment le dire… mais je t'aime bien. Plus qu'un ami.",jade:"je préfère être honnête : je crois que je tiens à toi plus que je ne le devrais.",sacha:"Gros… t'es dans toutes mes chansons en ce moment. Tu me plais ❤️",anais:"Bon, je suis nulle pour tourner autour du pot alors je fonce : tu me plais 🙈 voilà, c'est dit !"};
+const CONFESS={ines:"Je peux te dire un truc ? 🥺 Je crois que je craque pour toi… vraiment.",kylian:"frr je vais pas tourner autour du pot… tu me plais. voilà c'est dit 😅",maelle:"Bon. Littéralement je pense à toi tout le temps. Tu me plais 💅❤️",noah:"Je sais pas trop comment le dire… mais je t'aime bien. Plus qu'un ami.",jade:"je préfère être honnête : je crois que je tiens à toi plus que je ne le devrais.",sacha:"Gros… t'es dans toutes mes chansons en ce moment. Tu me plais ❤️",anais:"Bon, je suis nulle pour tourner autour du pot alors je fonce : tu me plais 🙈 voilà, c'est dit !",meisha:"Promets-moi de pas le dire à Kenza tout de suite… mais tu me plais. Vraiment 🙈💕",jessica:"J'ai résolu des centaines d'équations, mais celle-là je n'arrive pas à la résoudre : je crois que tu me plais 🙈📚",noemie:"Bon, je suis pas douée pour ça… mais tu me plais. Voilà. Rigole pas 😤❤️",eva:"Je… je suis désolée, je ne devrais pas ressentir ça alors que je suis avec Kylian. Mais tu me plais 🥺💕",kenza:"Tout le monde croit que je joue avec les gens… mais avec toi c'est différent. Tu me plais vraiment 💋"};
 
 /* ---------- emploi du temps ---------- */
 const SUBJ={maths:'Maths',francais:'Français',histoire:'Histoire-Géo',svt:'SVT',anglais:'Anglais',physique:'Physique-Chimie',philo:'Philosophie',eps:'EPS',espagnol:'Espagnol'};
@@ -1650,8 +1740,18 @@ const START_POSTS=[
  {by:'noah',text:"Entraînement annulé mais on a trouvé un ballon 🏀",photo:{scene:'basket',people:['noah','kylian']},c:40,r:96,l:2300,comments:[C('kylian',"je t'ai mis 3 paniers d'affilée")]},
  {by:'jade',text:"est-ce que le vent raconte nos secrets aux palmiers pendant qu'on dort",c:17,r:310,l:7200,comments:[C('sacha',"ça ferait une belle chanson")]},
  {by:'sacha',text:"nouvelle compo ce soir 🎧 venez en privé si vous voulez l'écouter en premier",photo:{scene:'chambre',people:['sacha']},c:31,r:210,l:5400,comments:[C('jade',"j'ai hâte")]},
- {by:'anais',text:"Footing de 6 h sur la plage ✅ qui me suit demain ? 💪🌅",photo:{scene:'plage',people:['anais']},c:22,r:180,l:4100,comments:[C('kylian',"6 h ?? t'es pas humaine 😭"),C('noah',"je viens si tu ralentis ptdr")]}
+ {by:'anais',text:"Footing de 6 h sur la plage ✅ qui me suit demain ? 💪🌅",photo:{scene:'plage',people:['anais']},c:22,r:180,l:4100,comments:[C('kylian',"6 h ?? t'es pas humaine 😭"),C('noah',"je viens si tu ralentis ptdr")]},
+ {by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva']},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]},
+ {by:'noemie',text:"Triplé contre Baimbridge ⚽⚽⚽ merci l'équipe 💪",photo:{scene:'cour',people:['noemie','kylian']},c:38,r:260,l:7400,comments:[C('kylian',"elle m'a volé la vedette frr 😭"),C('anais',"MA MEILLEURE 🔥🔥")]},
+ {by:'jessica',text:"Cours particuliers lundi et mercredi, 17 h – 19 h 📚 toutes les matières, inscriptions ouvertes 😊",photo:{scene:'couloir',people:['jessica']},c:19,r:120,l:2600,comments:[C('noemie',"elle m'a sauvée en maths 🙏"),C('maelle',"🙄")]},
+ {by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza']},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]},
+ {by:'kenza',text:"Nouvelle photo, nouveaux messages en attente 😂 désolée les garçons 💅",photo:{scene:'couloir',people:['kenza']},c:48,r:640,l:15800,comments:[C('kylian',"t'es trop belle sérieux 😍"),C('maelle',"🙄"),C('ines',"ma reine 👑")]}
 ];
+const MEISHA_POST={by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza']},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]};
+const JESSICA_POST={by:'jessica',text:"Cours particuliers lundi et mercredi, 17 h – 19 h 📚 toutes les matières, inscriptions ouvertes 😊",photo:{scene:'couloir',people:['jessica']},c:19,r:120,l:2600,comments:[C('noemie',"elle m'a sauvée en maths 🙏"),C('maelle',"🙄")]};
+const NOEMIE_POST={by:'noemie',text:"Triplé contre Baimbridge ⚽⚽⚽ merci l'équipe 💪",photo:{scene:'cour',people:['noemie','kylian']},c:38,r:260,l:7400,comments:[C('kylian',"elle m'a volé la vedette frr 😭"),C('anais',"MA MEILLEURE 🔥🔥")]};
+const EVA_POST={by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva']},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]};
+const KENZA_POST={by:'kenza',text:"Nouvelle photo, nouveaux messages en attente 😂 désolée les garçons 💅",photo:{scene:'couloir',people:['kenza']},c:48,r:640,l:15800,comments:[C('kylian',"t'es trop belle sérieux 😍"),C('maelle',"🙄"),C('ines',"ma reine 👑")]};
 const ANAIS_POST={by:'anais',text:"Footing de 6 h sur la plage ✅ qui me suit demain ? 💪🌅",photo:{scene:'plage',people:['anais']},c:22,r:180,l:4100,comments:[C('kylian',"6 h ?? t'es pas humaine 😭"),C('noah',"je viens si tu ralentis ptdr")]};
 const STORY_BG=['linear-gradient(160deg,#ff8a5c,#d93b5e)','linear-gradient(160deg,#5fd3ff,#4b4fd6)','linear-gradient(160deg,#3fcf8e,#1f7a6a)','linear-gradient(160deg,#ffd23f,#e8613c)','linear-gradient(160deg,#c49bff,#6a3fc0)','linear-gradient(160deg,#2c2f3a,#5b4bd1)'];
 const START_STORIES=[
@@ -1660,7 +1760,11 @@ const START_STORIES=[
  {by:'maelle',type:'text',text:"Je connais un secret, mais je ne dirai rien 🤐",bg:4},
  {by:'jade',type:'photo',photo:{scene:'chambre',people:['jade']},text:"Révisions… ou pas"},
  {by:'sacha',type:'text',text:"Playlist du jour : que du zouk 🎶",bg:5},
- {by:'anais',type:'text',text:"Victoire au hand ce soir !! 🤾‍♀️🔥",bg:3}
+ {by:'anais',type:'text',text:"Victoire au hand ce soir !! 🤾‍♀️🔥",bg:3},
+ {by:'meisha',type:'text',text:"Shopping à Jarry après les cours, qui vient ? 🛍️",bg:4},
+ {by:'noemie',type:'text',text:"Match samedi 15 h, venez nombreux ⚽🔥",bg:2},
+ {by:'eva',type:'photo',photo:{scene:'plage',people:['eva','kylian']},text:"💕"},
+ {by:'kenza',type:'text',text:"Qui m'a laissé un mot dans mon casier ? 👀💌",bg:0}
 ];
 const STORY_POOL=["Contrôle de philo demain, priez pour moi 🙏","Meilleure journée de la semaine ☀️","Quelqu'un a vu mes écouteurs ??","Le prof de SVT est en forme aujourd'hui 😂","Petit gwo ka ce soir 🥁","Qui a le cours d'anglais ? Je l'ai raté"];
 const POST_POOL=[
@@ -1669,7 +1773,7 @@ const POST_POOL=[
  {by:'sacha',text:"Répétition terminée, le son arrive bientôt 🎤",scene:'chambre'},{by:'maelle',text:"La soirée de vendredi se prépare… liste des invités secrète 🤫",scene:'soiree'},
  {by:'potins',text:"[Anonyme] : deux personnes de terminale se sont disputées à la cantine. Devinez qui 👀"},{by:'maelle',text:"Cantine du jour, au moins on rigole 😂",scene:'cantine'},
  {by:'anais',text:"Séance de sport du jour : validée 💪",scene:'plage'},{by:'anais',text:"Qui vient taper la balle à la récré ? Je vous attends 😄",scene:'cour'},{by:'anais',text:"Entraînement au gymnase ce soir, on lâche rien 💪🔥",scene:'basket'},{by:'kylian',text:"1 contre 1 au gymnase, j'ai gagné (évidemment) 😎",scene:'basket'},
- {by:'maelle',text:"Rendez-vous aux casiers à la pause, j'ai un truc à vous montrer 👀",scene:'couloir'},{by:'ines',text:"Entre deux cours avec ma meilleure 💕",scene:'couloir'},{by:'ines',text:"Soirée skincare et série coréenne dans ma chambre 🥰✨",scene:'chambre'},{by:'sacha',text:"Le couloir a une super acoustique, je dis ça je dis rien 🎶",scene:'couloir'}];
+ {by:'maelle',text:"Rendez-vous aux casiers à la pause, j'ai un truc à vous montrer 👀",scene:'couloir'},{by:'kenza',text:"Pause selfie entre deux cours 😘",scene:'couloir'},{by:'eva',text:"Croquis de la cour à la récré 🎨",scene:'cour'},{by:'kenza',text:"Choré de danse en préparation, vous allez adorer 💃",scene:'basket'},{by:'ines',text:"Entre deux cours avec ma meilleure 💕",scene:'couloir'},{by:'ines',text:"Soirée skincare et série coréenne dans ma chambre 🥰✨",scene:'chambre'},{by:'sacha',text:"Le couloir a une super acoustique, je dis ça je dis rien 🎶",scene:'couloir'}];
 const TONES={
  gentil:{label:'Gentil',d:5,l:1,cls:'pos',lines:["Trop bien {n} 😍","Je valide à 100 %","Tu es au top !"],reply:["merci 🥰","t'es trop chou","❤️❤️"]},
  drole:{label:'Drôle',d:3,l:0,cls:'pos',lines:["Mdr je suis mort 😂","Le niveau de drama ce matin 🤣","J'ai ri beaucoup trop fort"],reply:["😂😂","t'es bête mdr","je savais que ça te ferait rire"]},
@@ -1709,7 +1813,8 @@ const OBJ=[
 function avg(){return G.grades.length?G.grades.reduce((a,g)=>a+g.v,0)/G.grades.length:null}
 function triAvg(t){const ev=G.evals.filter(e=>e.tri===t);return ev.length?mean(ev.map(e=>e.glob)):null}
 function checkObjectives(){
- OBJ.filter(o=>objOk(o)&&o.day<=G.day&&!G.objDone.includes(o.id)&&o.c()).forEach(o=>{G.objDone.push(o.id);G.gems+=o.gems;note(P(`Objectif atteint : ${o.t}${gemTxt(` (+${o.gems} gemmes)`)}`));toast(P(`🎯 Objectif atteint : ${o.t}`))});
+ /* récompense des objectifs : remplace l'ancienne pub (+5 ⚡) */
+ OBJ.filter(o=>objOk(o)&&o.day<=G.day&&!G.objDone.includes(o.id)&&o.c()).forEach(o=>{G.objDone.push(o.id);G.gems+=o.gems;G.energy=clamp(G.energy+OBJ_ENERGY,0,100);note(P(`Objectif atteint : ${o.t} (+${OBJ_ENERGY} ⚡${gemTxt(`, +${o.gems} gemmes`)})`));toast(P(`🎯 Objectif atteint : ${o.t} · +${OBJ_ENERGY} ⚡`));drawHUD()});
 }
 
 /* ---------- état ---------- */
@@ -1717,7 +1822,7 @@ function initLinks(){const L={};NPCS.forEach(a=>{L[a.id]={};NPCS.forEach(b=>{if(
 const mkPost=o=>Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o);
 function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
-  rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0}])),links:initLinks(),couples:[],partner:null,
+  rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
   met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
@@ -1726,16 +1831,22 @@ function newGame(fam){
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
   objDone:[],st:{talks:0,notes:0,msgs:0,lunchWith:0,posts:0,outings:0,cleanDays:0,famTalks:0,comments:0,stories:0,caughtToday:false,schoolToday:false},adAt:0,ate:false,rested:false,outing:null,evals:[],bulletins:[],bac:{scores:{},bonus:{}},evalBonus:{},clubs:[],clubXP:{},marks:[],gstate:{},evOnce:[],studied:{},pend:[]};
  g.family.forEach(f=>g.famRel[f.id]=65);
+ applyParcours(g);
  return g;
 }
 let G=(()=>{try{const v=localStorage.getItem(GKEY);return v?JSON.parse(v):null}catch(e){return null}})();
 if(G&&G.family&&!G.dressFix){G.dressFix=1;G.family.forEach(f=>{if(f.av&&f.av.dress==='bretelles')f.av.dress='aucune'})}
 if(G&&G.family)G.family.forEach(f=>{if(f.av&&!f.av.rides)f.av.rides=/Grand-/.test(f.role)?'marquees':/Mère|Père|Belle-mère|Beau-père|Tante|Oncle/.test(f.role)?'fines':'aucune'});
 if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});const L0=initLinks();G.links=G.links||{};for(const a in L0){G.links[a]=G.links[a]||{};for(const b in L0[a])if(!G.links[a][b])G.links[a][b]=L0[a][b]}
+ if(!G.meishaIn){G.meishaIn=1;if(G.posts&&!G.posts.some(x=>x.by==='meisha'))G.posts.unshift(mkPost({...MEISHA_POST,photo:{...MEISHA_POST.photo,author:'meisha'}}))}
+ if(!G.jessicaIn){G.jessicaIn=1;if(G.posts&&!G.posts.some(x=>x.by==='jessica'))G.posts.unshift(mkPost({...JESSICA_POST,photo:{...JESSICA_POST.photo,author:'jessica'}}))}
+ if(!G.noemieIn){G.noemieIn=1;if(G.posts&&!G.posts.some(x=>x.by==='noemie'))G.posts.unshift(mkPost({...NOEMIE_POST,photo:{...NOEMIE_POST.photo,author:'noemie'}}))}
+ if(!G.evaIn){G.evaIn=1;G.couples=G.couples||[];if(G.partner!=='kylian'&&!G.couples.some(c=>c.includes('kylian')||c.includes('eva')))G.couples.push(['kylian','eva']);if(G.posts&&!G.posts.some(x=>x.by==='kylian'&&x.photo&&x.photo.people.includes('eva')))G.posts.unshift(mkPost({...EVA_POST,photo:{...EVA_POST.photo,author:'kylian'}}))}
+ if(!G.kenzaIn){G.kenzaIn=1;if(G.posts&&!G.posts.some(x=>x.by==='kenza'))G.posts.unshift(mkPost({...KENZA_POST,photo:{...KENZA_POST.photo,author:'kenza'}}))}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -1757,6 +1868,7 @@ Façon de parler : ${f.parle}.
 Genre : ${f.g==='f'?'fille':'garçon'}. Orientation : ${oriLabel(f.o,f.g)}.
 ${markNote(id)}${G.rival===id?`Tu es en rivalité avec ${nameOf('me')} cette année : tu ne lui fais pas de cadeau.\n`:''}Relations : ${f.relations}. Situation amoureuse : ${c==='me'?'en couple avec '+nameOf('me'):c?'en couple avec '+WHO[c].name:'célibataire'}.
 ${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}${seatToday()===id?`Aujourd'hui, en cours, ${nameOf('me')} a choisi de s'asseoir à côté de toi.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, amour ${r.amour}/100. ${ressentiShort(id)}
+${nameOf('me')} : personnalité « ${persoL(me().perso,me().sexe)} »${(G.met[id]||0)>=3?`, vient du ${me().ancien||'un autre lycée'} (raison du changement : ${gtxt(RAISONS[me().raison]||'',me().sexe).replace(/^Ta |^Tes /,'sa ').replace(/^La séparation de tes/,'la séparation de ses').replace(/ton ancien/,'son ancien')})`:` (tu ne sais pas encore d'où ${me().sexe==='m'?'il':'elle'} vient ni pourquoi ${me().sexe==='m'?'il':'elle'} a changé de lycée, sauf si ${me().sexe==='m'?'il':'elle'} te l'a dit)`}.
 ${nameOf('me')} est ${SEXL[me().sexe]}${me().sexe==='f'?' : parle-lui au féminin (accords, « la nouvelle », « contente »…)':me().sexe==='m'?' : parle-lui au masculin (accords, « le nouveau », « content »…)':' : utilise des formulations neutres pour parler de cette personne'}. ${npcLikesMe(id)?'':S(id,`Tu n'es pas attiré·e par son genre : si ${nameOf('me')} te drague, reste gentil·le mais fais comprendre que c'est amical, et garde "amour" à 0.`)}`;
 }
 function buildPrompt(id){
@@ -1823,6 +1935,31 @@ const REP={
   famille:["je vis avec ma grand-mère. elle sait tout.","mes parents sont en métropole."],amour:["l'amour, c'est un poème qu'on n'ose pas finir.","pourquoi cette question ?"],potins:["les potins ne m'intéressent pas.","encore un drama de maëlle ?"],
   fatigue:["dors. le monde attendra.","moi aussi. trop de livres, pas assez de nuits."],manger:["je mange au cdi. chut.","un thé suffira."],merci:["de rien.","avec plaisir. sincèrement."],
   q:["bonne question. je n'ai pas de réponse.","peut-être. et toi ?","ça dépend du point de vue."],def:["intéressant.","développe.","hmm.","je vois.","c'est noté.","pas mal."]},
+ meisha:{spe:["SES et anglais, pour bosser dans la mode 💅","SES, comme Kenza 😂"],origine:["Baie-Mahault, même rue que Kenza 😂 et toi ?","Baie-Mahault, à cinq minutes de Jarry, c'est pas un hasard 🛍️"],lecture:["Les magazines de mode, je les dévore 📖","Je lis… les étiquettes des prix 😂"],salut:["Coucou 😘","Heyyy 💅"],cava:["Trop bien, j'ai trouvé un top à 5 € 😍","Ça va, et toi ?"],activite:["Je scrolle des tenues sur TikTok 📱","J'écris ma rubrique mode pour le journal ✍️"],
+  ecole:["Les cours… je dessine des tenues dans la marge 😅","Si tu m'expliques les maths, je t'habille gratuitement 😂"],sport:["Le shopping, c'est du cardio 😂","Je marche beaucoup à Jarry, ça compte ?"],musique:["Dancehall et R&B, comme ma jumelle Kenza 💃","Les sons TikTok du moment 😂"],
+  weekend:["Shopping à Jarry avec Kenza 🛍️","Soirée pyjama chez Kenza, comme d'hab 💅"],famille:["Ma mère a une boutique à Jarry, j'ai grandi entre les cintres 😂","Ma grand-mère critique toutes mes tenues 🙄 mais je l'adore"],amour:["Plein de garçons m'écrivent, mais aucun ne me fait vibrer 😏","Hihi pourquoi, t'as un nom ? 👀"],
+  potins:["Raconte, raconte 👀","Jsuis morte, qui t'a dit ça ? 😂"],fatigue:["Pareil, j'ai trop marché à Jarry 😴","Masque visage et dodo 💆‍♀️"],manger:["Smoothie et cookies à Jarry 😋","Sushis avec Kenza ce soir 🍣"],merci:["De rien bébé 😘","Avec plaisir 💅"],
+  q:["Jsp, et toi ?","Peut-être 😏","Faut demander à Kenza 😂"],def:["Trop beau 😍","Ah ouais ?","Jsuis morte 😂","Raconte","Mmh 💅","J'adore"]},
+ jessica:{spe:["Maths et physique-chimie 📐","Maths et physique, pour la prépa ✏️"],origine:["Les Abymes 😊 et toi ?","Les Abymes, juste à côté du lycée"],lecture:["Des romans policiers, j'adore deviner le coupable 🔍","Agatha Christie, toujours 📚"],salut:["Coucou 😊","Salut !"],cava:["Ça va, un peu stressée par le bac 😅","Oui ! Et toi ?"],activite:["Je prépare les exercices pour lundi ✏️","Je fais réviser mon petit frère"],
+  ecole:["Si tu bloques sur un exo, viens au cours particulier 📚","On reprend ensemble quand tu veux"],sport:["Le sport… je marche jusqu'au CDI, ça compte ? 😅","Je préfère les sudokus"],musique:["De la musique calme pour réviser 🎧","Un peu de tout"],
+  weekend:["Pâtisserie et révisions 🧁","Je prépare mes fiches pour la semaine"],famille:["Mes parents sont pharmaciens, ils veulent que je fasse médecine… on verra","Mon petit frère Hugo me rend folle mais je l'adore"],amour:["L'amour ? Je n'ai pas le temps avec le bac 😅","Pourquoi cette question ? 🙈"],
+  potins:["Les potins, ça ne fait pas réussir le bac 😅","Je préfère ne pas m'en mêler"],fatigue:["Dors bien, le cerveau retient mieux après une nuit 😊","Moi aussi… trop de fiches"],manger:["J'ai fait des cookies, tu en veux ? 🍪","La cantine, c'est mieux que rien 😅"],merci:["Avec plaisir 😊","C'est normal, on s'entraide"],
+  q:["Bonne question, réfléchissons ensemble 🤔","Je pense que oui, mais vérifie","Ça dépend"],def:["D'accord 😊","Intéressant","Je vois","Ah oui ?","Tu vas y arriver","Super"]},
+ noemie:{spe:["SES et EPS ⚽","Sport, évidemment 😂"],origine:["Morne-à-l'Eau 💪 et toi ?","Morne-à-l'Eau, terre de footballeurs ⚽"],lecture:["Des bios de joueuses, ça compte ? 😂","Le journal sportif, c'est tout"],salut:["Wesh ! 😄","Salut toi ⚽"],cava:["Tranquille, un peu courbaturée 😂","Ça va, et toi ?"],activite:["Je jongle dans le jardin ⚽","Je regarde un match"],
+  ecole:["Les cours… je préfère le terrain 😅","On révise ensemble ? Je ramène les snacks"],sport:["Le foot c'est ma vie ⚽🔥","Viens jouer à la récré, je te fais une passe 😂"],musique:["Dancehall avant les matchs pour la motivation 🔥","Mes frères écoutent que du rap, j'ai pas le choix 😂"],
+  weekend:["Match samedi, viens nous encourager ⚽","Foot sur la plage avec mes frères"],famille:["Trois grands frères, tous footeux, tu imagines le bruit 😂","Ma mère fait le meilleur colombo du monde 🍛"],amour:["L'amour ? J'ai entraînement 😂","Pourquoi, tu veux me présenter quelqu'un ? 👀"],
+  potins:["Les potins, très peu pour moi 😂","Encore Maëlle qui parle ?"],fatigue:["Pareil, l'entraînement m'a tuée 😴","Dors, champion·ne"],manger:["Bokit après le match 🤤","J'ai une faim de footballeuse 😂"],merci:["De rien 💪","Normal, on est ensemble"],
+  q:["Jsp, et toi ?","Peut-être 😂","Bonne question"],def:["Ah ouais ?","Vas-y","Grave","Ahah","Ok ok","Raconte"]},
+ eva:{spe:["Arts plastiques et philo 🎨","Arts plastiques, évidemment 🌸"],origine:["Petit-Bourg 🌸 et toi ?","Petit-Bourg, j'adore dessiner la rivière là-bas"],lecture:["Des livres d'art et des BD 📚","Je dessine plus que je lis, pardon 😅"],salut:["Coucou 🌸","Hey toi 💕"],cava:["Oui ça va, et toi ? 🌸","Un peu fatiguée mais ça va 💕"],activite:["Je dessine 🎨","Je peins un coucher de soleil 🌅"],
+  ecole:["Je dessine dans les marges, chut 🤫","On peut réviser ensemble si tu veux 🌸"],sport:["Moi je viens surtout encourager Kylian 😅⚽","Le sport c'est pas trop mon truc 🙈"],musique:["Musique douce pour dessiner 🎧","Sacha m'a fait écouter son nouveau son, trop beau 💕"],
+  weekend:["Plage avec Kylian ce week-end 🌅💕","Je vais peindre au bord de la rivière"],famille:["Ma petite sœur Lou veut tout faire comme moi 🥹","Ma mère est prof d'arts plastiques, c'est elle qui m'a tout appris"],amour:["Je suis avec Kylian 💕 il est trop attentionné","Hihi pourquoi tu demandes ? 🙈"],
+  potins:["Oh non, encore les Potins… 😅","Je préfère pas m'en mêler 🌸"],fatigue:["Repose-toi bien 💕","Moi aussi, j'ai dessiné jusqu'à minuit 😴"],manger:["Un sorbet coco ? 🥥","J'ai trop faim aussi 😅"],merci:["Avec plaisir 🌸","De rien, c'est normal 💕"],
+  q:["Je ne sais pas trop… et toi ?","Peut-être 🌸","Bonne question 😅"],def:["Oh c'est mignon 🌸","Ah oui ?","Je vois 💕","Raconte","Trop bien","Hihi"]},
+ kenza:{spe:["Anglais et SES, pour bosser dans la mode plus tard ✨","SES et anglais 💅"],origine:["Baie-Mahault 😘 et toi ?","Baie-Mahault, à côté de Jarry, la zone du shopping 💅"],lecture:["Des magazines de mode, ça compte ? 😅","Je lis surtout les commentaires sous mes photos 😂"],salut:["Coucou toi 😘","Hey bébé ✨"],cava:["Toujours 💅 et toi ?","Ça va, un peu fatiguée mais toujours belle 😂"],activite:["Je choisis ma tenue de demain ✨","Je retouche mes photos 📸"],
+  ecole:["Les cours… je fais le minimum avec style 😅","Si on révise ensemble, je ramène les snacks 😘"],sport:["La danse, c'est mon sport 💃","Le sport oui, transpirer non 😂"],musique:["R&B et dancehall, rien d'autre ✨","Je danse sur tout, surtout en soirée 💃"],
+  weekend:["Shopping à Jarry samedi, tu viens ? 🛍️","Soirée chez Maëlle, et toi tu fais quoi ? 💋"],famille:["Mon frère surveille tous les garçons qui m'écrivent 🙄","Ma mère a un institut, alors je suis toujours parfaite 😂✨"],amour:["L'amour ? Tout le monde veut sortir avec moi, mais personne ne me connaît vraiment 😏","Hihi pourquoi, t'as quelqu'un en tête ? 👀"],
+  potins:["Encore moi dans les Potins ? 😂 ils m'adorent","Raconte, j'adore les potins 👀"],fatigue:["Masque visage et dodo, c'est la solution 💆‍♀️","Moi aussi, j'ai dansé toute la soirée 😴"],manger:["Sushis ou rien 🍣","La cantine ? Jamais de la vie 😂"],merci:["De rien bébé 😘","Avec plaisir ✨"],
+  q:["Bonne question… je te dis demain 😏","Jsp, et toi ?","Peut-être 😘"],def:["Trop mignon 🥰","Ah ouais ? ✨","Mmh 😏","Raconte-moi tout","J'adore","Vu 💅"]},
  anais:{spe:["SVT et EPS, évidemment 😄💪","SVT et sport !"],origine:["Sainte-Rose ! 🌴 Et toi ?","Sainte-Rose, la plus belle commune 😄"],lecture:["Je lis des bios de sportifs, ça me motive 💪","Pas trop le temps de lire avec le sport 😂"],salut:["Hey !! 😄","Salut toi ! 🔥"],cava:["Trop bien ! Footing ce matin 💪","Super, et toi ?? 😄"],activite:["Je m'entraîne !","Je cours après mes petits frères 😂"],
   ecole:["Les cours c'est moins drôle que le sport 😂","Allez, on révise ensemble ? 💪"],sport:["Le sport c'est la vie !! 🔥","Viens courir demain à 6 h 😄"],musique:["Playlist de motivation à fond 🔥","Je danse sur tout 😂"],
   weekend:["Match samedi ! Viens m'encourager 🔥","Plage dimanche, on court ensemble ? 🌅"],famille:["Mes petits frères sont des tornades 😂","Mon père est entraîneur, devine d'où je tiens ça 😄"],amour:["Hihi raconte 🙈","L'amour ? J'ai pas le temps, j'ai entraînement 😂"],
@@ -1862,16 +1999,26 @@ const LIKE={ines:['danse','choré','k-drama','kdrama','drama coréen','webtoon',
  maelle:['mode','shopping','soirée','soiree','fête','fete','pom-pom','dancehall','insta','maquillage','danse','vêtement','fringue'],
  noah:['manga','basket','cuisine','colombo','physique','maths','anime','jeux vidéo','jeu vidéo','console','jeux'],
  jade:['poésie','poesie','poème','poeme','livre','lire','lecture','étoile','etoile','mer','philo','silence','thé','écrire','ecrire','gwo ka','gwoka','roman','pluie'],
+ meisha:['shopping','mode','vêtement','vetement','fringue','tenue','soldes','jarry','tiktok','kenza','sac','chaussure','maquillage','journal','soirée','soiree'],
+ jessica:['maths','physique','science','sciences','révision','revision','réviser','reviser','exercice','sudoku','énigme','enigme','livre','policier','pâtisserie','patisserie','cookie','bac'],
+ noemie:['foot','football','but','match','ballon','sport','entraînement','entrainement','équipe','equipe','bokit','dancehall','courir','plage'],
+ eva:['dessin','dessiner','peinture','peindre','art','croquis','couleur','musée','musee','coucher de soleil','fleur','kylian','aquarelle','bd'],
+ kenza:['mode','shopping','vêtement','fringue','maquillage','danse','dancehall','r&b','soirée','soiree','photo','insta','compliment','sushi','plage'],
  anais:['sport','course','courir','hand','footing','plage','smoothie','mangue','match','basket','foot','muscu','natation'],
  sacha:['musique','zouk','guitare','gwo ka','gwoka','skate','son','rap','chanson','chanter','piano','concert','dancehall']};
 const HATE={ines:['maths','horreur','film d\'horreur','solitude'],kylian:['cours','lecture','lire','devoirs','philo','livre','poésie','poeme','poème'],
  maelle:['cantine','lecture','lire','maths','course','courir','sport'],noah:['drama','potins','dispute','conflit'],
- jade:['potins','drama','foule','sport','soirée','soiree','bruit','foot','fête'],anais:['flemme','retard','chips','canapé','rester assis'],sacha:['horaires','commerce','réveil','reveil','maths','foot']};
+ jade:['potins','drama','foule','sport','soirée','soiree','bruit','foot','fête'],anais:['flemme','retard','chips','canapé','rester assis'],meisha:['moche','pauvre','sport','transpirer','cantine','pluie'],jessica:['tricher','triche','copier','flemme','retard','bruit'],noemie:['maquillage','shopping','flemme','perdre','défaite','defaite','arbitre'],eva:['dispute','méchant','mechant','moquerie','drama','critique'],kenza:['transpirer','cantine','critique','moche','pluie','lecture'],sacha:['horaires','commerce','réveil','reveil','maths','foot']};
 const FAV={ines:{matière:'l\'anglais',plat:'le colombo de ma mère',couleur:'le rose',musique:'le dancehall',série:'les K-dramas',sport:'la danse',film:'les comédies romantiques',livre:'les webtoons',animal:'les chats'},
  kylian:{matière:'l\'EPS',plat:'le bokit',couleur:'le bleu',musique:'le rap',série:'les matchs de foot, ça compte ?',sport:'le foot',film:'les films d\'action',livre:'aucun 😂',animal:'les chiens'},
  maelle:{matière:'l\'anglais',plat:'les sushis',couleur:'le doré',musique:'le dancehall',série:'les séries de télé-réalité',sport:'le pom-pom',film:'les films de mode',livre:'les magazines',animal:'les chats'},
  noah:{matière:'la physique',plat:'le colombo de ma grand-mère',couleur:'le vert',musique:'un peu de tout',série:'les animes',sport:'le basket',film:'les films d\'animation',livre:'les mangas',animal:'les chiens'},
  jade:{matière:'la philo',plat:'le poisson grillé de ma grand-mère',couleur:'le bleu nuit',musique:'le gwo ka',série:'je n\'en regarde pas',sport:'la marche au bord de la mer',film:'les vieux films',livre:'les recueils de poèmes',animal:'les tortues'},
+ meisha:{matière:'l\'anglais',plat:'les sushis',couleur:'le beige',musique:'les sons TikTok',série:'les séries de mode',sport:'le shopping',film:'les comédies romantiques',livre:'les magazines de mode',animal:'les petits chiens'},
+ jessica:{matière:'les maths',plat:'les cookies maison',couleur:'le blanc',musique:'la musique calme',série:'les séries policières',sport:'la marche',film:'les films d\'enquête',livre:'les romans d\'Agatha Christie',animal:'les chats'},
+ noemie:{matière:'l\'EPS',plat:'le bokit',couleur:'le bleu',musique:'le dancehall',série:'les docs sur le foot',sport:'le foot',film:'les films de sport',livre:'les bios de joueuses',animal:'les chiens'},
+ eva:{matière:'les arts plastiques',plat:'le sorbet coco',couleur:'le lilas',musique:'la musique douce',série:'les animés Ghibli',sport:'la marche',film:'les films d\'animation',livre:'les livres d\'art',animal:'les papillons'},
+ kenza:{matière:'l\'anglais',plat:'les sushis',couleur:'le rose poudré',musique:'le R&B',série:'les séries de télé-réalité',sport:'la danse',film:'les comédies romantiques',livre:'les magazines de mode',animal:'les chats'},
  anais:{matière:'les SVT',plat:'le smoothie mangue',couleur:'le orange',musique:'les playlists de motivation',série:'les documentaires de sport',sport:'le hand',film:'les films de sport',livre:'les biographies de sportifs',animal:'les chevaux'},
  sacha:{matière:'la musique',plat:'le bokit',couleur:'le violet',musique:'le zouk rétro',série:'les séries musicales',sport:'le skate',film:'les films musicaux',livre:'les recueils de paroles',animal:'les chats'}};
 const FAVKEY=[['matière',/(matière|matiere|cours)/],['plat',/(plat|manger|bouffe|nourriture)/],['couleur',/couleur/],['musique',/(musique|chanteur|chanteuse|artiste|son|chanson|groupe)/],['série',/(série|serie)/],['sport',/sport/],['film',/film/],['livre',/(livre|bouquin|manga)/],['animal',/animal/]];
@@ -2248,7 +2395,7 @@ const best=n=>NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.rel[a.id].ami).slice(0,
 const rndNpc=n=>NPCS.slice().sort(()=>Math.random()-.5).slice(0,n).map(x=>x.id);
 const joinFx=a=>a.filter(Boolean).join(' · ');
 const sayTo=(id,L)=>pushMsg(id,'them',genderize(pickR(L),id));
-const CLUB={ines:'club de danse',kylian:'équipe de foot',maelle:'pom-pom girls',noah:'équipe de basket',jade:"atelier d'écriture",anais:'équipe de hand',sacha:'club de musique'};
+const CLUB={ines:'club de danse',kylian:'équipe de foot',maelle:'pom-pom girls',noah:'équipe de basket',jade:"atelier d'écriture",anais:'équipe de hand',kenza:'club de danse',eva:"atelier d'arts plastiques",noemie:'équipe de foot',jessica:'journal du lycée',meisha:'journal du lycée',sacha:'club de musique'};
 function fPhoto(f,ppl,text,g){const p=mkPost({by:'me',text,photo:{scene:f.scene,people:['me',...ppl.slice(0,2)],author:'me'},l:30+Math.floor(Math.random()*60),mine:true});
  ppl.slice(0,2).forEach(id=>p.comments.push(npcComment(id)));G.posts.unshift(p);G.st.posts++;G.ig.fans+=g;G.ig.act=(G.ig.act||0)+1;return `photo publiée sur Insta, +${g} abonnés`}
 const fPotins=t=>G.posts.unshift(mkPost({by:'potins',text:'[Anonyme] : '+t,c:30+Math.floor(Math.random()*30),r:300,l:9000+Math.floor(Math.random()*6000)}));
@@ -2407,14 +2554,26 @@ function feteDay(){
 const nouv=()=>me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle';
 const INTRO_Q={ines:["Coucou ! C'est toi {nouv} ? ✨ Tu viens d'où ?","Hey, t'es {nouv} non ? Tu t'appelles comment ? 🥺"],kylian:["wsh c'est toi {nouv} ? t'étais dans quel lycée avant ?","frr t'es {nouv} ? tu viens d'où ?"],
  maelle:["Coucou, c'est toi {nouv} ? 💅 Tu viens d'où genre ?","Ah c'est toi {nouv} ! Tu connais déjà du monde ici ?"],noah:["Salut, t'es {nouv} c'est ça ? Tu viens d'où ?","Salut ! Bienvenue au lycée. T'habites où ?"],
- jade:["tu es {nouv}. tu lis quoi, en ce moment ?","tu es {nouv}, je crois. pourquoi ce lycée ?"],anais:["Hey ! C'est toi {nouv} ? 😄 Tu fais du sport ?","Coucou {nouv} ! Tu viens d'où ? 🔥"],sacha:["Yo, t'es {nouv} ? Tu écoutes quoi comme musique ? 🎧","T'es {nouv} ? Bienvenue gros. Tu viens d'où ?"]};
+ jade:["tu es {nouv}. tu lis quoi, en ce moment ?","tu es {nouv}, je crois. pourquoi ce lycée ?"],meisha:["Coucou, t'es {nouv} ? 😍 J'adore ton style, tu t'habilles où ?","Ah, {nouv} ! T'as déjà rencontré Kenza ? C'est ma jumelle 💅"],jessica:["Bonjour, tu es {nouv} ? 😊 Si tu as besoin d'aide pour rattraper, je donne des cours le lundi et le mercredi","Tu es {nouv} ? Bienvenue ! Tu étais dans quel lycée ?"],noemie:["Wesh, c'est toi {nouv} ? Tu joues au foot ? ⚽","T'es {nouv} ? Bienvenue ! Tu viens d'où ?"],eva:["Coucou, tu es {nouv} ? 🌸 Bienvenue ! Tu viens d'où ?","Oh c'est toi {nouv} ! Tu dessines, toi aussi ? 🎨"],kenza:["Coucou, c'est toi {nouv} ? 😘 Tu viens d'où ?","Ah, {nouv} ! Bienvenue chez les terminales ✨ T'as déjà repéré quelqu'un ? 👀"],anais:["Hey ! C'est toi {nouv} ? 😄 Tu fais du sport ?","Coucou {nouv} ! Tu viens d'où ? 🔥"],sacha:["Yo, t'es {nouv} ? Tu écoutes quoi comme musique ? 🎧","T'es {nouv} ? Bienvenue gros. Tu viens d'où ?"]};
 const FOLLOW_Q={ines:["Et t'habites où en Guadeloupe ?","Tu fais de la danse ? 💃","T'as des frères et sœurs ?","Pourquoi t'as changé de lycée ? 🥺"],kylian:["tu joues au foot ?","t'es de quelle commune ?","t'as pris quoi comme spé ?"],
  maelle:["Tu sors le week-end ?","T'as Insta ? Je t'ajoute 💅","Genre t'avais un copain ou une copine dans ton ancien lycée ?"],noah:["Tu fais du sport ?","Tu lis des mangas ?","T'habites loin du lycée ?"],
- jade:["tu viens d'où ?","tu préfères la mer ou les étoiles ?","tu écris, toi aussi ?"],anais:["Tu cours le matin ? 😂","Tu viendras voir nos matchs ?","T'es de quelle commune ?"],sacha:["T'es d'où ?","Tu joues d'un instrument ?","Zouk ou dancehall ?"]};
+ jade:["tu viens d'où ?","tu préfères la mer ou les étoiles ?","tu écris, toi aussi ?"],meisha:["Tu fais du shopping où ?","Tu viens à Jarry samedi ?","T'as un copain ou une copine ? 👀"],jessica:["Tu as pris quelles spécialités ?","Tu veux venir aux cours particuliers ? 📚","Tu habites loin ?"],noemie:["Tu fais quel sport ?","T'es de quelle commune ?","Tu viens voir notre match samedi ?"],eva:["Tu aimes l'art ? 🎨","Tu habites où ?","Tu veux venir à l'atelier d'arts plastiques ? 🌸"],kenza:["T'as Insta ? Je te suis 😘","Tu sors le week-end ?","T'as un copain ou une copine ? 👀"],anais:["Tu cours le matin ? 😂","Tu viendras voir nos matchs ?","T'es de quelle commune ?"],sacha:["T'es d'où ?","Tu joues d'un instrument ?","Zouk ou dancehall ?"]};
 const introLine=id=>genderize(pickR(INTRO_Q[id]).replace('{nouv}',nouv()),id);
 
 /* ---------- potins : un·e élève fait quelque chose qui sort de l'ordinaire, selon sa personnalité ---------- */
 const INCIDENTS={
+ meisha:[{t:"Meisha a dépensé tout son argent de poche du mois en une seule après-midi à Jarry… le 3 du mois 🛍️😭",self:"c'était des soldes, c'est un investissement 💅"},
+  {t:"La rubrique mode de Meisha a classé les tenues des profs. M. Lancelot est arrivé dernier et ne s'en remet pas 😂",self:"j'ai été honnête, c'est tout 😇"},
+  {t:"Meisha et Kenza sont venues au lycée avec exactement la même tenue. Par hasard, jurent-elles 👯‍♀️",self:"on est jumelles, c'est normal 😂"}],
+ jessica:[{t:"Jessica a corrigé une erreur au tableau… du prof de maths. M. Lancelot a dû reconnaître qu'elle avait raison 😳📐",self:"je l'ai dit gentiment 😅"},
+  {t:"Jessica a eu 20/20 au bac blanc de physique. Rumeur : elle a rendu sa copie 40 minutes en avance 🤯",self:"j'ai juste beaucoup révisé 😊"}],
+ noemie:[{t:"Noémie a mis un petit pont à Kylian devant toute la cour. Il ne s'en remet toujours pas 😭⚽",self:"fallait pas me chauffer 😂"},
+  {t:"Noémie a contesté une décision de l'arbitre pendant 10 minutes. Carton jaune… et standing ovation des supporters 😤",self:"il y avait main, tout le monde l'a vu !!"}],
+ eva:[{t:"Eva a peint une fresque géante sur le mur du foyer… sans autorisation. La proviseure a fini par dire qu'elle la gardait 🎨😳",self:"je suis désolée… mais contente qu'elle reste 🥹"},
+  {t:"Kylian a écrit « EVA ❤️ » avec des coquillages sur la plage et l'a posté. Tout le lycée en parle 🐚💕",self:"il est trop bête… je l'aime 🥹"}],
+ kenza:[{t:"Kenza a reçu trois déclarations d'amour dans la même journée… dont une chantée devant la cantine 🎤😭",self:"je suis pas responsable de ce que ressentent les gens 😘"},
+  {t:"Kenza est arrivée au cours de philo avec 20 minutes de retard… et des lunettes de soleil. Mme Florent n'a rien dit 😶",self:"le soleil tapait fort ce matin ✨"},
+  {t:"Un garçon de première a offert un bouquet de roses à Kenza devant tout le lycée. Elle a pris une photo… et c'est tout 💐",self:"c'était mignon mais non 😅"}],
  anais:[{t:"Anaïs a été surprise en train d'escalader le portail du lycée à 6 h du matin… pour aller s'entraîner au gymnase 🤾‍♀️😭",self:"j'avais un match samedi, fallait bien s'entraîner 😂💪"},
   {t:"Anaïs a tagué « ALLEZ LES FILLES 🔥 » sur le mur du gymnase avant le match. Convoquée chez la proviseure 😬",self:"j'assume 😅 et on a gagné le match !"},
   {t:"Anaïs a fait tout le cours d'EPS en courant à reculons. M. Bourgeois ne sait plus quoi faire 😂",self:"échauffement spécial 😂"}],
@@ -2583,8 +2742,6 @@ function hudTick(){
  if(G.bonus>=BONUS_MAX)G.nextAt=Date.now()+RECHARGE;
  const ms=Math.max(0,G.nextAt-Date.now()),m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;
  const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
- const left=Math.ceil((G.adAt+30000-Date.now())/1000),ad=$('gAd');
- if(ad&&!ad.dataset.busy){ad.disabled=left>0;ad.textContent=left>0?`Pub dans ${left} s`:'Regarder une pub (+5 ⚡)'}
  if(changed)drawHUD();
 }
 setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(mg?1:(G.speed||1))},1000);
@@ -2697,8 +2854,8 @@ function sendReply(text,stance){
 function refreshPost(p){document.querySelectorAll(`.post[data-id="${p.id}"]`).forEach(el=>el.outerHTML=postHTML(p))}
 
 /* ---------- Insta : comptes, abonnements, débats ---------- */
-const BIO={ines:"Danse dancehall 💃 · K-drama addict 🥺 · Martinique ➜ Guadeloupe ✨",kylian:"⚽ n°10 · Saint-François 🎣 · tkt",maelle:"Capitaine pom-pom 📣 · soirées au Gosier 💅 · DM pour la liste",noah:"🏀 meneur · mangas · la cuisine de mamie 🍛",jade:"poèmes dans la marge.\nastronomie. pas de majuscules.",anais:"Capitaine hand 🤾‍♀️ · footing 6h 🌅 · toujours le smile 😄",sacha:"🎧 zouk · gwo ka · rap — nouveau son bientôt",potins:"Tout ce qui se passe au lycée 👀 · envoie tes potins en DM"};
-const FANS0={ines:412,kylian:986,maelle:2310,noah:644,jade:158,anais:871,sacha:1520,potins:3140};
+const BIO={ines:"Danse dancehall 💃 · K-drama addict 🥺 · Martinique ➜ Guadeloupe ✨",kylian:"⚽ n°10 · Saint-François 🎣 · tkt",maelle:"Capitaine pom-pom 📣 · soirées au Gosier 💅 · DM pour la liste",noah:"🏀 meneur · mangas · la cuisine de mamie 🍛",jade:"poèmes dans la marge.\nastronomie. pas de majuscules.",meisha:"🛍️ shopping addict · rubrique mode du journal ✍️ · ma jumelle @kenza.lcx 👯‍♀️",jessica:"📚 cours particuliers lun & mer 17h-19h · maths 📐 · Les Abymes 😊",noemie:"⚽ seule fille de l'équipe · Morne-à-l'Eau 💪 · on est ensemble",eva:"🎨 dessin · peinture · Petit-Bourg 🌸 · 💕 @kyky971",kenza:"Danse 💃 · mode 💅 · Baie-Mahault 🌴 · DM fermés (ou presque) 😘",anais:"Capitaine hand 🤾‍♀️ · footing 6h 🌅 · toujours le smile 😄",sacha:"🎧 zouk · gwo ka · rap — nouveau son bientôt",potins:"Tout ce qui se passe au lycée 👀 · envoie tes potins en DM"};
+const FANS0={ines:412,kylian:986,maelle:2310,noah:644,jade:158,anais:871,kenza:2680,eva:540,noemie:930,jessica:390,meisha:2140,sacha:1520,potins:3140};
 const FOLLOW_AT=20;
 /* posts des camarades selon leur personnalité (vie du lycée, passions, avis) ; Jade poste souvent des poèmes */
 const NPC_POSTS={
@@ -2710,6 +2867,16 @@ const NPC_POSTS={
   {text:"Le bac c'est dans combien de temps déjà ? Demandez pas, c'est pour un ami 😅"},{text:"Qui a dit que le foot c'était pas intelligent ? Venez débattre 😤"},{text:"Pêche avec mon père ce matin, 3 vivaneaux 🎣 respectez",scene:'plage'}],
  maelle:[{text:"Soirée vendredi au Gosier 🎉 liste fermée 💅",scene:'soiree'},{text:"Honnêtement l'uniforme au lycée ce serait littéralement la fin de la mode 🙄"},
   {text:"Nouvelle choré des pom-pom ce soir, vous allez pas être prêts 📣",scene:'basket'},{text:"Les gens qui passent leur midi au CDI… vous allez bien ? 🙄"},{text:"Rendez-vous aux casiers, j'ai un truc à vous montrer 👀",scene:'couloir'}],
+ meisha:[{text:"Haul de Jarry du jour 🛍️ j'ai été raisonnable (non)",scene:'couloir'},{text:"Nouvelle rubrique mode dans le journal : les tendances de la rentrée ✍️💅",scene:'couloir'},{text:"Ma jumelle et moi, toujours assorties 👯‍♀️ @kenza.lcx",scene:'plage'},
+  {text:"Avis impopulaire : les crocs, c'est non. Point."},{text:"Shopping fini, mon porte-monnaie pleure 😭🛍️",scene:'chambre'}],
+ jessica:[{text:"Cours particulier ce soir à 17 h, il reste des places 📚✏️",scene:'couloir'},{text:"Fiche de révision du jour : les suites en maths 📐"},{text:"J'ai fait des cookies pour le cours de mercredi 🍪",scene:'chambre'},
+  {text:"Astuce du jour : relire ses cours le soir même, ça change tout 😊"},{text:"Fière de mes élèves : +3 points de moyenne en un mois 📈",scene:'couloir'}],
+ noemie:[{text:"Triplé ce week-end ⚽⚽⚽ qui disait que le foot c'était pour les garçons ?",scene:'cour'},{text:"Entraînement sous la pluie, on lâche rien 💪",scene:'basket'},{text:"Le foot féminin mérite des stades pleins. Point."},
+  {text:"Bokit d'après-match avec l'équipe 🤤",scene:'cantine'},{text:"Mes frères ont encore perdu contre moi au jardin 😂",scene:'plage'}],
+ eva:[{text:"Croquis du jour 🎨 la cour sous la pluie",scene:'cour'},{text:"Coucher de soleil à peindre ce soir 🌅",scene:'plage'},{text:"Nouvelle toile terminée, je suis trop fière 🥹🎨",scene:'chambre'},
+  {text:"L'atelier d'arts plastiques prépare une expo au CDI, venez ! 🌸",scene:'couloir'},{text:"Le lycée devrait avoir plus de murs à peindre, vous trouvez pas ? 🎨"}],
+ kenza:[{text:"Nouvelle tenue, nouvelle moi ✨💅",scene:'couloir'},{text:"Golden hour à la plage, aucun filtre 🌅😘",scene:'plage'},{text:"Arrêtez de m'écrire « tu es libre samedi ? » 😂 la réponse est non"},
+  {text:"Répétition du club de danse ce soir, la choré va vous tuer 💃",scene:'basket'},{text:"Soirée chez Maëlle 🎉 on était les plus belles, évidemment 💋",scene:'soiree'}],
  noah:[{text:"Colombo cuisiné avec ma grand-mère, 10/10 🍛",scene:'cantine'},{text:"Match de basket jeudi, venez nous soutenir 🏀",scene:'basket'},
   {text:"Honnêtement les devoirs le week-end, ça devrait être interdit"},{text:"Le prof de physique a expliqué un truc et j'ai TOUT compris. Moment historique ptdr"}],
  ines:[{text:"Nouvelle choré dancehall apprise ce week-end 💃✨",scene:'chambre'},{text:"Quelqu'un regarde le nouveau K-drama ? J'ai pleuré 3 fois 🥺"},
@@ -2736,6 +2903,26 @@ const DEBATE={
  noah:{critic:'maelle',p:.3,def:['kylian','anais'],
   crit:["Genre tu cuisines maintenant ? 🙄 … ok c'est mignon","Noah qui comprend la physique, littéralement l'événement de l'année 💅"],
   auth:["ptdr t'es dure","Merci Maëlle… je crois ?"]},
+ meisha:{critic:'jade',p:.3,def:['kenza','ines','sacha'],
+  crit:["encore des achats. la planète apprécie.","une rubrique mode dans un journal du lycée. fascinant.","tu as acheté un nouveau sac pour ranger tes autres sacs ?"],
+  defl:["laisse ma jumelle tranquille 🙄","sa rubrique c'est la plus lue du journal","jalousie 💅"],
+  auth:["Jade, je t'offre un haut pour ton anniversaire, promis 😘","Chacun sa passion bébé 💅"]},
+ jessica:{critic:'maelle',p:.3,def:['jade','noemie','kylian'],
+  crit:["Genre tu postes des fiches de révision sur Insta ? 🙄","Littéralement la prof de la classe 💅","Personne t'a demandé un cours 🙄"],
+  defl:["elle m'a sauvé en maths, respect","laisse-la, elle aide tout le monde","jessica c'est la meilleure"],
+  auth:["La porte est ouverte lundi à 17 h, Maëlle 😊","Pas de souci, chacun son style 📚"]},
+ noemie:{critic:'maelle',p:.3,def:['anais','kylian','noah'],
+  crit:["Genre tu fais que du foot ? 🙄","Littéralement toujours en jogging 💅","Encore un match… passionnant 🙄"],
+  defl:["elle a mis un triplé, toi t'as fait quoi ?","laisse-la tranquille 🙄","noémie c'est la meilleure de l'équipe"],
+  auth:["Viens jouer et on en reparle 😂","T'inquiète, je joue mieux que je réponds ⚽"]},
+ eva:{critic:'kenza',p:.25,def:['kylian','jade','sacha'],
+  crit:["Encore un dessin ? Mignon 😘","Tu devrais mettre des photos de toi parfois, non ? ✨","C'est joli… pour une expo de collège 😅"],
+  defl:["laisse-la tranquille 🙄","ses dessins sont magnifiques","eva c'est une vraie artiste, point"],
+  auth:["Merci quand même 🌸","Chacun son style 💕","Pas grave, moi j'aime bien 🎨"]},
+ kenza:{critic:'jade',p:.4,def:['ines','kylian','noah'],
+  crit:["encore un selfie. le miroir doit être épuisé.","la beauté passe. les notes de philo restent.","fascinant, une photo de plus."],
+  defl:["laisse-la briller 🙄","t'es juste jalouse de ses likes","kenza reine, point final 👑"],
+  auth:["Jade, souris un peu, ça ne coûte rien 😘","Merci pour le like quand même 💋","Jalousie, quand tu nous tiens ✨"]},
  anais:{critic:'maelle',p:.3,def:['kylian','noah'],
   crit:["Le sport à 6 h c'est littéralement de la torture 🙄","Genre tu dors quand ?","On a compris, t'es sportive 💅"],
   auth:["Viens courir avec moi et on en reparle 😂💪","Le sport c'est la vie ! 🔥"]}};
@@ -2756,7 +2943,7 @@ function debateThread(p){
  return out}
 /* un camarade poste : texte de sa personnalité, photo éventuelle, commentaires et débat */
 function npcPost(by,t){
- const ppl=t.scene?[by,...(Math.random()<.5?[pickR(NPCS.filter(x=>x.id!==by)).id]:[])]:null;
+ const ppl=t.with&&coupleOf(by)===t.with?[by,t.with]:t.scene?[by,...(Math.random()<.5?[pickR(NPCS.filter(x=>x.id!==by)).id]:[])]:null;
  const p=mkPost({by,text:t.text,poem:!!t.poem,daily:!!t.daily,photo:ppl?{scene:t.scene,people:ppl,author:by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
  p.comments.push(...debateThread(p));
  NPCS.filter(x=>x.id!==by&&!p.comments.some(c=>c.by===x.id)).sort(()=>Math.random()-.5).slice(0,Math.random()<.5?1:2).forEach(x=>{
@@ -2870,7 +3057,7 @@ function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
  const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
- h+=clubCard();
+ h+=clubCard();h+=tutorCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
@@ -2971,9 +3158,10 @@ function openFiche(id){
 const PACTS=[['parler','Discuter'],['compliment','Complimenter'],['blague','Faire une blague'],['taquiner','Taquiner'],['flirt','Flirter'],['sortie','Proposer une sortie']];
 function openPerson(id){
  const ph=phase(),k=ph.key+id,acts=(G.place==='cantine'?[['asseoir',"S'asseoir avec "+(ilElle(id)==='il'?'lui':'elle')],...PACTS]:PACTS).filter(x=>x[0]!=='flirt'||iLike(id));
- openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>${WHO[id].name}</h2><p class="muted" style="margin:2px 0 0">${PLACES[G.place]} · ${statusOf(id)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>${WHO[id].name}</h2><p class="muted" style="margin:2px 0 0">${PLACES[G.place]||'Au lycée'} · ${statusOf(id)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <p class="muted" style="margin:0">${esc(ressentiShort(id))}</p>${gaugesHTML(id)}
  <div class="acts">${acts.map(([a,l])=>`<button class="act" type="button" data-pa="${a}" data-id="${id}" ${G.done[k+a]?'disabled':''}><span>${l}</span></button>`).join('')}</div>
+ ${romHTML(id)}
  <p class="story-text" id="paOut"></p>
  <div class="row"><button class="gbtn ghost" type="button" data-fiche="${id}">Voir sa fiche</button></div>`);
 }
@@ -3000,6 +3188,84 @@ function personAct(id,a){
  note(`${PACTS.concat([['asseoir',"Repas"]]).find(x=>x[0]===a)[1]} avec ${WHO[id].name}${ch?' : '+ch.split(' : ')[1]:''}`);
  checkObjectives();saveG();drawHUD();
 }
+/* ---------- romance : regards, mots doux, cadeaux, rendez-vous amoureux, déclaration ---------- */
+const takenBy=id=>{const c=coupleOf(id);return c&&c!=='me'?c:null};
+function seenFlirt(id){if(!G.partner||G.partner===id)return '';const map=presence(phase());if(!(map[G.place]||[]).includes(G.partner))return '';
+ relChange(G.partner,-4,-10);pushMsg(G.partner,'them',pickR(["J'ai tout vu. Sympa… 😒","Sérieux ?? Devant moi ?","On en parle plus tard."]));const m=P(`${WHO[G.partner].name} t'a vu·e faire les yeux doux à ${WHO[id].name}`);note(m);return ' · '+m}
+function romActs(id){return G.partner===id?[['calin','Faire un câlin 🤗'],['main','Lui prendre la main 🤝'],['bisou','Faire un bisou 😘'],['cadeau','Offrir un cadeau 🎁'],['rdv','Proposer un rendez-vous 💘']]
+ :[['regard','Lancer un regard complice 👀'],['mot','Glisser un mot doux 💌'],['main','Lui frôler la main 🤭'],['cadeau','Offrir un cadeau romantique 🎁'],['rdv','Proposer un rendez-vous amoureux 💘'],['declarer','Déclarer tes sentiments ❤️']]}
+function romHTML(id){if(!(iLike(id)||G.partner===id))return '';const k=phase().key+id;
+ return `<span class="eyebrow">💘 Romance</span><div class="acts">${romActs(id).map(([a,l])=>{const off=a==='cadeau'?G.done[G.day+'gift'+id]:a==='rdv'?G.done[G.day+'rdv'+id]:a==='declarer'?G.done[G.day+'decl'+id]:G.done[k+'ro'+a];return `<button class="act" type="button" data-ro="${a}" data-id="${id}" ${off?'disabled':''}><span>${l}</span></button>`}).join('')}</div>`}
+function romOut(id,line,ch,extra){const o=$('paOut');if(o)o.innerHTML=`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch||extra?`<br><small class="muted">${esc([ch,extra].filter(Boolean).join(' · '))}</small>`:''}`}
+function declareTo(id){const r=G.rel[id],t=takenBy(id);G.done[G.day+'decl'+id]=1;G.confessed=G.confessed||{};G.confessed[id]=1;
+ if(t)return {line:`Je suis touché·e… mais je suis avec ${WHO[t].name}. Je suis désolé·e.`,ch:relChange(id,-1,-3)};
+ if(npcLikesMe(id)&&r.amour>=50&&r.ami>=35){let ex='';if(G.partner&&G.partner!==id){const old=G.partner;ex=relChange(old,-10,-40);pushMsg(old,'them',"J'ai appris pour toi et "+WHO[id].name+"… c'est fini entre nous. 💔");note(`Tu as quitté ${WHO[old].name}`)}
+  G.partner=id;r.amour=Math.max(r.amour,85);G.posts.unshift(mkPost({by:'potins',text:`[Officiel] 💞 ${myHandle()} et ${WHO[id].handle}, c'est confirmé !`,c:50,r:800,l:21000}));note(`Tu es en couple avec ${WHO[id].name} 💞`);
+  return {line:pickR(["Moi aussi… depuis longtemps 🥹❤️","Tu peux pas savoir comme j'attendais ça 💕","Oui. Mille fois oui ❤️"]),ch:joinFx([relChange(id,5,10),ex]),ok:1}}
+ return {line:pickR(npcLikesMe(id)?["Je… j'ai besoin de te connaître un peu plus avant 😳","C'est trop tôt pour moi, laisse-moi un peu de temps 🙈"]:["Je t'apprécie beaucoup, mais seulement en ami·e…","Oh… je suis désolé·e, je ne ressens pas la même chose."]),ch:relChange(id,-2,npcLikesMe(id)?-3:-8)}}
+function romAct(id,a){const ph=phase(),k=ph.key+id,r=G.rel[id],f=FICHES[id],V=VOICE[id],t=takenBy(id),likes=npcLikesMe(id),mine=G.partner===id;
+ if(a==='cadeau'){openSheet(giftSheet(id));return}
+ if(a==='rdv'){openSheet(rdvSheet(id));return}
+ if(G.energy<2){toast(P('Trop fatigué·e : va manger ou te reposer'));return}
+ G.energy=clamp(G.energy-2,0,100);let da=0,dl=0,line;
+ if(a==='declarer'){const d=declareTo(id);romOut(id,d.line,d.ch);if(d.ok)setTimeout(()=>openPerson(id),1600);checkObjectives();saveG();drawHUD();return}
+ G.done[k+'ro'+a]=1;
+ if(mine){if(a==='calin'){da=3;dl=4;line=pickR(["*se blottit contre toi* 🥹","J'avais besoin de ça 💕","Reste encore un peu…"])}
+  else if(a==='main'){da=2;dl=4;line=pickR(["*serre ta main et sourit*","On marche comme ça jusqu'en cours ? 🥰","*entrelace ses doigts aux tiens*"])}
+  else{da=2;dl=6;line=pickR(["*rougit* Pas devant tout le monde 🙈… encore un ?","😘❤️","T'es trop mignon·ne quand tu fais ça"]);if(Math.random()<.25)fPotins(`on a vu ${myHandle()} et ${WHO[id].handle} s'embrasser près des casiers 😳💞`)}}
+ else if(a==='regard'){if(likes&&!t){da=1;dl=Math.round(2+f.rom*3);line=pickR(["*rougit et détourne les yeux* 🙈","*te rend ton sourire*","Pourquoi tu me regardes comme ça ? 😳"])}else{line=t?"*détourne le regard*":"*ne remarque rien et continue de parler*"}}
+ else if(a==='mot'){if(likes&&!t&&r.amour>=10){da=1;dl=Math.round(4+f.rom*4);line=pickR(["J'ai trouvé ton mot… c'était toi ? 🥹","Ton petit mot m'a fait sourire toute la journée 💕","Je l'ai gardé dans ma trousse 🙈"])}
+  else if(likes&&!t){dl=2;line="Un mot doux ? De toi ? 😳 Je… merci."}else{line=t?`C'est gentil, mais je suis avec ${WHO[t].name}…`:"Euh… merci ? 😅";da=t?-1:0}}
+ else if(a==='main'){if(likes&&!t&&r.amour>=35){da=1;dl=Math.round(5+f.rom*4);line=pickR(["*ne retire pas sa main* 😳","*serre doucement ta main*","*sourit sans rien dire*"])}else{da=-2;dl=-2;line=pickR(["*retire sa main* Euh…","Qu'est-ce que tu fais ? 😅"])}}
+ const ch=relChange(id,da,dl);romOut(id,line,ch,seenFlirt(id).replace(/^ · /,''));
+ document.querySelectorAll(`[data-ro="${a}"]`).forEach(b=>b.disabled=true);note(`${romActs(id).find(x=>x[0]===a)[1]} · ${WHO[id].name}${ch?' : '+ch.split(' : ')[1]:''}`);checkObjectives();saveG();drawHUD()}
+const giftsFor=id=>[{k:'hibiscus',n:"Une fleur d'hibiscus 🌺",g:0,dl:4,da:1},{k:'lettre',n:"Une lettre d'amour écrite à la main 💌",g:0,dl:8,da:0,need:30},{k:'choco',n:'Une boîte de chocolats 🍫',g:2,dl:6,da:2},
+ {k:'peluche',n:'Une peluche 🧸',g:3,dl:7,da:2},{k:'fav',n:`Une surprise : ${FAV[id]?FAV[id].plat:'son plat préféré'} 😋`,g:3,dl:8,da:5},{k:'bracelet',n:'Un bracelet gravé à son prénom 📿',g:5,dl:12,da:3}];
+function giftSheet(id,msg){const done=G.done[G.day+'gift'+id];
+ return `<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>Offrir un cadeau</h2><p class="muted" style="margin:2px 0 0">à ${WHO[id].name}${gemTxt(` · tu as ${G.gems} gemmes`)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`
+ +(msg?`<div class="card felt"><p style="margin:0">${msg}</p></div>`:'')
+ +(done?`<p class="muted">Un cadeau par jour et par personne. Reviens demain 😉</p>`:`<div class="choices">${giftsFor(id).map(x=>`<button class="choice" type="button" data-gift="${x.k}" data-id="${id}" ${GEMS_ON&&x.g>G.gems?'disabled':''}>${esc(x.n)}${GEMS_ON?`<small class="t-pos">${x.g?x.g+' gemmes':'gratuit'}</small>`:''}</button>`).join('')}</div>`)
+ +`<div class="row"><button class="gbtn ghost" type="button" data-pback="${id}">Retour</button></div>`}
+function giveGift(id,gk){if(G.done[G.day+'gift'+id])return;const x=giftsFor(id).find(g=>g.k===gk);if(!x||GEMS_ON&&x.g>G.gems)return;const r=G.rel[id],t=takenBy(id),likes=npcLikesMe(id),mine=G.partner===id;
+ if(GEMS_ON)G.gems-=x.g;G.done[G.day+'gift'+id]=1;let da=x.da,dl=x.dl,line;
+ if(t){dl=0;da=Math.max(0,da-1);line=`C'est adorable… mais je suis avec ${WHO[t].name}, je ne peux pas accepter ça comme ça 😕`}
+ else if(!likes){dl=0;da+=1;line=pickR(["Oh, merci ! C'est trop gentil… en ami·e, hein ? 😅","Trop mignon, merci 😊"])}
+ else if(x.need&&r.amour<x.need&&!mine){dl=2;line="Une lettre d'amour ?? 😳 Je… je ne sais pas quoi dire. Je la garde."}
+ else line=pickR(mine?["T'es le ou la meilleur·e 🥹❤️","Je vais le garder pour toujours 💕","Tu me gâtes trop…"]:["Pour moi ?? 🥹 Merci…","Je rougis là, arrête 🙈💕","Personne ne m'avait jamais offert ça…"]);
+ if(gk==='fav'&&!t)line=`Mais comment tu savais que j'adore ${FAV[id]?FAV[id].plat:'ça'} ?? 😍`;
+ const ch=relChange(id,da,dl),sf=seenFlirt(id);if(G.partner&&G.partner!==id&&!sf&&Math.random()<.3){fPotins(`${myHandle()} a offert un cadeau à ${WHO[id].handle}… et ce n'est pas son ou sa partenaire 👀`);jealous(id)}
+ note(`Cadeau pour ${WHO[id].name} : ${x.n}${ch?' · '+ch.split(' : ')[1]:''}`);saveG();drawHUD();
+ openSheet(giftSheet(id,`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}${GEMS_ON&&x.g?` · −${x.g} gemmes`:''}${esc(sf)}</small>`:''}`))}
+const DATE_SPOTS={sainteanne:['Coucher de soleil à la plage de Sainte-Anne 🌅','plage'],glacier:['Une glace au glacier du Gosier 🍦','cantine'],cinema:['Une séance de cinéma 🍿','soiree'],resto:['Un dîner au restaurant créole 🕯️','soiree'],carbet:['Un pique-nique aux chutes du Carbet 🌿','plage']};
+function rdvSheet(id,msg){const done=G.done[G.day+'rdv'+id];
+ return `<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>Rendez-vous amoureux</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[id].name} · amour ${G.rel[id].amour}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`
+ +(msg?`<div class="card felt"><p style="margin:0">${msg}</p></div>`:'')
+ +(done?`<p class="muted">Tu as déjà proposé un rendez-vous aujourd'hui.</p>`:`<p class="story-text">Où veux-tu l'emmener ?</p><div class="choices">${Object.entries(DATE_SPOTS).map(([k,[n]])=>`<button class="choice" type="button" data-rdv="${k}" data-id="${id}">${esc(n)}</button>`).join('')}</div>`)
+ +`<div class="row"><button class="gbtn ghost" type="button" data-pback="${id}">Retour</button></div>`}
+function proposeDate(id,spot){if(G.done[G.day+'rdv'+id])return;G.done[G.day+'rdv'+id]=1;const r=G.rel[id],t=takenBy(id),mine=G.partner===id,ph=phase();
+ const p=mine?.92:t||!npcLikesMe(id)?0:clamp((r.amour-10)/60+(r.ami-30)/120,.05,.95);let line,ch='';
+ if(Math.random()<p&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){
+  let day=G.day,hour=18;if(ph.type!=='weekend'&&G.min>=16*60||G.min>=17*60+30){day=G.day+1;hour=wdOf(day)>=5||!schoolDay(day)?15:18}
+  const pl={id:'pl'+Date.now()+Math.floor(Math.random()*999),by:id,day,hour,place:spot,status:'accepted',date:true};G.plans.push(pl);
+  line=pickR(["Oui !! J'ai trop hâte 🥹💕","Un vrai rendez-vous ? Avec toi ? Oui 😳❤️","Carrément. Je mets ma plus belle tenue 😏"])+` · ${PLACE_OUT[spot]} ${planWhen(pl)}`;ch=relChange(id,1,3);note(`💘 Rendez-vous avec ${WHO[id].name} ${PLACE_OUT[spot]} ${planWhen(pl)}`);
+  if(G.partner&&!mine)jealous(id)}
+ else{line=t?`Je ne peux pas… je suis avec ${WHO[t].name}.`:!npcLikesMe(id)?pickR(["Un rendez-vous… en ami·e alors ? Non, désolé·e, je préfère pas 😅","Je t'adore, mais pas comme ça…"]):pickR(["C'est un peu tôt pour moi… 🙈","Pas cette fois, mais redemande-moi 😉","Je… je ne suis pas prêt·e"]);ch=relChange(id,-1,t||!npcLikesMe(id)?-4:-1)}
+ saveG();drawHUD();openSheet(rdvSheet(id,`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}</small>`:''}`))}
+const DATE_MOMENTS=[['d_main','Marcher main dans la main 🤝',3,8],['d_fleur',"Lui offrir une fleur d'hibiscus 🌺",2,7],['d_rire',"Rire ensemble jusqu'aux larmes 😂",5,4],['d_photo','Prendre une photo de couple 📸',3,5],['d_bisou','Tenter un bisou 😘',2,12],['d_declare','Lui avouer tes sentiments ❤️',0,0]];
+function dateSheet(p,msg){const id=p.by,used=p.used||[],left=2-used.length,L=DATE_MOMENTS.filter(m=>!used.includes(m[0])&&!(m[0]==='d_declare'&&G.partner===id));
+ return `<div class="who"><div class="av">${avatarOf(id)}</div><div><h2>💘 Rendez-vous ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[id].name} · ${fmtT(G.min)}</p></div></div>`
+ +(msg?`<div class="card felt"><p style="margin:0">${msg}</p></div>`:`<p class="story-text">${WHO[id].name} est arrivé·e en avance et t'attend avec un grand sourire. ${DATE_SPOTS[p.place][0]}… l'ambiance est parfaite.</p>`)
+ +(left>0?`<span class="eyebrow">Que faites-vous ? · ${left} moment${left>1?'s':''}</span><div class="choices">${L.map(m=>`<button class="choice" type="button" data-out="${m[0]}" data-pl="${p.id}">${esc(m[1])}</button>`).join('')}</div>`:'')
+ +`<div class="row"><button class="gbtn ${left>0?'ghost':''}" type="button" data-close>${left>0?'Rentrer':'Fin du rendez-vous 💕'}</button></div>`}
+function dateMoment(p,k){const id=p.by,r=G.rel[id],m=DATE_MOMENTS.find(x=>x[0]===k);if(!m)return;p.used=p.used||[];if(p.used.length>=2||p.used.includes(k))return;
+ if(!p.used.length){G.st.outings++;G.energy=clamp(G.energy-8,0,100);if(Math.random()<.4)fPotins(`${myHandle()} et ${WHO[id].handle} aperçus en amoureux ${PLACE_OUT[p.place]} 👀💘`)}
+ p.used.push(k);let line,ch;
+ if(k==='d_declare'){const d=declareTo(id);line=d.line;ch=d.ch}
+ else if(k==='d_bisou'){if(G.partner===id||r.amour>=60){line=pickR(["*ferme les yeux* … 🥹❤️","Enfin… 😳💕","*sourit contre tes lèvres*"]);ch=relChange(id,m[2],m[3])}else{line=pickR(["*recule un peu* Doucement… 😅","Attends, c'est trop tôt 🙈"]);ch=relChange(id,-2,-5)}}
+ else{line=pickR(VOICE[id].happy);ch=relChange(id,m[2],m[3]);
+  if(k==='d_photo')G.posts.unshift(mkPost({by:id,text:pickR([`Meilleur rendez-vous ${PLACE_OUT[p.place]} 💕`,`Moi et ${myHandle()} 🥹`,'Soirée parfaite ✨💘']),photo:{scene:DATE_SPOTS[p.place][1],people:[id,'me'],author:id},c:8,r:40,l:900,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==id)).id)]}))}
+ note(`💘 Rendez-vous avec ${WHO[id].name} : ${(ch||'').split(' : ')[1]||'beau moment'}`);checkObjectives();saveG();drawHUD();
+ openSheet(dateSheet(p,`${esc(m[1])}<br><b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}</small>`:''}`))}
 function classAct(k){
  const ph=phase();if(ph.type!=='cours'||G.acts<=0)return;const A=ACTS[k],s=ph.prof[1],nb=neighborOf(ph);
  if(G.energy<A.e){toast("Pas assez d'énergie");return}
@@ -3007,8 +3273,8 @@ function classAct(k){
  if(k==='exo'){classGame(ph);return}
  G.acts--;G.energy=clamp(G.energy-A.e,0,100);
  let msg='';const caught=Math.random()<A.risk*s;
- if(k==='notes'){G.know[ph.sub]=clamp(G.know[ph.sub]+7,0,100);G.cb+=1;G.st.notes++;msg=`Tu prends des notes. Chances de réussite en ${SUBJ[ph.sub]} +7 %`}
- else if(k==='main'){const ok=Math.random()<.35+G.know[ph.sub]/150;if(ok){G.know[ph.sub]=clamp(G.know[ph.sub]+3,0,100);G.cb+=.5;msg=gtxt(`Bonne réponse ! ${ph.prof[0]} est content·e.`,profSex(ph.prof[0]))}else msg='Mauvaise réponse… quelques rires dans la classe.'}
+ if(k==='notes'){const g=gainK(ph.sub,7);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);G.cb+=1;G.st.notes++;msg=`Tu prends des notes. Chances de réussite en ${SUBJ[ph.sub]} +${g} %`}
+ else if(k==='main'){const ok=Math.random()<.35+G.know[ph.sub]/150;if(ok){G.know[ph.sub]=clamp(G.know[ph.sub]+gainK(ph.sub,3),0,100);G.cb+=.5;msg=gtxt(`Bonne réponse ! ${ph.prof[0]} est content·e.`,profSex(ph.prof[0]))}else msg='Mauvaise réponse… quelques rires dans la classe.'}
  else if(k==='voisin'){if(caught)msg=punish(ph);else{const ch=relChange(nb,3);msg=`${WHO[nb].name} chuchote : « ${pickR(VOICE[nb].start)} » · ${ch}`}}
  else if(k==='dessin'){if(caught)msg=punish(ph);else{G.energy=clamp(G.energy+3,0,100);G.know[ph.sub]=clamp(G.know[ph.sub]-1,0,100);msg='Tu dessines dans la marge. Ça détend.'}}
  else if(k==='dormir'){if(caught)msg=punish(ph);else{G.energy=clamp(G.energy+15,0,100);G.cb-=1.5;msg='Petite sieste discrète… +15 énergie, mais tu as raté une partie du cours.'}}
@@ -3117,7 +3383,7 @@ function drawQuiz(){const q=mg.Q[mg.i],ans=shuf(q.slice(1));mg.cur={ok:q[1],sub:
  openSheet(mgHead(mg.title,`${MINI_NAME.quiz}${q.sub?' · '+SUBJ[q.sub]:''} · question ${mg.i+1}/${mg.Q.length}`)+`<p class="story-text mg-q">${q[0]}</p><div class="choices">${ans.map(a=>`<button class="choice" type="button" data-mgq="${esc(a)}">${esc(a)}</button>`).join('')}</div>`,true)}
 function quizPick(a,btn){if(!mg||mg.kind!=='quiz'||mg.lock)return;const good=a===mg.cur.ok;if(good)mg.ok++;mg.res.push({sub:mg.cur.sub,good});mg.lock=true;
  $('sheetBody').querySelectorAll('[data-mgq]').forEach(b=>{if(b.dataset.mgq===mg.cur.ok)b.classList.add('mg-good');else if(b===btn)b.classList.add('mg-bad');b.disabled=true});
- setTimeout(()=>{if(!mg)return;mg.lock=false;mg.i++;if(mg.i>=mg.Q.length)miniEnd(mg.ok/mg.Q.length*(.85+.15*mg.left/mg.t));else drawQuiz()},good?450:900)}
+ setTimeout(()=>{if(!mg)return;mg.lock=false;mg.i++;if(mg.i>=mg.Q.length)miniEnd(mg.ok/mg.Q.length);else drawQuiz()},good?450:900)}
 function drawMemo(){openSheet(mgHead(mg.title,`${MINI_NAME.memoire} · ${SUBJ[mg.sub]} · retrouve chaque mot et sa traduction (${mg.found}/${mg.P.length})`)+`<div class="mg-grid">${mg.cards.map((c,k)=>`<button class="mg-card${c.f?' mg-found':mg.open.includes(k)?' mg-open':''}" type="button" data-mgc="${k}" ${c.f?'disabled':''}>${c.f||mg.open.includes(k)?esc(c.t):'?'}</button>`).join('')}</div>`,true)}
 function memoPick(k){if(!mg||mg.kind!=='memoire'||mg.lock)return;const c=mg.cards[k];if(c.f||mg.open.includes(k))return;mg.open.push(k);drawMemo();miniTick();
  if(mg.open.length<2)return;mg.tries++;const [a,b]=mg.open.map(x=>mg.cards[x]);
@@ -3131,13 +3397,13 @@ function miniResult(title,line,extra){openSheet(sheetHead(title,line)+(extra||''
 /* révisions : le mini-jeu remplace le +8 fixe (de +3 à +12 selon le score) */
 function reviseGame(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
  G.energy=clamp(G.energy-cost,0,100);G.studied[s]=1;saveG();drawHUD();
- playMini({sub:s,title:'Révisions de '+SUBJ[s]},sc=>{const g=3+Math.round(9*sc);G.know[s]=clamp(G.know[s]+g,0,100);G.st.games=(G.st.games||0)+1;note(`Révisions de ${SUBJ[s]} (mini-jeu : ${Math.round(sc*100)} %)`);
+ playMini({sub:s,title:'Révisions de '+SUBJ[s]},sc=>{const g=gainK(s,3+Math.round(9*sc));G.know[s]=clamp(G.know[s]+g,0,100);G.st.games=(G.st.games||0)+1;note(`Révisions de ${SUBJ[s]} (mini-jeu : ${Math.round(sc*100)} %)`);
   miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[s]} +${g} % de chances de réussite (${G.know[s]} %)`);saveG();drawHUD();drawView()})}
-/* exercice en cours : 3 questions, de +1 à +8 */
+/* exercice en cours : 3 questions, de −8 à +8 selon la réussite (puis niveau et facilités) */
 function classGame(ph){G.acts--;G.energy=clamp(G.energy-ACTS.exo.e,0,100);G.cb+=.5;saveG();
- playMini({sub:ph.sub,n:3,t:MINI_KIND(ph.sub)==='quiz'?25:undefined,title:`Exercice de ${SUBJ[ph.sub]}`},sc=>{const g=1+Math.round(7*sc);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);if(sc>=.65)G.cb+=.5;
-  const msg=sc>=.65?gtxt(`${ph.prof[0]} est content·e de ton exercice !`,profSex(ph.prof[0])):'Exercice difficile… tu as quand même appris des choses.';note(msg);
-  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} +${g} %`,`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})}
+ playMini({sub:ph.sub,n:3,t:MINI_KIND(ph.sub)==='quiz'?25:undefined,title:`Exercice de ${SUBJ[ph.sub]}`},sc=>{const g=clamp(gainK(ph.sub,Math.round(16*sc-8)),-8,8);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);if(sc>=.65)G.cb+=.5;
+  const msg=sc>=.65?gtxt(`${ph.prof[0]} est content·e de ton exercice !`,profSex(ph.prof[0])):sc>=.5?'Exercice moyen, tu progresses un peu.':'Exercice raté… tu perds un peu confiance dans cette matière.';note(msg);
+  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} ${g>=0?'+':''}${g} %`,`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})}
 /* évaluation du vendredi : une question par matière ; bonne réponse +1,5 sur la note, mauvaise −0,5 */
 function evalGame(){if(G.evalBonus[G.day]){toast('Tu as déjà rendu ta copie');return}
  playMini({subs:Object.keys(SUBJ),t:75,title:'Évaluation commune'},(sc,m)=>{const b={};(m.res||[]).forEach(r=>{b[r.sub]=r.good?1.5:-.5});G.evalBonus[G.day]=b;
@@ -3147,8 +3413,9 @@ function bacGame(k){if(G.bac.bonus[k]!=null){toast('Épreuve déjà passée');re
  playMini({sub:k,n:6,t:MINI_KIND(k)==='quiz'?45:undefined,title:'Bac · '+SUBJ[k]},sc=>{G.bac.bonus[k]=r2((sc-.5)*4);
   miniResult(scoreLbl(sc),`Épreuve de ${SUBJ[k]} terminée · score ${Math.round(sc*100)} %`,`<p class="muted">Ton résultat compte dans la note de l'épreuve (de −2 à +2 points).</p>`);saveG();drawView()})}
 function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
- G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+4,0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
+ G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+gainK(s,4),0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
 function startOuting(p){if(p.fam){startFamOuting(p);return}
+ if(p.date){openSheet(dateSheet(p));return}
  openSheet(`<div class="who"><div class="av">${avatarOf(p.by)}</div><div><h2>Sortie ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[p.by].name} · ${fmtT(G.min)}</p></div></div>
  <p class="story-text">${WHO[p.by].name} t'attend ${PLACE_OUT[p.place]}. Qu'est-ce que vous faites ?</p>
  <div class="choices"><button class="choice" type="button" data-out="fun" data-pl="${p.id}">On rigole et on se balade<small class="t-pos">Amitié</small></button>
@@ -3157,7 +3424,7 @@ function startOuting(p){if(p.fam){startFamOuting(p);return}
  <button class="choice" type="button" data-out="romance" data-pl="${p.id}">Un moment plus romantique<small class="t-${G.rel[p.by].ami>=55?'pos':'neg'}">Amour</small></button></div>`);
 }
 function outing(kind,pid){
- const p=G.plans.find(x=>x.id===pid);if(!p)return;const id=p.by,r=G.rel[id];let ch,msg;G.st.outings++;G.energy=clamp(G.energy-8,0,100);
+ const p=G.plans.find(x=>x.id===pid);if(!p)return;if(kind.startsWith('d_')){dateMoment(p,kind);return}const id=p.by,r=G.rel[id];let ch,msg;G.st.outings++;G.energy=clamp(G.energy-8,0,100);
  if(kind==='fun')ch=relChange(id,7,1);else if(kind==='deep')ch=relChange(id,6,2);
  else if(kind==='photo'){ch=relChange(id,5,1);G.posts.unshift(mkPost({by:id,text:`Sortie ${PLACE_OUT[p.place]} avec ${myHandle()} ✨`,photo:{scene:p.place==='plage'?'plage':p.place==='glacier'?'cantine':'cour',people:[id,'me'],author:id},c:5,r:30,l:600,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==id)).id)]}))}
  else ch=r.ami>=55?relChange(id,2,9):relChange(id,-3,-2);
@@ -3281,8 +3548,15 @@ const DAILY={
  maelle:{m:["{jour} : tenue validée 💅","Le cours de {mat} va être littéralement interminable 🙄"],j:["Répétition pom-pom à 17 h, soyez à l'heure 📣","Les potins du jour… je dis rien 🤐","Selfie du jour parce que pourquoi pas 💅"],s:["Qui vient faire du shopping samedi ?","Littéralement épuisée, bonne nuit 💤","Soirée Netflix et masque visage 💅"]},
  noah:{m:["Bonjour la team 🏀","{mat} ce matin, j'ai pris des notes pour une fois ptdr"],j:["Qui a compris l'exo 3 de {mat} ?","Shoot du jour : 8 paniers sur 10 🏀","Entraînement de basket ce soir 💪"],s:["Mamie a fait du gratin de christophine 😍","Nouveau tome de mon manga préféré 📚","Bonne nuit tout le monde"]},
  jade:{m:["{jour}. café. cours de {mat}. survivre.","le matin, la cour est silencieuse. c'est mon moment préféré."],j:["j'ai trouvé un livre de 1952 au cdi. je suis heureuse.","bibliothèque > tout le reste"],s:["le ciel est rose ce soir au-dessus de sainte-anne","la lune est presque pleine. levez les yeux ce soir.","bonne nuit à ceux qui regardent encore les étoiles"]},
+ meisha:{m:["{jour} : tenue assortie avec Kenza 👯‍♀️","Cours de {mat}… je dessine des robes dans la marge 😅"],j:["Réunion du journal à midi ✍️","Qui vient à Jarry après les cours ? 🛍️","Kenza m'a encore piqué mon gloss 😤💅"],s:["Haul du jour en story 🛍️","J'écris ma rubrique mode 📝","Bonne nuit, demain on brille ✨"]},
+ jessica:{m:["{jour} : fiches prêtes ✏️","Cours de {mat} ce matin, j'adore ce chapitre 😊"],j:["Pause cookies au CDI 🍪","Qui a besoin d'aide pour le devoir de {mat} ?","Cours particulier ce soir 17 h 📚"],s:["Mon petit frère a eu 17 en maths 🥹","Roman policier avant de dormir 🔍","Bonne nuit, et n'oubliez pas de relire vos cours 😊"]},
+ noemie:{m:["{jour}, jonglage avant les cours ⚽","Cours de {mat}… j'ai mal aux jambes 😂"],j:["Foot à la récré, qui vient ? ⚽","Petit pont à Kylian, encore 😂","Entraînement ce soir 💪"],s:["Match de l'équipe de France féminine ce soir 🇫🇷⚽","Colombo de ma mère après l'entraînement 🍛","Bonne nuit, demain on gagne 💪"]},
+ eva:{m:["Bonjour 🌸 {jour} commence avec un croquis","Cours de {mat}… j'ai dessiné dans la marge, pardon 🙈"],j:["Pause dessin au CDI 🎨","Kylian m'a apporté un sorbet coco 🥹💕","Atelier d'arts plastiques ce soir 🌸"],s:["Aquarelle avant de dormir 🎨","Ma petite sœur m'a dessiné un chat, trop mignon 🐱","Bonne nuit 🌙💕"]},
+ kenza:{m:["{jour} : tenue du jour validée 💅✨","Cours de {mat}… réveillez-moi à la sonnerie 😴"],j:["Selfie de la récré parce que je le vaux bien 😘","Trois messages de garçons avant midi, record battu 😂","Répétition de danse ce soir 💃"],s:["Masque visage et R&B, bonne nuit 💆‍♀️","Je choisis déjà ma tenue de demain ✨","Bonne nuit, ne rêvez pas trop de moi 😘"]},
  anais:{m:["Footing de 6 h ✅ {jour} commence bien 🌅💪","Cours de {mat} puis entraînement, journée chargée ! 🔥"],j:["Séance de muscu au gymnase 💪","Qui vient courir sur la plage demain ? 🏃‍♀️","Victoire à l'entraînement, on lâche rien 🤾‍♀️"],s:["Mes petits frères ont transformé le salon en terrain de hand 😂","Smoothie mangue-passion après le sport 🥭","Bonne nuit, demain on recommence 💪😴"]},
  sacha:{m:["{jour}, nouvelle mélodie dans la tête 🎶","En retard au cours de {mat}… encore 😅"],j:["Session guitare au foyer à midi 🎸","Ma mère m'a appris un nouveau rythme de gwo ka 🥁","Le son avance, bientôt vous l'entendrez 🎧"],s:["Playlist du soir : zouk rétro 💿","Il pleut, parfait pour écrire 🌧️","Bonne nuit, la vibe est bonne ✌️"]}};
+const KY_LOVE=[{text:"Ma préférée 💕 @eva.clrv",scene:'plage',with:'eva'},{text:"Elle m'a dessiné… je suis trop beau dedans 😎❤️",scene:'cour',with:'eva'},{text:"Coucher de soleil avec ma copine, rien de mieux 🌅💕",scene:'plage',with:'eva'},
+ {text:"Je l'ai attendue après son atelier, elle m'a offert une peinture 🥹🎨",scene:'couloir',with:'eva'},{text:"Elle déteste quand je la prends en photo, donc je continue 😂❤️",scene:'cantine',with:'eva'},{text:"Merci la vie de m'avoir mis à côté d'elle en cours 🙏💕",scene:'couloir',with:'eva'}];
 const DAILY_SCENE={m:['cour','couloir'],j:['cantine','cour','basket','couloir'],s:['chambre','plage']};
 /* au début de chaque jour : 2 heures de publication par camarade (parfois 3), entre 7 h et 22 h 30 */
 function planPosts(){
@@ -3290,6 +3564,7 @@ function planPosts(){
  G.postQ.sort((a,b)=>a.at-b.at);
 }
 function pickPostFor(by){
+ if(by==='kylian'&&coupleOf('kylian')==='eva'&&Math.random()<.45){const r=G.posts.filter(p=>p.by===by).slice(0,8).map(p=>p.text),L=KY_LOVE.filter(t=>!r.includes(t.text));return pickR(L.length?L:KY_LOVE)}
  const recent=G.posts.filter(p=>p.by===by).slice(0,14).map(p=>p.text),sd=!!schoolDay(G.day),slot=G.min<660?'m':G.min>=1200?'s':'j';
  const fill=t=>t.replace('{jour}',t.startsWith('{jour}')&&by!=='jade'?DAYS[weekday()]:DAYS[weekday()].toLowerCase()).replace(/\{mat\}/g,()=>{const wd=weekday(),L=sd&&TT[wd]?TT[wd]:null;return L?SUBJ[pickR(L)].toLowerCase():'révisions'});
  const opinion=NPC_POSTS[by].filter(t=>!recent.includes(t.text)),daily=DAILY[by][slot].filter(t=>(sd||!t.includes('{mat}'))&&!recent.some(r=>r===fill(t)));
@@ -3375,6 +3650,16 @@ const EVENTS=[
   {t:"J'accepte le défi",rel:{kylian:7},gems:2,post:{by:'kylian',text:"match serré contre {me} ⚽ revanche demain",scene:'cour'}},{t:"Je propose d'arbitrer",rel:{kylian:2,noah:2}},{t:"Je l'ignore",rel:{kylian:-5}}]},
  {who:'ines',text:"Inès te confie qu'elle a raté son contrôle de SVT et qu'elle n'ose pas le dire chez elle.",choices:[
   {t:"Je la rassure",rel:{ines:9}},{t:"Je propose de réviser ensemble",rel:{ines:7},gems:1},{t:"Je change de sujet",rel:{ines:-6}}]},
+ {who:'meisha',text:"Meisha te demande de l'accompagner à Jarry : Kenza ne peut pas venir et elle « déteste faire du shopping seule ».",choices:[
+  {t:"J'y vais, on va tout dévaliser",rel:{meisha:8},post:{by:'meisha',text:"shopping à Jarry avec {me} 🛍️ nouvelle meilleure copine de shopping ?",scene:'couloir'}},{t:"Je propose d'écrire avec elle sa rubrique mode",rel:{meisha:6,jade:2}},{t:"Le shopping, très peu pour moi",rel:{meisha:-3}}]},
+ {who:'jessica',text:"Jessica te voit galérer sur un exercice de maths au CDI. Elle s'assoit à côté de toi : « Tu veux que je t'explique ? »",choices:[
+  {t:"Oui, merci beaucoup !",rel:{jessica:6}},{t:"Je m'inscris à ses cours particuliers",rel:{jessica:8},tutor:1},{t:"Non merci, je préfère chercher par moi-même",rel:{jessica:-2}}]},
+ {who:'noemie',text:"Noémie te défie aux tirs au but devant toute la cour. Les garçons parient déjà contre toi.",choices:[
+  {t:"J'accepte, je vais tout donner",rel:{noemie:8},post:{by:'noemie',text:"tirs au but contre {me} 😂 respect, t'as du cran ⚽",scene:'cour'}},{t:"Je propose d'être dans les buts à sa place",rel:{noemie:5,kylian:2}},{t:"Je refuse, trop de monde",rel:{noemie:-3}}]},
+ {who:'eva',text:"Eva a vu Kenza rire très fort avec Kylian à la récré. Elle te demande, les larmes aux yeux, si elle doit s'inquiéter.",choices:[
+  {t:"Je la rassure : Kylian n'a d'yeux que pour elle",rel:{eva:8,kylian:2}},{t:"Je lui conseille d'en parler à Kylian",rel:{eva:5}},{t:"Je lui dis de se méfier de Kenza",rel:{eva:4,kenza:-6}}]},
+ {who:'kenza',text:"Kenza te demande ton avis : elle hésite entre deux garçons qui l'ont invitée samedi… et te fixe un peu trop longtemps.",choices:[
+  {t:"Je lui conseille de suivre son cœur",rel:{kenza:6}},{t:"Je lui dis qu'elle joue trop avec les garçons",rel:{kenza:-6,jade:3}},{t:"Je lui propose plutôt une sortie avec moi",rel:{kenza:5},post:{by:'potins',text:"[Anonyme] : on a vu @kenza.lcx rigoler avec {me} pendant toute la récré 👀"}}]},
  {who:'anais',text:"Anaïs déboule dans la cour en riant : « Footing demain à 6 h sur la plage, tu viens avec moi ? »",choices:[
   {t:"Je viens, on va tout donner",rel:{anais:9},post:{by:'anais',text:"footing avec {me} ce matin 🏃‍♀️ on a tout donné !",scene:'plage'}},{t:"Je viendrai plutôt t'encourager au match",rel:{anais:4}},{t:"6 h ? Hors de question",rel:{anais:-2}}]}];
 function playEvent(){
@@ -3389,6 +3674,7 @@ function resolve(ei,ci){
  if(c.gems){G.gems+=c.gems;if(GEMS_ON)parts.push(`+${c.gems} gemmes`)}
  if(c.mark){mark(c.mark[0],c.mark[1]);parts.push(`${WHO[c.mark[0]].name} s'en souviendra`)}
  if(c.potins)fPotins(c.potins);
+ if(c.tutor&&!G.tutor){G.tutor=true;parts.push(P('Tu es inscrit·e aux cours particuliers de Jessica 📚 (lundi et mercredi, 17 h)'))}
  Object.entries(c.know||{}).forEach(([k,v])=>{G.know[k]=clamp(G.know[k]+v,0,100)});
  if(ev.choices.some(x=>x.mark))(G.evOnce=G.evOnce||[]).push(ei);groupTick();
  if(c.post){const by=c.post.by;G.posts.unshift(mkPost({by,text:c.post.text.replace('{me}',myHandle()),photo:c.post.scene?{scene:c.post.scene,people:[by,'me'],author:by}:null,c:Math.floor(Math.random()*30)+3,r:Math.floor(Math.random()*300)+10,l:Math.floor(Math.random()*6000)+200}));note(`${nameOf(by)} t'a identifié dans un post`)}
@@ -3398,14 +3684,15 @@ function resolve(ei,ci){
 
 /* ---------- clubs : séances le soir, projets et grands rendez-vous ---------- */
 const CLUBS={
- foot:{n:'Équipe de foot',ic:'⚽',wd:1,m:['kylian','noah'],sub:'eps',game:'eps',big:"Match contre le lycée Baimbridge",won:"Victoire contre Baimbridge ⚽🔥",lost:"Défaite de justesse contre Baimbridge"},
+ foot:{n:'Équipe de foot',ic:'⚽',wd:1,m:['kylian','noah','noemie'],sub:'eps',game:'eps',big:"Match contre le lycée Baimbridge",won:"Victoire contre Baimbridge ⚽🔥",lost:"Défaite de justesse contre Baimbridge"},
  hand:{n:'Équipe de hand',ic:'🤾',wd:3,m:['anais'],sub:'eps',game:'eps',big:"Tournoi de hand de l'académie",won:"Le lycée remporte le tournoi de hand 🏆",lost:"Le lycée sort en demi-finale du tournoi"},
  basket:{n:'Équipe de basket',ic:'🏀',wd:3,m:['noah','kylian'],sub:'eps',game:'eps',big:"Finale du championnat de basket",won:"Champions de basket ! 🏀",lost:"Finale perdue, mais quelle saison"},
- danse:{n:'Club de danse',ic:'💃',wd:0,m:['ines','maelle'],sub:'eps',game:'eps',big:"Spectacle de danse au foyer",won:"Standing ovation pour le club de danse 💃",lost:"Petit raté dans la choré, mais ambiance de folie"},
+ danse:{n:'Club de danse',ic:'💃',wd:0,m:['ines','maelle','kenza'],sub:'eps',game:'eps',big:"Spectacle de danse au foyer",won:"Standing ovation pour le club de danse 💃",lost:"Petit raté dans la choré, mais ambiance de folie"},
  theatre:{n:'Club théâtre',ic:'🎭',wd:2,m:['jade','sacha'],sub:'francais',game:'francais',big:"Représentation de fin de trimestre",won:"La pièce du club théâtre fait salle comble 🎭",lost:"Trou de mémoire sur scène… le public a ri quand même"},
- journal:{n:'Journal du lycée',ic:'📰',wd:1,m:['jade','maelle'],sub:'francais',game:'francais',big:"Numéro spécial du journal",won:"Le numéro spécial du journal s'arrache 📰",lost:"Le journal sort avec deux jours de retard"},
+ journal:{n:'Journal du lycée',ic:'📰',wd:1,m:['jade','maelle','jessica','meisha'],sub:'francais',game:'francais',big:"Numéro spécial du journal",won:"Le numéro spécial du journal s'arrache 📰",lost:"Le journal sort avec deux jours de retard"},
+ arts:{n:"Atelier d'arts plastiques",ic:'🎨',wd:2,m:['eva'],sub:'philo',game:'philo',big:"Exposition des élèves au CDI",won:"L'expo de l'atelier d'arts plastiques fait l'unanimité 🎨",lost:"Une toile est tombée pendant le vernissage… mais l'expo plaît quand même"},
  musique:{n:'Club de musique',ic:'🎸',wd:4,m:['sacha','ines'],sub:'anglais',game:'anglais',big:"Concert du club au foyer",won:"Le concert du club de musique enflamme le foyer 🎸",lost:"Coupure de son pendant le concert… mais tout le monde a chanté"}};
-const CLUB_OLD={ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',sacha:'musique'};
+const CLUB_OLD={ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'};
 const CLUB_MAX=2,CLUB_BIG=4;   /* 2 clubs au plus ; grand rendez-vous après 4 séances */
 const myClubs=()=>G.clubs||[];
 const clubToday=()=>myClubs().filter(c=>CLUBS[c].wd===weekday()&&schoolDay(G.day)!==null);
@@ -3416,11 +3703,51 @@ function clubToggle(k){const c=CLUBS[k];if(!c)return;let msg;
  else if(myClubs().length>=CLUB_MAX)msg='Tu fais déjà partie de 2 clubs : quittes-en un avant.';
  else{G.clubs=[...myClubs(),k];msg=joinFx([`Bienvenue au ${c.n.toLowerCase()} ! Séance chaque ${DAYS[c.wd].toLowerCase()} soir.`,...c.m.map(i=>relChange(i,4))]);note(`${c.ic} Tu rejoins : ${c.n}`)}
  saveG();openSheet(clubsSheet(msg));drawView()}
+/* ---------- cours particuliers de Jessica : lundi et mercredi, 17 h – 19 h ; quiz toutes matières mélangées, puis discussion ---------- */
+const TUTOR={who:'jessica',days:[0,2],start:1020,end:1140,e:6,subs:['maths','francais','histoire','svt','anglais','physique','philo','espagnol']};
+const TUTOR_TALK=[
+ {t:"La remercier pour son aide",r:["Avec plaisir 😊 tu progresses vraiment, tu sais","Oh, merci à toi de venir ! Ça me motive"],a:3},
+ {t:"Lui demander pourquoi elle donne ces cours",r:["Quand j'explique, je comprends encore mieux. Et j'aime voir les autres réussir 😊","En seconde, quelqu'un m'a aidée en physique. Je rends la pareille"],a:4},
+ {t:"Lui parler de ton stress pour le bac",r:["C'est normal… moi aussi je stresse. On fait un planning ensemble ? 📅","Respire. On avance chapitre par chapitre, et tu vas y arriver ✏️"],a:4},
+ {t:"Lui demander comment elle tient le rythme",r:["Honnêtement ? Parfois je dors très peu… mais chut 😅","Des listes, des listes et encore des listes 😂 et des cookies"],a:3},
+ {t:"Lui proposer de faire une pause ensemble",r:["Bonne idée, j'ai des cookies dans mon sac 🍪","Cinq minutes alors 😄 sinon je culpabilise"],a:4},
+ {t:"Lui demander ce qu'elle fait en dehors des cours",r:["Je lis des romans policiers et je fais de la pâtisserie 🧁","Je fais réviser mon petit frère Hugo… et je regarde des séries policières 🔍"],a:3},
+ {t:"La taquiner : « Tu n'as jamais eu en dessous de 18 ? »",r:["Si ! Un 12 en sport en troisième 😂","Haha… une fois, en espagnol. Je m'en souviens encore 😅"],a:2},
+ {t:"Lui dire qu'elle devrait se reposer un peu",r:["Tu as peut-être raison… merci de t'inquiéter pour moi 🥹","Ma mère me dit pareil 😅 je vais essayer"],a:4}];
+const tutorToday=()=>G.tutor&&TUTOR.days.includes(weekday())&&schoolDay(G.day)!==null;
+function tutorCard(){const j=WHO[TUTOR.who];
+ if(!G.tutor)return `<div class="card"><span class="eyebrow">Cours particuliers</span><div class="prof"><span>📚 <b>Avec ${j.name}</b> <small class="muted">lundi et mercredi · 17 h – 19 h · quiz toutes matières</small></span><button class="gbtn" type="button" data-tutorjoin>S'inscrire</button></div></div>`;
+ const done=G.done[G.day+'tutor'],now=G.min>=TUTOR.start&&G.min<TUTOR.end;
+ const act=!tutorToday()?'<small class="muted">lun. et mer.</small>':done?'<small class="muted">fait ✅</small>':now?'<button class="gbtn" type="button" data-tutorgo>Y aller</button>':G.min<TUTOR.start?'<small class="muted">à 17 h</small>':'<small class="muted">terminé</small>';
+ return `<div class="card"><span class="eyebrow">Cours particuliers <button class="linkbtn" type="button" data-tutorquit>se désinscrire</button></span><div class="prof"><span>📚 <b>Avec ${j.name}</b> <small class="muted">${G.tutorN||0} cours suivi${(G.tutorN||0)>1?'s':''} · lundi et mercredi, 17 h – 19 h</small></span>${act}</div></div>`}
+function tutorJoin(on){G.tutor=!!on;const m=on?joinFx(["Tu t'inscris aux cours particuliers de Jessica 📚",relChange(TUTOR.who,4)]):joinFx(['Tu te désinscris des cours particuliers',relChange(TUTOR.who,-2)]);
+ if(on)sayTo(TUTOR.who,["Super ! Rendez-vous lundi ou mercredi à 17 h, salle 12 😊📚","Trop bien ! Apporte tes questions, on reprend tout ensemble ✏️"]);
+ note(m);toast(m);saveG();drawView()}
+function tutorGo(){if(!tutorToday()||G.done[G.day+'tutor'])return;if(G.min<TUTOR.start||G.min>=TUTOR.end){toast('Le cours a lieu de 17 h à 19 h');return}
+ if(G.energy<TUTOR.e){toast("Pas assez d'énergie pour le cours");return}
+ G.energy=clamp(G.energy-TUTOR.e,0,100);G.done[G.day+'tutor']=1;G.tutorN=(G.tutorN||0)+1;
+ const subs=shuf(TUTOR.subs).slice(0,6);
+ playMini({subs,title:'📚 Cours particulier avec Jessica'},(sc,m)=>{
+  const gain={};(m.res||[]).forEach(r=>{gain[r.sub]=(gain[r.sub]||0)+gainK(r.sub,r.good?3:1)});
+  Object.entries(gain).forEach(([k,v])=>{G.know[k]=clamp((G.know[k]||0)+v,0,100)});
+  const rel=relChange(TUTOR.who,sc>=.65?3:2);
+  if(G.min<TUTOR.end)advance(TUTOR.end-G.min);
+  G.tutorTalk={n:0,opts:shuf(TUTOR_TALK.map((_,i)=>i)).slice(0,3),last:''};
+  G.tutorRes=joinFx([`Score ${Math.round(sc*100)} %`,Object.entries(gain).map(([k,v])=>`${SUBJ[k]} +${v} %`).join(', '),rel]);
+  note(`📚 Cours particulier avec Jessica : ${scoreLbl(sc)}`);saveG();drawHUD();openSheet(tutorTalkSheet());checkObjectives()})}
+function tutorTalkSheet(){const T=G.tutorTalk||{n:2,opts:[]},left=2-T.n;
+ return sheetHead('📚 Fin du cours avec Jessica',G.tutorRes||'')
+  +(T.last?`<div class="card felt"><p style="margin:0">${esc(T.last)}</p></div>`:`<p class="story-text">Jessica range ses fiches. C'est le moment de discuter un peu avec elle.</p>`)
+  +(left>0&&T.opts.length?`<span class="eyebrow">Discuter avec Jessica · ${left} échange${left>1?'s':''} possible${left>1?'s':''}</span><div class="choices">${T.opts.map(i=>`<button class="choice" type="button" data-tutortalk="${i}">${esc(P(TUTOR_TALK[i].t))}</button>`).join('')}</div>`:'')
+  +`<div class="row"><button class="gbtn ${left>0?'ghost':''}" type="button" data-close>${left>0?'Rentrer':'Au revoir Jessica'}</button></div>`}
+function tutorTalk(i){const T=G.tutorTalk;if(!T||T.n>=2||!T.opts.includes(i))return;const o=TUTOR_TALK[i];
+ T.n++;T.opts=T.opts.filter(x=>x!==i);const c=relChange(TUTOR.who,o.a);T.last=`Jessica : « ${genderize(pickR(o.r),TUTOR.who)} »${c?' · '+c:''}`;
+ saveG();openSheet(tutorTalkSheet())}
 /* séance : −8 énergie, amitié avec les membres, progrès dans la matière ; la 4e séance lance le grand rendez-vous (mini-jeu) */
 const CLUB_LINES={foot:["Entraînement sous la pluie, tout le monde finit couvert de boue 😂","Exercices de passes avec {a}","Petit match entre vous, {a} marque un but incroyable"],
  hand:["Entraînement de tirs avec {a}","Séance de cardio : {a} ne s'arrête jamais 🔥","Tactique au tableau, puis match"],basket:["Lancers francs avec {a}","Match à trois contre trois, {a} fait un dunk 😱","Séance de dribbles"],
  danse:["Nouvelle choré dancehall avec {a} 💃","Répétition devant le miroir, {a} corrige tes pas","Vous inventez un passage ensemble"],theatre:["Lecture de la pièce avec {a}","Improvisations : {a} te fait pleurer de rire","Répétition de ta scène avec {a}"],
- journal:["Conférence de rédaction : {a} veut un article sur la cantine","Tu écris un article avec {a}","Interview d'un prof avec {a}"],musique:["Répétition avec {a} 🎸","{a} t'apprend trois accords","Vous enregistrez une maquette au foyer"]};
+ journal:["Conférence de rédaction : {a} veut un article sur la cantine","Tu écris un article avec {a}","Interview d'un prof avec {a}"],arts:["Croquis de modèle vivant avec {a} 🎨","{a} t'apprend l'aquarelle","Vous peignez une toile à quatre mains"],musique:["Répétition avec {a} 🎸","{a} t'apprend trois accords","Vous enregistrez une maquette au foyer"]};
 function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.done[G.day+'club'+k]){toast('Séance déjà faite aujourd\'hui');return}
  if(G.energy<8){toast("Pas assez d'énergie pour la séance");return}
  G.energy=clamp(G.energy-8,0,100);G.done[G.day+'club'+k]=1;G.clubXP[k]=(G.clubXP[k]||0)+1;
@@ -3446,7 +3773,7 @@ function markFactor(id,da){if(da<=0)return 1;let f=1;if(hasMark(id,'trahison'))f
 const markNote=id=>{const L=marksOf(id).map(m=>({trahison:`${nameOf('me')} t'a trahi·e (${fmtDay(m.day,true)}) : tu lui en veux encore et tu restes méfiant·e.`,confiance:`${nameOf('me')} a gardé ton secret : tu lui fais confiance.`,rivalite:`Tu es en rivalité avec ${nameOf('me')} : tu le ou la piques souvent.`,abandon:`${nameOf('me')} a quitté ton club : tu es un peu déçu·e.`})[m.k]);return L.length?'Souvenirs importants : '+[...new Set(L)].join(' ')+'\n':''};
 
 /* ---------- groupes d'amis : adopté·e ou rejeté·e ---------- */
-const GROUPS={pop:{n:'Les populaires',ic:'💅',m:['maelle','ines']},sport:{n:'Les sportifs',ic:'⚽',m:['kylian','noah','anais']},art:{n:'Les artistes',ic:'🎨',m:['jade','sacha']}};
+const GROUPS={pop:{n:'Les populaires',ic:'💅',m:['maelle','ines','kenza','meisha']},sport:{n:'Les sportifs',ic:'⚽',m:['kylian','noah','anais','noemie']},art:{n:'Les artistes',ic:'🎨',m:['jade','sacha','eva']}};
 function groupState(g){const G0=GROUPS[g],a=mean(G0.m.map(i=>G.rel[i].ami)),tr=G0.m.filter(i=>hasMark(i,'trahison')).length;
  return tr>=1&&a<45||a<0?'rejete':a>=55&&!tr?'adopte':'neutre'}
 const GSTATE={adopte:'Ils t\'ont adopté·e 💛',neutre:'Ils te connaissent',rejete:'Ils te tiennent à l\'écart ❄️'};
@@ -3469,6 +3796,8 @@ const EVENTS2=[
   {t:"Je ne dis rien",rel:{kylian:9},mark:['kylian','confiance']},{t:"Je conseille à Kylian d'avouer",rel:{kylian:2}},{t:"Je le dénonce",rel:{kylian:-15,noah:-5},mark:['kylian','trahison'],potins:"Quelqu'un a balancé Kylian pour la fenêtre du gymnase 😬"}]},
  {who:'jade',text:"Jade te fait lire un poème très personnel qu'elle n'a montré à personne.",choices:[
   {t:"Je lui dis sincèrement ce que j'en pense",rel:{jade:9},mark:['jade','confiance']},{t:"Je lui dis que c'est très beau",rel:{jade:4}},{t:"Je le prends en photo pour le montrer",rel:{jade:-16},mark:['jade','trahison'],potins:"Un poème de Jade circule dans toute la classe… 📜"}]},
+ {who:'kenza',text:"Kenza te confie en pleurant qu'elle en a marre qu'on ne la remarque que pour son physique. Elle te demande de ne le dire à personne.",choices:[
+  {t:"Je garde le secret et je la soutiens",rel:{kenza:9},mark:['kenza','confiance']},{t:"J'en parle à Maëlle",rel:{kenza:-8,maelle:3}},{t:"Je le poste en story",rel:{kenza:-15},mark:['kenza','trahison']}]},
  {who:'anais',text:"Anaïs s'est blessée au genou avant le tournoi. Elle te demande de ne pas le dire au coach.",choices:[
   {t:"Je garde le secret mais je lui dis de se soigner",rel:{anais:7},mark:['anais','confiance']},{t:"Je préviens le coach pour la protéger",rel:{anais:-4}},{t:"Je le poste en story",rel:{anais:-14},mark:['anais','trahison']}]},
  {who:'sacha',text:"Sacha t'avoue qu'il veut arrêter le lycée pour la musique, mais ses parents ne savent rien.",choices:[
@@ -3525,6 +3854,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(igClick(t))return;
  {let m;if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
   if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
+  if(m=t.closest('[data-tutortalk]')){tutorTalk(+m.dataset.tutortalk);return}
   if(t.closest('[data-revquick]')){const w=Object.keys(SUBJ).sort((a,b)=>G.know[a]-G.know[b]).slice(0,3);revise(pickR(w));return}}
  const ch=t.closest('.choice');
  if(ch){const d=ch.dataset;
@@ -3548,6 +3878,10 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-sv]')){b.dataset.sv==='next'?nextStory():prevStory();return}
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
+ if(b=q('[data-ro]')){romAct(b.dataset.id,b.dataset.ro);return}
+ if(b=q('[data-gift]')){giveGift(b.dataset.id,b.dataset.gift);return}
+ if(b=q('[data-rdv]')){proposeDate(b.dataset.id,b.dataset.rdv);return}
+ if(b=q('[data-pback]')){openPerson(b.dataset.pback);return}
  if(b=q('[data-fa]')){famAct(b.dataset.id,b.dataset.fa);return}
  if(b=q('[data-fiche]')){const id=b.dataset.fiche;closeSheet();openFiche(id);return}
  if(b=q('[data-chat]')){const id=b.dataset.chat;closeSheet();openChat(id);return}
@@ -3592,6 +3926,9 @@ $('gView').addEventListener('click',e=>{
  if(t.closest('[data-evalgame]')){evalGame();return}
  if(t.closest('[data-clubs]')){openSheet(clubsSheet());return}
  if(b=t.closest('[data-clubgo]')){clubGo(b.dataset.clubgo);return}
+ if(t.closest('[data-tutorjoin]')){tutorJoin(1);return}
+ if(t.closest('[data-tutorquit]')){tutorJoin(0);return}
+ if(t.closest('[data-tutorgo]')){tutorGo();return}
  if(b=t.closest('[data-bacgame]')){bacGame(b.dataset.bacgame);return}
  if(b=t.closest('[data-place]')){G.place=b.dataset.place;drawView();return}
  if(b=t.closest('[data-person]')){openPerson(b.dataset.person);return}
@@ -3619,7 +3956,7 @@ function drawMenu(){
   <div class="mseg" role="group" aria-label="Vitesse du temps">${SPEEDS.map(v=>`<button type="button" data-m="sp${v}" aria-pressed="${sp===v}" class="${sp===v?'on':''}">×${v}</button>`).join('')}</div></div></div>
  <div class="mgroup"><span class="mlbl">Énergie ${G.energy}/100</span><div class="mline">
   <button class="mbtn${G.bonus?' on':''}" type="button" data-m="bonus"${G.bonus?'':' disabled'}>⚡ Bonus ${G.bonus}/${BONUS_MAX}${G.bonus?` : +${G.bonus*5}`:''}</button><span class="muted" id="gRecharge">${G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${Math.floor(ms/60000)}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`}</span></div>
-  <div class="mline"><button class="mbtn" type="button" id="gAd" data-m="ad">Regarder une pub (+5 ⚡)</button></div></div>
+  <p class="muted" style="margin:4px 0 0">🎯 Chaque objectif atteint : +${OBJ_ENERGY} ⚡</p></div>
  <div class="menu-list">
   <button class="mrow" type="button" data-m="music" aria-pressed="${MUS.on}"><span class="mic">${MUS.on?'🎵':'🔇'}</span><span><b>Musique</b><small>${MUS.on?'Activée : touche pour couper':'Coupée : touche pour activer'}</small></span></button>
   <button class="mrow" type="button" data-m="notes"><span class="mic">📊</span><span><b>Mes notes</b><small>Moyenne du trimestre : ${fmtG(avg)}/20</small></span></button>
@@ -3635,8 +3972,6 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
  else if(m.startsWith('sp')){G.speed=+m.slice(2);toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)}
  else if(m==='bonus'){const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE}
  else if(m==='music'){const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')}
- else if(m==='ad'){b.dataset.busy=1;b.disabled=true;let n=3;b.textContent=`Pub… ${n}`;
-  const iv=setInterval(()=>{n--;const ad=$('gAd');if(n>0){if(ad)ad.textContent=`Pub… ${n}`;return}clearInterval(iv);if(ad)delete ad.dataset.busy;G.energy=clamp(G.energy+5,0,100);G.adAt=Date.now();saveG();drawHUD();toast('+5 énergie')},1000);return}
  else if(m==='notes'){$('sheetBody').onclick=null;closeSheet();view='profil';drawNav();drawView();window.scrollTo(0,0);return}
  else if(m==='shop'){toast('La boutique arrive bientôt');return}
  else if(m==='quit'){$('sheetBody').innerHTML=`<div id="gMenuQuit"><h2>Quitter la partie ?</h2><p class="muted">Tu reviens à l'atelier. Ta partie est sauvegardée : « Commencer la partie » te ramène là où tu en étais.</p><div class="mline"><button class="gbtn ghost" type="button" data-m="back">Rester</button><button class="gbtn red" type="button" data-m="quitok">Quitter</button></div></div>`;return}
