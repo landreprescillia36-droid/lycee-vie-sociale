@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v26';
+const VERSION = 'v27';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
@@ -63,7 +63,7 @@ const FICHIERS = [
   'assets/coiffures/serretete-acc.png', 'assets/chaussures/ballerines.png', 'assets/chaussures/basses.png', 'assets/chaussures/epaisses.png', 'assets/chaussures/retro.png', 'assets/chaussures/retro_creme.png', 'assets/chaussures/running.png', 'assets/chaussures/running_noire.png', 'assets/chaussures/sabots.png', 'js/app.js', 'js/config.js', 'js/cloud.js', 'js/vendor/supabase.js',
   'fonts/baloo-2-latin-600-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
   'fonts/nunito-latin-400-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2', 'fonts/nunito-latin-800-normal.woff2',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha'].map(n => `assets/chambres/${n}.jpg`),
 ];
 
