@@ -11,14 +11,14 @@ Jeu de simulation de vie sociale en terminale, dans un lycée de Guadeloupe. Cr�
 - `npm install` (une fois), puis `npm run dev` : serveur local, accessible aussi depuis le téléphone sur le même Wi-Fi (`--host`).
 - Sans installation : ouvrir `index.html` directement dans un navigateur, tout fonctionne.
 - `npm test` : simulation sans navigateur (faux DOM) de 3 jours de jeu + ouverture des écrans principaux. Doit finir par « OK ».
-- `npm run captures` (après `npx playwright install chromium`) : détecte les erreurs JS dans un vrai Chromium et enregistre dans `tools/captures/` l'atelier au format téléphone, tous les personnages en pied et tous les décors. **Toujours regarder les captures après une modification visuelle** : la créatrice juge au rendu.
+- `npm run captures` (après `npx playwright install chromium`) : détecte les erreurs JS dans un vrai Chromium et enregistre dans `tools/captures/` l'atelier et le jeu au format téléphone (en-tête, menu ⚙, bouton « Agir »), tous les personnages en pied et tous les décors. **Toujours regarder les captures après une modification visuelle** : la créatrice juge au rendu.
 
 ## Structure
 
 ```
 index.html          structure HTML (atelier, écran famille, jeu, feuille modale, toast)
 css/style.css       tous les styles (atelier clair, jeu sombre)
-js/app.js           tout le code (~2 500 lignes, script classique, variables globales)
+js/app.js           tout le code (~3 700 lignes, script classique, variables globales)
 claude-page.html    version publiée sur claude.ai (même corps que index.html, sans en-tête ; à refaire si index.html change) : https://claude.ai/artifact/4XTD2xkAiVHspaZsdKfwvc
 manifest.webmanifest, sw.js   application installable (PWA) : manifeste et service worker (cache hors ligne)
 js/cloud.js         comptes et sauvegarde en ligne Supabase (inactif si js/config.js est vide) ; js/vendor/supabase.js = supabase-js 2.117.2 (UMD)
@@ -28,7 +28,9 @@ icons/              icônes de l'app, générées par tools/icones.js (portrait 
 fonts/, css/fonts.css  polices Baloo 2 et Nunito hébergées localement
 assets/chambres/    chambres des camarades (images créées par Prescillia, 900×600)
 docs/references/    modèles visuels de Prescillia : personnages, corps/épaules, agencement de l'atelier
-tools/              simulate.js (test Node), captures.js (test Playwright), icones.js (icônes)
+tools/              simulate.js (test Node), captures.js (test Playwright), icones.js (icônes),
+                    traceur-coiffures.py / traceur-chaussures.py / traceur-bouches.py (décalque des planches de Prescillia
+                    → assets/coiffures, assets/chaussures, assets/bouches + js/*-art.js)
 ```
 
 `js/app.js` est découpé par commentaires de section (`/* ---------- … ---------- */`). Dans l'ordre :
@@ -41,6 +43,14 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 6. **Données de l'interface** : `WEAR` (catalogue de vêtements par rayon), `TABS` (onglets de l'atelier), `DEFAULT`, `BASE_LOOK` (Léa / Enzo), `normalize()`.
 7. **Catalogue filles / garçons** : chaque article a `g:'f'`, `g:'m'` ou rien (mixte) ; `wearVis()` filtre selon le sexe ; non-binaire = tout.
 8. **Moteur du jeu** : `NPCS` + `NPC_LOOK` (apparence), `NPC_NOM` (noms de famille), `FICHES` (personnalités), `LINKS0` (relations entre camarades), `VOICE`/`CONFESS` (répliques), `SUBJ`/`PROFS`/`TT` (emploi du temps), année scolaire, famille, photos (`sceneSVG`, `SCENES`, `ROOMS`), fil, **Insta** (`NPC_POSTS` posts selon la personnalité, `DEBATE` qui critique/défend qui, `debateThread`, `npcPost`, commentaires en fils `mkC` {id, re, to, vs}, réponses `STANCES`/`sendReply`, abonnements `G.ig` + `followTick`/`igFollow`/`igRequest`, onglet `drawInsta`, profils `openInsta`), objectifs, état `G` (`newGame`, `saveG`), IA, messages, autonomie des camarades, horloge, musique (Web Audio), HUD, vues, fiches, discussion, création de post, événements, écouteurs.
+
+## En-tête du jeu (HUD)
+
+- Une seule rangée : jour/heure (`gDayBtn`, ouvre le menu ; ⏸ affiché si pause), énergie (`gEnergy`, point rouge = bonus à récupérer), **Vitesse** (`gSpeed`, ×1 → ×2 → ×5 → ×10), **Menu ⚙** (`gMenu`). Zones tactiles ≥ 44 px, chaque bouton a un libellé.
+- Menu ⚙ (`openMenu`/`drawMenu`/`menuClick`) : pause, vitesse, bonus d'énergie, pub (en attente de décision), musique, Mes notes, Boutique, Quitter (avec confirmation).
+- Un seul bouton flottant « + Agir » (`gAct`) : lancer un événement ou publier un post.
+- **Gemmes mises de côté** : `GEMS_ON=false` (haut de `js/app.js`). `G.gems` continue de compter en silence ; tout ce qui les montre, les coûte ou les annonce passe par `GEMS_ON` / `gemTxt()`. Ne pas en réafficher sans accord.
+- Sourcils (`BROWS`, `browArt`, couleurs `BROWC`) et bouches (`MOUTH_ART` + `assets/bouches/`, couleur des lèvres selon la peau) viennent des planches de Prescillia ; anciennes formes migrées dans `normalize()`.
 
 ## Règles du code
 
