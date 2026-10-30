@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='28';
+const APP_VERSION='29';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -19,7 +19,8 @@ function shade(c,t){return t<0?mix(c,'#000000',-t):mix(c,'#ffffff',t)}
 
 const SKIN=['#fde3cf','#f6cfae','#eab48a','#d4975f','#b8784a','#9a6140','#80502f','#6a4027'];
 const HAIR=['#1c1412','#3b2219','#5a3522','#6e2a24','#8a5a35','#c08a4e','#e3c27a','#b8452e','#7d7f86','#e9e4dc','#5b4bd1','#e56aa6','#3a8f7d'];
-const IRIS=['#4a2a17','#7a4a26','#9a7a3a','#4f7a3a','#3d7f9a','#4a62b8','#7b7f8a','#7b3fa0'];
+/* iris : les 8 couleurs de la planche yeux de Prescillia (marron foncé, marron, châtain, noisette, vert, bleu, gris, noir) */
+const IRIS=['#2f1d13','#5f3a23','#7a5430','#4b4124','#4c6549','#3c525e','#616162','#222224'];
 const CLOTH=['#1f2127','#f4f1ea','#ece2cc','#a9adb3','#7a5236','#c49a6c','#f2c6d3','#d93b5e','#26314f','#3d6fd8','#5b5a3c','#2fa3a0','#f2c230','#e8613c','#7a4fd0'];
 const lum=h=>{const [r,g,b]=rgb(h);return (0.299*r+0.587*g+0.114*b)/255};
 const BOTC=['#86a6cc','#5b7fb5','#2f4a78','#9aa0a6','#c4c7cb','#f4f1ea','#1f2127','#c8b08a','#f2c6d3','#5a6b4a','#7a5236'];
@@ -183,7 +184,8 @@ function render(s,vb,p,showBg){
   o+=`</g>`}
  o+=`<g transform="translate(200,${252+a.noseY}) scale(${a.noseS})">${nose(s.nose,sk,skDD)}</g>`;
  o+=`<g transform="translate(200,${285+a.mouthY}) scale(${a.mouthS})">${mouth(s.mouth,lip,sk,p)}</g>`;
- o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eye(E,1,p,skDD)}</g><g transform="translate(${200-dx},${cy}) scale(${-sc},${sc})">${eye(E,-1,p,skDD)}</g>`;
+ if(EYEART(s))o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'d',p)}</g><g transform="translate(${200-dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'g',p)}</g>`;
+ else o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eye(E,1,p,skDD)}</g><g transform="translate(${200-dx},${cy}) scale(${-sc},${sc})">${eye(E,-1,p,skDD)}</g>`;
  const bx=55+a.browsX, by=cy-47+a.browsY, bc=s.browColor||hD;
  o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
@@ -199,6 +201,29 @@ function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" 
   default:return `<rect ${R} fill="${c}"/>`;
  }}
 
+/* yeux décalqués sur la planche de Prescillia (EYE_ART, js/yeux-art.js) : vrais pixels du dessin, chaque œil tel qu'elle l'a dessiné ;
+   l'iris est une image à part, recolorée (même rapport de couleur que l'iris choisi avec son « marron ») ; les styles de cils
+   autres que « naturels » ajoutent des cils dessinés le long de sa paupière */
+const EYE_OLD={grands:'grands',brillants:'grands',amande:'amande',ronds:'ronds',endormis:'tombantes',chat:'releves',doux:'amande',nets:'amandelong',rieurs:'petits'};
+const EYE_REF='#5f3a23';
+const eyeKey=k=>typeof EYE_ART==='undefined'?k:EYE_ART[k]?k:(EYE_OLD[k]||'amande');
+const EYEART=s=>typeof EYE_ART!=='undefined'&&EYE_ART[eyeKey(s.eyes)];
+const LASH_STY={longs:{n:9,len:[4,9],w:1.5,curl:.45,u0:.3},epais:{n:15,len:[3,5.5],w:2.1,curl:.35,u0:.2},espaces:{n:5,len:[4,6.5],w:1.6,curl:.4,u0:.35},recourbes:{n:9,len:[4,7.5],w:1.6,curl:1.1,u0:.3}};
+/* cils dessinés le long de la paupière (P : 9 points du haut du trait, coin intérieur → extérieur), plus longs vers l'extérieur, effilés */
+function lashSVG(P,sty){const L=LASH_STY[sty];if(!L||!P)return '';let d='';const f=v=>v.toFixed(1);
+ for(let i=0;i<L.n;i++){const u=L.u0+(1-L.u0)*i/(L.n-1),q=u*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j;
+  const x=P[j][0]+(P[j+1][0]-P[j][0])*t,y=P[j][1]+(P[j+1][1]-P[j][1])*t;
+  let tx=P[j+1][0]-P[j][0],ty=P[j+1][1]-P[j][1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;let nx=ty,ny=-tx;if(ny>0){nx=-nx;ny=-ny}
+  const len=L.len[0]+(L.len[1]-L.len[0])*u*u,c=L.curl*(.4+u*.8),bx=x-nx*1.4,by=y-ny*1.4,hw=L.w/2;
+  const ex=bx+nx*len+tx*len*c,ey=by+ny*len+ty*len*c*.5,mx=bx+nx*len*.7+tx*len*c*.15,my=by+ny*len*.7;
+  d+=`M${f(bx-tx*hw)},${f(by-ty*hw)} Q${f(mx-tx*hw*.6)},${f(my-ty*hw*.6)} ${f(ex)},${f(ey)} Q${f(mx+tx*hw*.6)},${f(my+ty*hw*.6)} ${f(bx+tx*hw)},${f(by+ty*hw)}Z`}
+ return `<path d="${d}" fill="#161214"/>`}
+function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7);
+ const g=rgb(s.iris||EYE_REF).map((v,i)=>v/Math.max(1,rgb(EYE_REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
+ return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
+  +`<image href="assets/yeux/${k}-iris-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`
+  +`<image href="assets/yeux/${k}-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
+  +lashSVG(P,s.cils)}
 function eye(E,m,p,skDD){
  const ink='#1d1411';
  if(E.closed) return `<path d="M-26,6 C-14,-16 14,-16 28,4" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/><path d="M26,2 L37,-7" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
@@ -927,7 +952,8 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'Cœur
  bouton:'Bouton',rond:'Rond doux',naturel:'Naturel',doux:'Doux',petit:'Petit',pointu:'Fin',aucun:'Aucun',
  fine:'Fine',moyenne:'Moyenne',pleine:'Pleine',coeur:'En cœur',rectangle:'Rectangulaire',ronde:'Ronde',pulpeuse:'Légèrement pulpeuse',trespulpeuse:'Très pulpeuse',asymetrique:'Asymétrique',superfine:'Avec une lèvre supérieure fine',inferieure:'Avec une lèvre inférieure plus pleine',tombante:'Aux commissures tombantes',remontante:'Aux commissures remontantes',entrouverte:'Bouche légèrement ouverte',fermee:'Bouche fermée',glossy:'Style glossy',mat:'Style mat',ombre:'Style ombré',glosscentre:'Avec gloss au centre',naturelle:'Naturelle',
  fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
- grands:'Grands',brillants:'Brillants',amande:'Amande',ronds:'Petits ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
+ grands:'Grands',brillants:'Brillants',amande:'Amandes',ronds:'Ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
+ amandelong:'En amande allongés',enfonces:'Enfoncés',sortants:'Sortants',petits:'Petits',tombantes:'Paupières tombantes',monolides:'Paupières monolides',releves:'Aux coins relevés',espaces:'Espacés',recourbes:'Recourbés',
  naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',
  tresse:'Tresse',longs:'Longs',queue:'Queue de cheval',chignon:'Chignon',boucles:'Bouclés',court:'Courts',rase:'Rasés',
  salopette:'Salopette',tshirt:'T-shirt',capuche:'Sweat',chemise:'Chemise',colroule:'Col roulé',
@@ -1134,7 +1160,8 @@ const TABS=[
   {id:'rides',label:'Rides',opts:['aucune','fines','marquees'],vb:hv('95 110 210 210')},
   {id:'barbe',label:'Barbe',noF:1,opts:['aucune','duvet','barbe3j','moustache','bouc','collier','courte'],vb:hv('100 215 200 125')}]},
  {label:'Yeux',subs:[
-  {id:'eyes',label:'Forme',opts:Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
+  {id:'eyes',label:'Forme',opts:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART):Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
+  {id:'cils',label:'Cils',opts:typeof EYE_LASHES!=='undefined'?EYE_LASHES:['naturels'],vb:hv('112 155 176 100')},
   {id:'iris',label:'Iris',cols:IRIS},
   {id:'brows',label:'Sourcils',opts:Object.keys(BROWS),vb:hv('112 128 176 100'),adj:'brows'},
   {id:'browColor',label:'Couleur des sourcils',cols:BROWC}]},
@@ -1160,13 +1187,13 @@ const ICON={
  minus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M14 14l4 4"/>',plus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M9 6v6M14 14l4 4"/>'};
 
 const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',face:'ovale',skin:SKIN[3],nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',
- eyes:'doux',iris:IRIS[0],brows:'epais',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
+ eyes:'amande',cils:'naturels',iris:IRIS[0],brows:'epais',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
  glasses:'aucune',earrings:'aucune',browColor:'',bgPattern:'uni',bgColor:BGC[1],
  perso:'sociable',raison:'demenagement',ancien:'Lycée Baimbridge',niveau:'moyen',forts:[],
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}if(s.hair==='tresse')s.hair='longondule';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}if(s.hair==='tresse')s.hair='longondule';if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
 let tab=0, sub=0;
 
@@ -1214,8 +1241,8 @@ function drawIdent(){drawParcours();if(editFam)return;
  $('segSexe').innerHTML=SEXES.map(([k,l])=>`<button class="sub" type="button" data-sx="${k}" aria-pressed="${state.sexe===k}">${l}</button>`).join('');
  $('segOri').innerHTML=ORIS.map(k=>`<button class="sub" type="button" data-or="${k}" aria-pressed="${state.orient===k}">${oriShort(k,state.sexe)}</button>`).join('');
  $('oriHint').textContent=oriHint(state.sexe,state.orient);}
-const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'doux',iris:IRIS[0],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
- m:{face:'allonge',skin:SKIN[2],eyes:'doux',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
+const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'amande',cils:'naturels',iris:IRIS[0],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
+ m:{face:'allonge',skin:SKIN[2],eyes:'amande',cils:'naturels',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
 const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
 $('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});

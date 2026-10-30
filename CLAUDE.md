@@ -29,7 +29,7 @@ fonts/, css/fonts.css  polices Baloo 2 et Nunito hébergées localement
 assets/chambres/    chambres des camarades (images créées par Prescillia, 900×600)
 docs/references/    modèles visuels de Prescillia : personnages, corps/épaules, agencement de l'atelier
 tools/              simulate.js (test Node), captures.js (test Playwright), icones.js (icônes),
-                    traceur-coiffures.py / traceur-chaussures.py / traceur-bouches.py (décalque des planches de Prescillia
+                    traceur-coiffures.py / traceur-chaussures.py / traceur-bouches.py / traceur-yeux.py (décalque des planches de Prescillia
                     → assets/coiffures, assets/chaussures, assets/bouches + js/*-art.js)
 ```
 
@@ -50,6 +50,7 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 - Menu ⚙ (`openMenu`/`drawMenu`/`menuClick`) : pause, vitesse, bonus d'énergie (plus de pub : chaque objectif atteint donne `OBJ_ENERGY` = +5 ⚡), musique, Mes notes, Boutique, Quitter (avec confirmation).
 - Un seul bouton flottant « + Agir » (`gAct`) : lancer un événement ou publier un post.
 - **Gemmes mises de côté** : `GEMS_ON=false` (haut de `js/app.js`). `G.gems` continue de compter en silence ; tout ce qui les montre, les coûte ou les annonce passe par `GEMS_ON` / `gemTxt()`. Ne pas en réafficher sans accord.
+- **Yeux** (`EYE_ART` + `assets/yeux/`, `tools/traceur-yeux.py` sur `docs/references/yeux/planche-yeux.png`) : 10 formes, chaque œil (d/g) tel que dessiné ; iris en image à part recolorée par rapport à son « marron » (`EYE_REF`, palette `IRIS` = ses 8 couleurs) ; `s.cils` : « naturels » = ses cils, les 4 autres styles ajoutent des cils dessinés le long de la paupière (`LASH_STY`, `lashSVG`). Anciennes formes migrées par `EYE_OLD`.
 - Sourcils (`BROWS`, `browArt`, couleurs `BROWC`) et bouches (`MOUTH_ART` + `assets/bouches/`, couleur des lèvres selon la peau) viennent des planches de Prescillia ; anciennes formes migrées dans `normalize()`.
 
 ## Règles du code
