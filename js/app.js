@@ -1,5 +1,9 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
 const APP_VERSION='27';
+/* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
+   mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
+const GEMS_ON=false;
+const gemTxt=t=>GEMS_ON?t:'';
 try{document.getElementById('atVers').textContent='Version '+APP_VERSION}catch(_){}
 /* mise à jour forcée : vide les copies en cache et le service worker, garde la partie (localStorage) */
 async function forceUpdate(){try{toast('⏳ Mise à jour…')}catch(_){}
@@ -1705,7 +1709,7 @@ const OBJ=[
 function avg(){return G.grades.length?G.grades.reduce((a,g)=>a+g.v,0)/G.grades.length:null}
 function triAvg(t){const ev=G.evals.filter(e=>e.tri===t);return ev.length?mean(ev.map(e=>e.glob)):null}
 function checkObjectives(){
- OBJ.filter(o=>objOk(o)&&o.day<=G.day&&!G.objDone.includes(o.id)&&o.c()).forEach(o=>{G.objDone.push(o.id);G.gems+=o.gems;note(P(`Objectif atteint : ${o.t} (+${o.gems} gemmes)`));toast(P(`🎯 Objectif atteint : ${o.t}`))});
+ OBJ.filter(o=>objOk(o)&&o.day<=G.day&&!G.objDone.includes(o.id)&&o.c()).forEach(o=>{G.objDone.push(o.id);G.gems+=o.gems;note(P(`Objectif atteint : ${o.t}${gemTxt(` (+${o.gems} gemmes)`)}`));toast(P(`🎯 Objectif atteint : ${o.t}`))});
 }
 
 /* ---------- état ---------- */
@@ -2303,13 +2307,13 @@ const FETES=[
  {id:'halloween',date:'2026-10-31',n:'Soirée Halloween au foyer',ic:'🎃',scene:'soiree',post:"[Officiel] 🎃 Soirée Halloween au foyer ! Déguisement obligatoire, même pour les profs 👻 Qui sera le plus effrayant ?",info:"Soirée déguisée au foyer après les cours.",acts:[
   {l:"Choisir ton déguisement",sm:"Photo sur Insta",pick:'list',list:COSTUMES,e:2,fx:(i,f)=>{G.costume=COSTUMES[i];return `Déguisement de ${COSTUMES[i]} · `+fPhoto(f,best(2),`🎃 Mon déguisement de ${COSTUMES[i]} pour Halloween`,4+Math.floor(Math.random()*5))}},
   {l:"Faire peur à quelqu'un",sm:"Ça passe… ou ça casse",pick:'any',e:2,fx:to=>FICHES[to].hum>.5?joinFx([`${WHO[to].name} hurle puis éclate de rire 😂`,relChange(to,4)]):joinFx([`${WHO[to].name} n'a pas du tout apprécié 😬`,relChange(to,-3)])},
-  {l:"Concours du meilleur déguisement",sm:"Gemmes si tu gagnes",e:3,fx:()=>{if(Math.random()<(G.costume?.55:.25)){G.gems+=5;fPotins(`${myHandle()} a gagné le concours du meilleur déguisement 🏆🎃`);return 'Tu gagnes le concours du meilleur déguisement 🏆 · +5 gemmes'}return 'Pas de victoire cette fois, mais tout le monde a adoré'}},
+  {l:"Concours du meilleur déguisement",sm:GEMS_ON?"Gemmes si tu gagnes":"Un titre si tu gagnes",e:3,fx:()=>{if(Math.random()<(G.costume?.55:.25)){G.gems+=5;fPotins(`${myHandle()} a gagné le concours du meilleur déguisement 🏆🎃`);return 'Tu gagnes le concours du meilleur déguisement 🏆'+gemTxt(' · +5 gemmes')}return 'Pas de victoire cette fois, mais tout le monde a adoré'}},
   {l:"Danser avec quelqu'un",sm:"Amitié, et plus si affinités",pick:'any',e:4,fx:to=>joinFx([`Tu danses avec ${WHO[to].name} 🕺`,relChange(to,3,likesBack(to,30)?4:0)])}]},
  {id:'telethon',date:'2026-12-04',n:'Téléthon du lycée',ic:'💛',scene:'basket',post:"[Officiel] 💛 Téléthon au gymnase aujourd'hui : tournoi de hand, ventes de gâteaux et défis. Anaïs a déjà promis 200 pompes 😂",info:"Tournoi, ventes et défis au gymnase pour récolter des dons.",acts:[
   {l:"Jouer le tournoi de hand avec Anaïs",sm:"Amitié avec Anaïs",e:8,fx:()=>{G.ig.fans+=3;return joinFx(['Vous gagnez deux matchs 🤾',relChange('anais',5)])}},
   {l:"Tenir le stand de gâteaux avec Noah",sm:"Amitié avec Noah",e:3,fx:()=>joinFx(['Le stand est vide en une heure 🍰',relChange('noah',5)])},
   {l:"Relever le défi des pompes",sm:"Abonnés",e:8,fx:()=>{const g=5+Math.floor(Math.random()*5);G.ig.fans+=g;fPotins(`${myHandle()} a fait 50 pompes devant tout le gymnase 💪`);return `Tout le gymnase t'applaudit · +${g} abonnés`}},
-  {l:"Faire un don (5 gemmes)",sm:"Le lycée apprécie",e:0,fx:()=>{if(G.gems<5)return "Il te faut 5 gemmes pour faire un don";G.gems-=5;return joinFx(['Merci pour ton don 💛',...rndNpc(2).map(id=>relChange(id,2))])}}]},
+  {l:"Faire un don (5 gemmes)",gems:1,sm:"Le lycée apprécie",e:0,fx:()=>{if(G.gems<5)return "Il te faut 5 gemmes pour faire un don";G.gems-=5;return joinFx(['Merci pour ton don 💛',...rndNpc(2).map(id=>relChange(id,2))])}}]},
  {id:'nwel',date:'2026-12-18',n:'Chanté Nwèl au lycée',ic:'🎄',scene:'cour',post:"[Officiel] 🎄 Chanté Nwèl dans la cour cet après-midi ! Ka, cantiques et jus de groseille pays. Sacha a promis un solo de ka 🥁",info:"Dernier jour avant les vacances de Noël : on chante Nwèl tous ensemble dans la cour.",acts:[
   {l:"Chanter avec la chorale",sm:"Photo sur Insta",e:3,fx:f=>'Tu chantes à pleine voix 🎶 · '+fPhoto(f,best(2),'🎄 Chanté Nwèl au lycée 🎶',4+Math.floor(Math.random()*5))},
   {l:"Jouer du ka avec Sacha",sm:"Amitié avec Sacha",e:4,fx:()=>joinFx(['Sacha te montre les rythmes du ka 🥁',relChange('sacha',6)])},
@@ -2331,7 +2335,7 @@ const FETES=[
   {l:'Défiler pendant la récré',sm:'Amitiés',e:5,fx:()=>joinFx(['Tu défiles dans la cour 🥁',...rndNpc(2).map(id=>relChange(id,2))])},
   {l:"Défiler avec quelqu'un",sm:'Amitié',pick:'any',e:4,fx:to=>joinFx([`Tu défiles avec ${WHO[to].name}`,relChange(to,4)])}]},
  {id:'paques',date:'2027-03-28',n:'Pâques au lycée',ic:'🦀',scene:'cour',post:"[Officiel] 🐣 Chasse aux œufs au lycée avant les vacances ! Et le club cuisine prépare un matoutou crabe pour tout le monde 🦀",info:"Chasse aux œufs dans tout le lycée et matoutou crabe préparé par le club cuisine.",acts:[
-  {l:"Chercher les œufs avec quelqu'un",sm:'Amitié, gemmes si tu trouves',pick:'any',e:4,fx:to=>{const ok=Math.random()<.5;if(ok)G.gems+=3;return joinFx([`Tu cherches les œufs avec ${WHO[to].name}${ok?' et vous trouvez le gros œuf doré 🥚✨ (+3 gemmes)':''}`,relChange(to,4)])}},
+  {l:"Chercher les œufs avec quelqu'un",sm:GEMS_ON?'Amitié, gemmes si tu trouves':'Amitié',pick:'any',e:4,fx:to=>{const ok=Math.random()<.5;if(ok)G.gems+=3;return joinFx([`Tu cherches les œufs avec ${WHO[to].name}${ok?' et vous trouvez le gros œuf doré 🥚✨'+gemTxt(' (+3 gemmes)'):''}`,relChange(to,4)])}},
   {l:'Goûter le matoutou crabe',sm:'+10 énergie',e:0,fx:()=>{G.energy=clamp(G.energy+10,0,100);return 'Le matoutou crabe est incroyable 🦀 · +10 énergie'}},
   {l:'Aider le club cuisine',sm:'Amitié avec Noah',e:4,fx:()=>joinFx(['Noah te montre le secret du matoutou 🦀',relChange('noah',5)])},
   {l:"Partager tes œufs en chocolat avec quelqu'un",sm:'Amitié',pick:'any',e:0,fx:to=>joinFx([`${WHO[to].name} est ravi·e`.replace('ravi·e',S(to,'ravi·e')),relChange(to,4,likesBack(to,30)?2:0)])}]},
@@ -2354,14 +2358,14 @@ const FETES=[
   {l:"Contredire quelqu'un devant tout le monde",sm:'Rivalité',pick:'any',e:2,fx:to=>{const r=G.rel[to].ami<20;if(r)mark(to,'rivalite');return joinFx([`Tu démontes l'argument de ${WHO[to].name}… qui n'apprécie pas du tout`,relChange(to,-7)])}}]},
  {id:'invitbal',date:'2027-06-14',n:'Invitations pour le bal',ic:'💌',scene:'couloir',post:"[Anonyme] 💌 Les invitations pour le bal ont commencé… qui va demander qui ? 👀 On veut des noms !",info:"Deux semaines avant le bal, tout le lycée cherche sa cavalière ou son cavalier. Les tenues se préparent.",acts:[
   {l:"Inviter quelqu'un au bal",sm:'Amour ou amitié',pick:'any',e:0,fx:to=>{if(likesBack(to,30)){G.balWith=to;return joinFx([`${WHO[to].name} dit oui avec un grand sourire 💃`,relChange(to,3,6),jealous(to)])}if(G.rel[to].ami>=45){G.balWith=to;return joinFx([S(to,`${WHO[to].name} accepte, en ami·e`),relChange(to,4)])}return joinFx([`${WHO[to].name} y va déjà avec quelqu'un d'autre…`,relChange(to,-1)])}},
-  {l:'Choisir ta tenue de bal',sm:'−5 gemmes · plus de chances d\'être élu·e',e:0,fx:()=>{if(G.gems<5)return "Pas assez de gemmes pour la tenue de tes rêves";G.gems-=5;G.balOutfit=1;return "Tu trouves LA tenue parfaite ✨ · −5 gemmes"}},
+  {l:'Choisir ta tenue de bal',sm:gemTxt('−5 gemmes · ')+'plus de chances d\'être élu·e',e:0,fx:()=>{if(GEMS_ON&&G.gems<5)return "Pas assez de gemmes pour la tenue de tes rêves";if(GEMS_ON)G.gems-=5;G.balOutfit=1;return "Tu trouves LA tenue parfaite ✨"+gemTxt(' · −5 gemmes')}},
   {l:"Organiser l'after avec tes amis",sm:'Amitié avec tes proches',e:3,fx:()=>joinFx(["After prévu chez toi après le bal 🎉",...best(3).map(i=>relChange(i,3))])}]},
  {id:'bal',date:'2027-06-30',n:'Bal des terminales',ic:'🥂',scene:'soiree',post:"[Officiel] 🥂 Bal des terminales ce soir ! Dernière soirée de l'année, sortez vos plus belles tenues ✨",info:"Dernier jour de l'année : le grand bal des terminales.",acts:[
   {l:"Arriver au bal avec la personne invitée",sm:'Amour',e:0,fx:()=>{const to=G.balWith;if(!to)return "Tu arrives avec tes amis : finalement c'est encore mieux 😄";return joinFx([`Tu fais ton entrée au bras de ${WHO[to].name} ✨ Tout le monde vous regarde`,relChange(to,3,likesBack(to,30)?5:0)])}},
   {l:"Inviter quelqu'un au bal",sm:'Amitié ou amour',pick:'any',e:0,fx:to=>likesBack(to,30)?joinFx([`${WHO[to].name} accepte d'être ton ou ta cavalière 💃`,relChange(to,2,6),jealous(to)]):G.rel[to].ami>=40?joinFx([S(to,`${WHO[to].name} vient avec toi, en ami·e`),relChange(to,4)]):joinFx([`${WHO[to].name} y va déjà avec quelqu'un`,relChange(to,-1)])},
   {l:"Danser un slow avec quelqu'un",sm:'Amour',pick:'love',e:3,fx:to=>likesBack(to,35)?joinFx([`Un slow avec ${WHO[to].name}… le temps s'arrête 💞`,relChange(to,2,8),jealous(to)]):joinFx([`Un slow un peu gênant avec ${WHO[to].name} 😅`,relChange(to,1)])},
   {l:'Photo de groupe avec tes amis',sm:'Beaucoup d\'abonnés',e:0,fx:f=>'Photo souvenir de la terminale 📸 · '+fPhoto(f,best(3),'🥂 Bal des terminales avec mes amis ✨',8+Math.floor(Math.random()*6))},
-  {l:'Tenter d\'être élu·e roi ou reine du bal',sm:'Dépend de ta popularité',e:0,fx:()=>{const ch=Math.min(.85,.1+G.ig.fans/600+igFriends().length*.06+(G.balOutfit?.15:0)+(Object.values(G.gstate||{}).filter(x=>x==='adopte').length*.05));if(Math.random()<ch){G.gems+=10;fPotins(`${myHandle()} est ${me().sexe==='f'?'la reine':me().sexe==='m'?'le roi':'élu·e souverain·e'} du bal 👑`);return P('Tu es élu·e ')+(me().sexe==='f'?'reine':me().sexe==='m'?'roi':'souverain·e')+' du bal 👑 · +10 gemmes'}return "Pas élu·e cette fois, mais quelle soirée".replace('élu·e',P('élu·e'))}}]}];
+  {l:'Tenter d\'être élu·e roi ou reine du bal',sm:'Dépend de ta popularité',e:0,fx:()=>{const ch=Math.min(.85,.1+G.ig.fans/600+igFriends().length*.06+(G.balOutfit?.15:0)+(Object.values(G.gstate||{}).filter(x=>x==='adopte').length*.05));if(Math.random()<ch){G.gems+=10;fPotins(`${myHandle()} est ${me().sexe==='f'?'la reine':me().sexe==='m'?'le roi':'élu·e souverain·e'} du bal 👑`);return P('Tu es élu·e ')+(me().sexe==='f'?'reine':me().sexe==='m'?'roi':'souverain·e')+' du bal 👑'+gemTxt(' · +10 gemmes')}return "Pas élu·e cette fois, mais quelle soirée".replace('élu·e',P('élu·e'))}}]}];
 /* jour de la fête = la vraie date si c'est un jour de cours, sinon le dernier jour de cours avant */
 const feteDayOf=k=>{let d=CAL.findIndex(c=>c&&c.k===k);if(d<1)d=CAL_END;while(d>1&&!CAL[d].sd)d--;return d};
 const FETE_ON={};FETES.forEach(f=>{f.day=f.free?CAL.findIndex(c=>c&&c.k===f.date):feteDayOf(f.date);(FETE_ON[f.day]=FETE_ON[f.day]||[]).push(f)});
@@ -2370,7 +2374,7 @@ const fst=id=>(G.fetes=G.fetes||{})[id]||(G.fetes[id]={n:0,used:[],done:false});
 const fetesOpen=()=>fetesToday().filter(f=>!fst(f.id).done);
 /* prochaines fêtes et vacances, pour la carte « À venir » de la journée */
 function upcoming(n){const out=[];for(let d=G.day+1;d<=CAL_END&&out.length<n;d++){(FETE_ON[d]||[]).forEach(f=>out.push([d,f.ic+' '+f.n]));const v=VACS.find(x=>x[0]===CAL[d].k);if(v)out.push([d,'🌴 '+v[2]])}return out.slice(0,n)}
-const actOk=a=>a.pick!=='love'||(me().orient!=='ace'&&NPCS.some(n=>iLike(n.id)));
+const actOk=a=>(GEMS_ON||!a.gems)&&(a.pick!=='love'||(me().orient!=='ace'&&NPCS.some(n=>iLike(n.id))));
 function feteSheet(f,msg){
  const st=fst(f.id),left=FETE_MAX-st.n,shift=!f.free&&f.date!==CAL[G.day].k,acts=f.acts.map((a,i)=>[a,i]).filter(([a,i])=>actOk(a)&&!st.used.includes(i));
  return sheetHead(`${f.ic} ${f.n}`,`${f.free?'Aujourd\'hui':'Aujourd\'hui au lycée'} · ${fmtDay(G.day,true)}`)
@@ -2569,7 +2573,7 @@ function drawClock(){
  const bar=$('phBar');if(bar)bar.style.width=(clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100)+'%';
 }
 function drawHUD(){
- $('gBonusDot').hidden=!G.bonus;$('gGems').textContent=G.gems;drawClock();
+ $('gBonusDot').hidden=!G.bonus;$('gGems').textContent=G.gems;$('gGemsChip').hidden=$('gEnergyPlus').hidden=!GEMS_ON;drawClock();
  if(!$('sheet').hidden&&$('gMenuBody'))drawMenu();
 }
 function hudTick(){
@@ -2855,7 +2859,7 @@ function ttHTML(){
 function objectivesCard(){
  const open=OBJ.filter(o=>objOk(o)&&o.day<=G.day&&!G.objDone.includes(o.id)).slice(0,3);
  return `<div class="card"><div class="ph-top"><span class="eyebrow">Objectifs · niveau ${G.objDone.length}</span><span class="muted">${G.objDone.length}/${OBJ.filter(objOk).length}</span></div>
- ${open.length?`<div class="objs">${open.map(o=>`<div class="obj"><span class="chk"></span><span>${P(o.t)}</span><b>+${o.gems}</b></div>`).join('')}</div>`:`<p class="muted">Tous les objectifs du moment sont atteints. De nouveaux arrivent dans les prochains jours.</p>`}</div>`;
+ ${open.length?`<div class="objs">${open.map(o=>`<div class="obj"><span class="chk"></span><span>${P(o.t)}</span>${GEMS_ON?`<b>+${o.gems}</b>`:''}</div>`).join('')}</div>`:`<p class="muted">Tous les objectifs du moment sont atteints. De nouveaux arrivent dans les prochains jours.</p>`}</div>`;
 }
 const ACTS={
  notes:{l:'Prendre des notes',e:4,risk:0,ico:'✏️'},exo:{l:"Faire l'exercice",e:3,risk:0,ico:'🧩'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Parler à ton voisin',e:2,risk:.12,ico:'💬'},
@@ -3381,7 +3385,7 @@ function playEvent(){
 function resolve(ei,ci){
  const ev=EVENTS[ei],c=ev.choices[ci],parts=[];
  Object.entries(c.rel||{}).forEach(([k,d])=>{const s=relChange(k,d);if(s)parts.push(s)});
- if(c.gems){G.gems+=c.gems;parts.push(`+${c.gems} gemmes`)}
+ if(c.gems){G.gems+=c.gems;if(GEMS_ON)parts.push(`+${c.gems} gemmes`)}
  if(c.mark){mark(c.mark[0],c.mark[1]);parts.push(`${WHO[c.mark[0]].name} s'en souviendra`)}
  if(c.potins)fPotins(c.potins);
  Object.entries(c.know||{}).forEach(([k,v])=>{G.know[k]=clamp(G.know[k]+v,0,100)});
@@ -3426,7 +3430,7 @@ function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.
 function clubBig(k){const c=CLUBS[k];playMini({sub:c.game,n:5,title:c.big},sc=>{const win=sc>=.6;
  G.posts.unshift(mkPost({by:'potins',text:`[Officiel] ${win?c.won:c.lost} · bravo à ${[...c.m.map(i=>WHO[i].name),nameOf('me')].join(', ')} !`,c:20+Math.floor(Math.random()*30),r:300,l:6000+Math.floor(Math.random()*6000)}));
  if(win){G.ig.fans+=15+Math.floor(sc*20);G.gems+=5}
- const msg=joinFx([win?c.won:c.lost,...c.m.map(i=>relChange(i,win?6:3)),win?'+5 gemmes · nouveaux abonnés':'']);note(`${c.ic} ${c.big} : ${win?'réussi':'raté de peu'}`);
+ const msg=joinFx([win?c.won:c.lost,...c.m.map(i=>relChange(i,win?6:3)),win?gemTxt('+5 gemmes · ')+'nouveaux abonnés':'']);note(`${c.ic} ${c.big} : ${win?'réussi':'raté de peu'}`);
  miniResult(win?'Grand succès ! 🎉':'Raté de peu…',`Score ${Math.round(sc*100)} %`,`<p class="story-text">${esc(msg)}</p>`);checkObjectives();saveG();drawHUD()})}
 
 /* ---------- traces durables : trahisons, confiance, rancunes ---------- */
