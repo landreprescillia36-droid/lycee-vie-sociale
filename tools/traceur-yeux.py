@@ -233,10 +233,10 @@ for sid, (x, y, w, h) in SHAPES:
         T = 1.3 + 4.2 * u_ ** 1.2
         yo_ = np.polyval(cfo, xo_) - 4.2; sl = np.polyval(np.polyder(cfo), xo_)
         inb = (xx >= box[0]) & (xx <= box[2])
-        limF = np.where(inb, np.polyval(cfo, np.clip(xx, box[0], box[2])) - T,
-                        np.where((xx - xo_) * sgn > 0, yo_ + sl * (xx - xo_) * .4 - .5 * np.abs(xx - xo_), -1))
-        P = [(float(x_), float(np.polyval(cfo, x_) - (1.3 + 4.2 * (((x_ - xi_) * sgn) / max(1, box[2] - box[0])) ** 1.2))) for x_ in np.linspace(box[0], box[2], 9)]
-        cut = (yy < limF) & ~inside
+        # tout le trait (haut et bas) est retiré de l'image : le jeu dessine l'eye-liner du haut, net ; pas de trait en bas
+        cut = ink & ~inside
+        AXs = np.where(inside.any(0))[0]; xa, xb = int(AXs.min()), int(AXs.max())
+        P = [(float(x_), float(np.polyval(cfo, x_))) for x_ in np.linspace(xa + .5, xb - .5, 9)]
         top = np.where(cut, 0, top)
         save(f'{sid}-{side}', top, col)
         if side == 'g': P = P[::-1]

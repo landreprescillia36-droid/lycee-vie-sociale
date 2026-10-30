@@ -208,25 +208,32 @@ const EYE_OLD={grands:'grands',brillants:'grands',amande:'amande',ronds:'ronds',
 const EYE_REF='#5f3a23';
 const eyeKey=k=>typeof EYE_ART==='undefined'?k:EYE_ART[k]?k:(EYE_OLD[k]||'amande');
 const EYEART=s=>typeof EYE_ART!=='undefined'&&EYE_ART[eyeKey(s.eyes)];
-/* styles de cils d'après la planche : brins fins et effilés, plus longs et plus couchés vers le coin extérieur, pointe recourbée vers l'extérieur */
-const LASH_STY={naturels:{n:11,len:[2.5,6.5],w:1,tilt:[10,55],bend:.42,u0:.2},longs:{n:11,len:[3.5,10],w:1.05,tilt:[12,58],bend:.38,u0:.2},epais:{n:15,len:[3,7],w:1.55,tilt:[12,55],bend:.32,u0:.15},
- espaces:{n:6,len:[4,8.5],w:1.15,tilt:[14,55],bend:.36,u0:.3},recourbes:{n:11,len:[3.5,8.5],w:1.1,tilt:[4,40],bend:.75,u0:.2}};
-function lashSVG(P,sty){const L=LASH_STY[sty];if(!L||!P)return '';let d='';const f=v=>v.toFixed(2);
- for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(1,L.u0+(1-L.u0)*(i+jit*.35)/(L.n-1)),q=u*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j;
-  const x=P[j][0]+(P[j+1][0]-P[j][0])*t,y=P[j][1]+(P[j+1][1]-P[j][1])*t;
-  let tx=P[j+1][0]-P[j][0],ty=P[j+1][1]-P[j][1];const tl=Math.hypot(tx,ty)||1;tx/=tl;ty/=tl;let nx=ty,ny=-tx;if(ny>0){nx=-nx;ny=-ny}
+/* eye-liner du haut et cils dessinés par le jeu (nets à toutes les tailles), d'après la planche : trait fin au coin intérieur,
+   épais vers l'extérieur, queue relevée ; cils fins et effilés, plus longs et couchés vers l'extérieur, pointe recourbée.
+   P = 9 points du haut de l'ouverture de l'œil (coin intérieur → extérieur), relevés sur la planche de Prescillia. */
+const LASH_STY={naturels:{n:11,len:[2.5,6.5],w:1,tilt:[10,55],bend:.42,u0:.2},longs:{n:12,len:[3.5,10],w:1.05,tilt:[10,58],bend:.4,u0:.15},
+ epais:{n:16,len:[3,7],w:1.5,tilt:[10,55],bend:.38,u0:.12},espaces:{n:6,len:[4,8],w:1.15,tilt:[12,55],bend:.4,u0:.28},recourbes:{n:12,len:[3.5,8.5],w:1.1,tilt:[2,40],bend:.8,u0:.15}};
+function lidCurve(P,n){const o=[];for(let k=0;k<=n;k++){const q=k/n*(P.length-1),j=Math.min(P.length-2,Math.floor(q)),t=q-j,p0=P[Math.max(0,j-1)],p1=P[j],p2=P[j+1],p3=P[Math.min(P.length-1,j+2)],t2=t*t,t3=t2*t;
+ o.push([0,1].map(c=>.5*(2*p1[c]+(-p0[c]+p2[c])*t+(2*p0[c]-5*p1[c]+4*p2[c]-p3[c])*t2+(-p0[c]+3*p1[c]-3*p2[c]+p3[c])*t3)))}return o}
+function lidSVG(P,sty){if(!P||P.length<3)return '';const f=v=>v.toFixed(2),C=lidCurve(P,32),N=C.length,sx=Math.sign(C[N-1][0]-C[0][0])||1;
+ const nrm=k=>{const a=C[Math.max(0,k-1)],b=C[Math.min(N-1,k+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;let nx=ty,ny=-tx;if(ny>0){nx=-nx;ny=-ny}return [tx,ty,nx,ny]};
+ const th=u=>.5+3.4*Math.pow(u,1.15),bot=[],top=[];
+ C.forEach((p,k)=>{const u=k/(N-1),[,,nx,ny]=nrm(k),t=th(u);bot.push([p[0]-nx*1.4,p[1]-ny*1.4]);top.push([p[0]+nx*t,p[1]+ny*t])});
+ const e=C[N-1],T=th(1),wx=e[0]+sx*9,wy=e[1]-T-4;
+ const liner=`M${bot.map(q=>f(q[0])+','+f(q[1])).join(' L')} Q${f(e[0]+sx*5.5)},${f(e[1]-1.6)} ${f(wx)},${f(wy)} Q${f(e[0]+sx*3.5)},${f(e[1]-T-1.6)} ${top.slice().reverse().map(q=>f(q[0])+','+f(q[1])).join(' L')}Z`;
+ const L=LASH_STY[sty]||LASH_STY.naturels;let d='';
+ for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(1,L.u0+(1-L.u0)*(i+jit*.35)/(L.n-1)),k=Math.round(u*(N-1)),[tx,ty,nx,ny]=nrm(k),b=top[k];
   const a=(L.tilt[0]+(L.tilt[1]-L.tilt[0])*u*u)*Math.PI/180,dx=nx*Math.cos(a)+tx*Math.sin(a),dy=ny*Math.cos(a)+ty*Math.sin(a);
-  const len=(L.len[0]+(L.len[1]-L.len[0])*Math.pow(u,1.6))*(1+jit*.18)+1.6,hw=L.w/2,bx=x-nx*2.8,by=y-ny*2.8;
-  const mx=bx+dx*len*.55,my=by+dy*len*.55,ex=mx+(dx*Math.cos(L.bend)+tx*Math.sin(L.bend))*len*.5,ey=my+(dy*Math.cos(L.bend)+ty*Math.sin(L.bend))*len*.5-len*.04;
-  const px=-dy*hw,py=dx*hw;
-  d+=`M${f(bx+px)},${f(by+py)} Q${f(mx+px*.45)},${f(my+py*.45)} ${f(ex)},${f(ey)} Q${f(mx-px*.45)},${f(my-py*.45)} ${f(bx-px)},${f(by-py)}Z`}
- return `<path d="${d}" fill="#141012"/>`}
+  const len=(L.len[0]+(L.len[1]-L.len[0])*Math.pow(u,1.6))*(1+jit*.18)+.8,hw=L.w/2,bx=b[0]-nx*.8,by=b[1]-ny*.8;
+  const mx=bx+dx*len*.55,my=by+dy*len*.55,ex=mx+(dx*Math.cos(L.bend)+tx*Math.sin(L.bend))*len*.5,ey=my+(dy*Math.cos(L.bend)+ty*Math.sin(L.bend))*len*.5;
+  const px=-dy*hw,py=dx*hw;d+=`M${f(bx+px)},${f(by+py)} Q${f(mx+px*.45)},${f(my+py*.45)} ${f(ex)},${f(ey)} Q${f(mx-px*.45)},${f(my-py*.45)} ${f(bx-px)},${f(by-py)}Z`}
+ return `<path d="${liner}" fill="#141012"/><path d="${d}" fill="#141012"/>`}
 function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7);
  const g=rgb(s.iris||EYE_REF).map((v,i)=>v/Math.max(1,rgb(EYE_REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
   +`<image href="assets/yeux/${k}-iris-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`
   +`<image href="assets/yeux/${k}-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
-  +lashSVG(P,s.cils)}
+  +lidSVG(P,s.cils)}
 function eye(E,m,p,skDD){
  const ink='#1d1411';
  if(E.closed) return `<path d="M-26,6 C-14,-16 14,-16 28,4" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/><path d="M26,2 L37,-7" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
