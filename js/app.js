@@ -217,12 +217,14 @@ function lidCurve(P,n){const o=[];for(let k=0;k<=n;k++){const q=k/n*(P.length-1)
  o.push([0,1].map(c=>.5*(2*p1[c]+(-p0[c]+p2[c])*t+(2*p0[c]-5*p1[c]+4*p2[c]-p3[c])*t2+(-p0[c]+3*p1[c]-3*p2[c]+p3[c])*t3)))}return o}
 function lidSVG(P,sty){if(!P||P.length<3)return '';const f=v=>v.toFixed(2),C=lidCurve(P,32),N=C.length,sx=Math.sign(C[N-1][0]-C[0][0])||1;
  const nrm=k=>{const a=C[Math.max(0,k-1)],b=C[Math.min(N-1,k+1)];let tx=b[0]-a[0],ty=b[1]-a[1];const l=Math.hypot(tx,ty)||1;tx/=l;ty/=l;let nx=ty,ny=-tx;if(ny>0){nx=-nx;ny=-ny}return [tx,ty,nx,ny]};
- const th=u=>.5+3.4*Math.pow(u,1.15),bot=[],top=[];
+ const th=u=>.5+3.6*Math.pow(Math.min(u,.8)/.8,1.15)-(u>.8?(u-.8)/.2*1.6:0),bot=[],top=[];
  C.forEach((p,k)=>{const u=k/(N-1),[,,nx,ny]=nrm(k),t=th(u);bot.push([p[0]-nx*1.4,p[1]-ny*1.4]);top.push([p[0]+nx*t,p[1]+ny*t])});
- const e=C[N-1],T=th(1),wx=e[0]+sx*9,wy=e[1]-T-4;
- const liner=`M${bot.map(q=>f(q[0])+','+f(q[1])).join(' L')} Q${f(e[0]+sx*5.5)},${f(e[1]-1.6)} ${f(wx)},${f(wy)} Q${f(e[0]+sx*3.5)},${f(e[1]-T-1.6)} ${top.slice().reverse().map(q=>f(q[0])+','+f(q[1])).join(' L')}Z`;
+ /* queue (comme la planche) : le trait suit le coin de l'œil puis une pointe fine part vers l'extérieur et le haut,
+    raccordée en douceur au haut du trait (pas de crochet) */
+ const k9=Math.round(.86*(N-1)),a9=top[k9],e=bot[N-1],tipX=e[0]+sx*6.5,tipY=a9[1]+(e[1]-a9[1])*.25-1.5;
+ const liner=`M${bot.map(q=>f(q[0])+','+f(q[1])).join(' L')} C${f(e[0]+sx*1.5)},${f(e[1]-1.2)} ${f(tipX-sx*3.5)},${f(tipY+1.1)} ${f(tipX)},${f(tipY)} C${f(tipX-sx*3)},${f(tipY+.1)} ${f(a9[0]+sx*2)},${f(a9[1]-.2)} ${top.slice(0,k9+1).reverse().map(q=>f(q[0])+','+f(q[1])).join(' L')}Z`;
  const L=LASH_STY[sty]||LASH_STY.naturels;let d='';
- for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(1,L.u0+(1-L.u0)*(i+jit*.35)/(L.n-1)),k=Math.round(u*(N-1)),[tx,ty,nx,ny]=nrm(k),b=top[k];
+ for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(.93,L.u0+(.93-L.u0)*(i+jit*.35)/(L.n-1)),k=Math.round(u*(N-1)),[tx,ty,nx,ny]=nrm(k),b=top[k];
   const a=(L.tilt[0]+(L.tilt[1]-L.tilt[0])*u*u)*Math.PI/180,dx=nx*Math.cos(a)+tx*Math.sin(a),dy=ny*Math.cos(a)+ty*Math.sin(a);
   const len=(L.len[0]+(L.len[1]-L.len[0])*Math.pow(u,1.6))*(1+jit*.18)+.8,hw=L.w/2,bx=b[0]-nx*.8,by=b[1]-ny*.8;
   const mx=bx+dx*len*.55,my=by+dy*len*.55,ex=mx+(dx*Math.cos(L.bend)+tx*Math.sin(L.bend))*len*.5,ey=my+(dy*Math.cos(L.bend)+ty*Math.sin(L.bend))*len*.5;
