@@ -566,7 +566,7 @@ function hatSVG(s,p){const c=s.hatColor,d=shade(c,-.3);
  }}
 function edgesSVG(s,hD){return s.edges==='baby'?LN('M114,150 c-8,4 -10,14 -2,16 c6,1 8,-6 2,-8 M286,150 c8,4 10,14 2,16 c-6,1 -8,-6 -2,-8 M150,138 q4,-6 10,-2 M240,136 q6,-4 10,2 M120,168 q-4,6 2,10 M280,168 q4,6 -2,10',hD,1.8,.9):''}
 const TOPS=['salopette','tshirt','crop','debardeur','ajuste','henley','asym','capuche','chemise','colroule','gilet','epaules','blouse','veste','cardigan'];
-const TOP2={capuche2:{h:470,ext:13,sl:446,sx:9,neck:'deepv',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
+const TOP2={capuche2:{h:470,ext:13,sl:446,sx:9,neck:'v',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
  chemcrop:{h:394,ext:4,sl:446,sx:5,neck:'deepv',scol:1,btnv2:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square',heart:1},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
  polo:{h:398,ext:1,sl:292,sx:1.5,band2:1,fit:1,neck:'v',pcol:1,placket2:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square',fly:1},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1,heart:2},
  pullfin:{h:412,ext:8,sl:446,sx:7,neck:'off',cuff:1},halter:{h:376,ext:0,neck:'halter',fit:1,nosl:1,keyhole:1},tanksport:{h:380,ext:0,neck:'tank',fit:1,nosl:1,trim:1,rib:1},
@@ -739,7 +739,7 @@ function topSVG(G,T,s,p,K){
  o+=J.torso;
  if(!['off','asym','tube','halter','tank'].includes(T.neck))o+=arms();
  if(T.neck==='cami'&&!hasJk)o+=yokeSVG(G,p,sk,270,true)+camiStraps;
- const ex=T.puff===2?(y=>4+16*Math.sin(Math.PI*(.22+.78*Math.max(0,Math.min(1,(y-232)/(T.sl-228)))))):T.puff?(y=>3+11*Math.sin(Math.PI*Math.min(1,(y-236)/200))):(()=>T.sx);
+ const ex=T.puff===2?(y=>4+9*Math.sin(Math.PI*(.22+.78*Math.max(0,Math.min(1,(y-232)/(T.sl-228)))))):T.puff?(y=>3+11*Math.sin(Math.PI*Math.min(1,(y-236)/200))):(()=>T.sx);
  const yTop=T.neck==='off'?240:null;
  [-1,1].forEach(k=>{
   if(T.nosl||(T.neck==='asym'&&k===1))return;
@@ -757,7 +757,7 @@ function topSVG(G,T,s,p,K){
  if(G.f&&!(s.jacket&&JK[s.jacket])&&!T.bib&&!T.nosl)[-1,1].forEach(k=>{if(T.neck==='asym'&&k===1)return;o+=bustLine(G,k,c,ex,yTop?yTop+6:258)});
  if(T.bib){const b=s.bottomColor;o+=LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')}
  if(T.hood2&&!(s.jacket&&JK[s.jacket])){const hf=shade(c,.1),ho=shade(c,-.4);
-  const Lf='M138,228 C144,200 164,186 182,188 C172,210 182,236 200,254 C172,254 148,246 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,210 218,236 200,254 C228,254 252,246 262,228Z';
+  const Lf='M138,228 C144,200 164,186 182,188 C172,210 182,240 200,266 C172,262 148,250 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,210 218,240 200,266 C228,262 252,250 262,228Z';
   o+=`<path d="${Rf}" fill="${hf}"/>`+LN(Rf,ho,2,.8)+`<path d="${Lf}" fill="${hf}"/>`+LN(Lf,ho,2,.8)+LN('M150,226 C160,208 174,200 186,200 M250,226 C240,208 226,200 214,200',ho,1.4,.35);
   const sc=lum(c)>.7?'#9a9488':'#f4f1ea';o+=`<circle cx="187" cy="240" r="2.2" fill="${ho}"/><circle cx="213" cy="240" r="2.2" fill="${ho}"/>`+LN('M187,240 L188,320 M213,240 L212,320',sc,2.6,1)+`<rect x="186.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/><rect x="210.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/>`;
   o+=`<path d="M156,${h-78} L244,${h-78} L256,${h-16} L144,${h-16}Z" fill="none" stroke="${ho}" stroke-width="2.4" opacity=".55"/>`+LN(`M156,${h-78} L144,${h-16} M244,${h-78} L256,${h-16}`,shade(c,.12),1.2,.4)}
