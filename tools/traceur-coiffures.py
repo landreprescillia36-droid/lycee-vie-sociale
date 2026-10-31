@@ -392,7 +392,7 @@ for hid, c in HAIRS.items():
         al = np.clip((cv2.GaussianBlur(al, (0, 0), 1.5) - .5) * 2 + .5, 0, 1)
     if c.get('match') == 'g':   # contour orangé de la ligne des cheveux et peau du dessin : transparents (la peau du jeu est dessous)
         pr = px.astype(int); lum_ = (pr * [.299, .587, .114]).sum(-1)
-        al = al * (1 - np.clip(((pr[..., 0] - pr[..., 2]) - 22) / 18, 0, 1) * np.clip((lum_ - 40) / 25, 0, 1))
+        al = al * (1 - np.clip(((pr[..., 0] - pr[..., 2]) - 14) / 14, 0, 1) * np.clip((lum_ - 34) / 18, 0, 1))
         al = al * (1 - np.clip((lum_ - 120) / 30, 0, 1))   # restes clairs du fond de la planche
     if c.get('match') == 'g' and c.get('arrondi', 1):   # côtés arrondis vers le crâne du jeu : sous v_a, le bord extérieur rentre en courbe jusqu'au contour du visage
         # (on rogne le bord, sans déformer les mèches) ; la coiffure ne dépasse plus en bloc au-dessus des oreilles
@@ -414,6 +414,9 @@ for hid, c in HAIRS.items():
         side = np.clip((np.abs(Ug - 200) - 52) / 14, 0, 1)[None, :]   # 0 au milieu du front, 1 sur les côtés
         ramp = np.clip((Vg - v0_) / (v1_ - v0_), 0, 1)[:, None]
         al = al * (1 - .85 * side * ramp ** 1.2)
+    if c.get('match') == 'g':   # contour net et lisse (plus de marches en escalier sur le bord des cheveux)
+        al = np.clip((cv2.GaussianBlur(al.astype(np.float32), (0, 0), 1.6) - .5) * 2.2 + .5, 0, 1) * (al > .02)
+        al = cv2.GaussianBlur(al, (0, 0), .7)
     if c.get('match') == 'g':   # bord semi-transparent : couleur des mèches voisines (pas le fond clair de la planche, qui ressortait une fois reteint)
         bm = ((al < .97) & (cv2.dilate((al > .02).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0)).astype(np.uint8)
         px = cv2.inpaint(np.ascontiguousarray(px[:, :, ::-1]).astype(np.uint8), bm, 4, cv2.INPAINT_TELEA)[:, :, ::-1]
