@@ -1129,7 +1129,7 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['longs','carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bbantu','bcarre','bchignon','bpuffs','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','bchignonbas','btwists','bchignonmeches','bwashgo','bfoulard','btressesboucles','bcourt','bqueuehaute','btressesarriere','carreondule','longondule','carreplongeant','miboucle','ananas','degrade','taper','fadehaut','raiecote'];
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
