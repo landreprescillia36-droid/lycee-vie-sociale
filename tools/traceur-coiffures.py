@@ -459,12 +459,27 @@ for hid, c in HAIRS.items():
     if c.get('oreilles'): out_img['ears'] = 1   # oreilles du jeu visibles à travers les cheveux
     if c.get('match') == 'g':   # crâne : peau sous toute la largeur des cheveux (rang par rang), jusqu'au haut des oreilles : la coiffure ne se détache jamais de la tête
         alb = np.zeros(sz[::-1], np.float32); alb[Y0:Y1, X0:X1] = rgba[..., 3] / 255.   # cheveux tels que dessinés (après les retouches)
-        cr = cv2.resize((alb > .5).astype(np.uint8), (M.shape[1], M.shape[0]), interpolation=cv2.INTER_NEAREST).astype(bool); cr2 = np.zeros_like(cr)
-        for y in range(cr.shape[0]):
-            if toU(0, y)[1] > 226: break
-            xs_ = np.where(cr[y])[0]
-            if len(xs_): cr2[y, xs_.min():xs_.max() + 1] = True
-        out_img['crane'] = paths(cv2.erode(cr2.astype(np.uint8), np.ones((31, 31), np.uint8)).astype(bool))   # en retrait du bord des cheveux : pas de liseré de peau autour
+        # crâne lisse : demi-largeur des cheveux (bord extérieur, lissé) tant qu'il y a des cheveux sur les côtés, puis courbe douce
+        # jusqu'au contour du visage du jeu (v = 215) ; le trait du contour de la tête relie ainsi les cheveux au visage
+        def fh(v):
+            P = FACE_OV[np.abs(FACE_OV[:, 1] - v) < 1.5]
+            return float(np.abs(P[:, 0] - 200).max()) if len(P) else 94
+        Hs, Ws = alb.shape; uu = np.array([toU(x * UP / S, 0)[0] for x in range(Ws)]); vv = np.array([toU(0, y * UP / S)[1] for y in range(Hs)])
+        V, HW = [], []
+        for y in range(Hs):
+            xs_ = np.where(alb[y] > (.06 if vv[y] > 130 else .6))[0]
+            if not len(xs_): continue
+            hw_ = min(200 - uu[xs_.min()], uu[xs_.max()] - 200)
+            if V and hw_ < 60 and vv[y] > 120: break   # plus de cheveux sur les côtés
+            V.append(vv[y]); HW.append(hw_ - (1 if vv[y] > 130 else 4))
+        V = np.array(V); HW = np.array(HW); k_ = 9
+        HW = np.convolve(np.pad(HW, k_, mode='edge'), np.ones(2 * k_ + 1) / (2 * k_ + 1), 'valid')
+        ve, he = V[-1], HW[-1]; vend = max(ve + 18, 212)
+        V2 = list(V); H2 = list(HW)
+        for v in np.linspace(ve, vend, 30)[1:]:
+            tt = (v - ve) / (vend - ve); tt = tt * tt * (3 - 2 * tt); V2.append(v); H2.append(he + (fh(v) - he) * tt)
+        pl = ' '.join('%.1f,%.1f' % (200 - h, v) for v, h in list(zip(V2, H2))[::3]); pr = ' '.join('%.1f,%.1f' % (200 + h, v) for v, h in list(zip(V2[::-1], H2[::-1]))[::3])
+        out_img['crane'] = 'M' + pl + ' L' + pr + 'Z'
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
     if dbg:
