@@ -58,6 +58,9 @@ def garcon(nom, **kw):
 GARCONS = ['gnaturel', 'gdegbas', 'gdegmoyen', 'gdeghaut', 'gbuzz', 'gcarrecourt', 'gcarremoyen', 'gcarrelong', 'gplaques', 'graiemilieu',
            'graiecote', 'gquiff', 'gpompadour', 'gtaper', 'gondule']
 for k in GARCONS: HAIRS[k] = garcon(k)
+for k, f in {'gdegbas': (186, 214), 'gdegmoyen': (172, 208), 'gdeghaut': (156, 200), 'gbuzz': (176, 212), 'gtaper': (182, 214), 'gnaturel': (196, 222)}.items(): HAIRS[k]['fondu'] = f
+# dégradé : sur les côtés (hors du front), les cheveux s'éclaircissent jusqu'à la peau entre les deux hauteurs (unités de tête)
+for k in ['gcarremoyen', 'gcarrelong', 'graiemilieu']: HAIRS[k].update(oreilles=False, combler=None, oeil=(9, 9, 16, 9, 18))   # (hauteur œil, côté extérieur, côté intérieur, sourcil extérieur, intérieur) : les mèches qui passent sur le coin de l'œil restent   # yeux et sourcils découpés au plus près   # mèches qui descendent devant les oreilles
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 K_LONGS, CHIN_U = 1.785, 308.5
 def _bez(d):   # contour du visage « ovale » du jeu (FACES.ovale dans js/app.js), en points
@@ -113,9 +116,11 @@ for hid, c in HAIRS.items():
         ex_, ey_ = EYES_T[c['match']]; sc_ = fs / FACES_T[c['match']][4]   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
         ey = fch - ey_ * sc_
         mh, mw = {True: (10, 15), 'b': (10 * 1.033, 15 * 1.033), 'c': (11, 16), 'g': (10, 16)}[c['match']]
-        c['cut'] += [(int(ey - mh * sc_), int(ey + mh * sc_), int(fcx + dx * sc_ - mw * sc_), int(fcx + dx * sc_ + mw * sc_)) for dx in (-ex_, ex_)]
+        oe = c.get('oeil') or (mh, mw, mw, 18, 18)
+        bo = lambda dx, o, i: (int(fcx + dx * sc_ - (o if dx < 0 else i) * sc_), int(fcx + dx * sc_ + (i if dx < 0 else o) * sc_))
+        c['cut'] += [(int(ey - oe[0] * sc_), int(ey + oe[0] * sc_)) + bo(dx, oe[1], oe[2]) for dx in (-ex_, ex_)]
         if c.get('sourcils', c['match'] == 'g'):   # sourcils épais du garçon : retirés (sauf s'ils touchent une frange, cf. 'sourcils': False)
-            c['cut'] += [(int(ey - 27 * sc_), int(ey - 10 * sc_), int(fcx + dx * sc_ - 22 * sc_), int(fcx + dx * sc_ + 22 * sc_)) for dx in (-ex_, ex_)]
+            c['cut'] += [(int(ey - 27 * sc_), int(ey - 10 * sc_)) + bo(dx, oe[3], oe[4]) for dx in (-ex_, ex_)]
         c['back'] = (int(fch - 6 * fs), c['bottom'], 0, im.shape[1]) if c['back'] else None
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
         sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
@@ -384,6 +389,12 @@ for hid, c in HAIRS.items():
             if rs < r0: al[y, rs + 1:] = 0
             elif rs > r0: n_ = rs - r0; px[y, r0 + 1:rs + 1] = px[y, r0 - n_:r0][::-1]; al[y, r0 + 1:rs + 1] = al[y, r0 - 2]
         al = np.clip((cv2.GaussianBlur(al, (0, 0), 1.5) - .5) * 2 + .5, 0, 1)
+    if c.get('fondu'):
+        v0_, v1_ = c['fondu']; Xg = np.arange(al.shape[1]); Yg = np.arange(al.shape[0])
+        Ug = np.array([toU(x * UP / S, 0)[0] for x in Xg]); Vg = np.array([toU(0, y * UP / S)[1] for y in Yg])
+        side = np.clip((np.abs(Ug - 200) - 52) / 14, 0, 1)[None, :]   # 0 au milieu du front, 1 sur les côtés
+        ramp = np.clip((Vg - v0_) / (v1_ - v0_), 0, 1)[:, None]
+        al = al * (1 - .85 * side * ramp ** 1.2)
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
@@ -430,7 +441,8 @@ for hid, c in HAIRS.items():
         v = np.zeros_like(bigim); v[:] = 235
         for k in range(K): v[L == k] = rgb[k]
         cv2.imwrite(f'{dbg}/coiffure_{hid}.png', cv2.resize(v[:, :, ::-1], None, fx=.5, fy=.5))
-    print(hid, 'visage', fl, fr, 'haut', top, 'échelle', round(sx, 3), round(sy, 3))
+    if os.environ.get("CUTS"): print(c["cut"])
+    print(hid, "visage", fl, fr, 'haut', top, 'échelle', round(sx, 3), round(sy, 3))
 if ONLY:   # seulement quelques coiffures refaites : les autres sont gardées telles quelles
     old = json.loads(open('js/coiffures-art.js').read().split('const HAIR_ART=', 1)[1].rstrip().rstrip(';')); old.update(out); out = old
 js = '/* formes décalquées par tools/traceur-coiffures.py sur docs/references/coiffures/ — ne pas modifier à la main */\nconst HAIR_ART=' + json.dumps(out, separators=(',', ':')) + ';\n'
