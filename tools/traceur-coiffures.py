@@ -483,6 +483,16 @@ for hid, c in HAIRS.items():
             tt = (v - ve) / (vend - ve); tt = tt * tt * (3 - 2 * tt); V2.append(v); H2.append(he + (fh(v) - he) * tt)
         pl = ' '.join('%.1f,%.1f' % (200 - h, v) for v, h in list(zip(V2, H2))[::3]); pr = ' '.join('%.1f,%.1f' % (200 + h, v) for v, h in list(zip(V2[::-1], H2[::-1]))[::3])
         out_img['crane'] = 'M' + pl + ' L' + pr + 'Z'
+        # tempes : trait en diagonale du contour du crâne (bord du visage, plus bas) jusqu'au coin de la ligne des cheveux
+        tp = []
+        for k in (-1, 1):
+            best = None   # coin de la ligne des cheveux : point de cheveux le plus bas entre 64 et 84 unités du milieu
+            ys_, xs_ = np.where((alb > .5) & (((uu - 200) * k > 64) & ((uu - 200) * k < 84))[None, :])
+            if len(ys_):
+                i_ = np.argmax(ys_); best = (uu[xs_[i_]], vv[ys_[i_]])
+            if best:
+                vb_ = max(best[1] + 22, 168); tp.append([round(best[0], 1), round(best[1], 1), round(200 + k * fh(vb_), 1), round(vb_, 1)])
+        out_img['tempe'] = tp
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
     if dbg:
