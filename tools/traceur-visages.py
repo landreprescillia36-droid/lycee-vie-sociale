@@ -5,7 +5,7 @@
    et le dessous de l'oreille), puis la mâchoire est suivie à l'intérieur de la silhouette (le cou est de la même couleur :
    on prend, colonne par colonne, la ligne où la peau devient plus sombre vers le bas = ombre sous le menton).
    Le contour est posé sur la tête du jeu : centre des yeux du dessin -> yeux du jeu (x 148 et 252, y 205)."""
-import sys, json, re, numpy as np, cv2
+import sys, os, json, re, numpy as np, cv2
 SRC = 'docs/references/visages/planche-visages.png'
 NAMES = ['ovale', 'rond', 'carre', 'rectangle', 'coeur', 'diamant', 'triangle', 'allonge', 'trapeze', 'losange']
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
@@ -61,7 +61,7 @@ for j, i in enumerate(heads):
     Re = ears(Re, 1)
     # jonction avec le cou : là où le bord arrête de rentrer (largeur minimale sous la bouche)
     ys_ = sorted(Le); wd = np.array([Re[y] - Le[y] for y in ys_])
-    yb0 = int(ey + 70 / S); cand = [y for y in ys_ if yb0 <= y <= ey + 160 / S]
+    cand = [y for y in ys_ if ey + 1.0 * (exr - exl) <= y <= ey + 1.45 * (exr - exl) and Re[y] - Le[y] > .4 * (exr - exl)]
     yn = cand[int(np.argmin([Re[y] - Le[y] for y in cand]))]   # le plus étroit = cou
     # mâchoire : ligne d'ombre (assombrissement vers le bas) colonne par colonne
     jaw = []
@@ -70,30 +70,26 @@ for j, i in enumerate(heads):
         col = gy[ya:yb, x].copy(); col[~filled[ya:yb, x]] = 0
         jaw.append((x, ya + int(np.argmin(col)), -col.min()))
     jx = np.array([q[0] for q in jaw], float); jy = np.array([q[1] for q in jaw], float); js = np.array([q[2] for q in jaw])
-    ok = js > 6
-    jyS = cv2.GaussianBlur(np.interp(jx, jx[ok], jy[ok]).reshape(1, -1).astype(np.float32), (0, 0), 3).ravel()
-    # le bord de la silhouette rejoint la mâchoire où la ligne d'ombre croise le bord
-    def meet(E, sgn):
-        best = None
-        for y in sorted(E):
-            if y < ey + .62 * D: continue
-            xe = E[y]; jj = np.interp(xe, jx, jyS)
-            if y >= jj: return y
+    # mâchoire : ligne d'ombre sous le menton, gardée seulement au-dessus du cou (colonnes entre les bords du cou, où elle est nette)
+    xc = (Le[yn] + Re[yn]) / 2; hn = (Re[yn] - Le[yn]) / 2
+    ok = (js > 6) & (np.abs(jx - xc) < hn - 3)
+    if os.environ.get("DBG"): print(k, g, "yn", yn, "ey", ey, "D", D, "hn", hn, "xc", xc, (js > 6).sum())
+    jyS = cv2.GaussianBlur(jy[ok].reshape(1, -1).astype(np.float32), (0, 0), 2).ravel(); jxS = jx[ok]
+    # côtés : bord de la silhouette jusqu'à la jonction avec le cou (là où le bord devient vertical)
+    def junction(E):
+        for y in range(int(ey + .62 * D), yn):
+            if abs(E[y + 4] - E[y]) < 1.2: return y
         return yn
-    yl, yr = meet(Le, -1), meet(Re, 1)
-    xl, xr = Le[yl], Re[yr]
-    sel = (jx > xl) & (jx < xr)
-    pts = [U(Le[y], y) for y in sorted(Le) if y <= yl][::-1]          # gauche : de la mâchoire vers le haut
-    pts = pts[::-1]
+    yl, yr = junction(Le), junction(Re)
     left = [U(Le[y], y) for y in sorted(Le) if y <= yl]                # haut -> bas (gauche)
     right = [U(Re[y], y) for y in sorted(Re) if y <= yr][::-1]         # bas -> haut (droite)
-    bottom = [U(x, y) for x, y in zip(jx[sel], jyS[sel])]               # gauche -> droite
+    bottom = [U(x, y) for x, y in zip(jxS, jyS)]                        # gauche -> droite
     C = left + bottom + right
     # symétrie : moyenne avec le miroir (le dessin est presque symétrique)
     C = np.array(C)
     P = []
     ang = lambda p: np.arctan2(p[1] - 190, p[0] - 200)
-    th = np.linspace(0, 2 * np.pi, 48, endpoint=False) + np.pi / 2   # départ en bas (menton)
+    th = np.linspace(0, 2 * np.pi, 96, endpoint=False) + np.pi / 2   # départ en bas (menton)
     A = np.arctan2(C[:, 1] - 190, C[:, 0] - 200); R = np.hypot(C[:, 0] - 200, C[:, 1] - 190)
     o = np.argsort(A); A, R = A[o], R[o]
     Rf = lambda a: np.interp(((a + np.pi) % (2 * np.pi)) - np.pi, A, R, period=2 * np.pi)
@@ -101,7 +97,7 @@ for j, i in enumerate(heads):
         r = (Rf(t) + Rf(np.pi - t)) / 2
         P.append((200 + r * np.cos(t), 190 + r * np.sin(t)))
     P = np.array(P)
-    r_ = np.hypot(P[:, 0] - 200, P[:, 1] - 190); r_ = np.convolve(np.r_[r_[-3:], r_, r_[:3]], np.array([1, 3, 1]) / 5, 'same')[3:-3]   # petites bosses lissées
+    r_ = np.hypot(P[:, 0] - 200, P[:, 1] - 190); r_ = np.convolve(np.r_[r_[-3:], r_, r_[:3]], np.array([1, 2, 1]) / 4, 'same')[3:-3]   # petites bosses lissées
     P = np.c_[200 + r_ * np.cos(th), 190 + r_ * np.sin(th)]
     d = bez_path(P)
     def edge_at(yv, sgn):
