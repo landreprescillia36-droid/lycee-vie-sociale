@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='36';
+const APP_VERSION='37';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -132,6 +132,7 @@ const TAILLE={petite:.9,moyenne:1,grande:1.1},TAILLE_F={grande:1.05},CORP={mince
 const legX=(G,v)=>{const k=G.lk||1;if(k===1)return v;if(v<=25)return 25-(25-v)*k;return Math.min(Math.max(v,G.HH+2),25+(v-25)*k)};
 const BODY_Y=206,BODY_L=672,BODY_K=.9;
 function render(s,vb,p,showBg){
+ s=noAcc(s);
  if(typeof HAIR_ALL!=='undefined'&&!HAIR_ALL.includes(s.hair)&&HAIR_SWAP[s.hair])s={...s,hair:HAIR_SWAP[s.hair]};
  const hk=(s.sexe==='f'&&TAILLE_F[s.taille])||TAILLE[s.taille]||1,wk=(CORP[s.corpulence]||CORP.moyenne).w,vh=+String(vb).split(/[ ,]+/)[3],up=vh>=600?(hk-1)*BODY_L:0;
  if(s.hair==='ananas'||s.hair==='chignonhaut'){let [x,y,w,h]=String(vb).split(/[ ,]+/).map(Number);const top=(s.hair==='ananas'?-46:-14)-up;if(y>top){const h2=h+(y-top),w2=w*h2/h;x-=(w2-w)/2;vb=[x,top,w2,h2].map(v=>+v.toFixed(1)).join(' ')}}
@@ -1208,16 +1209,7 @@ const WEAR={
   {s:'shoes',v:'bottes',c:'#1f2127',n:'Bottes hautes noires',r:'T'},
   {s:'shoes',v:'montantes',c:'#1f2127',n:'Baskets montantes noires',r:null},{s:'shoes',v:'sandales',c:'#7a5236',n:'Sandales à brides',r:null}]},
  acc:{l:'Accessoires',vb:hv('40 0 320 300'),items:[
-  {s:'hat',v:'aucun',n:'Sans chapeau'},{s:'hat',v:'casquette',c:'#1f2127',n:'Casquette',r:null},{s:'hat',v:'bob',c:'#ece2cc',n:'Bob',r:null},
-  {s:'hat',v:'bonnet',c:'#26314f',n:'Bonnet côtelé',r:null},{s:'hat',v:'foulard',c:'#f2c230',n:'Foulard en madras',r:null},
-  {s:'bag',v:'aucun',n:'Sans sac',vb:'90 190 220 280'},{s:'bag',v:'bandouliere',c:'#7a5236',n:'Sac bandoulière',r:null,vb:'90 190 220 280'},
-  {s:'bag',v:'tote',c:'#ece2cc',n:'Tote bag',r:null,vb:'90 190 220 280'},{s:'bag',v:'banane',c:'#1f2127',n:'Sac banane',r:null,vb:'90 190 220 280'},
-  {s:'necklace',v:'aucun',n:'Sans collier',vb:'150 176 100 100'},{s:'necklace',v:'chaine',n:'Chaîne dorée',r:null,vb:'150 176 100 100'},
-  {s:'necklace',v:'perles',n:'Collier de perles',r:null,vb:'150 176 100 100'},{s:'necklace',v:'rasdecou',n:'Ras-de-cou',r:null,vb:'150 176 100 100'},
-  {s:'glasses',v:'aucune',n:'Sans lunettes',vb:hv('80 140 240 130')},{s:'glasses',v:'rondes',n:'Lunettes rondes',r:null,vb:hv('80 140 240 130')},{s:'glasses',v:'carrees',n:'Lunettes carrées',r:null,vb:hv('80 140 240 130')},
-  {s:'glasses',v:'soleil',n:'Lunettes de soleil',r:null,vb:hv('80 140 240 130')},{s:'glasses',v:'dorees',n:'Monture dorée',r:null,vb:hv('80 140 240 130')},{s:'glasses',v:'coeur',n:'Lunettes cœur',r:null,vb:hv('80 140 240 130')},
-  {s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,vb:hv('55 175 110 100')},
-  {s:'earrings',v:'perles',n:"Puces perle",r:null,vb:hv('55 175 110 100')},{s:'earrings',v:'etoiles',n:'Étoiles',r:null,vb:hv('55 175 110 100')}]}
+  {s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,vb:hv('55 175 110 100')}]}
 };
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
@@ -1296,6 +1288,8 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
+/* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
+function noAcc(s){if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:'aucun',necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
 let tab=0, sub=0;
