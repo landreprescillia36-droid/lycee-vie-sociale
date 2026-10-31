@@ -54,7 +54,7 @@ for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FA
 # planche « Coiffures pour garçon » (docs/references/coiffures/planche-garcons-lisses.jpg, cases dans garcons/) : visage de garçon
 # plus long que celui du jeu ; la case est posée à la largeur de la tête et les yeux sur ceux du jeu (menton « virtuel »)
 def garcon(nom, **kw):
-    return {'src': f'docs/references/coiffures/garcons/{nom}.png', 'match': 'g', 'bottom': 196, 'back': False, 'tips': False, 'smooth': False, 'bord': 13, 'oreilles': True, 'combler': 'gd', **kw}
+    return {'src': f'docs/references/coiffures/garcons/{nom}.png', 'match': 'g', 'bottom': 196, 'back': False, 'tips': False, 'smooth': False, 'bord': 13, 'oreilles': True, 'combler': 'gd', 'rogne': 17, **kw}
 GARCONS = ['gnaturel', 'gdegbas', 'gdegmoyen', 'gdeghaut', 'gbuzz', 'gcarrecourt', 'gcarremoyen', 'gcarrelong', 'gplaques', 'graiemilieu',
            'graiecote', 'gquiff', 'gpompadour', 'gtaper', 'gondule']
 for k in GARCONS: HAIRS[k] = garcon(k)
@@ -345,11 +345,12 @@ for hid, c in HAIRS.items():
     near = cv2.dilate(hole, np.ones((5, 5), np.uint8)).astype(bool)
     lumc = (clean.astype(float) * [.299, .587, .114]).sum(-1)
     sk_in = (((clean[..., 0].astype(int) - clean[..., 2] > 40) & (clean[..., 0] > 80)) | (near & (lumc > 55)) | hole.astype(bool)).astype(np.uint8)
-    if c.get('match') in ('b', 'c'):   # bretelles blanches du débardeur et fond clair coincés entre les boucles ou les tresses : repeints en cheveux
+    if c.get('match') in ('b', 'c', 'g'):   # bretelles blanches du débardeur et fond clair coincés entre les boucles ou les tresses : repeints en cheveux
         sk_in |= ((lumc > 140) & (abs(clean[..., 0].astype(int) - clean[..., 2]) < 45)).astype(np.uint8)
     if c.get('accessoire'): sk_in[cv2.dilate(hole, np.ones((5, 5), np.uint8)) > 0] = 0   # barrette : gardée telle quelle, pas repeinte en cheveux
     F = F | (cv2.resize(hole, (F.shape[1], F.shape[0]), interpolation=cv2.INTER_NEAREST) > 0)   # restes de peau ou de contour orangé dans les cheveux
-    a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((UP // 2 * 2 + 1,) * 2, np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
+    er = c.get('rogne', UP // 2 * 2 + 1)   # bord resserré (planche garçons : fond clair autour des mèches, on rogne un peu plus)
+    a = cv2.GaussianBlur(cv2.erode(F.astype(np.uint8), np.ones((er, er), np.uint8)).astype(np.float32), (9, 9), 0)   # bord resserré : pas de liseré couleur peau
     # la raie (ligne de peau entre les deux côtés, en haut du crâne) est gardée telle quelle
     fy0 = np.where(skin[:, int(cx)])[0]; fy0 = fy0[fy0 > top + 3].min() if len(fy0[fy0 > top + 3]) else top + 30
     sk_in[:fy0, max(0, int(cx) - 3):int(cx) + 4] = 0
@@ -395,6 +396,9 @@ for hid, c in HAIRS.items():
         side = np.clip((np.abs(Ug - 200) - 52) / 14, 0, 1)[None, :]   # 0 au milieu du front, 1 sur les côtés
         ramp = np.clip((Vg - v0_) / (v1_ - v0_), 0, 1)[:, None]
         al = al * (1 - .85 * side * ramp ** 1.2)
+    if c.get('match') == 'g':   # bord semi-transparent : couleur des mèches voisines (pas le fond clair de la planche, qui ressortait une fois reteint)
+        bm = ((al < .97) & (cv2.dilate((al > .02).astype(np.uint8), np.ones((5, 5), np.uint8)) > 0)).astype(np.uint8)
+        px = cv2.inpaint(np.ascontiguousarray(px[:, :, ::-1]).astype(np.uint8), bm, 4, cv2.INPAINT_TELEA)[:, :, ::-1]
     ys2, xs2 = np.where(al > .02); X0, Y0, X1, Y1 = xs2.min(), ys2.min(), xs2.max() + 1, ys2.max() + 1
     rgba = np.dstack([px[..., ::-1], (al * 255).clip(0, 255).astype(np.uint8)])[Y0:Y1, X0:X1]
     cv2.imwrite(f'assets/coiffures/{hid}.png', rgba, [cv2.IMWRITE_PNG_COMPRESSION, 9])
@@ -435,6 +439,13 @@ for hid, c in HAIRS.items():
     if accM is not None: out_img['acc'] = 1
     if dos: out_img['dos'] = 1
     if c.get('oreilles'): out_img['ears'] = 1   # oreilles du jeu visibles à travers les cheveux
+    if c.get('match') == 'g':   # crâne : peau sous toute la largeur des cheveux (rang par rang), jusqu'au haut des oreilles : la coiffure ne se détache jamais de la tête
+        cr = np.zeros_like(M)
+        for y in range(M.shape[0]):
+            if toU(0, y)[1] > 226: break
+            xs_ = np.where(M[y])[0]
+            if len(xs_): cr[y, xs_.min():xs_.max() + 1] = True
+        out_img['crane'] = paths(cv2.erode(cr.astype(np.uint8), np.ones((31, 31), np.uint8)).astype(bool))   # en retrait du bord des cheveux : pas de liseré de peau autour
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
     if dbg:
