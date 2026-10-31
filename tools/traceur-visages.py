@@ -98,12 +98,17 @@ for j, i in enumerate(heads):
         P.append((200 + r * np.cos(t), 190 + r * np.sin(t)))
     P = np.array(P)
     r_ = np.hypot(P[:, 0] - 200, P[:, 1] - 190); r_ = np.convolve(np.r_[r_[-3:], r_, r_[:3]], np.array([1, 2, 1]) / 4, 'same')[3:-3]   # petites bosses lissées
+    low = np.sin(th) > .55   # bas du visage (mâchoire, menton) : petites cassures du raccord lissées
+    r2 = np.convolve(np.r_[r_[-4:], r_, r_[:4]], np.array([1, 2, 3, 2, 1]) / 9, 'same')[4:-4]; r_ = np.where(low, r2, r_)
     P = np.c_[200 + r_ * np.cos(th), 190 + r_ * np.sin(th)]
     d = bez_path(P)
     def edge_at(yv, sgn):
         q = P[(P[:, 0] - 200) * sgn > 0]; i_ = np.argmin(np.abs(q[:, 1] - yv)); return q[i_, 0]
     ex = round(float(edge_at(207, -1)) + 1, 1)
-    out[g][k] = {'d': d, 'ex': ex, 'chin': round(float(P[0][1]), 1)}
+    open("/tmp/vis/geo.txt", "a").write(f"{g} {k} {ecx} {ey} {S}\n")
+    col = gray[int(ey):int(ey + 1.3 * D), int(ecx) - 3:int(ecx) + 4].mean(1)   # bouche : ligne la plus sombre sous le nez, sur l'axe
+    mo = 205 + (int(.6 * D) + int(np.argmin(col[int(.6 * D):int(1.25 * D)]))) * S
+    out[g][k] = {'d': d, 'ex': ex, 'chin': round(float(P[0][1]), 1), 'mo': round(float(mo - 286), 1)}   # décalage de la bouche (et du nez) par rapport au jeu
     print(g, k, 'menton', round(float(P[0][1]), 1), 'joue', ex, 'haut', round(float(P[:, 1].min()), 1))
     if dbg:
         v = im[y0:y0 + h, x0:x0 + w].copy(); v = cv2.resize(v, None, fx=3, fy=3)
