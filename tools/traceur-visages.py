@@ -114,14 +114,14 @@ for j, i in enumerate(heads):
         lin = lambda a_, b_, n: [(a_[0] + (b_[0] - a_[0]) * i / n, a_[1] + (b_[1] - a_[1]) * i / n) for i in range(1, n)]
         def qb(a_, c_, b_, n):   # courbe douce (Bézier quadratique)
             return [((1-u)**2*a_[0]+2*(1-u)*u*c_[0]+u*u*b_[0], (1-u)**2*a_[1]+2*(1-u)*u*c_[1]+u*u*b_[1]) for u in np.linspace(0, 1, n)[1:-1]]
-        rr = 13
+        rr = 20
         def side(s_):   # du milieu du menton vers l'angle de la mâchoire, côté s_ (-1 gauche, 1 droite)
             C0 = (200 + s_ * xC, ch - rr); A0 = (200 + s_ * xA, yA)
             pts_ = qb((200, ch), (200 + s_ * xC * .7, ch + 1), C0, 7) + [C0]
-            mid = ((C0[0] + A0[0]) / 2 + s_ * 3, (C0[1] + A0[1]) / 2 + 2)   # mâchoire légèrement bombée
+            mid = ((C0[0] + A0[0]) / 2 + s_ * 7, (C0[1] + A0[1]) / 2 + 3)   # mâchoire légèrement bombée
             pts_ += qb(C0, mid, A0, 8) + [A0]
             return pts_
-        L = side(-1) + [q for q in lefts if q[1] < yA - 4] + [q for q in rights if q[1] < yA - 4] + side(1)[::-1]
+        L = side(-1)[:-1] + [q for q in lefts if q[1] < yA - 14] + [q for q in rights if q[1] < yA - 14] + side(1)[::-1][1:]   # l'angle (A) est remplacé par une courbe douce
         P = np.array([(200, ch)] + L)
     d = bez_path(P)
     def edge_at(yv, sgn):
