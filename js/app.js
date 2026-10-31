@@ -166,7 +166,15 @@ function render(s,vb,p,showBg){
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
  const outl=mix(sk,'#6a2e14',.42);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=false,rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="207" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="209" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${207-ry*.55} C${xx+6*k},${207-ry*.6} ${xx+8*k},${207+ry*.3} ${xx-2*k},${207+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ /* ombre portée du menton sur le cou (planche) */
+ if(F.chin)o+=`<defs><filter id="${p}cs" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="${p}csc"><rect x="${s.sexe==='m'?165:174}" y="${F.chin-60}" width="${s.sexe==='m'?70:52}" height="90"/></clipPath></defs><g clip-path="url(#${p}csc)"><path d="${F.d}" transform="translate(0,${s.sexe==='m'?9:7})" fill="${mix(skDD,'#000',.2)}" opacity=".65" filter="url(#${p}cs)"/></g>`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
+ if(F.chin){/* structure du menton (planche) : ombre le long de la mâchoire, menton éclairé, creux sous la lèvre */
+  const ch=F.chin,m=s.sexe==='m'?1:.75,my=285+mo+a.mouthY;
+  o+=`<defs><clipPath id="${p}fj"><path d="${F.d}"/></clipPath><filter id="${p}fjb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter><filter id="${p}fjs" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter><linearGradient id="${p}fjg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}fjm"><rect x="0" y="${ch-150}" width="400" height="150" fill="url(#${p}fjg)"/></mask></defs>`
+   +`<g clip-path="url(#${p}fj)"><path d="${F.d}" fill="none" stroke="${skDD}" stroke-width="16" opacity="${.2*m}" filter="url(#${p}fjb)" mask="url(#${p}fjm)"/>`
+   +`<ellipse cx="200" cy="${ch-13}" rx="${22+4*m}" ry="10" fill="${skL}" opacity="${.7*m}" filter="url(#${p}fjs)"/>`
+   +`<path d="M188,${my+17} Q200,${my+13} 212,${my+17}" fill="none" stroke="${skDD}" stroke-width="3" opacity="${.3*m}" filter="url(#${p}fjs)"/></g>`}
  const blush={aucune:0,rose:.55,fort:1}[s.cheeks]??0;
  if(blush) o+=`<clipPath id="${p}fcb"><path d="${F.d}"/></clipPath><g opacity="${blush}" clip-path="url(#${p}fcb)"><ellipse cx="128" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/><ellipse cx="272" cy="258" rx="30" ry="20" fill="url(#${p}bl)"/></g>`;
  const rk={fines:1,marquees:2}[s.rides]||0;
