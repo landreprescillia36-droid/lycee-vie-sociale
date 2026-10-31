@@ -821,11 +821,18 @@ const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?31:27)-1.5;
  return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},207 a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
+/* coiffures garçons (décalquées sur la tête du jeu « ovale ») ajustées à la forme de tête choisie : largeur aux tempes et haut du crâne */
+const FHW={};function faceHW(d,y){const k=d+y;if(k in FHW)return FHW[k];const n=d.match(/-?[\d.]+/g).map(Number);let a=null,b=null;for(let i=0;i<n.length;i+=2){const X=n[i],Y=n[i+1],dd=Math.abs(Y-y);if(X<200){if(!a||dd<a[0])a=[dd,X]}else if(!b||dd<b[0])b=[dd,X]}return FHW[k]=a&&b?(b[1]-a[1])/2:94}
+function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i=1;i<n.length;i+=2)m=Math.min(m,n[i]);return m}
+function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d,o=FACES.ovale.d;
+ const sx=faceHW(d,150)/faceHW(o,150),top=faceTop(d),sy=(207-top)/(207-faceTop(o)),y0=top;
+ return {sx,sy,y0,t:`translate(200,${fx(y0)}) scale(${fx(sx)},${fx(sy)}) translate(-200,-70)`}}
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
-function sideburns(s,A,col){return A.tempe.map(q=>{const k=q[0]<200?-1:1,v0=q[1]-8,v1=Math.max(v0+16,192),N=8,o=[],i=[];
- for(let j=0;j<=N;j++){const v=v0+(v1-v0)*j/N,x=faceEdge(s,v,k)-k*.6,w=(1-j/N)*Math.abs(q[0]-faceEdge(s,v0,k))*.9+2.2*(1-j/N)+1.2;o.push([x,v]);i.push([x-k*w,v])}
- const d='M'+o.concat(i.reverse()).map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
- return `<path d="${d}" fill="${shade(col,-.08)}"/><path d="${d}" fill="none" stroke="${shade(col,-.35)}" stroke-width="1" opacity=".35"/>`}).join('')}
+function sideburns(s,A,col,fit){return A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,fit.y0+(q0[1]-70)*fit.sy]:q0,k=q[0]<200?-1:1,vb=192;
+ /* tempe : cheveux courts du coin de la ligne des cheveux jusqu'au haut de l'oreille, collés au crâne ; trait en diagonale côté visage */
+ const P=[[q[0],q[1]-6]];for(let v=q[1]-6;v<=vb;v+=6)P.push([faceEdge(s,v,k)+k*9,v]);P.push([faceEdge(s,vb,k)-k*1,vb]);
+ const d='M'+P.map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
+ return `<path d="${d}" fill="${shade(col,-.05)}"/>`+LN(`M${fx(q[0])},${fx(q[1]-6)} L${fx(faceEdge(s,vb,k)-k*1)},${vb}`,shade(col,-.45),1.6,.55)}).join('')}
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
@@ -837,12 +844,13 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
   if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16,tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".45 1.3"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
-  const img=`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`;
+  const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
+  const img=G0+`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`+G1;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
   if(part==='back'&&A.dos)return flt+img.replace(`${s.hair}.png`,`${s.hair}-dos.png`);   /* cheveux sous les épaules : vides remplis de mèches, derrière le corps */
   if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
-  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${A.crane?`<mask id="${cid}k"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="${(FACES[s.face]||FACES.joufflu).d}" fill="#000" stroke="#fff" stroke-width="9"/></mask><mask id="${cid}l"><rect x="-400" y="125" width="1200" height="1000" fill="#fff"/><path d="${(FACES[s.face]||FACES.joufflu).d}" fill="#000"/></mask><path d="${A.crane}" fill="${s.skin}" mask="url(#${cid}k)"/><path d="${A.crane}" fill="none" stroke="${mix(s.skin,'#6a2e14',.42)}" stroke-width="2.4" opacity=".5" mask="url(#${cid}l)"/>`:''}${img}${A.tempe?sideburns(s,A,same?A.main:hc):''}${A.acc?`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:''}</g>`}
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${A.crane?`<mask id="${cid}k"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="${faceOf(s).d}" fill="#000" stroke="#fff" stroke-width="9"/></mask><mask id="${cid}l"><rect x="-400" y="125" width="1200" height="1000" fill="#fff"/><path d="${faceOf(s).d}" fill="#000"/></mask>${G0}<path d="${A.crane}" fill="${s.skin}" mask="url(#${cid}k)"/><path d="${A.crane}" fill="none" stroke="${mix(s.skin,'#6a2e14',.42)}" stroke-width="2.4" opacity=".5" mask="url(#${cid}l)"/>${G1}`:''}${img}${A.tempe?sideburns(s,A,same?A.main:hc,fit):''}${A.acc?G0+`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`+G1:''}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
