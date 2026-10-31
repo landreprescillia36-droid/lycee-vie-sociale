@@ -107,8 +107,22 @@ for j, i in enumerate(heads):
     ex = round(float(edge_at(207, -1)) + 1, 1)
     open("/tmp/vis/geo.txt", "a").write(f"{g} {k} {ecx} {ey} {S}\n")
     col = gray[int(ey):int(ey + 1.3 * D), int(ecx) - 3:int(ecx) + 4].mean(1)   # bouche : ligne la plus sombre sous le nez, sur l'axe
-    mo = 205 + (int(.6 * D) + int(np.argmin(col[int(.6 * D):int(1.25 * D)]))) * S
-    out[g][k] = {'d': d, 'ex': ex, 'chin': round(float(P[0][1]), 1), 'mo': round(float(mo - 286), 1)}   # décalage de la bouche (et du nez) par rapport au jeu
+    yc_ = int(min(1.25 * D, (P[0][1] - 205) / S - 10 / S))   # au-dessus du menton
+    mo = 205 + (int(.6 * D) + int(np.argmin(col[int(.6 * D):yc_]))) * S
+    pys = []   # pupilles (pixels les plus sombres de chaque œil) et sourcils (ligne la plus sombre au-dessus) : hauteurs du modèle
+    for dx in (-52, 52):
+        x0_, x1_, y0_, y1_ = int(ecx + (dx - 14) / S), int(ecx + (dx + 14) / S), int(ey - 25 / S), int(ey + 25 / S)
+        b_ = gray[y0_:y1_, x0_:x1_]; yy, xx = np.where(b_ < np.percentile(b_, 6)); pys.append(y0_ + yy.mean())
+    py = np.mean(pys); bys = []
+    for dx in (-52, 52):
+        y0_ = int(py - 70 / S); b_ = gray[y0_:int(py - 26 / S), int(ecx + (dx - 22) / S):int(ecx + (dx + 22) / S)]
+        yy, xx = np.where(b_ < 70); yy = yy[yy < np.percentile(yy, 100)] if len(yy) else yy
+        # le sourcil = la bande sombre la plus haute (au-dessus du trait de paupière)
+        rows = np.where((b_ < 70).sum(1) > b_.shape[1] * .25)[0]
+        grp = np.split(rows, np.where(np.diff(rows) > 2)[0] + 1) if len(rows) else [[0]]
+        bys.append(y0_ + float(np.mean(grp[0])))
+    eo = 205 + (py - ey) * S - 205; bo = 205 + (np.mean(bys) - ey) * S - 158
+    out[g][k] = {'d': d, 'eo': round(float(eo), 1), 'bo': round(float(bo), 1), 'ex': ex, 'chin': round(float(P[0][1]), 1), 'mo': round(float(mo - 286), 1)}   # décalage de la bouche (et du nez) par rapport au jeu
     print(g, k, 'menton', round(float(P[0][1]), 1), 'joue', ex, 'haut', round(float(P[:, 1].min()), 1))
     if dbg:
         v = im[y0:y0 + h, x0:x0 + w].copy(); v = cv2.resize(v, None, fx=3, fy=3)
