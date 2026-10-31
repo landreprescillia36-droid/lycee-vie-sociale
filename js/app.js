@@ -564,7 +564,7 @@ function hatSVG(s,p){const c=s.hatColor,d=shade(c,-.3);
  }}
 function edgesSVG(s,hD){return s.edges==='baby'?LN('M114,150 c-8,4 -10,14 -2,16 c6,1 8,-6 2,-8 M286,150 c8,4 10,14 2,16 c-6,1 -8,-6 -2,-8 M150,138 q4,-6 10,-2 M240,136 q6,-4 10,2 M120,168 q-4,6 2,10 M280,168 q4,6 -2,10',hD,1.8,.9):''}
 const TOPS=['salopette','tshirt','crop','debardeur','ajuste','henley','asym','capuche','chemise','colroule','gilet','epaules','blouse','veste','cardigan'];
-const TOP2={tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
+const TOP2={capuche2:{h:470,ext:13,sl:446,sx:9,neck:'deepv',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
  chemcrop:{h:392,ext:3,sl:446,sx:4,collar:1,buttons:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square',heart:1},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
  polo:{h:400,ext:1,sl:298,sx:3,fit:1,collar:1,placket:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square',fly:1},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1,heart:2},
  pullfin:{h:412,ext:8,sl:446,sx:7,neck:'off',cuff:1},halter:{h:376,ext:0,neck:'halter',fit:1,nosl:1,keyhole:1},tanksport:{h:380,ext:0,neck:'tank',fit:1,nosl:1,trim:1,rib:1},
@@ -591,6 +591,7 @@ function body(s,p,sk,skD,skDD,skL){
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M160,222 C150,186 172,160 200,160 C228,160 250,186 240,222Z" fill="${dk}"/>`;
+ if(T.hood2)o+=`<path d="M142,234 C134,196 158,174 200,172 C242,174 266,196 258,234Z" fill="${shade(c,-.35)}"/>`;
  o+=`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="190" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
@@ -687,7 +688,7 @@ function topSVG(G,T,s,p,K){
  if(G.f)o+=bustSVG(p,c,T.fit?1:.7,tor);
  if(T.ext>=5&&!T.vest)o+=LN(`M170,${h-44} Q176,${h-22} 170,${h-4} M232,${h-54} Q226,${h-28} 230,${h-4}`,dk,2,.22);
  if(T.neck==='off'){/* bande dessinée après les manches */}
- else if(T.neck==='deepv')o+=LN('M185,217 L200,294 L215,217',dk,2.4,.7);
+ else if(T.neck==='deepv'&&!T.hood2)o+=LN('M185,217 L200,294 L215,217',dk,2.4,.7);
  else if(T.neck==='cardi'){o+=LN('M185,217 L200,330 M215,217 L200,330',dk,4,.5)+LN(`M200,330 L200,${h}`,dk,1.5,.5);for(let y=346;y<h-14;y+=34)o+=`<circle cx="205" cy="${y}" r="4.2" fill="${shade(c,-.4)}"/>`;
   [-1,1].forEach(k=>{o+=`<path d="M${200+k*16},${h-78} L${200+k*50},${h-78} L${200+k*50},${h-30} L${200+k*16},${h-30}Z" fill="none" stroke="${dk}" stroke-width="2" opacity=".45"/>`})}
  else if(T.neck==='cami')o+=LN('M155,266 Q200,310 245,266',lt,2.4,.8);
@@ -696,9 +697,9 @@ function topSVG(G,T,s,p,K){
  if(T.btn1)o+=`<circle cx="200" cy="292" r="2.4" fill="${shade(c,-.25)}"/>`;
  if(G.f&&T.neck==='cv')o+=LN('M190,300 Q196,306 200,316 M210,300 Q204,306 200,316',skDD,1.6,.22);
  if(G.f&&T.neck==='cami')o+=LN('M190,274 Q197,280 200,287 M210,274 Q203,280 200,287',skDD,1.8,.24);
- else if(!['asym','square','tube','halter','tank','scoop','v','cv'].includes(T.neck)&&!T.collar&&!T.turtle)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
+ else if(!['asym','square','tube','halter','tank','scoop','v','cv'].includes(T.neck)&&!T.collar&&!T.turtle&&!T.hood2)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
  if(T.neck==='scoop')o+=LN('M185,217 Q200,250 215,217',dk,2.6,.6);
- if(T.neck==='v')o+=LN('M185,217 L200,262 L215,217',dk,2.6,.6);
+ if(T.neck==='v'&&!T.hood2)o+=LN('M185,217 L200,262 L215,217',dk,2.6,.6);
  if(T.neck==='tube')o+=LN(`M${fx(200-sideX(G,268))},268 Q200,262 ${fx(200+sideX(G,268))},268`,lt,3,.7);
  if(T.neck==='halter')o+=LN(`M186,210 Q${fx(200-sideX(G,278)+6)},250 ${fx(200-sideX(G,278))},278 M214,210 Q${fx(200+sideX(G,278)-6)},250 ${fx(200+sideX(G,278))},278`,dk,2,.4);
  if(T.keyhole){const kd='M200,220 Q190,236 183,252 Q192,266 200,276 Q208,266 217,252 Q210,236 200,220Z';o+=`<path d="${kd}" fill="${sk}"/>`+LN(kd,dk,1.6,.6)+LN('M188,214 Q204,236 217,252 M212,214 Q196,236 183,252',shade(c,.12),1.6,.6);
@@ -717,6 +718,7 @@ function topSVG(G,T,s,p,K){
  if(T.zip)o+=LN(`M200,226 L200,${h}`,shade(c,-.42),2.4,1)+`<rect x="197" y="240" width="6" height="12" rx="2" fill="#c9c4b8"/>`;
  if(T.turtle)o+=`<path d="M185,164 Q200,160 215,164 L217,212 Q200,220 183,212Z" fill="${shade(c,-.06)}"/><path d="M185,164 Q200,160 215,164 L217,212 Q200,220 183,212Z" fill="url(#${p}rib)"/>`;
  if(T.hen)o+=LN('M200,212 L200,262',dk,1.5,.6)+[226,242,258].map(y=>`<circle cx="200" cy="${y}" r="2.6" fill="${shade(c,-.45)}"/>`).join('');
+
  if(T.hood)o+=LN('M168,212 Q200,242 232,212',dk,7,.9)+LN('M193,226 L191,272 M207,226 L209,272',lum(c)>.7?'#9a9488':'#f4f1ea',2.5,1)+`<path d="M160,${h-60} L240,${h-60} L250,${h-14} L150,${h-14}Z" fill="none" stroke="${dk}" stroke-width="2.4" opacity=".6"/>`;
  if(T.bib){const b=s.bottomColor,bd=shade(b,-.3);o+=`<path d="M166,300 L234,300 L240,410 L160,410Z" fill="${b}"/><path d="M180,320 L220,320 L220,354 L180,354Z" fill="none" stroke="#d6a35c" stroke-width="1.4" stroke-dasharray="3 2"/>`+LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')+`<circle cx="170" cy="304" r="4.5" fill="#c8a24a"/><circle cx="230" cy="304" r="4.5" fill="#c8a24a"/>`+LN('M166,300 L234,300',bd,2,.4)}
  if(T.band)o+=hemBand(h,T.neck==='off'?lt:shade(c,-.06),T.ext);
@@ -742,6 +744,11 @@ function topSVG(G,T,s,p,K){
  if(T.neck==='off'){const xl=armPts(G,-1).sx-G.au-ex(240)-1,xr=armPts(G,1).sx+G.au+ex(240)+1;o+=LN(`M${fx(xl)},241 Q200,256 ${fx(xr)},241`,lt,6,1)+LN(`M${fx(xl+2)},244.5 Q200,259.5 ${fx(xr-2)},244.5`,shade(lt,-.12),1.2,.5)}
  if(G.f&&!(s.jacket&&JK[s.jacket])&&!T.bib&&!T.nosl)[-1,1].forEach(k=>{if(T.neck==='asym'&&k===1)return;o+=bustLine(G,k,c,ex,yTop?yTop+6:258)});
  if(T.bib){const b=s.bottomColor;o+=LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')}
+ if(T.hood2&&!(s.jacket&&JK[s.jacket])){const hf=shade(c,.1),ho=shade(c,-.4);
+  const Lf='M138,228 C144,200 164,186 182,188 C172,212 182,240 204,264 C172,258 148,248 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,212 218,240 196,264 C228,258 252,248 262,228Z';
+  o+=`<path d="${Rf}" fill="${hf}"/>`+LN(Rf,ho,2,.8)+`<path d="${Lf}" fill="${hf}"/>`+LN(Lf,ho,2,.8)+LN('M150,226 C160,208 174,200 186,200 M250,226 C240,208 226,200 214,200',ho,1.4,.35);
+  const sc=lum(c)>.7?'#9a9488':'#f4f1ea';o+=LN('M186,238 C188,266 188,290 188,318 M214,238 C212,266 212,290 212,318',sc,2.6,1)+`<rect x="186.6" y="316" width="3" height="7" rx="1" fill="#b9b9b9"/><rect x="210.4" y="316" width="3" height="7" rx="1" fill="#b9b9b9"/>`;
+  o+=`<path d="M156,${h-78} L244,${h-78} L256,${h-16} L144,${h-16}Z" fill="none" stroke="${ho}" stroke-width="2.4" opacity=".55"/>`+LN(`M156,${h-78} L144,${h-16} M244,${h-78} L256,${h-16}`,shade(c,.12),1.2,.4)}
  o+=J.sleeves;
  o+=hands();
  return o;
@@ -1187,7 +1194,7 @@ WEAR.top.items.unshift({s:'top',v:'debardeur',c:'#f4f1ea',n:'Débardeur à fines
 const TOPS_PUB=['tbasic','camicote'];
 /* planche « Hauts et robes » de Prescillia (docs/references/vetements/planche-hauts-robes.png) — aperçu : 2 hauts, 2 robes */
 WEAR.top.items.unshift(...[['tbasic','#f4f1ea','T-shirt basique'],['tajuste','#1f2127','T-shirt ajusté'],['epaules2','#a9adb3','Haut épaules dénudées'],['camicote','#f4f1ea','Débardeur côtelé'],['bustier','#1f2127','Bustier'],
- ['chemcrop','#a8bce6','Chemise courte'],['mlrose','#f2c6d3','Haut manches longues rose'],['cardicrop','#ece2cc','Cardigan court'],['capuche','#2f5a3a','Sweat à capuche vert'],['polo','#f4f1ea','Polo'],
+ ['chemcrop','#a8bce6','Chemise courte'],['mlrose','#f2c6d3','Haut manches longues rose'],['cardicrop','#ece2cc','Cardigan court'],['capuche2','#24382a','Sweat à capuche vert'],['polo','#f4f1ea','Polo'],
  ['mlnoir','#1f2127','Haut manches longues papillon'],['tcrop','#f2c6d3','T-shirt crop cœur'],['halter','#1f2127','Haut dos nu'],['tanksport','#f4f1ea','Débardeur sport'],['blousecrop','#9aa8e0','Blouse']]
  .filter(([v])=>TOPS_PUB.includes(v)).map(([v,c,n])=>({s:'top',v,c,n,r:'V',g:'f',nw:1})));
 WEAR.dress.items.splice(1,0,...[['moulante','#1f2127','Robe moulante'],['fleurie','#86a6e0','Robe fleurie'],['maille','#c8b08a','Robe en maille'],['robecol','#1f2127','Robe col'],
