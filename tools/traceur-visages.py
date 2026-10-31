@@ -111,8 +111,10 @@ for j, i in enumerate(heads):
         ch = HER_CHIN.get(k, 346); sc_ = (ch - 236) / (349 - 236)   # mâchoire étirée selon la longueur du menton de la forme
         up = [tuple(q) for q in P if q[1] < 236]   # dans l'ordre : côté gauche en montant, dessus, côté droit en descendant
         wl = 200 - up[0][0]; wr = up[-1][0] - 200
-        side = lambda w0: [(236 + (Y - 236) * sc_, hw + (w0 - HER_W[0][1]) * max(0, 1 - (Y - 236) / 30)) for Y, hw in HER_W]
-        jaw = [(X, 236 + (Y - 236) * sc_) for X, Y in HER_JAW]
+        # joues : ligne droite (sans courbe) du dessous de l'oreille jusqu'au début de la mâchoire (marques de Prescillia)
+        Ye, We = 236 + (310 - 236) * sc_, 57   # coin du menton (relevé sur sa version)
+        side = lambda w0: [(Y, w0 + (We - w0) * (Y - 236) / (Ye - 236)) for Y in np.linspace(236, Ye, 12)] + [(236 + (318 - 236) * sc_, 51)]
+        jaw = [(X * 1.1, 236 + (Y - 236) * sc_) for X, Y in HER_JAW]
         P = np.array([(200 - X, Y) for X, Y in jaw] + [(200 - hw, Y) for Y, hw in side(wl)[::-1]] + up
                      + [(200 + hw, Y) for Y, hw in side(wr)] + [(200 + X, Y) for X, Y in jaw[::-1][:-1]])
     d = bez_path(P)
