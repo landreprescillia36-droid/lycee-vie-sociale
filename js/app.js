@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='32';
+const APP_VERSION='33';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -707,11 +707,11 @@ function topSVG(G,T,s,p,K){
  if(T.keyhole){const kd='M200,220 Q190,236 183,252 Q192,266 200,276 Q208,266 217,252 Q210,236 200,220Z';o+=`<path d="${kd}" fill="${sk}"/>`+LN(kd,dk,1.6,.6)+LN('M188,214 Q204,236 217,252 M212,214 Q196,236 183,252',shade(c,.12),1.6,.6);
   o+=`<path d="M184,196 Q200,202 216,196 L216,212 Q200,218 184,212Z" fill="${shade(c,.08)}"/>`+LN('M184,212 Q200,218 216,212',dk,1.4,.5)}
  if(T.trim){const s2=x=>fx(shY(G,x<200?-1:1,x)+1);o+=LN(`M175,${s2(175)} C175,262 184,268 200,268 C216,268 225,262 225,${s2(225)}`,'#1f2127',4.4)+LN(`M177,${s2(177)+3} C177.5,260 185,264.5 200,264.5 C215,264.5 222.5,260 223,${s2(223)+3}`,'#f4f1ea',1.2,.8)+LN(`M166,${s2(166)} L166,258 Q166,280 ${fx(200-sideX(G,284))},284 M234,${s2(234)} L234,258 Q234,280 ${fx(200+sideX(G,284))},284`,'#1f2127',2.6)+``}
- if(T.scol){const lc=shade(c,.08),oc=shade(c,-.3);const Lc='M187,203 L163,212 L167,251 L195,231Z',Rc='M213,203 L237,212 L233,251 L205,231Z';
-  o+=LN('M195,231 L200,294 L205,231',oc,1.3,.55)+`<path d="${Lc}" fill="${lc}" stroke-linejoin="miter"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.6)+LN(Rc,oc,1.4,.6)}
+ if(T.scol){const lc=shade(c,.08),oc=shade(c,-.3);const Lc='M186,206 C176,212 160,218 152,226 L170,250 L182,244 L200,294 L192,236Z',Rc='M214,206 C224,212 240,218 248,226 L230,250 L218,244 L200,294 L208,236Z';
+  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.6)+LN(Rc,oc,1.4,.6)}
  if(T.btnv2){o+=LN(`M200,294 L200,${h}`,dk,1.4,.5)+LN(`M204,294 L204,${h}`,dk,1,.3);for(let y=306;y<h-6;y+=24)o+=`<circle cx="202" cy="${y}" r="2.6" fill="${shade(c,.2)}" stroke="${dk}" stroke-width=".8"/>`}
- if(T.pcol){const lc=shade(c,-.02),oc=shade(c,-.35);const Lc='M188,204 L168,212 L172,244 L196,230Z',Rc='M212,204 L232,212 L228,244 L204,230Z';
-  o+=LN('M196,230 L200,262 L204,230',oc,1.2,.5)+`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
+ if(T.pcol){const lc=shade(c,-.02),oc=shade(c,-.35);const Lc='M186,205 C181,208 176,212 172,218 L182,246 L196,258 L193,222Z',Rc='M214,205 C219,208 224,212 228,218 L218,246 L204,258 L207,222Z';
+  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
  if(T.placket2)o+=LN('M196,262 L196,292 L204,292 L204,262',shade(c,-.3),1.2,.6)+`<circle cx="200" cy="270" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/><circle cx="200" cy="283" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/>`;
  if(T.ruff){const sq=(()=>{const a=profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=160)[0],b=profTo(G,1,sideX(G,222)).filter(q=>q[0]>=240)[0];return [a,b]})();let w=`M${fx(sq[0][0])},${fx(sq[0][1])}`;const P=[];for(let i=0;i<=16;i++){const u=i/16,x=(1-u)**3*sq[0][0]+3*(1-u)**2*u*162+3*(1-u)*u*u*178+u**3*200,y=(1-u)**3*sq[0][1]+3*(1-u)**2*u*262+3*(1-u)*u*u*282+u**3*282;P.push([x,y])}for(let i=15;i>=0;i--)P.push([400-P[i][0],P[i][1]]);for(let s2=0;s2<P.length-1;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],n=1;for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n,mx=x0+(x1-x0)*(i-.5)/n,my=y0+(y1-y0)*(i-.5)/n;w+=` Q${fx(mx)},${fx(my+2)} ${fx(x)},${fx(y)}`}}const nk=`M${fx(sq[0][0])},${fx(sq[0][1])} C162,262 178,282 200,282 C222,282 238,262 ${fx(sq[1][0])},${fx(sq[1][1])}`;let sc='';for(let s2=3;s2<P.length-4;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],dx=x1-x0,dy=y1-y0,l=Math.hypot(dx,dy)||1,nx=-dy/l*3,ny=dx/l*3;sc+=`M${fx(x0+nx)},${fx(y0+ny)} Q${fx((x0+x1)/2+nx*1.9)},${fx((y0+y1)/2+ny*1.9)} ${fx(x1+nx)},${fx(y1+ny)} `}o+=LN(sc,dk,1,.5)+LN(nk,dk,1.6,.8)}
  if(T.seams)o+=LN(`M182,300 Q178,340 182,${h} M218,300 Q222,340 218,${h}`,dk,1.4,.3);
