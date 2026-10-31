@@ -9,9 +9,10 @@ import sys, os, json, re, numpy as np, cv2
 SRC = 'docs/references/visages/planche-visages.png'
 CHIN_K = {'carre': .34, 'rectangle': .32, 'trapeze': .36, 'ovale': .24, 'rond': .28, 'allonge': .24, 'coeur': .2, 'triangle': .2, 'diamant': .22, 'losange': .22}   # largeur du menton / largeur à l'angle de la mâchoire
 CHIN_M = {'allonge': 340}
+JAWS = json.load(open('tools/garcons-machoire.json'))
 HER_W = [(236, 100), (240, 97), (250, 87.5), (260, 84), (270, 79.3), (280, 74.2), (290, 68.5), (300, 61.5), (310, 52.5), (318, 46)]   # demi-largeur du visage (garçons)
 HER_JAW = [(0, 349), (6, 349), (12, 348.5), (18, 347.5), (24, 344.5), (30, 339.5), (36, 333.5), (41, 326), (45, 319)]   # mâchoire, du menton vers le côté
-HER_CHIN = {'allonge': 352, 'diamant': 341, 'coeur': 349}
+HER_CHIN = {'allonge': 352, 'diamant': 340, 'coeur': 341}
 NAMES = ['ovale', 'rond', 'carre', 'rectangle', 'coeur', 'diamant', 'triangle', 'allonge', 'trapeze', 'losange']
 dbg = sys.argv[1] if len(sys.argv) > 1 else None
 im = cv2.imread(SRC); gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY).astype(float)
@@ -106,17 +107,40 @@ for j, i in enumerate(heads):
     low = np.sin(th) > .55   # bas du visage (mâchoire, menton) : petites cassures du raccord lissées
     r2 = np.convolve(np.r_[r_[-4:], r_, r_[:4]], np.array([1, 2, 3, 2, 1]) / 9, 'same')[4:-4]; r_ = np.where(low, r2, r_)
     P = np.c_[200 + r_ * np.cos(th), 190 + r_ * np.sin(th)]
-    if g == 'm':   # garçons : bas du visage relevé pixel par pixel sur la version corrigée de Prescillia
-        # (docs/references/personnages/camarades-corriges.png, Kylian, Noah, Sacha : même mâchoire pour les trois)
-        ch = HER_CHIN.get(k, 346); sc_ = (ch - 236) / (349 - 236)   # mâchoire étirée selon la longueur du menton de la forme
-        up = [tuple(q) for q in P if q[1] < 236]   # dans l'ordre : côté gauche en montant, dessus, côté droit en descendant
-        wl = 200 - up[0][0]; wr = up[-1][0] - 200
-        # joues : ligne droite (sans courbe) du dessous de l'oreille jusqu'au début de la mâchoire (marques de Prescillia)
-        Ye, We = 236 + (310 - 236) * sc_, 57   # coin du menton (relevé sur sa version)
-        side = lambda w0: [(Y, w0 + (We - w0) * (Y - 236) / (Ye - 236)) for Y in np.linspace(236, Ye, 12)] + [(236 + (318 - 236) * sc_, 51)]
-        jaw = [(X * 1.1, 236 + (Y - 236) * sc_) for X, Y in HER_JAW]
-        P = np.array([(200 - X, Y) for X, Y in jaw] + [(200 - hw, Y) for Y, hw in side(wl)[::-1]] + up
-                     + [(200 + hw, Y) for Y, hw in side(wr)] + [(200 + X, Y) for X, Y in jaw[::-1][:-1]])
+    if g == 'm':   # garçons : bas du visage décalqué pixel par pixel sur la version corrigée de Prescillia (tools/traceur-garcons.py)
+        src = JAWS.get(k, JAWS['diamant']); base = 'allonge' if k == 'allonge' else 'diamant'
+        ch0 = np.interp(200, *zip(*[(x, y) for x, y, _ in JAWS[base]['chin']]))
+        ch = HER_CHIN.get(k, ch0); sc_ = (ch - 236) / (ch0 - 236)
+        def sidepts(sgn):
+            S_ = sorted([(y, x) for y, x in JAWS['allonge']['side'][str(sgn)]])   # côtés de Kylian : relevé complet, sans trou
+            sa_ = (np.interp(200, *zip(*[(x, y) for x, y, _ in JAWS['allonge']['chin']])) - 236) / (ch0 - 236)
+            ys_ = np.array([q[0] for q in S_]); xs_ = np.array([q[1] for q in S_])
+            ok_ = np.abs(xs_ - 200) > 47   # au-dessus de la mâchoire (plus large que le cou)
+            ys_, xs_ = ys_[ok_], xs_[ok_]
+            xs_ = np.convolve(np.pad(xs_, 4, mode='edge'), np.ones(9) / 9, 'valid')   # bruit des pixels seulement
+            return [(x, 236 + (y - 236) / sa_ * sc_) for y, x in zip(ys_, xs_)]
+        C_ = [(x, y) for x, y, st in JAWS[base]['chin'] if abs(x - 200) <= 33 and st > 8]
+        cx_ = np.array([q[0] for q in C_]); cy_ = np.array([q[1] for q in C_])
+        cy_ = (cy_ + np.interp(400 - cx_, cx_, cy_)) / 2   # symétrique
+        cy_ = np.convolve(np.pad(cy_, 4, mode='edge'), np.ones(9) / 9, 'valid')
+        chin_ = [(x, 236 + (y - 236) * sc_) for x, y in zip(cx_, cy_)]
+        up = [tuple(q) for q in P if q[1] < 236]
+        L_ = sidepts(-1); R_ = sidepts(1)
+        dl = 200 - L_[0][0] - (200 - up[0][0]); dr = R_[0][0] - 200 - (up[-1][0] - 200)   # raccord avec le haut de la forme (fondu sur 25 unités)
+        L_ = [(x + dl * max(0, 1 - (y - 236) / 25), y) for x, y in L_]; R_ = [(x - dr * max(0, 1 - (y - 236) / 25), y) for x, y in R_]
+        P = np.array(chin_[:len(chin_) // 2][::-1] and ([(200, ch)] if False else []) + [q for q in chin_ if q[0] <= 200][::-1] + L_[::-1] + up + R_ + [q for q in chin_ if q[0] > 200][::-1])
+        # contour décalqué : rééchantillonné tous les 4 unités et lissé (le bruit des pixels faisait des marches au raccord joue/menton)
+        def resample(Q, step=4.0):
+            Q = np.array(Q); d_ = np.r_[0, np.cumsum(np.hypot(*np.diff(Q, axis=0).T))]; n_ = max(4, int(d_[-1] / step))
+            u_ = np.linspace(0, d_[-1], n_); return np.c_[np.interp(u_, d_, Q[:, 0]), np.interp(u_, d_, Q[:, 1])]
+        lowL = [tuple(q) for q in P if q[0] <= 200 and q[1] >= 236]; lowL.sort(key=lambda q: -q[1] if q[0] < 199 else -999)
+        lowL = sorted(lowL, key=lambda q: (q[1] if abs(q[0] - 200) > 47 else 400 - abs(q[0] - 200)))   # de la joue (haut) vers le menton
+        Ls = resample(lowL); k5 = np.array([1, 2, 3, 2, 1]) / 9
+        for _ in range(2): Ls[2:-2] = np.c_[np.convolve(Ls[:, 0], k5, 'valid'), np.convolve(Ls[:, 1], k5, 'valid')]
+        Ls[-1] = (200, ch)
+        Rs = np.c_[400 - Ls[:, 0], Ls[:, 1]]
+        up2 = [q for q in up if q[1] < 236]
+        P = np.array([(200, ch)] + [tuple(q) for q in Ls[::-1][1:]] + up2 + [tuple(q) for q in Rs] [:-1])
     d = bez_path(P)
     def edge_at(yv, sgn):
         q = P[(P[:, 0] - 200) * sgn > 0]; i_ = np.argmin(np.abs(q[:, 1] - yv)); return q[i_, 0]
