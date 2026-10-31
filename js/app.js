@@ -565,10 +565,10 @@ function hatSVG(s,p){const c=s.hatColor,d=shade(c,-.3);
 function edgesSVG(s,hD){return s.edges==='baby'?LN('M114,150 c-8,4 -10,14 -2,16 c6,1 8,-6 2,-8 M286,150 c8,4 10,14 2,16 c-6,1 -8,-6 -2,-8 M150,138 q4,-6 10,-2 M240,136 q6,-4 10,2 M120,168 q-4,6 2,10 M280,168 q4,6 -2,10',hD,1.8,.9):''}
 const TOPS=['salopette','tshirt','crop','debardeur','ajuste','henley','asym','capuche','chemise','colroule','gilet','epaules','blouse','veste','cardigan'];
 const TOP2={capuche2:{h:470,ext:13,sl:446,sx:9,neck:'deepv',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
- chemcrop:{h:392,ext:3,sl:446,sx:4,collar:1,buttons:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square',heart:1},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
- polo:{h:400,ext:1,sl:298,sx:3,fit:1,collar:1,placket:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square',fly:1},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1,heart:2},
+ chemcrop:{h:394,ext:4,sl:446,sx:5,neck:'deepv',scol:1,btnv2:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square',heart:1},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
+ polo:{h:398,ext:1,sl:298,sx:3,fit:1,neck:'v',pcol:1,placket2:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square',fly:1},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1,heart:2},
  pullfin:{h:412,ext:8,sl:446,sx:7,neck:'off',cuff:1},halter:{h:376,ext:0,neck:'halter',fit:1,nosl:1,keyhole:1},tanksport:{h:380,ext:0,neck:'tank',fit:1,nosl:1,trim:1,rib:1},
- blousecrop:{h:384,ext:2,sl:300,sx:4,puff:1,neck:'square',tie:1},tbasic:{h:392,ext:1,sl:298,sx:4,fit:1,neck:'square',bow:1},camicote:{h:372,ext:0,sl:0,sx:0,neck:'cami',fit:1,nosl:1,rib:1,btn1:1},debardeur:{h:396,ext:0,sl:0,sx:0,neck:'cami',fit:1,nosl:1},tshirt:{h:452,ext:5,sl:302,sx:5},ajuste:{h:404,ext:0,sl:446,sx:1,fit:1},crop:{h:350,ext:0,sl:446,sx:1,rib:1,fit:1},henley:{h:384,ext:1,sl:446,sx:1.5,rib:1,fit:1,hen:1},
+ blousecrop:{h:388,ext:2,sl:304,sx:4,puff:1,neck:'square',tie:1,ruff:1,seams:1},tbasic:{h:392,ext:1,sl:298,sx:4,fit:1,neck:'square',bow:1},camicote:{h:372,ext:0,sl:0,sx:0,neck:'cami',fit:1,nosl:1,rib:1,btn1:1},debardeur:{h:396,ext:0,sl:0,sx:0,neck:'cami',fit:1,nosl:1},tshirt:{h:452,ext:5,sl:302,sx:5},ajuste:{h:404,ext:0,sl:446,sx:1,fit:1},crop:{h:350,ext:0,sl:446,sx:1,rib:1,fit:1},henley:{h:384,ext:1,sl:446,sx:1.5,rib:1,fit:1,hen:1},
  asym:{h:362,ext:0,neck:'asym',sl:446,sx:1,fit:1,rib:1},capuche:{h:458,ext:9,sl:446,sx:7,hood:1,band:1,cuff:1},chemise:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1},
  colroule:{h:446,ext:2,sl:446,sx:2,turtle:1,rib:1,fit:1},salopette:{h:440,ext:3,sl:300,sx:4,bib:1},gilet:{h:450,ext:5,vest:1},
  epaules:{h:384,ext:1,sl:446,sx:2,neck:'off',band:1,fit:1},blouse:{h:446,ext:6,sl:446,sx:4,neck:'deepv',puff:1,cuff:1},
@@ -591,7 +591,7 @@ function body(s,p,sk,skD,skDD,skL){
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M160,222 C150,186 172,160 200,160 C228,160 250,186 240,222Z" fill="${dk}"/>`;
- if(T.hood2)o+=`<path d="M142,234 C134,196 158,174 200,172 C242,174 266,196 258,234Z" fill="${shade(c,-.35)}"/>`;
+ if(T.hood2)o+=`<path d="M146,234 C140,200 162,182 200,180 C238,182 260,200 254,234Z" fill="${shade(c,-.12)}"/>`+LN('M156,226 C156,204 174,192 200,190 C226,192 244,204 244,226',shade(c,-.4),1.4,.4);
  o+=`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="190" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
@@ -688,7 +688,7 @@ function topSVG(G,T,s,p,K){
  if(G.f)o+=bustSVG(p,c,T.fit?1:.7,tor);
  if(T.ext>=5&&!T.vest)o+=LN(`M170,${h-44} Q176,${h-22} 170,${h-4} M232,${h-54} Q226,${h-28} 230,${h-4}`,dk,2,.22);
  if(T.neck==='off'){/* bande dessinée après les manches */}
- else if(T.neck==='deepv'&&!T.hood2)o+=LN('M185,217 L200,294 L215,217',dk,2.4,.7);
+ else if(T.neck==='deepv'&&!T.hood2&&!T.scol)o+=LN('M185,217 L200,294 L215,217',dk,2.4,.7);
  else if(T.neck==='cardi'){o+=LN('M185,217 L200,330 M215,217 L200,330',dk,4,.5)+LN(`M200,330 L200,${h}`,dk,1.5,.5);for(let y=346;y<h-14;y+=34)o+=`<circle cx="205" cy="${y}" r="4.2" fill="${shade(c,-.4)}"/>`;
   [-1,1].forEach(k=>{o+=`<path d="M${200+k*16},${h-78} L${200+k*50},${h-78} L${200+k*50},${h-30} L${200+k*16},${h-30}Z" fill="none" stroke="${dk}" stroke-width="2" opacity=".45"/>`})}
  else if(T.neck==='cami')o+=LN('M155,266 Q200,310 245,266',lt,2.4,.8);
@@ -699,18 +699,26 @@ function topSVG(G,T,s,p,K){
  if(G.f&&T.neck==='cami')o+=LN('M190,274 Q197,280 200,287 M210,274 Q203,280 200,287',skDD,1.8,.24);
  else if(!['asym','square','tube','halter','tank','scoop','v','cv'].includes(T.neck)&&!T.collar&&!T.turtle&&!T.hood2)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
  if(T.neck==='scoop')o+=LN('M185,217 Q200,250 215,217',dk,2.6,.6);
- if(T.neck==='v'&&!T.hood2)o+=LN('M185,217 L200,262 L215,217',dk,2.6,.6);
+ if(T.neck==='v'&&!T.hood2&&!T.pcol)o+=LN('M185,217 L200,262 L215,217',dk,2.6,.6);
  if(T.neck==='tube')o+=LN(`M${fx(200-sideX(G,268))},268 Q200,262 ${fx(200+sideX(G,268))},268`,lt,3,.7);
  if(T.neck==='halter')o+=LN(`M186,210 Q${fx(200-sideX(G,278)+6)},250 ${fx(200-sideX(G,278))},278 M214,210 Q${fx(200+sideX(G,278)-6)},250 ${fx(200+sideX(G,278))},278`,dk,2,.4);
  if(T.keyhole){const kd='M200,220 Q190,236 183,252 Q192,266 200,276 Q208,266 217,252 Q210,236 200,220Z';o+=`<path d="${kd}" fill="${sk}"/>`+LN(kd,dk,1.6,.6)+LN('M188,214 Q204,236 217,252 M212,214 Q196,236 183,252',shade(c,.12),1.6,.6);
   o+=`<path d="M184,196 Q200,202 216,196 L216,212 Q200,218 184,212Z" fill="${shade(c,.08)}"/>`+LN('M184,212 Q200,218 216,212',dk,1.4,.5)}
  if(T.trim){const s2=x=>fx(shY(G,x<200?-1:1,x)+1);o+=LN(`M175,${s2(175)} C175,262 184,268 200,268 C216,268 225,262 225,${s2(225)}`,'#1f2127',4.4)+LN(`M177,${s2(177)+3} C177.5,260 185,264.5 200,264.5 C215,264.5 222.5,260 223,${s2(223)+3}`,'#f4f1ea',1.2,.8)+LN(`M166,${s2(166)} L166,258 Q166,280 ${fx(200-sideX(G,284))},284 M234,${s2(234)} L234,258 Q234,280 ${fx(200+sideX(G,284))},284`,'#1f2127',2.6)+`<text x="200" y="294" text-anchor="middle" font-family="cursive,serif" font-style="italic" font-size="9" fill="#1f2127" opacity=".8">Lycée</text>`}
- if(T.pocket)o+=`<path d="M210,262 L234,262 L234,288 L210,288Z" fill="none" stroke="${dk}" stroke-width="1.8" opacity=".5"/>`+LN('M210,268 L234,268',dk,1.4,.4);
+ if(T.scol){const lc=shade(c,.08),oc=shade(c,-.3);const Lc='M186,206 C176,212 160,218 152,226 L170,250 L182,244 L200,294 L192,236Z',Rc='M214,206 C224,212 240,218 248,226 L230,250 L218,244 L200,294 L208,236Z';
+  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.6)+LN(Rc,oc,1.4,.6)}
+ if(T.btnv2){o+=LN(`M200,294 L200,${h}`,dk,1.4,.5)+LN(`M204,294 L204,${h}`,dk,1,.3);for(let y=306;y<h-6;y+=24)o+=`<circle cx="202" cy="${y}" r="2.6" fill="${shade(c,.2)}" stroke="${dk}" stroke-width=".8"/>`}
+ if(T.pcol){const lc=shade(c,-.02),oc=shade(c,-.35);const Lc='M186,206 C178,210 166,214 158,218 L170,240 L194,256 L192,224Z',Rc='M214,206 C222,210 234,214 242,218 L230,240 L206,256 L208,224Z';
+  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
+ if(T.placket2)o+=LN('M196,262 L196,292 L204,292 L204,262',shade(c,-.3),1.2,.6)+`<circle cx="200" cy="270" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/><circle cx="200" cy="283" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/>`;
+ if(T.ruff){const sq=(()=>{const a=profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=160)[0],b=profTo(G,1,sideX(G,222)).filter(q=>q[0]>=240)[0];return [a,b]})();let w=`M${fx(sq[0][0])},${fx(sq[0][1])}`;const P=[[sq[0][0],sq[0][1]],[162,274],[238,274],[sq[1][0],sq[1][1]]];for(let s2=0;s2<3;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],n=s2===1?10:4;for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n,mx=x0+(x1-x0)*(i-.5)/n,my=y0+(y1-y0)*(i-.5)/n;w+=` Q${fx(mx+(s2===1?0:(s2===0?-2:2)))},${fx(my+(s2===1?2.5:0))} ${fx(x)},${fx(y)}`}}o+=LN(w,shade(c,.15),3.5,.9)+LN(w,dk,1,.4)}
+ if(T.seams)o+=LN(`M182,300 Q178,340 182,${h} M218,300 Q222,340 218,${h}`,dk,1.4,.3);
+ if(T.pocket)o+=`<path d="M214,296 L240,296 L240,326 L214,326Z" fill="none" stroke="${dk}" stroke-width="1.6" opacity=".5"/><path d="M213,294 L241,294 L241,304 L227,308 L213,304Z" fill="${shade(c,.05)}" stroke="${dk}" stroke-width="1.2" stroke-opacity=".5"/>`;
  if(T.btnv){const y0=T.neck==='cv'?326:T.neck==='deepv'?294:262,a=T.neck==='cv'?profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=172)[0]:[185,217],b=T.neck==='cv'?profTo(G,1,sideX(G,222)).filter(q=>q[0]>=228)[0]:[215,217],vd=`M${fx(a[0])},${fx(a[1])} L200,${y0} L${fx(b[0])},${fx(b[1])}`;o+=LN(`M200,${y0} L200,${h}`,dk,1.4,.5)+LN(vd,shade(c,-.08),6,.9)+LN(vd,dk,1,.4);for(let y=y0+12;y<h-14;y+=22)o+=`<circle cx="200" cy="${y}" r="3" fill="${shade(c,-.25)}"/>`}
  if(T.heart===1)o+=`<path d="M200,282 c-2,-3 -6,-2 -5,1 c1,2 5,4 5,4 c0,0 4,-2 5,-4 c1,-3 -3,-4 -5,-1Z" fill="${shade(c,-.3)}"/>`;
  if(T.heart===2)o+=`<path d="M200,286 c-3,-5 -10,-3 -8,2 c1.5,3.5 8,7 8,7 c0,0 6.5,-3.5 8,-7 c2,-5 -5,-7 -8,-2Z" fill="#d93b5e" opacity=".85"/>`;
  if(T.fly)o+=`<g fill="#f4f1ea" opacity=".9"><path d="M200,292 C194,280 184,282 188,292 C184,298 194,302 200,294Z"/><path d="M200,292 C206,280 216,282 212,292 C216,298 206,302 200,294Z"/></g>`+LN('M200,284 L200,300',shade(c,-.3),1.2);
- if(T.tie)o+=`<path d="M200,276 L193,272 L193,280Z M200,276 L207,272 L207,280Z" fill="${shade(c,-.2)}"/>`+LN('M199,277 L196,292 M201,277 L204,292',shade(c,-.2),1.4)+LN('M200,276 L200,'+h,dk,1.2,.35);
+ if(T.tie)o+=LN('M200,277 C192,268 186,272 190,280 C193,284 198,280 200,277 C202,280 207,284 210,280 C214,272 208,268 200,277',shade(c,-.25),1.6)+LN('M199,279 C196,292 194,304 192,318 M201,279 C204,292 206,304 208,318',shade(c,-.25),1.4)+`<circle cx="200" cy="277" r="1.8" fill="${shade(c,-.3)}"/>`;
  if(T.neck==='asym')o+=LN(`M185,217 Q${fx(200+30)},246 ${fx(200+sideX(G,272))},272`,dk,2.4,.6);
  if(T.collar){const cc=T.zip?shade(c,-.1):lt;o+=`<path d="M184,204 L200,228 L190,244 L172,214Z" fill="${cc}"/><path d="M216,204 L200,228 L210,244 L228,214Z" fill="${cc}"/>`;if(T.placket)o+=LN('M184,204 L200,228 L190,244 L172,214Z M216,204 L200,228 L210,244 L228,214Z',dk,1.4,.6);
   if(T.placket){o+=LN('M200,228 L200,270',dk,1.5,.5)+`<circle cx="200" cy="242" r="2.8" fill="${dk}"/><circle cx="200" cy="260" r="2.8" fill="${dk}"/>`}
@@ -737,6 +745,7 @@ function topSVG(G,T,s,p,K){
   if(T.quilt)o+=`<path d="${armD(G,k,T.sl,ex,yTop)}" fill="url(#${p}qlt)"/>`;
   if(!yTop&&!(s.jacket&&JK[s.jacket]))o+=capPatch(G,p,k,'tp'+k,c,k<0?SL_L:SL_R,TOR,torHalf(G,h,T.ext),ex(240),262);
   if(T.sl<446)o+=cuff(k,dk,T.sl-5,T.sl,ex(T.sl)+.5).replace('/>',' opacity=".35"/>');
+  if(T.ruff&&T.sl<446){const A=armPts(G,k),y=T.sl,x0=edge(A.O,y)+k*(ex(y)+2),x1=edge(A.I,y)-k*(ex(y)+2),Y=AY(y);let w=`M${fx(x0)},${fx(Y)}`;for(let i=1;i<=5;i++){const x=x0+(x1-x0)*i/5,mx=x0+(x1-x0)*(i-.5)/5;w+=` Q${fx(mx)},${fx(Y+5)} ${fx(x)},${fx(Y)}`}o+=`<path d="${w} L${fx(x1)},${fx(Y-5)} L${fx(x0)},${fx(Y-5)}Z" fill="${shade(c,.06)}"/>`+LN(w,dk,1.1,.4)}
   else if(T.cuff)o+=cuff(k,shade(c,-.1),432,446,T.puff?2.5:ex(446)+.5);
   if(T.sl>362)o+=LN(`M${fx(edge(armPts(G,k).O,330)+k*ex(330))},${fx(AY(330))} Q${fx(edge(armPts(G,k).O,345)+k*(ex(345)-6))},${fx(AY(346))} ${fx(edge(armPts(G,k).O,362)+k*ex(362))},${fx(AY(362))}`,dk,1.6,.25);
  });
