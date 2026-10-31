@@ -51,6 +51,13 @@ HAIRS['bchignon']['fin'] = [(60, 128, 70, 205), (272, 340, 70, 205)]   # côtés
 HAIRS['bpuffs']['fin'] = [(30, 112, 130, 300), (268, 345, 130, 300)]   # boucles qui pendent devant les oreilles
 HAIRS['bbantu']['fermer'] = [(265, 310, 55, 105)]   # tempe droite, entre les deux nœuds
 for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FACE6: HAIRS[k]['oreilles'] = True
+# planche « Coiffures pour garçon » (docs/references/coiffures/planche-garcons-lisses.jpg, cases dans garcons/) : visage de garçon
+# plus long que celui du jeu ; la case est posée à la largeur de la tête et les yeux sur ceux du jeu (menton « virtuel »)
+def garcon(nom, **kw):
+    return {'src': f'docs/references/coiffures/garcons/{nom}.png', 'match': 'g', 'bottom': 196, 'back': False, 'tips': False, 'smooth': False, 'bord': 13, 'oreilles': True, 'combler': 'gd', **kw}
+GARCONS = ['gnaturel', 'gdegbas', 'gdegmoyen', 'gdeghaut', 'gbuzz', 'gcarrecourt', 'gcarremoyen', 'gcarrelong', 'gplaques', 'graiemilieu',
+           'graiecote', 'gquiff', 'gpompadour', 'gtaper', 'gondule']
+for k in GARCONS: HAIRS[k] = garcon(k)
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 K_LONGS, CHIN_U = 1.785, 308.5
 def _bez(d):   # contour du visage « ovale » du jeu (FACES.ovale dans js/app.js), en points
@@ -66,8 +73,10 @@ FACE_OV = _bez('M200,312 C140,312 106,262 106,190 C106,112 148,70 200,70 C252,70
 FACES_T = {True: (cv2.imread('docs/references/coiffures/modele-visage.png')[92:165, 70:138], 34, 25.5, 80, 1.0),
            'b': (cv2.imread('docs/references/coiffures/bouclees/bcarre.png')[116:186, 82:162], 39.25, 27, 82.75, 1.033),
            # visage du jeu dessiné par Prescillia : yeux à ±30 px et 59 px au-dessus du menton = yeux du jeu (±52, y 205) et menton (y 312)
-           'c': (cv2.imread('docs/references/coiffures/bouclees-face/bcarre.png')[118:194, 95:191], 48, 30, 89.5, K_LONGS / 1.77)}
-EYES_T = {True: (26.25, 54.5), 'b': (27.1, 56.3), 'c': (30, 59.5)}   # écart des yeux au centre et hauteur yeux-menton, en px du modèle (taille 1)
+           'c': (cv2.imread('docs/references/coiffures/bouclees-face/bcarre.png')[118:194, 95:191], 48, 30, 89.5, K_LONGS / 1.77),
+           # garçon (case « buzz cut ») : yeux à ±28,5 px en y 115, 1,85 unité par px (largeur de la tête), menton virtuel = yeux + 107 unités
+           'g': (cv2.imread('docs/references/coiffures/garcons/gbuzz.png')[100:165, 35:130], 47.5, 15, 72.8, K_LONGS / 1.85)}
+EYES_T = {True: (26.25, 54.5), 'b': (27.1, 56.3), 'c': (30, 59.5), 'g': (28.5, 57.8)}   # écart des yeux au centre et hauteur yeux-menton, en px du modèle (taille 1)
 def visage(img, m=True):
     T, ex, ey_, ch, k = FACES_T[m]; best = None
     for s in np.arange(.8, 1.45, .01):
@@ -103,8 +112,10 @@ for hid, c in HAIRS.items():
         c['cut'] = [(int(fch + 4 * fs), int(fch + 22 * fs), int(fcx - 24 * fs), int(fcx + 24 * fs))]   # ras-de-cou
         ex_, ey_ = EYES_T[c['match']]; sc_ = fs / FACES_T[c['match']][4]   # les deux yeux (quand une mèche fine les touche, ils seraient pris pour des cheveux)
         ey = fch - ey_ * sc_
-        mh, mw = {True: (10, 15), 'b': (10 * 1.033, 15 * 1.033), 'c': (11, 16)}[c['match']]
+        mh, mw = {True: (10, 15), 'b': (10 * 1.033, 15 * 1.033), 'c': (11, 16), 'g': (10, 16)}[c['match']]
         c['cut'] += [(int(ey - mh * sc_), int(ey + mh * sc_), int(fcx + dx * sc_ - mw * sc_), int(fcx + dx * sc_ + mw * sc_)) for dx in (-ex_, ex_)]
+        if c.get('sourcils', c['match'] == 'g'):   # sourcils épais du garçon : retirés (sauf s'ils touchent une frange, cf. 'sourcils': False)
+            c['cut'] += [(int(ey - 27 * sc_), int(ey - 10 * sc_), int(fcx + dx * sc_ - 22 * sc_), int(fcx + dx * sc_ + 22 * sc_)) for dx in (-ex_, ex_)]
         c['back'] = (int(fch - 6 * fs), c['bottom'], 0, im.shape[1]) if c['back'] else None
     if c.get('mirror'):   # moitié du dessin recopiée en miroir (Prescillia a validé ce côté-là)
         sk0 = (im[..., 0] - im[..., 2] > 45) & (im[..., 0] > 120); fx0 = np.where(sk0[c['face_row']])[0]; cx0 = (fx0.min() + fx0.max() + 1) / 2
@@ -420,6 +431,8 @@ for hid, c in HAIRS.items():
         for k in range(K): v[L == k] = rgb[k]
         cv2.imwrite(f'{dbg}/coiffure_{hid}.png', cv2.resize(v[:, :, ::-1], None, fx=.5, fy=.5))
     print(hid, 'visage', fl, fr, 'haut', top, 'échelle', round(sx, 3), round(sy, 3))
+if ONLY:   # seulement quelques coiffures refaites : les autres sont gardées telles quelles
+    old = json.loads(open('js/coiffures-art.js').read().split('const HAIR_ART=', 1)[1].rstrip().rstrip(';')); old.update(out); out = old
 js = '/* formes décalquées par tools/traceur-coiffures.py sur docs/references/coiffures/ — ne pas modifier à la main */\nconst HAIR_ART=' + json.dumps(out, separators=(',', ':')) + ';\n'
 open('js/coiffures-art.js', 'w').write(js)
 print(len(js), 'octets')
