@@ -2,12 +2,27 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v35';
+const VERSION = 'v36';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest',
   'css/style.css', 'css/fonts.css', 'js/chaussures-art.js', 'js/coiffures-art.js', 'js/bouches-art.js', 'js/yeux-art.js', 'assets/yeux/amande-d.png', 'assets/yeux/amande-g.png', 'assets/yeux/amande-iris-d.png', 'assets/yeux/amande-iris-g.png', 'assets/yeux/amandelong-d.png', 'assets/yeux/amandelong-g.png', 'assets/yeux/amandelong-iris-d.png', 'assets/yeux/amandelong-iris-g.png', 'assets/yeux/enfonces-d.png', 'assets/yeux/enfonces-g.png', 'assets/yeux/enfonces-iris-d.png', 'assets/yeux/enfonces-iris-g.png', 'assets/yeux/grands-d.png', 'assets/yeux/grands-g.png', 'assets/yeux/grands-iris-d.png', 'assets/yeux/grands-iris-g.png', 'assets/yeux/monolides-d.png', 'assets/yeux/monolides-g.png', 'assets/yeux/monolides-iris-d.png', 'assets/yeux/monolides-iris-g.png', 'assets/yeux/petits-d.png', 'assets/yeux/petits-g.png', 'assets/yeux/petits-iris-d.png', 'assets/yeux/petits-iris-g.png', 'assets/yeux/releves-d.png', 'assets/yeux/releves-g.png', 'assets/yeux/releves-iris-d.png', 'assets/yeux/releves-iris-g.png', 'assets/yeux/ronds-d.png', 'assets/yeux/ronds-g.png', 'assets/yeux/ronds-iris-d.png', 'assets/yeux/ronds-iris-g.png', 'assets/yeux/sortants-d.png', 'assets/yeux/sortants-g.png', 'assets/yeux/sortants-iris-d.png', 'assets/yeux/sortants-iris-g.png', 'assets/yeux/tombantes-d.png', 'assets/yeux/tombantes-g.png', 'assets/yeux/tombantes-iris-d.png', 'assets/yeux/tombantes-iris-g.png', 'assets/bouches/fine.png', 'assets/bouches/moyenne.png', 'assets/bouches/pleine.png', 'assets/bouches/coeur.png', 'assets/bouches/rectangle.png', 'assets/bouches/ronde.png', 'assets/bouches/pulpeuse.png', 'assets/bouches/trespulpeuse.png', 'assets/bouches/asymetrique.png', 'assets/bouches/superfine.png', 'assets/bouches/inferieure.png', 'assets/bouches/tombante.png', 'assets/bouches/remontante.png', 'assets/bouches/entrouverte.png', 'assets/bouches/fermee.png', 'assets/bouches/glossy.png', 'assets/bouches/mat.png', 'assets/bouches/ombre.png', 'assets/bouches/glosscentre.png', 'assets/bouches/naturelle.png', 'assets/coiffures/longs.png',
   'assets/coiffures/carrelisse.png',
+  'assets/coiffures/gnaturel.png',
+  'assets/coiffures/gdegbas.png',
+  'assets/coiffures/gdegmoyen.png',
+  'assets/coiffures/gdeghaut.png',
+  'assets/coiffures/gbuzz.png',
+  'assets/coiffures/gcarrecourt.png',
+  'assets/coiffures/gcarremoyen.png',
+  'assets/coiffures/gcarrelong.png',
+  'assets/coiffures/gplaques.png',
+  'assets/coiffures/graiemilieu.png',
+  'assets/coiffures/graiecote.png',
+  'assets/coiffures/gquiff.png',
+  'assets/coiffures/gpompadour.png',
+  'assets/coiffures/gtaper.png',
+  'assets/coiffures/gondule.png',
   'assets/coiffures/queuehaute2.png',
   'assets/coiffures/mechesdevant.png',
   'assets/coiffures/frangedroite.png',

@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='35';
+const APP_VERSION='36';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -132,6 +132,7 @@ const TAILLE={petite:.9,moyenne:1,grande:1.1},TAILLE_F={grande:1.05},CORP={mince
 const legX=(G,v)=>{const k=G.lk||1;if(k===1)return v;if(v<=25)return 25-(25-v)*k;return Math.min(Math.max(v,G.HH+2),25+(v-25)*k)};
 const BODY_Y=206,BODY_L=672,BODY_K=.9;
 function render(s,vb,p,showBg){
+ if(typeof HAIR_ALL!=='undefined'&&!HAIR_ALL.includes(s.hair)&&HAIR_SWAP[s.hair])s={...s,hair:HAIR_SWAP[s.hair]};
  const hk=(s.sexe==='f'&&TAILLE_F[s.taille])||TAILLE[s.taille]||1,wk=(CORP[s.corpulence]||CORP.moyenne).w,vh=+String(vb).split(/[ ,]+/)[3],up=vh>=600?(hk-1)*BODY_L:0;
  if(s.hair==='ananas'||s.hair==='chignonhaut'){let [x,y,w,h]=String(vb).split(/[ ,]+/).map(Number);const top=(s.hair==='ananas'?-46:-14)-up;if(y>top){const h2=h+(y-top),w2=w*h2/h;x-=(w2-w)/2;vb=[x,top,w2,h2].map(v=>+v.toFixed(1)).join(' ')}}
  const a=s.adj, sk=s.skin, skD=mix(sk,'#5a2412',.2), skDD=mix(sk,'#3a140a',.4), skL=mix(sk,'#ffd9b8',.22);
@@ -1043,11 +1044,26 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'Cœur
  uni:'Uni',degrade:'Dégradé',pois:'Pois',rayures:'Rayures',rayons:'Rayons'};
 const HAIR_F=['tresse','longs','longsondules','ondulescote','frange','carre','carreondule','carreplongeant','carreretrousse','queue','queuehaute','couettes','chignon','demichignon','macarons','boucles','boucleslongues'];
 const HAIR_M=['court','texture','banane','piques','meche','fondu','plaque','raie','rideau','rase'];
-const REFS={C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
+const REFS={GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
 const VECT="Rendu vectoriel stylisé : la texture photographique et l'éclairage réel ne sont pas reproduits.";
 const NOREF="Aucune image de référence fournie : proposition à valider ou à remplacer par ta propre référence.";
 const CAT_H=[['all','Toutes'],['court','Courts'],['mi','Mi-longs'],['long','Longs'],['lisse','Lisses'],['ondule','Ondulés'],['boucle','Bouclés'],['crepu','Crépus'],['tresse','Tresses'],['chignon','Chignons'],['queue','Queues de cheval'],['attache','Attachées']];
 const HAIRDB={
+ gnaturel:{n:'Cheveux courts naturels',c:'court crepu boucle',r:'GL',g:'m'},
+ gdegbas:{n:'Dégradé bas',c:'court crepu boucle',r:'GL',g:'m'},
+ gdegmoyen:{n:'Dégradé moyen',c:'court crepu boucle',r:'GL',g:'m'},
+ gdeghaut:{n:'Dégradé haut',c:'court crepu boucle',r:'GL',g:'m'},
+ gbuzz:{n:'Buzz cut',c:'court crepu',r:'GL',g:'m'},
+ gcarrecourt:{n:'Carré court',c:'court lisse',r:'GL',g:'m'},
+ gcarremoyen:{n:'Carré moyen',c:'mi lisse',r:'GL',g:'m'},
+ gcarrelong:{n:'Carré long',c:'mi lisse',r:'GL',g:'m'},
+ gplaques:{n:'Cheveux plaqués',c:'court lisse',r:'GL',g:'m'},
+ graiemilieu:{n:'Raie au milieu',c:'mi lisse',r:'GL',g:'m'},
+ graiecote:{n:'Raie sur le côté',c:'court lisse',r:'GL',g:'m'},
+ gquiff:{n:'Quiff',c:'court lisse',r:'GL',g:'m'},
+ gpompadour:{n:'Pompadour',c:'court lisse',r:'GL',g:'m'},
+ gtaper:{n:'Taper',c:'court boucle crepu',r:'GL',g:'m'},
+ gondule:{n:'Ondulations légères',c:'court ondule',r:'GL',g:'m'},
  couettes:{n:'Couettes basses',c:'mi lisse queue attache',r:'F',x:"Raie au milieu, couettes au niveau des oreilles et pointes recourbées respectées ; mèches fines simplifiées."},
  meches:{n:'Mèches lâchées ondulées',c:'court ondule',r:'W2',x:"Volume ébouriffé, grande mèche ondulée qui tombe sur le front, pointes recourbées sur les tempes et au-dessus des oreilles, d'après ta planche (vue de face)."},
  raiecote:{n:'Raie sur le côté',c:'court lisse',r:'R3',x:"Raie marquée à droite, cheveux plaqués et coiffés vers la gauche, ligne frontale arrondie, côtés en dégradé jusqu'au haut des oreilles, d'après ta planche (vue de face)."},
@@ -1129,7 +1145,12 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute'];
+const HAIR_G=['gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gcarremoyen','gcarrelong','gplaques','graiemilieu','graiecote','gquiff','gpompadour','gtaper','gondule'];
+/* coiffures retirées du catalogue : remplacées par la plus proche (personnages, parties en cours) */
+const HAIR_SWAP={longs:'raiemilieu',lisselong:'raiemilieu',lisseoreilles:'raiemilieu',longondule:'raiemilieu',longsondules:'raiecotel',ondulescote:'raiecotel',longboucle:'blongs',boucleslongues:'blongs',boucles:'bcarre',miboucle:'bcarre',afro:'bafro',twa:'bcourt',afropuff:'bchignonhaut',ananas:'bchignonhaut',washgo:'bwashgo',bantu:'btwists',bbantu:'btwists',bpuffs:'bafro',macarons:'bafro',boxbraids:'bbox',vanilles:'btwists',locks:'btwists',nattes:'bcollees',btressesarriere:'bcollees',tresse:'deuxtresses',bfoulard:'bafro',bchignonbas:'bchignon',chignon:'chignonhaut2',chignonhaut:'chignonhaut2',demichignon:'bdemiqueue',queue:'queuelisse',queuehaute:'queuehaute2',couettes:'deuxtresses',carre:'carrelisse',carreondule:'carrelisse',carreplongeant:'carrelisse',carreretrousse:'carrelisse',lobraie:'carrelisse',longfrange:'frangedroite',frange:'frangedroite',meches:'mechesdevant',
+ degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
+const hairOk=h=>HAIR_ALL.includes(h)?h:(HAIR_SWAP[h]||h);
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gcarremoyen','gcarrelong','gplaques','graiemilieu','graiecote','gquiff','gpompadour','gtaper','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
@@ -1275,7 +1296,7 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
  adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}};
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}if(s.hair==='tresse')s.hair='longondule';if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
 let tab=0, sub=0;
 
@@ -1335,7 +1356,7 @@ const BODYL={petite:['Petite','Petit'],moyenne:['Moyenne','Moyen'],grande:['Gran
 const bodyLbl=o=>(BODYL[o]||[o,o])[state.sexe==='m'?1:0];
 let catPick={},curList=[];
 function catList(S){
- if(S.hairCat)return HAIR_ALL.filter(k=>S.hairCat==='all'||HAIRDB[k].c.split(' ').includes(S.hairCat)).map(k=>({s:'hair',v:k,...HAIRDB[k],vb:'58 -4 284 290'}));
+ if(S.hairCat)return HAIR_ALL.filter(k=>wearVis({g:HAIR_G.includes(k)?'m':'f'})&&(S.hairCat==='all'||HAIRDB[k].c.split(' ').includes(S.hairCat))).map(k=>({s:'hair',v:k,...HAIRDB[k],vb:'58 -4 284 290'}));
  const W=WEAR[S.wear];return W.items.filter(wearVis).map(it=>({...it,vb:it.vb||W.vb}));
 }
 function entryState(e){if(e.set)return {...state,jacket:'aucune',dress:'aucune',...e.set};const o={...state};o[e.s]=e.v;const cs=COLSLOT[e.s];if(cs&&e.c)o[cs]=e.c;if(e.s==='top'||e.s==='bottom')o.dress='aucune';return o}
@@ -1395,7 +1416,7 @@ function harmonious(){const s=clone(DEFAULT);s.dress='aucune';s.name=state.name;
  s.brows=pick(['epais','epais','fins','arques']);s.nose=pick(['bouton','bouton','petit']);
  s.mouth=pick(MOUTHS);s.cheeks=pick(['rose','rose','aucune']);
  s.freckles=Math.random()<.2?'legeres':'aucune';
- s.hair=male?pick(['degrade','taper','fadehaut','raiecote']):pick(HAIR_ALL.filter(h=>!['degrade','taper','fadehaut','raiecote'].includes(h)));if(male){s.cheeks='aucune';s.freckles='aucune'}
+ s.hair=male?pick(HAIR_G):pick(HAIR_ALL.filter(h=>!HAIR_G.includes(h)));if(male){s.cheeks='aucune';s.freckles='aucune'}
  s.hairColor=Math.random()<.85?pick(NATURAL):pick(HAIR.slice(8));
  if(SKIN.indexOf(s.skin)>=5&&Math.random()<.7)s.hairColor=pick(HAIR.slice(0,3));
  const boy=state.sexe==='m';
@@ -1703,7 +1724,7 @@ function famAvatar(role,seed){
  s.rides=old?'marquees':adult?'fines':'aucune';s.dress='aucune';
  s.skin=me().skin;s.face=fem?p(['joufflu','ovale','rond','coeur']):p(['naturel','anguleux','carre','allonge']);s.eyes=fem?p(['grands','amande','rieurs']):p(['doux','nets','amande']);s.iris=me().iris;s.brows=p(['epais','fins','arques']);
  s.nose=p(['bouton','petit']);s.mouth=p(['naturelle','fermee','remontante','moyenne','fine']);s.cheeks=p(['rose','aucune']);s.freckles='aucune';
- s.hair=fem?p(HAIR_ALL.filter(h=>!['degrade','taper','fadehaut','raiecote'].includes(h))):p(['degrade','taper','fadehaut','raiecote']);
+ s.hair=fem?p(HAIR_ALL.filter(h=>!HAIR_G.includes(h))):p(HAIR_G);
  s.hairColor=old?'#d9d4cc':(r()<.7?me().hairColor:p(HAIR.slice(0,5)));
  s.top=old?p(['chemise','colroule']):p(['tshirt','chemise','capuche','colroule']);const c=p(COMBOS);s.topColor=c[0];s.bgColor=c[1];s.bgPattern='uni';
  s.sexe=fem?'f':'m';s.bottom=p(fem&&!old?['droit','flare','large','jupe']:['droit','large']);s.bottomColor=p(BOTC.slice(0,7));s.shoes=p(old?['basses','retro']:['basses','running','retro','sandales']);s.shoesColor=p(SHOEC.slice(0,4));
