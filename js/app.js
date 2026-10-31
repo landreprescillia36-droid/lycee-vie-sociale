@@ -827,8 +827,8 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
- const sx=(faceHW(d,150)+2.5)/113,top=faceTop(d),sy=(205-top+2)/(205-20),y0=205-(205-70)*sy;
- return {sx,sy,y0,t:`translate(200,205) scale(${fx(sx)},${fx(sy)}) translate(-200,-205)`}}
+ const sx=(faceHW(d,150)+2.5)/113,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
+ return {sx,sy,t:`translate(200,205) scale(${fx(sx)}) translate(-200,-205)`}}
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 function sideburns(s,A,col,fit){return A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,205+(q0[1]-205)*fit.sy]:q0,k=q[0]<200?-1:1,vb=192;
  /* tempe : cheveux courts du coin de la ligne des cheveux jusqu'au haut de l'oreille, collés au crâne ; trait en diagonale côté visage */
