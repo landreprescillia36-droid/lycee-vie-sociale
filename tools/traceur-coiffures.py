@@ -58,9 +58,9 @@ def garcon(nom, **kw):
 GARCONS = ['gnaturel', 'gdegbas', 'gdegmoyen', 'gdeghaut', 'gbuzz', 'gcarrecourt', 'gcarremoyen', 'gcarrelong', 'gplaques', 'graiemilieu',
            'graiecote', 'gquiff', 'gpompadour', 'gtaper', 'gondule']
 for k in GARCONS: HAIRS[k] = garcon(k)
-for k, f in {'gdegbas': (186, 214), 'gdegmoyen': (172, 208), 'gdeghaut': (156, 200), 'gbuzz': (176, 212), 'gtaper': (182, 214), 'gnaturel': (196, 222)}.items(): HAIRS[k]['fondu'] = f
+for k, f in {'gdegbas': (186, 214), 'gdegmoyen': (172, 208), 'gdeghaut': (156, 200), 'gbuzz': (176, 212), 'gtaper': (182, 214), 'gnaturel': (196, 222)}.items(): HAIRS[k].update(fondu=f)
 # dégradé : sur les côtés (hors du front), les cheveux s'éclaircissent jusqu'à la peau entre les deux hauteurs (unités de tête)
-for k in ['gcarremoyen', 'gcarrelong', 'graiemilieu']: HAIRS[k].update(oreilles=False, combler=None, oeil=(9, 9, 16, 9, 18))   # (hauteur œil, côté extérieur, côté intérieur, sourcil extérieur, intérieur) : les mèches qui passent sur le coin de l'œil restent   # yeux et sourcils découpés au plus près   # mèches qui descendent devant les oreilles
+for k in ['gcarremoyen', 'gcarrelong', 'graiemilieu']: HAIRS[k].update(oreilles=False, combler=None, arrondi=0, oeil=(9, 9, 16, 9, 18))   # (hauteur œil, côté extérieur, côté intérieur, sourcil extérieur, intérieur) : les mèches qui passent sur le coin de l'œil restent   # yeux et sourcils découpés au plus près   # mèches qui descendent devant les oreilles
 # modèles de visage : image, découpe (sourcils -> bouche), centre des yeux et menton dans la découpe, taille par rapport au visage de « longs »
 K_LONGS, CHIN_U = 1.785, 308.5
 def _bez(d):   # contour du visage « ovale » du jeu (FACES.ovale dans js/app.js), en points
@@ -390,6 +390,24 @@ for hid, c in HAIRS.items():
             if rs < r0: al[y, rs + 1:] = 0
             elif rs > r0: n_ = rs - r0; px[y, r0 + 1:rs + 1] = px[y, r0 - n_:r0][::-1]; al[y, r0 + 1:rs + 1] = al[y, r0 - 2]
         al = np.clip((cv2.GaussianBlur(al, (0, 0), 1.5) - .5) * 2 + .5, 0, 1)
+    if c.get('match') == 'g':   # contour orangé de la ligne des cheveux et peau du dessin : transparents (la peau du jeu est dessous)
+        pr = px.astype(int); lum_ = (pr * [.299, .587, .114]).sum(-1)
+        al = al * (1 - np.clip(((pr[..., 0] - pr[..., 2]) - 22) / 18, 0, 1) * np.clip((lum_ - 40) / 25, 0, 1))
+        al = al * (1 - np.clip((lum_ - 120) / 30, 0, 1))   # restes clairs du fond de la planche
+    if c.get('match') == 'g' and c.get('arrondi', 1):   # côtés arrondis vers le crâne du jeu : sous v_a, le bord extérieur rentre en courbe jusqu'au contour du visage
+        # (on rogne le bord, sans déformer les mèches) ; la coiffure ne dépasse plus en bloc au-dessus des oreilles
+        Xg = np.arange(al.shape[1]); Ug = np.array([toU(x * UP / S, 0)[0] for x in Xg]); Vg = np.array([toU(0, y * UP / S)[1] for y in range(al.shape[0])])
+        def face_half(v):
+            P = FACE_OV[np.abs(FACE_OV[:, 1] - v) < 1.5]
+            return float(np.abs(P[:, 0] - 200).max()) if len(P) else 94
+        v_a, v_b = (118, 172)
+        ya = int(np.searchsorted(Vg, v_a)); rowa = np.where(al[min(ya, al.shape[0] - 1)] > .5)[0]
+        if len(rowa):
+            hwa = max(200 - Ug[rowa.min()], Ug[rowa.max()] - 200)
+            for y in range(ya, al.shape[0]):
+                tt = min(1, (Vg[y] - v_a) / (v_b - v_a)); tt = tt * tt * (3 - 2 * tt)
+                lim = hwa + (face_half(min(Vg[y], 300)) + 1.5 - hwa) * tt
+                al[y] *= np.clip((lim - np.abs(Ug - 200)) / 1.5, 0, 1)
     if c.get('fondu'):
         v0_, v1_ = c['fondu']; Xg = np.arange(al.shape[1]); Yg = np.arange(al.shape[0])
         Ug = np.array([toU(x * UP / S, 0)[0] for x in Xg]); Vg = np.array([toU(0, y * UP / S)[1] for y in Yg])
@@ -440,12 +458,13 @@ for hid, c in HAIRS.items():
     if dos: out_img['dos'] = 1
     if c.get('oreilles'): out_img['ears'] = 1   # oreilles du jeu visibles à travers les cheveux
     if c.get('match') == 'g':   # crâne : peau sous toute la largeur des cheveux (rang par rang), jusqu'au haut des oreilles : la coiffure ne se détache jamais de la tête
-        cr = np.zeros_like(M)
-        for y in range(M.shape[0]):
+        alb = np.zeros(sz[::-1], np.float32); alb[Y0:Y1, X0:X1] = rgba[..., 3] / 255.   # cheveux tels que dessinés (après les retouches)
+        cr = cv2.resize((alb > .5).astype(np.uint8), (M.shape[1], M.shape[0]), interpolation=cv2.INTER_NEAREST).astype(bool); cr2 = np.zeros_like(cr)
+        for y in range(cr.shape[0]):
             if toU(0, y)[1] > 226: break
-            xs_ = np.where(M[y])[0]
-            if len(xs_): cr[y, xs_.min():xs_.max() + 1] = True
-        out_img['crane'] = paths(cv2.erode(cr.astype(np.uint8), np.ones((31, 31), np.uint8)).astype(bool))   # en retrait du bord des cheveux : pas de liseré de peau autour
+            xs_ = np.where(cr[y])[0]
+            if len(xs_): cr2[y, xs_.min():xs_.max() + 1] = True
+        out_img['crane'] = paths(cv2.erode(cr2.astype(np.uint8), np.ones((31, 31), np.uint8)).astype(bool))   # en retrait du bord des cheveux : pas de liseré de peau autour
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
     if dbg:
