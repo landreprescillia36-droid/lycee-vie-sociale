@@ -493,6 +493,16 @@ for hid, c in HAIRS.items():
             if best:
                 vb_ = max(best[1] + 22, 168); tp.append([round(best[0], 1), round(best[1], 1), round(200 + k * fh(vb_), 1), round(vb_, 1)])
         out_img['tempe'] = tp
+    if c.get('match') == 'g':   # contour de la tête sur la planche (peau + cheveux, hors fond) : demi-largeur à v = 150 (au-dessus des oreilles) et haut du crâne,
+        # pour poser la coiffure à l'échelle de chaque forme de tête du jeu
+        src0 = cv2.imread(c['src']).astype(int); bgc = np.median(np.r_[src0[2:6, 2:-2].reshape(-1, 3), src0[:, 2:6].reshape(-1, 3)], 0)
+        fg = (np.abs(src0 - bgc).sum(-1) > 45).astype(np.uint8); fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+        fs_, fcx_, fch_ = c['face']; k_ = K_LONGS / fs_
+        row = int(round(fch_ + (150 - CHIN_U) / k_)); xs_ = np.where(fg[row])[0]; ci = int(fcx_)
+        l = ci; r = ci
+        while l > 0 and fg[row, l - 1]: l -= 1
+        while r < fg.shape[1] - 1 and fg[row, r + 1]: r += 1
+        out_img['hw'] = round(float((r - l) / 2 * k_), 1)
     if c.get('fcut'): out_img['fcut'] = c['fcut']   # découpe des mèches de devant : [hauteur des épaules, demi-largeur]
     out[hid] = {**out_img, 'main': hexc(rgb[main]), 'back': [['sil', paths(backR), hexc(rgb[0])]], 'front': [['sil', '', hexc(rgb[main])]]}   # avec l'image, les calques vectoriels de devant ne servent pas (fichier 10 fois plus léger)
     if dbg:
