@@ -54,7 +54,7 @@ for k in ['bbantu', 'bchignon', 'bpuffs', 'bcollees', 'bfoulard', 'bcourt'] + FA
 # planche « Coiffures pour garçon » (docs/references/coiffures/planche-garcons-lisses.jpg, cases dans garcons/) : visage de garçon
 # plus long que celui du jeu ; la case est posée à la largeur de la tête et les yeux sur ceux du jeu (menton « virtuel »)
 def garcon(nom, **kw):
-    return {'src': f'docs/references/coiffures/garcons/{nom}.png', 'match': 'g', 'bottom': 196, 'back': False, 'tips': False, 'smooth': False, 'bord': 13, 'oreilles': True, 'combler': 'gd', 'rogne': 17, **kw}
+    return {'src': f'docs/references/coiffures/garcons/{nom}.png', 'match': 'g', 'bottom': 196, 'back': False, 'tips': False, 'smooth': False, 'bord': 13, 'oreilles': True, 'combler': 'gd', 'rogne': 17, 'gloss': 1.45, 'net': 1, **kw}
 GARCONS = ['gnaturel', 'gdegbas', 'gdegmoyen', 'gdeghaut', 'gbuzz', 'gcarrecourt', 'gcarremoyen', 'gcarrelong', 'gplaques', 'graiemilieu',
            'graiecote', 'gquiff', 'gpompadour', 'gtaper', 'gondule']
 for k in GARCONS: HAIRS[k] = garcon(k)
@@ -337,7 +337,7 @@ for hid, c in HAIRS.items():
     os.makedirs('assets/coiffures', exist_ok=True)
     F = M & ~box; S = 3
     sz = (bigim.shape[1] * S // UP, bigim.shape[0] * S // UP)
-    clean = cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 1, 1, 3, 7)[:, :, ::-1]   # enlève les blocs de la compression JPEG
+    clean = np.ascontiguousarray(im.astype(np.uint8)) if c.get('net') else cv2.fastNlMeansDenoisingColored(np.ascontiguousarray(im.astype(np.uint8)[:, :, ::-1]), None, 1, 1, 3, 7)[:, :, ::-1]   # planche garçons (PNG net) : texture gardée
     # trous dans les cheveux (là où le contour de l'épaule croisait les mèches) : bouchés et repeints avec les mèches voisines
     hole = np.zeros_like(F0 := cv2.resize(F.astype(np.uint8), (im.shape[1], im.shape[0]), interpolation=cv2.INTER_NEAREST))
     cs_, _ = cv2.findContours(F0, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE); cv2.drawContours(hole, cs_, -1, 1, -1); hole = hole & (1 - F0)

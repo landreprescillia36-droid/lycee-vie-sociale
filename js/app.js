@@ -827,7 +827,7 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
- const sx=(faceHW(d,150)+2.5)/113,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
+ const sx=(faceHW(d,150)+3)/104,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
  return {sx,sy,t:`translate(200,205) scale(${fx(sx)}) translate(-200,-205)`}}
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 function sideburns(s,A,col,fit){return A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,205+(q0[1]-205)*fit.sy]:q0,k=q[0]<200?-1:1,vb=192;
@@ -845,7 +845,7 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
  if(A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf'+part,cid=p+'hac';
   if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16,tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
-   flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation=".45 1.3"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
+   flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${HAIR_G.includes(s.hair)?'.15 .35':'.45 1.3'}"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
   const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
   const img=G0+`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`+G1;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
