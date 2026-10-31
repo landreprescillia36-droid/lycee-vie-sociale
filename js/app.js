@@ -351,7 +351,7 @@ function armD(G,k,yEnd,ext,yTop){
  const sx=A.sx,au=A.au+e(236);
  if(yTop)return `M${fx(edge(A.I,272)-k*e(272))},${fx(AY(272))} L${fx(sx-k*(au-6))},${yTop+6} L${fx(sx+k*au)},${yTop} L${pts(o.filter(q=>q[1]>yTop))} L${pts(i)}Z`;
  const pr=shProf(G,k,edge(A.O,246)+k*e(246)).filter(q=>k*(q[0]-200)>=G.SH-16);
- return `M${pts(i.slice(-1))} C${fx(sx-k*(au-2))},${fx(AY(250))} ${fx(sx-k*12)},240 ${pts(pr.slice(0,1))} L${pts(pr)} L${pts(o.filter(q=>q[1]>246.5))} L${pts(i)}Z`;
+ return `M${pts(i.slice(-1))} C${fx(sx-k*(au-2))},${fx(AY(250))} ${fx(sx-k*12)},240 ${pts(pr.slice(0,1))} L${pts(pr)} L${pts(o.filter(q=>q[1]>Math.max(246.5,pr[pr.length-1][1]+1)))} L${pts(i)}Z`;
 }
 function handD(G,k){const w=armPts(G,k).wx,Y=v=>fx(AY(v));return `M${fx(w-k*8.5)},${Y(442)} C${fx(w-k*13)},${Y(470)} ${fx(w-k*10)},${Y(510)} ${fx(w+k*1)},${Y(520)} C${fx(w+k*10)},${Y(512)} ${fx(w+k*12)},${Y(472)} ${fx(w+k*8.5)},${Y(442)}Z`}
 function legD(G,k,foot){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
@@ -759,7 +759,7 @@ function topSVG(G,T,s,p,K){
  if(T.bib){const b=s.bottomColor;o+=LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')}
  if(T.neck==='scoopw'&&!(s.jacket&&JK[s.jacket])){const sh=sideX(G,222),PL=profTo(G,-1,sh).filter(q=>q[0]<=160),PR=profTo(G,1,sh).filter(q=>q[0]>=240),a0=PL[0],b0=PR[0],mid=profTo(G,1,sh).filter(q=>q[0]<240&&q[0]>=200),midL=profTo(G,-1,sh).filter(q=>q[0]>160&&q[0]<200);
   const nk=`M${fx(a0[0])},${fx(a0[1])} C162,262 178,282 200,282 C222,282 238,262 ${fx(b0[0])},${fx(b0[1])}`;
-  const top=midL.concat(mid).filter(q=>q[0]>a0[0]&&q[0]<b0[0]).sort((u,v)=>v[0]-u[0]);o+=`<path d="${nk} ${top.map(q=>'L'+fx(q[0])+','+fx(q[1]+.6)).join(' ')}Z" fill="${sk}"/>`+LN(nk,dk,1.6,.8)}
+  const top=midL.concat(mid).filter(q=>q[0]>a0[0]&&q[0]<b0[0]).sort((u,v)=>v[0]-u[0]);o+=`<path d="${nk} ${top.map(q=>'L'+fx(q[0])+','+fx(q[1]-.2)).join(' ')}Z" fill="${sk}"/>`+LN(nk,dk,1.6,.8)+[-1,1].map(k=>{const A=armPts(G,k),Q=shProf(G,k,edge(A.O,246)+k*ex(246)).filter(q=>k*(q[0]-200)>=40);const j=Q.findIndex(q=>k*(q[0]-200)>=G.SH-16);Q.splice(j+2);return LN('M'+(k<0?a0:b0).map(fx).join(',')+' L'+Q.map(q=>fx(q[0])+','+fx(q[1])).join(' L'),dk,1.4,.7)}).join('')}
  if(T.hood2&&!(s.jacket&&JK[s.jacket])){const hf=shade(c,.1),ho=shade(c,-.4);
   const Lf='M138,228 C144,200 164,186 182,188 C172,210 182,240 200,266 C172,262 148,250 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,210 218,240 200,266 C228,262 252,250 262,228Z';
   o+=`<path d="${Rf}" fill="${hf}"/>`+LN(Rf,ho,2,.8)+`<path d="${Lf}" fill="${hf}"/>`+LN(Lf,ho,2,.8)+LN('M150,226 C160,208 174,200 186,200 M250,226 C240,208 226,200 214,200',ho,1.4,.35);
