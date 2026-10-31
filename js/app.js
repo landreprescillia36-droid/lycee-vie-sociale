@@ -591,11 +591,11 @@ function hatSVG(s,p){const c=s.hatColor,d=shade(c,-.3);
 function edgesSVG(s,hD){return s.edges==='baby'?LN('M114,150 c-8,4 -10,14 -2,16 c6,1 8,-6 2,-8 M286,150 c8,4 10,14 2,16 c-6,1 -8,-6 -2,-8 M150,138 q4,-6 10,-2 M240,136 q6,-4 10,2 M120,168 q-4,6 2,10 M280,168 q4,6 -2,10',hD,1.8,.9):''}
 const TOPS=['salopette','tshirt','crop','debardeur','ajuste','henley','asym','capuche','chemise','colroule','gilet','epaules','blouse','veste','cardigan'];
 const TOP2={/* planche « Hauts pour garçon » (docs/references/vetements/planche-hauts-garcons.png) — logos de marques non reproduits */
- gtee:{h:452,ext:4,sl:336,sx:5,flare:3,crew:1},gpolo:{h:452,ext:4,sl:336,sx:5,flare:3,pcolm:1,band2:1},gpolopk:{h:452,ext:4,sl:336,sx:5,flare:3,pcolm:1,band2:1,pk2:1},
+ gtee:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,crew:1},gpolo:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,pcolm:1,band2:1},gpolopk:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,pcolm:1,band2:1,pk2:1},
  gchem:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1,pk2:1},ghood:{h:458,ext:9,sl:446,sx:7,hood:1,band:1,cuff:1},gzip:{h:458,ext:9,sl:446,sx:7,hood:1,zip:1,band:1,cuff:1},
  gsweat:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1},gpull:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1,knit:1},gcote:{h:456,ext:6,sl:446,sx:5,band:1,cuff:1,rib:1},
- gsport:{h:452,ext:4,sl:336,sx:5,flare:3,crew:1,raglan:1},gbandes:{h:452,ext:4,sl:336,sx:5,flare:3,crew:1,sstripe:1},gdeb:{h:452,ext:0,neck:'tank',fit:1,nosl:1},gnageur:{h:452,ext:0,neck:'tank',fit:1,nosl:1,racer:1},
- glayer:{h:452,ext:4,sl:336,sx:5,flare:3,crew:1,layer:1},gteepk:{h:452,ext:4,sl:336,sx:5,flare:3,crew:1,pk2:1},gover:{h:470,ext:9,sl:350,sx:7,flare:4,crew:1},glin:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1,pk2:1,lin:1},
+ gsport:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,crew:1,raglan:1},gbandes:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,crew:1,sstripe:1},gdeb:{h:452,ext:0,neck:'tank',fit:1,nosl:1},gnageur:{h:452,ext:0,neck:'tank',fit:1,nosl:1,racer:1},
+ glayer:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,crew:1,layer:1},gteepk:{h:448,ext:2.5,fit:1,sl:336,sx:2.5,flare:1.5,crew:1,pk2:1},gover:{h:470,ext:9,sl:350,sx:7,flare:4,crew:1},glin:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1,pk2:1,lin:1},
  graye:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1,stripes:1},capuche2:{h:470,ext:13,sl:446,sx:9,neck:'v',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
  chemcrop:{h:394,ext:4,sl:446,sx:5,neck:'deepv',scol:1,btnv2:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square'},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
  polo:{h:398,ext:1,sl:292,sx:1.5,band2:1,fit:1,neck:'v',pcol:1,placket2:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square'},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1},
