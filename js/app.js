@@ -707,11 +707,11 @@ function topSVG(G,T,s,p,K){
  if(T.keyhole){const kd='M200,220 Q190,236 183,252 Q192,266 200,276 Q208,266 217,252 Q210,236 200,220Z';o+=`<path d="${kd}" fill="${sk}"/>`+LN(kd,dk,1.6,.6)+LN('M188,214 Q204,236 217,252 M212,214 Q196,236 183,252',shade(c,.12),1.6,.6);
   o+=`<path d="M184,196 Q200,202 216,196 L216,212 Q200,218 184,212Z" fill="${shade(c,.08)}"/>`+LN('M184,212 Q200,218 216,212',dk,1.4,.5)}
  if(T.trim){const s2=x=>fx(shY(G,x<200?-1:1,x)+1);o+=LN(`M175,${s2(175)} C175,262 184,268 200,268 C216,268 225,262 225,${s2(225)}`,'#1f2127',4.4)+LN(`M177,${s2(177)+3} C177.5,260 185,264.5 200,264.5 C215,264.5 222.5,260 223,${s2(223)+3}`,'#f4f1ea',1.2,.8)+LN(`M166,${s2(166)} L166,258 Q166,280 ${fx(200-sideX(G,284))},284 M234,${s2(234)} L234,258 Q234,280 ${fx(200+sideX(G,284))},284`,'#1f2127',2.6)+`<text x="200" y="294" text-anchor="middle" font-family="cursive,serif" font-style="italic" font-size="9" fill="#1f2127" opacity=".8">Lycée</text>`}
- if(T.scol){const lc=shade(c,.08),oc=shade(c,-.3);const Lc='M186,206 C176,212 160,218 152,226 L170,250 L182,244 L200,294 L192,236Z',Rc='M214,206 C224,212 240,218 248,226 L230,250 L218,244 L200,294 L208,236Z';
-  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.6)+LN(Rc,oc,1.4,.6)}
+ if(T.scol){const lc=shade(c,.08),oc=shade(c,-.3);const Lc='M187,203 L163,212 L167,251 L195,231Z',Rc='M213,203 L237,212 L233,251 L205,231Z';
+  o+=LN('M195,231 L200,294 L205,231',oc,1.3,.55)+`<path d="${Lc}" fill="${lc}" stroke-linejoin="miter"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.6)+LN(Rc,oc,1.4,.6)}
  if(T.btnv2){o+=LN(`M200,294 L200,${h}`,dk,1.4,.5)+LN(`M204,294 L204,${h}`,dk,1,.3);for(let y=306;y<h-6;y+=24)o+=`<circle cx="202" cy="${y}" r="2.6" fill="${shade(c,.2)}" stroke="${dk}" stroke-width=".8"/>`}
- if(T.pcol){const lc=shade(c,-.02),oc=shade(c,-.35);const Lc='M186,205 C181,208 176,212 172,218 L182,246 L196,258 L193,222Z',Rc='M214,205 C219,208 224,212 228,218 L218,246 L204,258 L207,222Z';
-  o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
+ if(T.pcol){const lc=shade(c,-.02),oc=shade(c,-.35);const Lc='M188,204 L168,212 L172,244 L196,230Z',Rc='M212,204 L232,212 L228,244 L204,230Z';
+  o+=LN('M196,230 L200,262 L204,230',oc,1.2,.5)+`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
  if(T.placket2)o+=LN('M196,262 L196,292 L204,292 L204,262',shade(c,-.3),1.2,.6)+`<circle cx="200" cy="270" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/><circle cx="200" cy="283" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/>`;
  if(T.ruff){const sq=(()=>{const a=profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=160)[0],b=profTo(G,1,sideX(G,222)).filter(q=>q[0]>=240)[0];return [a,b]})();let w=`M${fx(sq[0][0])},${fx(sq[0][1])}`;const P=[];for(let i=0;i<=16;i++){const u=i/16,x=(1-u)**3*sq[0][0]+3*(1-u)**2*u*162+3*(1-u)*u*u*178+u**3*200,y=(1-u)**3*sq[0][1]+3*(1-u)**2*u*262+3*(1-u)*u*u*282+u**3*282;P.push([x,y])}for(let i=15;i>=0;i--)P.push([400-P[i][0],P[i][1]]);for(let s2=0;s2<P.length-1;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],n=1;for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n,mx=x0+(x1-x0)*(i-.5)/n,my=y0+(y1-y0)*(i-.5)/n;w+=` Q${fx(mx)},${fx(my+2)} ${fx(x)},${fx(y)}`}}o+=LN(w,shade(c,.15),3.5,.9)+LN(w,dk,1,.4)}
  if(T.seams)o+=LN(`M182,300 Q178,340 182,${h} M218,300 Q222,340 218,${h}`,dk,1.4,.3);
@@ -739,7 +739,7 @@ function topSVG(G,T,s,p,K){
  o+=J.torso;
  if(!['off','asym','tube','halter','tank'].includes(T.neck))o+=arms();
  if(T.neck==='cami'&&!hasJk)o+=yokeSVG(G,p,sk,270,true)+camiStraps;
- const ex=T.puff===2?(y=>3+17*Math.sin(Math.PI*Math.max(0,Math.min(1,(y-232)/(T.sl-224))))):T.puff?(y=>3+11*Math.sin(Math.PI*Math.min(1,(y-236)/200))):(()=>T.sx);
+ const ex=T.puff===2?(y=>4+16*Math.sin(Math.PI*(.22+.78*Math.max(0,Math.min(1,(y-232)/(T.sl-228)))))):T.puff?(y=>3+11*Math.sin(Math.PI*Math.min(1,(y-236)/200))):(()=>T.sx);
  const yTop=T.neck==='off'?240:null;
  [-1,1].forEach(k=>{
   if(T.nosl||(T.neck==='asym'&&k===1))return;
@@ -757,9 +757,9 @@ function topSVG(G,T,s,p,K){
  if(G.f&&!(s.jacket&&JK[s.jacket])&&!T.bib&&!T.nosl)[-1,1].forEach(k=>{if(T.neck==='asym'&&k===1)return;o+=bustLine(G,k,c,ex,yTop?yTop+6:258)});
  if(T.bib){const b=s.bottomColor;o+=LN('M170,302 L158,218 M230,302 L242,218',b,9)+LN('M170,302 L158,218 M230,302 L242,218','#d6a35c',1.2,.9,'3 2')}
  if(T.hood2&&!(s.jacket&&JK[s.jacket])){const hf=shade(c,.1),ho=shade(c,-.4);
-  const Lf='M138,228 C144,200 164,186 182,188 C172,212 182,240 204,264 C172,258 148,248 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,212 218,240 196,264 C228,258 252,248 262,228Z';
+  const Lf='M138,228 C144,200 164,186 182,188 C172,210 182,236 200,254 C172,254 148,246 138,228Z',Rf='M262,228 C256,200 236,186 218,188 C228,210 218,236 200,254 C228,254 252,246 262,228Z';
   o+=`<path d="${Rf}" fill="${hf}"/>`+LN(Rf,ho,2,.8)+`<path d="${Lf}" fill="${hf}"/>`+LN(Lf,ho,2,.8)+LN('M150,226 C160,208 174,200 186,200 M250,226 C240,208 226,200 214,200',ho,1.4,.35);
-  const sc=lum(c)>.7?'#9a9488':'#f4f1ea';o+=LN('M190,252 C190,272 189,294 189,320 M210,252 C210,272 211,294 211,320',sc,2.6,1)+`<rect x="187.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/><rect x="209.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/>`;
+  const sc=lum(c)>.7?'#9a9488':'#f4f1ea';o+=`<circle cx="187" cy="240" r="2.2" fill="${ho}"/><circle cx="213" cy="240" r="2.2" fill="${ho}"/>`+LN('M187,240 L188,320 M213,240 L212,320',sc,2.6,1)+`<rect x="186.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/><rect x="210.5" y="318" width="3" height="7" rx="1" fill="#b9b9b9"/>`;
   o+=`<path d="M156,${h-78} L244,${h-78} L256,${h-16} L144,${h-16}Z" fill="none" stroke="${ho}" stroke-width="2.4" opacity=".55"/>`+LN(`M156,${h-78} L144,${h-16} M244,${h-78} L256,${h-16}`,shade(c,.12),1.2,.4)}
  o+=J.sleeves;
  o+=hands();
