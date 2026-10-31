@@ -590,7 +590,13 @@ function hatSVG(s,p){const c=s.hatColor,d=shade(c,-.3);
  }}
 function edgesSVG(s,hD){return s.edges==='baby'?LN('M114,150 c-8,4 -10,14 -2,16 c6,1 8,-6 2,-8 M286,150 c8,4 10,14 2,16 c-6,1 -8,-6 -2,-8 M150,138 q4,-6 10,-2 M240,136 q6,-4 10,2 M120,168 q-4,6 2,10 M280,168 q4,6 -2,10',hD,1.8,.9):''}
 const TOPS=['salopette','tshirt','crop','debardeur','ajuste','henley','asym','capuche','chemise','colroule','gilet','epaules','blouse','veste','cardigan'];
-const TOP2={capuche2:{h:470,ext:13,sl:446,sx:9,neck:'v',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
+const TOP2={/* planche « Hauts pour garçon » (docs/references/vetements/planche-hauts-garcons.png) — logos de marques non reproduits */
+ gtee:{h:452,ext:4,sl:300,sx:4},gpolo:{h:452,ext:4,sl:298,sx:3.5,neck:'v',pcol:1,placket2:1,band2:1},gpolopk:{h:452,ext:4,sl:298,sx:3.5,neck:'v',pcol:1,placket2:1,band2:1,pk2:1},
+ gchem:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1,pk2:1},ghood:{h:458,ext:9,sl:446,sx:7,hood:1,band:1,cuff:1},gzip:{h:458,ext:9,sl:446,sx:7,hood:1,zip:1,band:1,cuff:1},
+ gsweat:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1},gpull:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1,knit:1},gcote:{h:456,ext:6,sl:446,sx:5,band:1,cuff:1,rib:1},
+ gsport:{h:452,ext:4,sl:300,sx:4,raglan:1},gbandes:{h:452,ext:4,sl:300,sx:4,sstripe:1},gdeb:{h:452,ext:0,neck:'tank',fit:1,nosl:1},gnageur:{h:452,ext:0,neck:'tank',fit:1,nosl:1,racer:1},
+ glayer:{h:452,ext:4,sl:300,sx:4,layer:1},gteepk:{h:452,ext:4,sl:300,sx:4,pk2:1},gover:{h:470,ext:9,sl:322,sx:8},glin:{h:458,ext:6,sl:446,sx:5,collar:1,buttons:1,cuff:1,pk2:1,lin:1},
+ graye:{h:456,ext:7,sl:446,sx:6,band:1,cuff:1,stripes:1},capuche2:{h:470,ext:13,sl:446,sx:9,neck:'v',hood2:1,band:1,cuff:1},tajuste:{h:392,ext:0,sl:298,sx:2,fit:1,neck:'scoop'},epaules2:{h:386,ext:1,sl:446,sx:2,neck:'off',fit:1,rib:1,cuff:1},bustier:{h:366,ext:0,neck:'tube',fit:1,nosl:1,rib:1},
  chemcrop:{h:394,ext:4,sl:446,sx:5,neck:'deepv',scol:1,btnv2:1,cuff:1,pocket:1},mlrose:{h:392,ext:0,sl:446,sx:1.5,fit:1,rib:1,neck:'square'},cardicrop:{h:392,ext:3,sl:446,sx:3.5,neck:'cv',rib:1,btnv:1,cuff:1,band:1},
  polo:{h:398,ext:1,sl:292,sx:1.5,band2:1,fit:1,neck:'v',pcol:1,placket2:1},mlnoir:{h:392,ext:0,sl:446,sx:1.5,fit:1,neck:'square'},tcrop:{h:372,ext:0,sl:298,sx:3,fit:1},
  pullfin:{h:412,ext:8,sl:446,sx:7,neck:'off',cuff:1},halter:{h:376,ext:0,neck:'halter',fit:1,nosl:1,keyhole:1},tanksport:{h:380,ext:0,neck:'tank',fit:1,nosl:1,trim:1,rib:1},
@@ -606,7 +612,7 @@ function body(s,p,sk,skD,skDD,skL){
  <linearGradient id="${p}lmL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${skD}"/><stop offset=".42" stop-color="${skL}"/><stop offset="1" stop-color="${sk}"/></linearGradient><linearGradient id="${p}lmR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${sk}"/><stop offset=".58" stop-color="${skL}"/><stop offset="1" stop-color="${skD}"/></linearGradient>
  <linearGradient id="${p}tpL" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,-.22)}"/><stop offset=".45" stop-color="${shade(c,.06)}"/><stop offset="1" stop-color="${shade(c,-.18)}"/></linearGradient><linearGradient id="${p}tpR" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,-.18)}"/><stop offset=".55" stop-color="${shade(c,.06)}"/><stop offset="1" stop-color="${shade(c,-.22)}"/></linearGradient>
  <linearGradient id="${p}tp" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(c,T.fit?-.13:-.2)}"/><stop offset="${T.fit?.18:.4}" stop-color="${shade(c,.06)}"/><stop offset=".65" stop-color="${c}"/><stop offset="${T.fit?.86:1}" stop-color="${shade(c,T.fit?-.02:-.2)}"/><stop offset="1" stop-color="${shade(c,T.fit?-.14:-.2)}"/></linearGradient>
- <pattern id="${p}rib" width="5" height="10" patternUnits="userSpaceOnUse"><path d="M2.5,0 V10" stroke="#000" stroke-opacity=".13" stroke-width="1.3"/></pattern>
+ <pattern id="${p}gstr" width="40" height="26" patternUnits="userSpaceOnUse" y="6"><rect y="0" width="40" height="4.5" fill="${cont}"/></pattern><pattern id="${p}gknit" width="6" height="6" patternUnits="userSpaceOnUse"><path d="M0,3 Q1.5,0 3,3 Q4.5,6 6,3" fill="none" stroke="#000" stroke-opacity=".07" stroke-width="1"/></pattern><pattern id="${p}glin" width="4" height="7" patternUnits="userSpaceOnUse"><path d="M1,0 V5 M3,2 V7" stroke="#000" stroke-opacity=".06" stroke-width=".8"/></pattern><pattern id="${p}rib" width="5" height="10" patternUnits="userSpaceOnUse"><path d="M2.5,0 V10" stroke="#000" stroke-opacity=".13" stroke-width="1.3"/></pattern>
  <pattern id="${p}cab" width="24" height="26" patternUnits="userSpaceOnUse"><path d="M6,0 C14,6 14,7 6,13 C-2,19 -2,20 6,26 M18,0 C10,6 10,7 18,13 C26,19 26,20 18,26" fill="none" stroke="#000" stroke-opacity=".15" stroke-width="2"/><path d="M12,0 V26 M0,0 V26" stroke="#000" stroke-opacity=".08" stroke-width="1"/></pattern>
  <pattern id="${p}tw2" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V5" stroke="#000" stroke-opacity=".08" stroke-width="1.4"/></pattern>
  <pattern id="${p}mad" width="28" height="28" patternUnits="userSpaceOnUse"><rect x="0" y="9" width="28" height="7" fill="#d93b5e" opacity=".45"/><rect x="9" y="0" width="7" height="28" fill="#d93b5e" opacity=".35"/><rect x="0" y="21" width="28" height="2" fill="#2fa36b" opacity=".6"/><rect x="21" y="0" width="2" height="28" fill="#2fa36b" opacity=".5"/><rect x="0" y="3" width="28" height="1.5" fill="#fff" opacity=".4"/><rect x="3" y="0" width="1.5" height="28" fill="#fff" opacity=".35"/></pattern>
@@ -738,6 +744,10 @@ function topSVG(G,T,s,p,K){
   o+=`<path d="${Lc}" fill="${lc}"/><path d="${Rc}" fill="${lc}"/>`+LN(Lc,oc,1.4,.7)+LN(Rc,oc,1.4,.7)}
  if(T.placket2)o+=LN('M196,262 L196,292 L204,292 L204,262',shade(c,-.3),1.2,.6)+`<circle cx="200" cy="270" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/><circle cx="200" cy="283" r="2.3" fill="${shade(c,-.15)}" stroke="${shade(c,-.4)}" stroke-width=".7"/>`;
  if(T.ruff){const sq=(()=>{const a=profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=160)[0],b=profTo(G,1,sideX(G,222)).filter(q=>q[0]>=240)[0];return [a,b]})();let w=`M${fx(sq[0][0])},${fx(sq[0][1])}`;const P=[];for(let i=0;i<=16;i++){const u=i/16,x=(1-u)**3*sq[0][0]+3*(1-u)**2*u*162+3*(1-u)*u*u*178+u**3*200,y=(1-u)**3*sq[0][1]+3*(1-u)**2*u*262+3*(1-u)*u*u*282+u**3*282;P.push([x,y])}for(let i=15;i>=0;i--)P.push([400-P[i][0],P[i][1]]);for(let s2=0;s2<P.length-1;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],n=1;for(let i=1;i<=n;i++){const x=x0+(x1-x0)*i/n,y=y0+(y1-y0)*i/n,mx=x0+(x1-x0)*(i-.5)/n,my=y0+(y1-y0)*(i-.5)/n;w+=` Q${fx(mx)},${fx(my+2)} ${fx(x)},${fx(y)}`}}const nk=`M${fx(sq[0][0])},${fx(sq[0][1])} C162,262 178,282 200,282 C222,282 238,262 ${fx(sq[1][0])},${fx(sq[1][1])}`;let sc='';for(let s2=3;s2<P.length-4;s2++){const [x0,y0]=P[s2],[x1,y1]=P[s2+1],dx=x1-x0,dy=y1-y0,l=Math.hypot(dx,dy)||1,nx=-dy/l*3,ny=dx/l*3;sc+=`M${fx(x0+nx)},${fx(y0+ny)} Q${fx((x0+x1)/2+nx*1.9)},${fx((y0+y1)/2+ny*1.9)} ${fx(x1+nx)},${fx(y1+ny)} `}o+=LN(sc,dk,1,.5)+LN(nk,dk,1.6,.8)}
+ if(T.stripes)o+=`<path d="${torsoD(G,h,T.ext,T.neck)}" fill="url(#${p}gstr)"/>`;
+ if(T.knit||T.lin)o+=`<path d="${torsoD(G,h,T.ext,T.neck)}" fill="url(#${p}${T.lin?'glin':'gknit'})"/>`;
+ if(T.pk2)o+=`<path d="M216,276 L238,276 L238,302 Q227,306 216,302Z" fill="${shade(c,.03)}" stroke="${dk}" stroke-width="1.3" opacity=".75"/>`;
+ if(T.racer)o+=LN('M178,262 Q200,278 222,262',dk,1.2,.35);
  if(T.seams)o+=LN(`M182,300 Q178,340 182,${h} M218,300 Q222,340 218,${h}`,dk,1.4,.3);
  if(T.pocket)o+=`<path d="M214,296 L240,296 L240,326 L214,326Z" fill="none" stroke="${dk}" stroke-width="1.6" opacity=".5"/><path d="M213,294 L241,294 L241,304 L227,308 L213,304Z" fill="${shade(c,.05)}" stroke="${dk}" stroke-width="1.2" stroke-opacity=".5"/>`;
  if(T.btnv){const y0=T.neck==='cv'?326:T.neck==='deepv'?294:262,a=T.neck==='cv'?profTo(G,-1,sideX(G,222)).filter(q=>q[0]<=172)[0]:[185,217],b=T.neck==='cv'?profTo(G,1,sideX(G,222)).filter(q=>q[0]>=228)[0]:[215,217],vd=`M${fx(a[0])},${fx(a[1])} L200,${y0} L${fx(b[0])},${fx(b[1])}`;o+=LN(`M200,${y0} L200,${h}`,dk,1.4,.5)+LN(vd,shade(c,-.08),6,.9)+LN(vd,dk,1,.4);for(let y=y0+12;y<h-14;y+=22)o+=`<circle cx="200" cy="${y}" r="3" fill="${shade(c,-.25)}"/>`}
@@ -767,7 +777,12 @@ function topSVG(G,T,s,p,K){
  const yTop=T.neck==='off'?240:null;
  [-1,1].forEach(k=>{
   if(T.nosl||(T.neck==='asym'&&k===1))return;
+  if(T.layer){const lc=lum(c)>.6?'#1f2127':'#8e9096';o+=sleeve(k,lc,446,()=>1.5)+cuff(k,shade(lc,-.15),436,446,2)}
   o+=sleeve(k,TF,T.sl,ex,yTop);
+  if(T.stripes)o+=`<path d="${armD(G,k,T.sl,ex,yTop)}" fill="url(#${p}gstr)"/>`;
+  if(T.knit||T.lin)o+=`<path d="${armD(G,k,T.sl,ex,yTop)}" fill="url(#${p}${T.lin?'glin':'gknit'})"/>`;
+  if(T.sstripe||T.raglan){const A=armPts(G,k),L_=[];for(let y=238;y<=T.sl-6;y+=6)L_.push([edge(A.O,y)+k*(ex(y)-2.5),AY(y)]);const d0='M'+L_.map(q=>fx(q[0])+','+fx(q[1])).join(' L');
+   o+=T.raglan?LN(`M${fx(200+k*24)},${fx(shY(G,k,200+k*24)+2)} L${fx(L_[0][0]-k*3)},${fx(L_[0][1]-4)}`,cont,2,.9):[0,4].map(d=>LN(d0,cont,2,.95).replace('<path','<path transform="translate('+(-k*d)+',0)"')).join('')}
   if(T.rib)o+=`<path d="${armD(G,k,T.sl,ex,yTop)}" fill="url(#${p}rib)"/>`;
   if(T.puff===2&&!(s.jacket&&JK[s.jacket]))o+=LN(armD(G,k,T.sl,ex,yTop),dk,1.4,.7);
   if(T.quilt)o+=`<path d="${armD(G,k,T.sl,ex,yTop)}" fill="url(#${p}qlt)"/>`;
@@ -832,7 +847,7 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
-const HAIR_FADE={gnaturel:212,gdegbas:206,gdegmoyen:196,gdeghaut:184,gbuzz:204};
+const HAIR_FADE={gdeghaut:184};
 function sideburns(s,A,col,fit,cid){const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb')+'fd';
  const grad=`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${fx(fit?205+(Math.min(...A.tempe.map(q=>q[1]))-205)*fit.sy-8:150)}" x2="0" y2="${vb}"><stop offset="0" stop-color="${col}" stop-opacity=".95"/><stop offset=".55" stop-color="${col}" stop-opacity=".6"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="${id}b" x="-30%" y="-10%" width="160%" height="120%"><feGaussianBlur stdDeviation="1.6"/></filter><pattern id="${id}p" width="3" height="3" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="${shade(col,-.4)}" opacity=".5"/></pattern></defs>`;
  return grad+A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,205+(q0[1]-205)*fit.sy]:q0,k=q[0]<200?-1:1,y0=q[1]-10;
@@ -1256,7 +1271,10 @@ const WEAR={
 };
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
-REFS.K='tes captures des personnages';REFS.V='ta planche « Hauts et robes »';
+REFS.K='tes captures des personnages';REFS.HG='ta planche « Hauts pour garçon »';
+/* planche « Hauts pour garçon » : logos de marques non reproduits */
+WEAR.top.items.unshift(...[['gtee','#f4f1ea','T-shirt blanc'],['gtee','#1f2127','T-shirt noir'],['gtee','#ece2cc','T-shirt crème'],['gtee','#4a4b50','T-shirt gris anthracite'],['gpolo','#f4f1ea','Polo blanc'],['gpolo','#1f2127','Polo noir'],['gpolopk','#ece2cc','Polo crème à poche'],['gchem','#1f2127','Chemise noire'],['ghood','#a9adb3','Sweat à capuche gris'],['ghood','#1f2127','Sweat à capuche noir'],['ghood','#ece2cc','Sweat à capuche crème'],['gzip','#1f2127','Sweat zippé à capuche noir'],['gsweat','#1f2127','Sweat col rond noir'],['gsweat','#a9adb3','Sweat col rond gris'],['gpull','#ece2cc','Pull en maille crème'],['gcote','#1f2127','Pull côtelé noir'],['gsport','#f4f1ea','T-shirt de sport blanc'],['gsport','#1f2127','T-shirt de sport noir'],['gbandes','#f4f1ea','T-shirt à bandes blanc'],['gbandes','#1f2127','T-shirt à bandes noir'],['gdeb','#1f2127','Débardeur noir'],['gdeb','#f4f1ea','Débardeur blanc'],['gnageur','#1f2127','Débardeur dos nageur noir'],['gnageur','#f4f1ea','Débardeur dos nageur blanc'],['glayer','#1f2127','T-shirt noir sur manches longues'],['glayer','#f4f1ea','T-shirt blanc sur manches longues'],['gteepk','#1f2127','T-shirt noir à poche'],['gover','#ece2cc','T-shirt ample crème'],['glin','#ece2cc','Chemise en lin crème'],['graye','#1f2127','Pull rayé noir'],['graye','#ece2cc','Pull rayé crème']].map(([v,c,n])=>({s:'top',v,c,n,r:'HG',g:'m',nw:1})));
+REFS.V='ta planche « Hauts et robes »';
 WEAR.top.items.push({s:'top',v:'capuche',c:'#3d6fd8',n:'Sweat à capuche bleu',r:null,g:'m'},{s:'top',v:'tshirt',c:'#ece2cc',n:'T-shirt crème',r:null,g:'m'},{s:'top',v:'chemise',c:'#26314f',n:'Chemise marine',r:null,g:'m'});
 WEAR.top.items.unshift({s:'top',v:'debardeur',c:'#f4f1ea',n:'Débardeur à fines bretelles',r:null,g:'f',nw:1});
 /* hauts de la planche déjà publiés ; les autres sont dessinés (TOP2) mais pas encore dans le catalogue, en attente de son accord */
