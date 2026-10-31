@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='34';
+const APP_VERSION='35';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1137,14 +1137,11 @@ const WEAR={
  top:{l:'Hauts',vb:'96 150 208 340',items:[
   {s:'top',v:'crop',c:'#1f2127',n:'Crop top côtelé noir, manches longues',r:'T',x:"Côtes, longueur courte et col rond respectés ; plis du tissu simplifiés."},
   {s:'top',v:'ajuste',c:'#7a5236',n:'Haut ajusté marron, manches longues',r:'T',x:"Coupe près du corps et teinte respectées ; maille fine simplifiée."},
-  {s:'top',v:'gilet',c:'#ece2cc',n:'Pull sans manches torsadé crème',r:'T',x:"Torsades, bordure noire en V et manches longues noires dessous respectées ; finesse des torsades simplifiée."},
+  {s:'top',v:'gilet',g:'m',c:'#ece2cc',n:'Pull sans manches torsadé crème',r:'T',x:"Torsades, bordure noire en V et manches longues noires dessous respectées ; finesse des torsades simplifiée."},
   {s:'top',v:'epaules',c:'#f2c6d3',n:'Haut rose épaules dénudées',r:'T',x:"Encolure basse sur les épaules, manches longues et bande claire en bas respectées."},
-  {s:'top',v:'blouse',c:'#26314f',n:'Blouse marine col V, manches bouffantes',r:'T',x:"Décolleté en V, volume des manches et poignets respectés ; fronces simplifiées."},
-  {s:'top',v:'henley',c:'#7a5236',n:'Henley court marron boutonné',r:'T',x:"Patte boutonnée et longueur courte respectées."},
-  {s:'top',v:'asym',c:'#1f2127',n:'Crop asymétrique une épaule noir',r:'T',x:"Une seule manche et encolure en biais respectées ; l'ourlet asymétrique est rendu droit."},
-  {s:'top',v:'salopette',c:'#f2c230',n:'T-shirt jaune et salopette',r:'G',x:"T-shirt jaune et bretelles repris ; la salopette prend la couleur du bas choisi (cuir marron sur ta référence)."},
-  {s:'top',v:'tshirt',c:'#f4f1ea',n:'T-shirt blanc',r:null},{s:'top',v:'chemise',c:'#f4f1ea',n:'Chemise blanche',r:null},
-  {s:'top',v:'colroule',c:'#1f2127',n:'Col roulé noir',r:null},{s:'top',v:'capuche',c:'#a9adb3',n:'Sweat à capuche gris',r:null}]},
+  {s:'top',v:'henley',g:'m',c:'#7a5236',n:'Henley court marron boutonné',r:'T',x:"Patte boutonnée et longueur courte respectées."},
+  {s:'top',v:'tshirt',g:'m',c:'#f4f1ea',n:'T-shirt blanc',r:null},{s:'top',v:'chemise',g:'m',c:'#f4f1ea',n:'Chemise blanche',r:null},
+  {s:'top',v:'colroule',g:'m',c:'#1f2127',n:'Col roulé noir',r:null},{s:'top',v:'capuche',g:'m',c:'#a9adb3',n:'Sweat à capuche gris',r:null}]},
  bottom:{l:'Bas',vb:'106 390 188 490',items:[
   {s:'bottom',v:'large',c:'#9aa0a6',n:'Baggy gris délavé',r:'T',x:"Coupe large et délavage respectés ; usure du denim simplifiée."},
   {s:'bottom',v:'large',c:'#5b7fb5',n:'Jean large bleu',r:'T'},
