@@ -424,29 +424,46 @@ function pantsLegD(G,k,t){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
  }}
 const DENIM=['#86a6cc','#5b7fb5','#2f4a78','#9aa0a6','#1f2127','#3f5f94','#8eaed3','#4f6f9f','#3e5a88','#7e9cc4','#2c3f6b'];
 const LN=(dd,col,w,op,dash)=>`<path d="${dd}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op??1}"${dash?` stroke-dasharray="${dash}"`:''}/>`;
+/* jupes de la planche « Bas pour filles » : ceinture large, plis creusés, tartan, fente, godets, jean à revers */
+function jupeSVG(G,s,p,t,wx){const b=s.bottomColor,H=G.HH,J=JUPES[t]||{y:548,w:14,c:5},hy=J.y,hw=H+J.w,dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
+ const sideL=y=>{const u=(y-404)/(hy-404);return 200-(wx+(hw-wx)*Math.pow(u,J.w>20?1.6:1.1))-(J.w<=8?Math.sin(u*Math.PI)*3:0)};
+ const sil=hem=>{let o=`M${f(200-wx)},404 Q200,410 ${f(200+wx)},404`;for(let y=410;y<=hy;y+=6)o+=` L${f(400-sideL(y))},${y}`;o+=` ${hem} `;for(let y=hy;y>=410;y-=6)o+=` L${f(sideL(y))},${y}`;return o+'Z'};
+ const N=t==='jplis'||t==='jcarreaux'?13:0;let hem=`L${f(200+hw)},${hy}`;
+ if(N){for(let i=N;i>=0;i--){const x=200-hw+2*hw*i/N;hem+=` L${f(x)},${hy+(i%2?3.5:0)}`}}
+ else if(t==='jpatineuse'){for(let i=12;i>=0;i--){const x=200-hw+2*hw*i/12;hem+=` Q${f(x+hw/12)},${hy+(i%2?7:-2)} ${f(x)},${hy+2}`}}
+ else hem+=` Q200,${hy+5} ${f(200-hw)},${hy}`;
+ const S=sil(hem);let o=`<defs><linearGradient id="${q}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.3)}"/><stop offset=".2" stop-color="${b}"/><stop offset=".5" stop-color="${shade(b,.08)}"/><stop offset=".8" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.3)}"/></linearGradient>
+ <linearGradient id="${q}v" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset=".85" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".15"/></linearGradient>
+ <clipPath id="${q}c"><path d="${S}"/></clipPath>
+ <pattern id="${q}tt" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="translate(${f(200-17)},404)"><rect width="34" height="34" fill="${b}"/><rect y="9" width="34" height="9" fill="${shade(b,-.55)}" opacity=".75"/><rect x="9" width="9" height="34" fill="${shade(b,-.55)}" opacity=".6"/><path d="M0,26.5 H34 M26.5,0 V34" stroke="#eeeef0" stroke-width="2" opacity=".85"/><path d="M0,3 H34 M3,0 V34" stroke="${shade(b,.35)}" stroke-width="1" opacity=".6"/></pattern>
+ <pattern id="${q}dn" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V4" stroke="#fff" stroke-opacity=".1" stroke-width="1.2"/></pattern>
+ <pattern id="${q}gr" width="3" height="3" patternUnits="userSpaceOnUse"><rect width="1" height="1" fill="#000" opacity=".06"/><rect x="1.5" y="1.5" width="1" height="1" fill="#fff" opacity=".07"/></pattern></defs>`;
+ o+=`<path d="${S}" fill="${t==='jcarreaux'?`url(#${q}tt)`:`url(#${q}g)`}"/>`;
+ o+=`<g clip-path="url(#${q}c)">`;
+ if(t==='jcarreaux')o+=`<path d="${S}" fill="url(#${q}g)" opacity=".35"/>`;
+ if(N){/* plis creux : un pan sur deux dans l'ombre, arêtes claires, du haut des hanches au bas */
+  const y0=t==='jcarreaux'?470:440;for(let i=0;i<N;i++){const xa=200-wx+2*wx*i/N,xb=200-wx+2*wx*(i+1)/N,ha=200-hw+2*hw*i/N,hb=200-hw+2*hw*(i+1)/N;
+   if(i%2)o+=`<path d="M${f(xa+(xb-xa)*.5)},${y0} L${f(xb)},${y0} L${f(hb)},${hy+4} L${f(ha+(hb-ha)*.35)},${hy+4}Z" fill="#000" opacity="${t==='jcarreaux'?.28:.32}"/>`;
+   o+=LN(`M${f(xb)},${y0-12} L${f(hb)},${hy+3}`,i%2?lt:dk,i%2?1:1.4,i%2?.45:.55)}}
+ if(t==='jpatineuse')for(let i=0;i<12;i++){const x=200-hw+2*hw*(i+.5)/12,xt=200-wx+2*wx*(i+.5)/12;o+=`<path d="M${f(xt)},430 Q${f((xt+x)/2)},${hy-30} ${f(x-hw/12*.7)},${hy+6} L${f(x+hw/12*.7)},${hy+6} Q${f((xt+x)/2+3)},${hy-30} ${f(xt+1)},430Z" fill="${i%2?'#000':'#fff'}" opacity="${i%2?.22:.08}"/>`}
+ if(t==='jmoulante'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[0,1].forEach(i=>{o+=LN(`M${f(200-H+4)},${452+i*14} Q200,${462+i*14} ${f(200+H-4)},${452+i*14}`,dk,1.1,.18)});[-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-6)},420 Q${200+k*(H-6)},470 ${200+k*(hw-8)},${hy-2}`,dk,1,.25)})}
+ if(t==='jfendue'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[-1,1].forEach(k=>{o+=LN(`M${200+k*16},420 Q${200+k*19},470 ${200+k*21},${hy}`,dk,1.1,.45)+LN(`M${200+k*17.2},420 Q${200+k*20.2},470 ${200+k*22.2},${hy}`,lt,.8,.25)});
+  const sx=200+H*.42;o+=`<path d="M${f(sx-6)},${hy+3} L${f(sx-.6)},${hy-38} L${f(sx+.6)},${hy-38} L${f(sx+6)},${hy+3}Z" fill="${shade(s.skin,-.06)}"/>`+LN(`M${f(sx-6)},${hy+3} L${f(sx-.6)},${hy-38} M${f(sx+.6)},${hy-38} L${f(sx+6)},${hy+3}`,dk,1.1,.7)}
+ if(t==='jupejean'){const ts='#d6a35c';o+=`<path d="${S}" fill="url(#${q}dn)"/>`+`<ellipse cx="200" cy="${(404+hy)/2+8}" rx="${H*.55}" ry="${(hy-404)*.38}" fill="#fff" opacity=".05"/>`;
+  o+=LN(`M206,420 C208,450 207,470 201,484`,ts,1.2,.9,'2.5 2')+LN(`M209,420 L209,474`,dk,1,.35);
+  [-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-4)},421 Q${200+k*(wx-16)},448 ${200+k*26},423`,ts,1.2,.9,'2.5 2')+LN(`M${200+k*(wx-4)},421 Q${200+k*(wx-16)},448 ${200+k*26},423`,dk,1,.3)+`<circle cx="${200+k*(wx-6)}" cy="424" r="1.6" fill="#c8a24a"/>`});
+  o+=`<path d="M${f(200-hw-1)},${hy-11} L${f(200+hw+1)},${hy-11} L${f(200+hw+1)},${hy+3} Q200,${hy+8} ${f(200-hw-1)},${hy+3}Z" fill="${shade(b,.14)}"/>`+LN(`M${f(200-hw)},${hy-11} L${f(200+hw)},${hy-11}`,dk,1.2,.5)+LN(`M${f(200-hw+2)},${hy-6} Q200,${hy-2} ${f(200+hw-2)},${hy-6}`,'#fff',1,.3)}
+ o+=`<path d="${S}" fill="url(#${q}v)"/></g>`;
+ /* ceinture large (passants, bouton, braguette pour le tartan et le jean) */
+ const bh=t==='jpatineuse'||t==='jplis'?18:16;
+ o+=`<path d="M${f(200-wx)},404 Q200,410 ${f(200+wx)},404 L${f(200+wx+.8)},${404+bh} Q200,${410+bh} ${f(200-wx-.8)},${404+bh}Z" fill="${t==='jcarreaux'?`url(#${q}tt)`:shade(b,.04)}"/>`+LN(`M${f(200-wx-.8)},${404+bh} Q200,${410+bh} ${f(200+wx+.8)},${404+bh}`,dk,1.3,.55)+LN(`M${f(200-wx)},405 Q200,411 ${f(200+wx)},405`,lt,1,.35);
+ if(t==='jcarreaux'||t==='jupejean'){o+=[-1,1].map(k=>`<rect x="${f(200+k*(wx-9)-1.6)}" y="404" width="3.2" height="${bh+1}" rx="1" fill="${shade(b,-.15)}"/>`).join('')+`<circle cx="200" cy="${404+bh/2+2}" r="2.4" fill="${t==='jupejean'?'#c8a24a':'#d8d4cc'}"/>`;if(t==='jcarreaux')o+=LN(`M204,${408+bh} C206,${430+bh} 205,${444+bh} 200,${452+bh}`,dk,1.2,.55)}
+ return o}
 function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,404)+1.5,dk=shade(b,-.3);
  const dn=(['droit','large','flare','short'].includes(t)&&DENIM.includes(b))||['slim','mom','bootcut','bermuda'].includes(t),st=dn?'#d6a35c':shade(b,-.22);
  const d=`<defs><linearGradient id="${p}pl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.22)}"/><stop offset=".45" stop-color="${shade(b,.1)}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.18)}"/></linearGradient><pattern id="${p}ht" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1" cy="2" r=".8" fill="#fff" fill-opacity=".28"/><circle cx="4" cy="5" r=".8" fill="#000" fill-opacity=".12"/></pattern><pattern id="${p}tw" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V5" stroke="#000" stroke-opacity=".07" stroke-width="1.4"/></pattern></defs>`;
  let o='';
- if(t==='jupejean'){/* jupe trapèze courte en jean : surpiqûres dorées, bouton, poches */
-  const sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+9},462 ${200+H+19},512 ${200+H+25},548 Q200,553 ${200-H-25},548 C${200-H-19},512 ${200-H-9},462 ${fx(200-wx)},404Z`,ts='#d6a35c';
-  o+=`<path d="${sk}" fill="url(#${p}pl)"/><path d="${sk}" fill="url(#${p}tw)"/>`;
-  o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},418 Q200,424 ${fx(200-wx-1)},418Z" fill="${shade(b,-.06)}"/>`;
-  o+=LN(`M${fx(200-wx)},417 Q200,423 ${fx(200+wx)},417`,ts,1.3,.9,'3 2')+LN('M204,420 L204,551',ts,1.3,.9,'3 2')+LN(`M${200-H-21},540 Q200,548 ${200+H+21},540`,ts,1.3,.9,'3 2');
-  o+=LN(`M${fx(200-wx+3)},421 Q${fx(200-wx+14)},446 174,424 M${fx(200+wx-3)},421 Q${fx(200+wx-14)},446 226,424`,ts,1.3,.9,'3 2')+`<circle cx="200" cy="411" r="2.6" fill="#c8a24a"/>`;
-  o+=LN(`M${200-H+4},476 L${200-H-10},544 M${200+H-4},476 L${200+H+10},544`,dk,1.6,.3);
-  return d+o;
- }
- if(JUPES[t]){const J=JUPES[t],hy=J.y,hw=H+J.w,c1=`${200+H+J.c}`;let sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+J.c},440 ${200+hw-(J.w>20?8:1)},${hy-50} ${200+hw},${hy} Q200,${hy+7} ${200-hw},${hy} C${200-hw+(J.w>20?8:1)},${hy-50} ${200-H-J.c},440 ${fx(200-wx)},404Z`;
-  o+=`<path d="${sk}" fill="url(#${p}pl)"/>`;
-  if(t==='jcarreaux')o+=`<defs><pattern id="${p}pld" width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill="none"/><path d="M0,4 H18 M0,13 H18" stroke="${shade(b,-.45)}" stroke-width="2.2" opacity=".55"/><path d="M4,0 V18 M13,0 V18" stroke="${shade(b,-.45)}" stroke-width="2.2" opacity=".55"/><path d="M0,8.5 H18 M8.5,0 V18" stroke="${shade(b,.5)}" stroke-width="1" opacity=".5"/></pattern></defs><path d="${sk}" fill="url(#${p}pld)"/>`;
-  if(J.plis)for(let i=-3;i<=3;i++){const xt=200+i*wx/3.4,xb=200+i*hw/3.4;o+=LN(`M${fx(xt)},420 L${fx(xb)},${hy+2}`,dk,1.8,.45)+LN(`M${fx(xt+4)},420 L${fx(xb+7)},${hy+2}`,shade(b,.25),1.1,.35)}
-  if(t==='jpatineuse')[-2,-1,0,1,2].forEach(i=>{o+=LN(`M${200+i*14},${hy-60} Q${200+i*20},${hy-25} ${200+i*24},${hy+3}`,dk,1.8,.35)});
-  if(t==='jmoulante')[0,1,2].forEach(i=>{o+=LN(`M${200-H+6},${448+i*18} Q200,${456+i*18} ${200+H-6},${448+i*18}`,dk,1.2,.2)});
-  if(t==='jfendue'){const sx=200-H*.45;o+=`<path d="M${fx(sx-5)},${hy+2} L${fx(sx)},${hy-34} L${fx(sx+5)},${hy+2}Z" fill="${shade(s.skin,-.08)}"/>`+LN(`M${fx(sx-5)},${hy+2} L${fx(sx)},${hy-34} L${fx(sx+5)},${hy+2}`,dk,1.2,.6)}
-  o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},${J.band||418} Q200,${(J.band||418)+6} ${fx(200-wx-1)},${J.band||418}Z" fill="${shade(b,-.08)}"/>`;
-  return d+o;
- }
+ if(JUPES[t]||t==='jupejean')return d+jupeSVG(G,s,p,t,wx);
  if(t==='jupe'){
   const sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+8},470 ${200+H+24},520 ${200+H+30},568 Q200,582 ${200-H-30},568 C${200-H-24},520 ${200-H-8},470 ${fx(200-wx)},404Z`;
   o+=`<path d="${sk}" fill="url(#${p}pl)"/>`;
@@ -1376,7 +1393,7 @@ WEAR.set.items.push(
  Object.values(WEAR).forEach(W=>W.items.forEach(it=>{if(it.g)return;if(it.set)it.g='f';else if(F[it.s]&&F[it.s].includes(it.v))it.g='f'}))})();
 /* bas des filles : ta planche « Bas pour filles » (18 pièces) ; les anciens bas restent pour les garçons et pour les tenues déjà portées */
 WEAR.bottom.items.forEach(it=>{if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
-WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#6b6b72',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#4f6f9f',n:'Jupe en jean',r:'BF',g:'f',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'f',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'f',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'f',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'f',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'f',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'f',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'droit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'large',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
+WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'f',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'f',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'f',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'f',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'f',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'f',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'f',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'droit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'large',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
 const wearVis=it=>!it.g||state.sexe==='nb'||it.g===state.sexe;
 const wearHas=k=>WEAR[k].items.some(it=>wearVis(it)&&it.v!=='aucune'&&it.v!=='aucun');
 const CATLBL={f:'Catalogue filles',m:'Catalogue garçons',nb:'Catalogue complet'};
