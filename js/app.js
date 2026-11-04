@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='63';
+const APP_VERSION='64';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1565,7 +1565,7 @@ function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,cl
 $('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
 function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
-function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')}
+function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
 const BODYL={petite:['Petite','Petit'],moyenne:['Moyenne','Moyen'],grande:['Grande','Grand'],mince:['Mince','Mince'],ronde:['Ronde','Rond'],forte:['Forte','Fort']};
 const bodyLbl=o=>(BODYL[o]||[o,o])[state.sexe==='m'?1:0];
 let catPick={},curList=[];
@@ -1603,7 +1603,7 @@ function drawGrid(){
 function refresh(){drawPortrait();drawGrid()}
 
 tabsEl.addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=+b.dataset.i;sub=0;pview=['Tenue','Corps'].includes(TABS[tab].label)?'full':'portrait';drawTabs();drawSubs();refresh()});
-subsEl.addEventListener('click',e=>{const b=e.target.closest('.sub');if(!b)return;sub=+b.dataset.i;drawSubs();drawGrid()});
+subsEl.addEventListener('click',e=>{if(e.target.closest('[data-colwheel]')){const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false;P.scrollIntoView({block:'nearest',behavior:'smooth'})}else P.hidden=true;return}const b=e.target.closest('.sub');if(!b)return;sub=+b.dataset.i;drawSubs();drawGrid()});
 grid.addEventListener('click',e=>{const ci=e.target.closest('[data-ci]');if(ci){const S=TABS[tab].subs[sub],en=curList[+ci.dataset.ci];if(!en)return;const n=state.name;state=en.set?{...state,jacket:'aucune',dress:'aucune',...en.set}:entryState(en);state.name=n;catPick[S.hairCat?'hair':S.wear]=en;refresh();return}
  const b=e.target.closest('[data-v]');if(!b)return;state[TABS[tab].subs[sub].id]=b.dataset.v;refresh()});
 tools.addEventListener('click',e=>{const b=e.target.closest('.tool');if(!b)return;const k=b.dataset.k,[lo,hi]=LIM[k];
@@ -5005,10 +5005,15 @@ nom.value=me().name;$('nomFam').value=me().nom||'';drawTabs();drawSubs();refresh
 $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;
 $('bRestart').onclick=askRestart;
 /* cercle des couleurs au-dessus du nova : toutes les couleurs du personnage au même endroit */
-function colPopDraw(){const P=$('colPop'),jean=typeof JEAN_ART!=='undefined'&&JEAN_ART[state.bottom],dr=state.dress&&state.dress!=='aucune';
- const rows=[['skin','Peau',SKIN],['hairColor','Cheveux',HAIR],['iris','Yeux',IRIS],...(dr?[['dressColor','Robe',CLOTH]]:[['topColor','Haut',CLOTH],...(jean?[]:[['bottomColor','Bas',BOTC]])]),['shoesColor','Chaussures',SHOEC]];
+/* couleurs de l'onglet en cours (visage → peau, cheveux → couleur, haut, bas, chaussures…) */
+function colRows(){const T=TABS[tab],S=T.subs[sub]||{},jean=typeof JEAN_ART!=='undefined'&&JEAN_ART[state.bottom];
+ if(T.label==='Visage'||T.label==='Corps')return [['skin','Peau',SKIN]];
+ if(T.label==='Yeux')return [['iris','Iris',IRIS],['browColor','Sourcils',BROWC]];
+ if(T.label==='Cheveux')return [['hairColor','Cheveux',HAIR]];
+ if(T.label==='Fond')return [['bgColor','Fond',BGC]];
+ const W={top:[['topColor','Haut',CLOTH]],bottom:jean?[]:[['bottomColor','Bas',BOTC]],dress:[['dressColor','Robe',CLOTH]],jacket:[['jacketColor','Veste',CLOTH]],shoes:[['shoesColor','Chaussures',SHOEC]]}[S.wear];return W||[]}
+function colPopDraw(){const P=$('colPop'),rows=colRows();
  P.innerHTML=`<div class="colpop-h"><b>Couleurs</b><button type="button" class="linkbtn" data-colclose>Fermer</button></div>`+rows.map(([k,l,C])=>`<div class="colrow"><span>${l}</span><div class="colsw">${C.map(c=>`<button type="button" class="sw${state[k]===c?' on':''}" style="background:${c}" data-colk="${k}" data-colv="${c}" aria-label="${l} ${c}"></button>`).join('')}</div></div>`).join('')}
-$('bColors').onclick=()=>{const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false}else P.hidden=true};
 $('colPop').addEventListener('click',e=>{const b=e.target.closest('[data-colk]');if(b){state[b.dataset.colk]=b.dataset.colv;refresh();colPopDraw();return}if(e.target.closest('[data-colclose]'))$('colPop').hidden=true});
 $('bAtMus').onclick=e=>{e.stopPropagation();musMode('atelier');const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(x){}on?musStart():musStop();drawMusicBtn()};
 drawMusicBtn();
