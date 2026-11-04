@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='64';
+const APP_VERSION='65';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -692,7 +692,19 @@ function jacketParts(G,s,p,sx){
   sl+=LN(`M${fx(edge(A.O,330)+k*e)},${fx(AY(330))} Q${fx(edge(A.O,345)+k*(e-6))},${fx(AY(346))} ${fx(edge(A.O,362)+k*e)},${fx(AY(362))}`,dk,1.6,.3);const th=torHalf(G,J.h,J.ext);sl+=capPatch(G,p,k,'jc'+k,c,JKS,JKS,J.closed?th:(x=>colAt(c,JKS,k<0?(x-(200-th))/(192-(200-th)):((200+th)-x)/((200+th)-208))),sx+5,262)});
  return {torso:t,sleeves:sl};
 }
-function accSVG(G,s){let o='';const bc=s.bagColor,bd=shade(bc,-.3);
+/* colliers des filles d'après ta planche « Accessoires » : pendentif rond, pendentif diamant, collier prénom, multi-rangs, choker */
+function chainV(y0,yv,w){const pts=[];for(let i=0;i<=20;i++){const t=i/20,x=(1-t)*(1-t)*(200-w)+2*(1-t)*t*200+t*t*(200+w),y=(1-t)*(1-t)*y0+2*(1-t)*t*(2*yv-y0)+t*t*y0;pts.push([x,y])}
+ const d='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L');return LN(d,GOLD_D,1.6,.9)+LN(d,GOLD,1,1)}
+function necklaceSVG(s){const n=s.necklace,gem=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r+1}" fill="${GOLD}"/><circle cx="${x}" cy="${y}" r="${r}" fill="#eef3f7"/><path d="M${x-r*.6},${y} L${x},${y-r*.6} L${x+r*.6},${y} L${x},${y+r*.6}Z" fill="#fff"/>`;
+ const losange=(x,y,h,band)=>`<path d="M${x},${y-h} L${x+h*.7},${y} L${x},${y+h} L${x-h*.7},${y}Z" fill="${band?'#c9ced4':GOLD}"/><path d="M${x},${y-h+1.6} L${x+h*.7-1.4},${y} L${x},${y+h-1.6} L${x-h*.7+1.4},${y}Z" fill="#f1f5f8"/><path d="M${x},${y-h+3} L${x+1.6},${y} L${x},${y+h-3} L${x-1.6},${y}Z" fill="#fff"/>`;
+ switch(n){
+  case 'pendrond':return chainV(224,262,24)+LN('M200,261 L200,265',GOLD,1)+gem(200,270,4.4);
+  case 'penddiam':return chainV(224,262,24)+LN('M200,261 L200,263',GOLD,1)+losange(200,272,8);
+  case 'prenom':{const t=esc((s.name||'Baby').slice(0,10));return chainV(224,258,24)+`<text x="200" y="270" text-anchor="middle" font-family="'Brush Script MT','Segoe Script','Lucida Handwriting',cursive" font-style="italic" font-weight="700" font-size="${t.length>6?12:15}" fill="${GOLD}" stroke="${GOLD_D}" stroke-width=".35">${t}</text>`}
+  case 'multi':return chainV(220,244,23)+chainV(223,266,25)+chainV(226,290,27)+[[244,0],[266,0],[290,0]].map(([y])=>gem(200,y+1,1.8)).join('')+[-1,1].map(k=>`<circle cx="${200+k*11}" cy="262" r="1.4" fill="${GOLD_L}"/><circle cx="${200+k*13}" cy="286" r="1.4" fill="${GOLD_L}"/><circle cx="${200+k*9}" cy="241" r="1.2" fill="${GOLD_L}"/>`).join('');
+  case 'choker':return `<path d="M185,198 Q200,203 215,198 L215,206 Q200,211 185,206Z" fill="#141214"/><path d="M185,199 Q200,204 215,199" fill="none" stroke="#3a3438" stroke-width="1"/>`+LN('M200,208 L200,212','#c9ced4',1)+losange(200,219,6.5,1);
+  default:return ''}}
+function accSVG(G,s){let o=necklaceSVG(s);const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
  if(s.necklace==='perles')for(let i=0;i<=14;i++){const t=i/14,x=(1-t)*(1-t)*184+2*(1-t)*t*200+t*t*216,y=(1-t)*(1-t)*212+2*(1-t)*t*256+t*t*212;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="2.7" fill="#f6f1e6" stroke="#c9bfa9" stroke-width=".6"/>`}
  if(s.necklace==='rasdecou')o+=`<path d="M186,198 Q200,204 214,198 L214,205 Q200,211 186,205Z" fill="#1f2127"/>`;
@@ -1214,12 +1226,18 @@ function hairFront(s,p,hD,hL){
   case 'nattes':{let r=`<path d="${SLICK}" fill="${mix(s.hairColor,s.skin,.4)}"/>`;[120,146,172,200,228,254,280].forEach(x=>{const D=`M${x},${(106+Math.abs(x-200)*.55).toFixed(1)} Q${(200+(x-200)*.85).toFixed(1)},80 ${(200+(x-200)*.45).toFixed(1)},64`;r+=`<path d="${D}" stroke="${s.hairColor}" stroke-width="15" fill="none" stroke-linecap="round"/><path d="${D}" stroke="${hD}" stroke-width="15" fill="none" stroke-dasharray="3 4" opacity=".55"/>`});return r}
   default:return '';
  }}
+/* boucles d'oreilles des filles d'après ta planche « Accessoires » : puce diamant, petits cercles, grands cercles, perles, pendantes étoile */
+const GOLD='#d9a843',GOLD_D='#9c7020',GOLD_L='#f6dc8a';
 function earrings(t,ex,dy){
- const xs=[ex-2,400-ex+2];dy=dy||0;
+ const xs=[ex-2,400-ex+2];dy=dy||0;const Y=232;
+ const gem=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#eef3f7" stroke="#b9c3cc" stroke-width=".8"/><path d="M${x-r*.6},${y} L${x},${y-r*.6} L${x+r*.6},${y} L${x},${y+r*.6}Z" fill="#fff" opacity=".9"/><circle cx="${x-r*.35}" cy="${y-r*.35}" r="${r*.25}" fill="#fff"/>`;
  const o=(()=>{switch(t){
+  case 'puce':return xs.map(x=>gem(x,Y,5.2)).join('');
+  case 'pcercles':return xs.map(x=>`<ellipse cx="${x}" cy="${Y+7}" rx="5.5" ry="7.5" fill="none" stroke="${GOLD_D}" stroke-width="3.4"/><ellipse cx="${x}" cy="${Y+7}" rx="5.5" ry="7.5" fill="none" stroke="${GOLD}" stroke-width="2.2"/><path d="M${x-4.5},${Y+3} Q${x-6},${Y+8} ${x-3.5},${Y+12}" fill="none" stroke="${GOLD_L}" stroke-width="1" opacity=".9"/>`).join('');
+  case 'gcercles':return xs.map((x,k)=>{const s2=k?1:-1;return `<path d="M${x},${Y} C${x+s2*13},${Y+10} ${x+s2*12},${Y+40} ${x},${Y+50} C${x-s2*9},${Y+40} ${x-s2*8},${Y+12} ${x},${Y}Z" fill="none" stroke="${GOLD_D}" stroke-width="3.6"/><path d="M${x},${Y} C${x+s2*13},${Y+10} ${x+s2*12},${Y+40} ${x},${Y+50} C${x-s2*9},${Y+40} ${x-s2*8},${Y+12} ${x},${Y}Z" fill="none" stroke="${GOLD}" stroke-width="2.4"/><path d="M${x+s2*2},${Y+4} C${x+s2*10},${Y+14} ${x+s2*10},${Y+36} ${x+s2*2},${Y+46}" fill="none" stroke="${GOLD_L}" stroke-width="1" opacity=".85"/>`}).join('');
+  case 'perles':return xs.map(x=>`<circle cx="${x}" cy="${Y+1}" r="5.6" fill="#f8f3ea" stroke="#d9cfbd" stroke-width=".9"/><circle cx="${x-1.4}" cy="${Y-.4}" r="1.5" fill="#fff"/><circle cx="${x+1.2}" cy="${Y+2.6}" r="2" fill="#e9dfcf" opacity=".6"/>`).join('');
+  case 'etoile':return xs.map(x=>gem(x,Y,2.8)+`<path d="M${x},${Y+3} L${x},${Y+17}" stroke="#c9ced4" stroke-width="1"/><path transform="translate(${x},${Y+22})" d="M0,-6 L1.7,-1.9 6,-1.9 2.5,.8 3.7,5.1 0,2.5 -3.7,5.1 -2.5,.8 -6,-1.9 -1.7,-1.9Z" fill="#eef1f4" stroke="#9aa3ad" stroke-width=".7"/><circle cx="${x-1}" cy="${Y+21}" r=".9" fill="#fff"/>`).join('');
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
-  case 'perles':return xs.map(x=>`<circle cx="${x}" cy="234" r="5.5" fill="#fbf7ef" stroke="#d9cfbd" stroke-width="1"/><circle cx="${x-1.5}" cy="232.5" r="1.6" fill="#fff"/>`).join('');
-  case 'etoiles':return xs.map(x=>`<path transform="translate(${x},240)" d="M0,-9 L2.6,-2.8 9,-2.8 3.8,1.2 5.6,7.6 0,3.8 -5.6,7.6 -3.8,1.2 -9,-2.8 -2.6,-2.8Z" fill="#f2c230" stroke="#b9861b" stroke-width="1"/>`).join('');
   default:return '';
  }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){
@@ -1256,7 +1274,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En c�
  uni:'Uni',degrade:'Dégradé',pois:'Pois',rayures:'Rayures',rayons:'Rayons'};
 const HAIR_F=['tresse','longs','longsondules','ondulescote','frange','carre','carreondule','carreplongeant','carreretrousse','queue','queuehaute','couettes','chignon','demichignon','macarons','boucles','boucleslongues'];
 const HAIR_M=['court','texture','banane','piques','meche','fondu','plaque','raie','rideau','rase'];
-const REFS={BF:'ta planche « Bas pour filles »',GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
+const REFS={ACC:'ta planche « Boucles d\'oreilles / Colliers »',BF:'ta planche « Bas pour filles »',GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
 const VECT="Rendu vectoriel stylisé : la texture photographique et l'éclairage réel ne sont pas reproduits.";
 const NOREF="Aucune image de référence fournie : proposition à valider ou à remplacer par ta propre référence.";
 const CAT_H=[['all','Toutes'],['court','Courts'],['mi','Mi-longs'],['long','Longs'],['lisse','Lisses'],['ondule','Ondulés'],['boucle','Bouclés'],['crepu','Crépus'],['tresse','Tresses'],['chignon','Chignons'],['queue','Queues de cheval'],['attache','Attachées']];
@@ -1420,7 +1438,10 @@ const WEAR={
   {s:'shoes',v:'bottes',c:'#1f2127',n:'Bottes hautes noires',r:'T'},
   {s:'shoes',v:'montantes',c:'#1f2127',n:'Baskets montantes noires',r:null},{s:'shoes',v:'sandales',c:'#7a5236',n:'Sandales à brides',r:null}]},
  acc:{l:'Accessoires',vb:hv('40 0 320 300'),items:[
-  {s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,vb:hv('55 175 110 100')}]}
+  {s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,g:'m',vb:hv('55 175 110 100')},
+  ...[['puce','Puce diamant'],['pcercles','Petits cercles'],['gcercles','Grands cercles'],['perles','Perles'],['etoile','Pendantes étoile']].map(([v,n])=>({s:'earrings',v,n,r:'ACC',g:'f',nw:1,vb:hv('55 175 110 120')})),
+  {s:'necklace',v:'aucun',n:'Sans collier',g:'f',vb:hv('140 170 120 130')},
+  ...[['pendrond','Pendentif rond'],['penddiam','Pendentif diamant'],['prenom','Collier prénom'],['multi','Collier multi-rangs'],['choker','Choker']].map(([v,n])=>({s:'necklace',v,n,r:'ACC',g:'f',nw:1,vb:hv('140 170 120 130')}))]}
 };
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
@@ -1504,7 +1525,9 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
-function noAcc(s){if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:'aucun',necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
+const BO_F=['puce','pcercles','gcercles','perles','etoile'],COL_F=['pendrond','penddiam','prenom','multi','choker'];
+function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anneaux'):BO_F.includes(s.earrings)?s.earrings:'aucune',co=COL_F.includes(s.necklace)?s.necklace:'aucun';
+ if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace===co&&s.glasses==='aucune'&&s.earrings===bo)return s;return {...s,hat:'aucun',bag:'aucun',necklace:co,glasses:'aucune',earrings:bo}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(s)}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
