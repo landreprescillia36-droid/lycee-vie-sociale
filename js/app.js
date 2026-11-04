@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='61';
+const APP_VERSION='62';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1457,7 +1457,8 @@ WEAR.set.items.push(
  Object.values(WEAR).forEach(W=>W.items.forEach(it=>{if(it.g)return;if(it.set)it.g='f';else if(F[it.s]&&F[it.s].includes(it.v))it.g='f'}))})();
 /* bas des filles : ta planche « Bas pour filles » (18 pièces) ; les anciens bas restent pour les garçons et pour les tenues déjà portées */
 WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'wip',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'wip',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'jdroit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'jlarge',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
-const wearVis=it=>it.g!=='wip'&&(!it.g||state.sexe==='nb'||it.g===state.sexe);/* g:'wip' = pas encore validé par Prescillia */
+WEAR.bottom.items.forEach(it=>{if(it.r==='BF')return;if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
+const wearVis=it=>it.g!=='wip'&&it.g!=='old'&&(!it.g||state.sexe==='nb'||it.g===state.sexe);/* g:'wip' = pas encore validé par Prescillia */
 const wearHas=k=>WEAR[k].items.some(it=>wearVis(it)&&it.v!=='aucune'&&it.v!=='aucun');
 const CATLBL={f:'Catalogue filles',m:'Catalogue garçons',nb:'Catalogue complet'};
 const TABS=[
@@ -1504,8 +1505,11 @@ const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
 function noAcc(s){if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:'aucun',necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
-let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(s)}
+/* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
+const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
+function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];return s}
+let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):normalize(DEFAULT)}catch(e){return normalize(DEFAULT)}})();
 /* joues, rides et baby hairs ne se choisissent plus dans l'atelier : on les retire de l'avatar du joueur */
 Object.assign(state,{cheeks:'aucune',rides:'aucune',edges:'aucun'});
 let tab=0, sub=0;
@@ -1554,7 +1558,7 @@ function drawIdent(){drawParcours();if(editFam)return;
  $('segSexe').innerHTML=SEXES.map(([k,l])=>`<button class="sub" type="button" data-sx="${k}" aria-pressed="${state.sexe===k}">${l}</button>`).join('');
  $('segOri').innerHTML=ORIS.map(k=>`<button class="sub" type="button" data-or="${k}" aria-pressed="${state.orient===k}">${oriShort(k,state.sexe)}</button>`).join('');
  $('oriHint').textContent=oriHint(state.sexe,state.orient);}
-const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'amande',cils:'naturels',iris:IRIS[0],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
+const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'amande',cils:'naturels',iris:IRIS[0],brows:'epais',nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'jlarge',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',earrings:'aucune',necklace:'aucun',bag:'aucun',jacket:'aucune',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[1]},
  m:{face:'allonge',skin:SKIN[2],eyes:'amande',cils:'naturels',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
 const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
@@ -1631,7 +1635,7 @@ function harmonious(){const s=clone(DEFAULT);s.dress='aucune';s.name=state.name;
  if(SKIN.indexOf(s.skin)>=5&&Math.random()<.7)s.hairColor=pick(HAIR.slice(0,3));
  const boy=state.sexe==='m';
  s.top=pick(boy?['tshirt','capuche','chemise','colroule','gilet']:TOPS);
- s.bottom=pick(boy?['droit','large','jogging','cordon','short']:BOTTOMS);s.bottomColor=pick(BOTC);s.shoes=pick(boy?['montantes','running','basses','retro']:SHOES);s.shoesColor=pick(SHOEC);
+ s.bottom=pick(boy?['droit','large','jogging','cordon','short']:state.sexe==='f'?['jplis','jcarreaux','jfendue','jmoulante','jpatineuse','slim','mom','jdroit','jlarge','bootcut','bermuda']:BOTTOMS);s.bottomColor=pick(BOTC);s.shoes=pick(boy?['montantes','running','basses','retro']:SHOES);s.shoesColor=pick(SHOEC);
  const c=pick(COMBOS);s.topColor=c[0];s.bgColor=c[1];s.bgPattern=Math.random()<.75?'uni':pick(['degrade','pois']);
  s.glasses=Math.random()<.25?pick(['rondes','carrees','dorees']):'aucune';
  s.taille=pick(['petite','moyenne','moyenne','grande']);s.corpulence=pick(['mince','moyenne','moyenne','moyenne','ronde','forte']);
@@ -1689,7 +1693,7 @@ const NPC_LOOK={ines:{sexe:'f',face:'ovale',skin:'#d4975f',eyes:'doux',iris:'#7a
  anais:{sexe:'f',face:'ovale',skin:'#9a6140',eyes:'amande',iris:'#4b4124',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'aucune',freckles:'legeres',hair:'bafro',hairColor:'#1c1412',edges:'aucun',top:'tanksport',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  potins:{bottom:'droit',shoes:'basses'}};
 NPC_LOOK.potins={hair:'carreondule'};
-[...NPCS,POTINS].forEach(n=>{n.av=Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{})});
+[...NPCS,POTINS].forEach(n=>{n.av=basNeuf(Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{}))});
 let avUid=0;
 const uid=()=>'g'+(avUid++)+'_';
 const GKEY='atelier-partie-v3', RECHARGE=10*60*1000, BONUS_MAX=5;
@@ -1968,7 +1972,7 @@ function famAvatar(role,seed){
  s.glasses=old&&r()<.6?'dorees':r()<.15?'rondes':'aucune';s.earrings=fem&&r()<.5?p(['perles','anneaux']):'aucune';
  if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','barbe3j','courte','moustache','bouc','collier']);
  if(adult){if(s.eyes==='grands')s.eyes=fem?'amande':'doux';s.cheeks='aucune';s.adj.eyesS=.92;s.adj.mouthY=2;s.hairColor=mix(s.hairColor,'#a8a39b',.16)}
- return s;
+ return basNeuf(s);
 }
 
 /* ---------- photos ---------- */
