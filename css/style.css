@@ -430,3 +430,42 @@ body.playing{background:var(--g-bg)}
 .hspeed{width:58px}
 .hspeed b{font:800 17px var(--display);font-variant-numeric:tabular-nums;line-height:1.1}
 .hspeed.on{background:var(--g-blue)}.hspeed.on small{color:#dce8ff}
+
+/* ---------- palette Novalya (choisie par Prescillia) ----------
+   bleu ardoise #263B55 : menus, barre de navigation, titres · bleu très clair #E8EEF5 : fond · bleu pastel #A8C7D8 : boutons et sélections
+   pêche #E8BFAF : notifications et éléments importants · blanc : cartes et fenêtres */
+:root,:root[data-theme="dark"]{
+  --bg:#E8EEF5; --surface:#ffffff; --raised:#f2f6fa; --stage:#dbe5ef; --ink:#263B55; --muted:#5d6f86; --line:#d3dde8;
+  --sel:#263B55; --accent:#A8C7D8; --accent-ink:#263B55;
+  --g-bg:#E8EEF5; --g-card:#ffffff; --g-line:#d3dde8; --g-ink:#263B55; --g-muted:#66788f; --g-blue:#A8C7D8; --g-red:#E8BFAF; --g-purple:#A8C7D8;
+  --g-gold-ink:#c98a4b; --g-field:#f2f6fa; --g-field-line:#c9d6e3; --g-slate:#263B55; --g-peach:#E8BFAF; color-scheme:light}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#E8EEF5; --surface:#ffffff; --raised:#f2f6fa; --stage:#dbe5ef; --ink:#263B55; --muted:#5d6f86; --line:#d3dde8; --sel:#263B55; --accent:#A8C7D8; --accent-ink:#263B55; color-scheme:light}}
+.game{color-scheme:light}
+h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
+.choice,.chip,.sheet textarea,.seg,.mbtn,.mseg,.mrow,.reacts button{background:var(--g-field);border-color:var(--g-field-line);color:var(--g-ink)}
+.choice:hover{border-color:#263B55}
+.chip[aria-pressed="true"],.seg button[aria-pressed="true"],.mbtn.on,.mseg button.on,.hspeed.on{background:#A8C7D8;border-color:#A8C7D8;color:#263B55}
+.hspeed.on small{color:#263B55}
+.gbtn,.fab-act,.story .add,.bub.me{background:#A8C7D8;color:#263B55}
+.gbtn.ghost{background:var(--g-field);color:var(--g-ink)}
+.gbtn.red{background:#E8BFAF;color:#263B55}
+.fab-act{box-shadow:0 6px 18px rgba(38,59,85,.25)}
+.mention{color:#3f6d93}
+.story .ring{border-color:#A8C7D8}
+.bar i{background:#7fa9c2}
+/* barre de navigation et en-tête du jeu : bleu ardoise */
+.gnav{background:#263B55;border-top-color:#263B55}
+.gnav button{color:#a8bcd0}
+.gnav button[aria-current="page"]{color:#ffffff}
+.gnav .dot,.badge{background:#E8BFAF;color:#263B55}
+.tt div.now,.ig-chip{background:#dbe7f1}
+.ig-tile{background:#dbe5ef;color:#263B55}
+.choice.mg-good,.mg-card.mg-found{background:#e3f4ea;border-color:#3fa66f}
+.choice.mg-bad{background:#f9e6e0;border-color:#E8BFAF}
+.refb{background:#263B55;color:#fff}
+.hplus.purple{background:#A8C7D8;color:#263B55}
+.t-pos{color:#2f8f5b!important}.t-neg{color:#c0544a!important}
+.sheet{box-shadow:0 -8px 30px rgba(38,59,85,.18)}
+.brand{color:#263B55}.brand span{color:#5d6f86}
+.hval.low b,.mrow.danger b{color:#b5543f}
