@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='54';
+const APP_VERSION='55';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2076,7 +2076,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{}}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();G.askd=G.askd||{}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -2112,7 +2112,7 @@ ${mem}
 
 Moment présent : ${fmtDay(G.day,true)}${dayLbl(G.day)?' ('+dayLbl(G.day)+')':''}, ${fmtT(G.min)} (${ph.lbl||PLABEL[ph.type]}${ph.sub?' de '+SUBJ[ph.sub]:''}). C'est l'année de terminale : évaluation commune chaque vendredi après-midi, bac les ${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x),true)).join(' et ')} (on est au jour de cours ${Math.min(sdDone(G.day),YEAR_DAYS)}/${YEAR_DAYS}).
 
-Conversation par messages (la plus récente en bas) :
+${isFam(id)?'':gtxt(kbNote(id),FICHES[id].g)+'\n\n'}Conversation par messages (la plus récente en bas) :
 ${th}
 
 Écris la prochaine réponse de ${nameOf(id)} comme une vraie personne qui envoie un message : 1 à 3 phrases courtes, uniquement en français (jamais en créole), avec sa façon de parler. Réponds à ce que ${me} vient d'écrire et varie les sujets : ne ramène pas sans cesse la conversation sur la nourriture ni sur une seule passion. Reste cohérent avec la personnalité et les sentiments : tu peux être vexé·e, distant·e, enthousiaste ou taquin·e selon ce que ${me} a écrit. Les histoires de cœur restent douces et adaptées à des lycéens, sans contenu sexuel. Ne dis jamais que tu es une IA ou un personnage.
@@ -2533,7 +2533,7 @@ function advance(n){
   if(G.min%60===0&&!G.asleep){npcPing();familyPing();followTick();checkObjectives()}
  }
  const ph=phase();
- if(ph.key===G.phaseKey)classEventTick(n);
+ if(ph.key===G.phaseKey){vsTick();classEventTick(n)}
  if(ph.key!==G.phaseKey){const prev=G.lastPhase;G.phaseKey=ph.key;G.lastPhase=ph;onPhaseChange(prev,ph)}
  evalCatch();checkPlans();drawClock();if(G.min%5===0)saveG();
 }
@@ -2544,11 +2544,11 @@ function onPhaseChange(prev,ph){
  if(ph.type==='eval'&&!G.asleep)toast('📝 Évaluation commune : toutes les matières, jusqu\'à 17h');
  if(ph.type==='bac'&&!G.asleep)toast(`🎓 Bac : épreuves de ${ph.subs.map(k=>SUBJ[k]).join(', ')}`);
  if(ph.type==='cours'){G.acts=3;G.cb=0;G.st.schoolToday=true;if(!G.asleep)toast(`🔔 Cours de ${SUBJ[ph.sub]} avec ${ph.prof[0]}`)}
- if(['recre','dej','matin','weekend','soir'].includes(ph.type)){presence(ph);autoStep(ph);G.place=placesFor(ph.type)[0];G.placeKey=ph.key;if(!G.asleep&&ph.type!=='matin')toast(`🔔 ${ph.lbl||PLABEL[ph.type]} : choisis où aller`)}
+ if(['recre','dej','matin','weekend','soir'].includes(ph.type)){presence(ph);autoStep(ph);G.place=vsHome()&&ph.type!=='weekend'?'maison':placesFor(ph.type)[0];G.placeKey=ph.key;if(!G.asleep&&ph.type!=='matin')toast(`🔔 ${ph.lbl||PLABEL[ph.type]} : choisis où aller`)}
  if(ph.type==='nuit'&&ph.start===1320&&!G.asleep)toast('🌙 22h : il est l\'heure de dormir');
  if(view==='day')drawView();
 }
-function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1}
+function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1;hwAssign(prev)}
 /* note d'une matière tirée de la jauge de chances (0-100 %) */
 function examGrade(k,stress){const p=G.know[k];return clamp(Math.round((p/100*20+rnd(-(stress||2.2),stress||2.2)+(G.energy<25?-1.5:0))*2)/2,0,20)}
 function popSheet(html){if(G.asleep||$('game').hidden)G.pend.push(html);else openSheet(html,true)}
@@ -3282,25 +3282,29 @@ function objectivesCard(){
  ${open.length?`<div class="objs">${open.map(o=>`<div class="obj"><span class="chk"></span><span>${P(o.t)}</span>${GEMS_ON?`<b>+${o.gems}</b>`:''}</div>`).join('')}</div>`:`<p class="muted">Tous les objectifs du moment sont atteints. De nouveaux arrivent dans les prochains jours.</p>`}</div>`;
 }
 const ACTS={
- notes:{l:'Prendre des notes',e:4,risk:0,ico:'✏️'},exo:{l:"Faire l'exercice",e:3,risk:0,ico:'🧩'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Parler à ton voisin',e:2,risk:.12,ico:'💬'},
- mot:{l:'Écrire en cachette',e:2,risk:.15,ico:'📝'},dessin:{l:'Dessiner',e:0,risk:.06,ico:'🎨'},dormir:{l:'Dormir',e:0,risk:.18,ico:'😴'}};
+ notes:{l:'Suivre le cours',e:4,risk:0,ico:'✏️'},exo:{l:"Faire l'exercice",e:3,risk:0,ico:'🧩'},main:{l:'Lever la main',e:3,risk:0,ico:'🙋'},voisin:{l:'Discuter avec un·e camarade',e:2,risk:.12,ico:'💬'},phone:{l:'Jouer sur ton téléphone',e:0,risk:.2,ico:'📱'},
+ mot:{l:'Écrire en cachette',e:2,risk:.15,ico:'📝'},dessin:{l:'Dessiner',e:0,risk:.06,ico:'🎨'},dormir:{l:'Dormir en classe',e:0,risk:.18,ico:'😴'}};
+const ACTS_ON=['notes','voisin','phone','dormir','exo'];
 const riskLbl=(r,s)=>{const x=r*s;return x===0?['Sans risque','ok']:x<.2?['Risque faible','lo']:x<.4?['Risque moyen','mid']:['Risque élevé','hi']};
 function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
  const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
- h+=clubCard();h+=tutorCard();
+ h+=vsCard();h+=clubCard();h+=tutorCard();
  h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
- if(ph.type==='cours'){
+ if(ph.type==='cours'&&vsAbsent(ph)){const v=vsInit();
+  h+=`<p class="story-text">${v.expelled?P('Tu as été exclu·e définitivement du lycée.'):v.excl&&G.day<=v.excl?P('Tu es exclu·e du lycée jusqu\'au '+fmtDay(v.excl,true)+'.'):v.sick[G.day]?'Tu es resté·e à la maison aujourd\'hui (« malade »).':`Tu sèches le cours de ${SUBJ[ph.sub]}. Tu traînes dans la cour en attendant la sonnerie.`}</p></div>`.replace('resté·e',P('resté·e'));
+ }else if(ph.type==='cours'){
   const [prof,s]=ph.prof,nb=neighborOf(ph);
   h+=`<div class="prof"><div><b>${prof}</b><span class="muted"> · ${gtxt(SEV[s],profSex(prof))}</span></div><span class="sev">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>
   <p class="muted">À côté de toi : <b style="color:var(--g-ink)">${WHO[nb].name}</b>${seatToday()?'':' (au hasard)'} <button class="linkbtn" type="button" data-seatopen>Changer de place</button> · Actions restantes : ${G.acts}/3 · Chances de réussite en ${SUBJ[ph.sub]} : ${G.know[ph.sub]} %</p>
-  <div class="acts">${Object.entries(ACTS).map(([k,a])=>{const [rl,rc]=riskLbl(a.risk,s);return `<button class="act" type="button" data-ca="${k}" ${G.acts<=0?'disabled':''}><span class="ico">${a.ico}</span><span>${a.l}</span><small class="r-${rc}">${rl}</small></button>`}).join('')}</div></div>`;
+  <div class="acts">${ACTS_ON.map(k=>[k,ACTS[k]]).map(([k,a])=>{const [rl,rc]=riskLbl(a.risk,s);return `<button class="act" type="button" data-ca="${k}" ${G.acts<=0?'disabled':''}><span class="ico">${a.ico}</span><span>${P(a.l)}</span><small class="r-${rc}">${rl}</small></button>`}).join('')}</div></div>`;
  }else if(['recre','dej','matin','weekend'].includes(ph.type)){
   if(G.placeKey!==ph.key){G.place=placesFor(ph.type)[0];G.placeKey=ph.key}
+  if(ph.type!=='weekend'&&schoolDay(G.day)&&vsHome())h+=placeBody(ph,'maison',{})+'</div>';else{
   const map=presence(ph),pls=placesFor(ph.type);
   h+=`<div class="chips">${pls.map(p=>`<button class="chip" type="button" data-place="${p}" aria-pressed="${G.place===p}">${PLACES[p]}</button>`).join('')}</div>`;
-  h+=placeBody(ph,G.place,map)+'</div>';
+  h+=placeBody(ph,G.place,map)+'</div>';if(G.place==='cour')h+=courCard(ph)}
  }else if(ph.type==='eval'){
   h+=`<p class="story-text">Évaluation commune : toutes les matières sont évaluées. Tes notes dépendent de tes chances de réussite dans chaque matière. Résultats à 17h.</p>${G.evalBonus[G.day]?'<p class="muted">✍️ Copie rendue : tes réponses compteront dans les notes.</p>':'<div class="row"><button class="gbtn" type="button" data-evalgame>✍️ Composer (une question par matière)</button></div>'}${knowBars()}</div>`;
  }else if(ph.type==='bac'){
@@ -3393,6 +3397,7 @@ function openPerson(id){
  openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>${WHO[id].name}</h2><p class="muted" style="margin:2px 0 0">${PLACES[G.place]||'Au lycée'} · ${statusOf(id)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <p class="muted" style="margin:0">${esc(ressentiShort(id))}</p>${gaugesHTML(id)}
  <div class="acts">${acts.map(([a,l])=>`<button class="act" type="button" data-pa="${a}" data-id="${id}" ${G.done[k+a]?'disabled':''}><span>${l}</span></button>`).join('')}</div>
+ <div class="acts"><button class="act" type="button" data-askopen="${id}"><span>❓ Poser une question</span></button></div>
  ${romHTML(id)}
  <p class="story-text" id="paOut"></p>
  <div class="row"><button class="gbtn ghost" type="button" data-fiche="${id}">Voir sa fiche</button></div>`);
@@ -3499,17 +3504,19 @@ function dateMoment(p,k){const id=p.by,r=G.rel[id],m=DATE_MOMENTS.find(x=>x[0]==
  note(`💘 Rendez-vous avec ${WHO[id].name} : ${(ch||'').split(' : ')[1]||'beau moment'}`);checkObjectives();saveG();drawHUD();
  openSheet(dateSheet(p,`${esc(m[1])}<br><b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}</small>`:''}`))}
 function classAct(k){
- const ph=phase();if(ph.type!=='cours'||G.acts<=0)return;const A=ACTS[k],s=ph.prof[1],nb=neighborOf(ph);
+ const ph=phase();if(ph.type!=='cours'||G.acts<=0||vsAbsent(ph))return;const A=ACTS[k],s=ph.prof[1],nb=neighborOf(ph);
+ if(k==='phone'&&vsInit().phoneDay===G.day){toast('📵 Ton téléphone est confisqué jusqu\'à ce soir');return}
  if(G.energy<A.e){toast("Pas assez d'énergie");return}
  if(k==='mot'){openNote(ph);return}
  if(k==='exo'){classGame(ph);return}
  G.acts--;G.energy=clamp(G.energy-A.e,0,100);
  let msg='';const caught=Math.random()<A.risk*s;
- if(k==='notes'){const g=gainK(ph.sub,7);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);G.cb+=1;G.st.notes++;msg=`Tu prends des notes. Chances de réussite en ${SUBJ[ph.sub]} +${g} %`}
+ if(k==='notes'){const g=gainK(ph.sub,7);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);G.cb+=1;G.st.notes++;cPart(ph.sub);if(Math.random()<.3)cAppr(ph.sub,1);msg=`Tu suis attentivement le cours. Chances de réussite en ${SUBJ[ph.sub]} +${g} %`}
+ else if(k==='phone'){if(caught){cAppr(ph.sub,-2);msg='😬 '+P(`${ph.prof[0]} t'a vu·e sur ton téléphone. `)+applyDisc('téléphone en cours',Math.max(2,discLevel(s>=2?2:1)))}else{G.energy=clamp(G.energy+5,0,100);G.know[ph.sub]=clamp(G.know[ph.sub]-1,0,100);msg='Tu scrolles discrètement sous la table. +5 énergie.'}}
  else if(k==='main'){const ok=Math.random()<.35+G.know[ph.sub]/150;if(ok){G.know[ph.sub]=clamp(G.know[ph.sub]+gainK(ph.sub,3),0,100);G.cb+=.5;msg=gtxt(`Bonne réponse ! ${ph.prof[0]} est content·e.`,profSex(ph.prof[0]))}else msg='Mauvaise réponse… quelques rires dans la classe.'}
- else if(k==='voisin'){if(caught)msg=punish(ph);else{const ch=relChange(nb,3);msg=`${WHO[nb].name} chuchote : « ${pickR(VOICE[nb].start)} » · ${ch}`}}
+ else if(k==='voisin'){if(caught){cAppr(ph.sub,-1);msg=punish(ph)}else{const ch=relChange(nb,3);msg=`${WHO[nb].name} chuchote : « ${pickR(VOICE[nb].start)} » · ${ch}`}}
  else if(k==='dessin'){if(caught)msg=punish(ph);else{G.energy=clamp(G.energy+3,0,100);G.know[ph.sub]=clamp(G.know[ph.sub]-1,0,100);msg='Tu dessines dans la marge. Ça détend.'}}
- else if(k==='dormir'){if(caught)msg=punish(ph);else{G.energy=clamp(G.energy+15,0,100);G.cb-=1.5;msg='Petite sieste discrète… +15 énergie, mais tu as raté une partie du cours.'}}
+ else if(k==='dormir'){if(caught){cAppr(ph.sub,-3);msg=punish(ph)+' Mauvaise appréciation.'}else{G.energy=clamp(G.energy+15,0,100);G.cb-=1.5;msg='Petite sieste discrète… +15 énergie, mais tu as raté une partie du cours.'}}
  note(msg);toast(msg);checkObjectives();saveG();drawHUD();drawView();
 }
 function punish(ph){
@@ -3642,8 +3649,13 @@ const CEV=[
    ['Répondre gentiment, sans plus',()=>`Tu réponds poliment.`+cRel(id,2)],['Ranger le mot sans répondre',()=>`Tu le glisses dans ta trousse.`+cRel(id,0,-2)]]}}}
 ];
 function cPart(sub){const c=clsInit();c.part[sub]=(c.part[sub]||0)+1;G.cb+=.5}
+/* pop-ups de vie scolaire : réveil le matin, choix avant chaque cours (et ramassage des devoirs) */
+function vsTick(){if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase(),v=vsInit();if(v.expelled)return;
+ if(ph.type==='matin'&&schoolDay(G.day)&&weekday()<5&&v.wake!==G.day){vsMorning();return}
+ if(ph.type==='cours'&&v.bc!==ph.key){v.bc=ph.key;if(vsHome())return;hwCollect(ph);vsBeforeClass(ph)}}
 function classEventTick(n){
  if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase();if(ph.type!=='cours')return;
+ if(vsAbsent(ph)||vsInit().bc!==ph.key)return;
  const c=clsInit();if(c.ev.key!==ph.key){/* au début du cours : 1 événement presque toujours (85 %), parfois un 2e (40 %), à des heures tirées au sort */
   const len=ph.end-ph.start,at=[];if(Math.random()<.85)at.push(ph.start+8+Math.floor(Math.random()*(len*.45)));if(at.length&&Math.random()<.4)at.push(Math.min(ph.end-8,at[0]+20+Math.floor(Math.random()*(len*.35))));c.ev={key:ph.key,n:0,last:ph.start,at}}
  const e=c.ev;e.at=e.at||[];
@@ -3657,15 +3669,288 @@ function openClassEvent(ph,force){const c=clsInit(),sub=ph.sub,prof=ph.prof[0];
  openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">📚 ${SUBJ[sub]} · ${prof}</span><h2>${P(d.t)}</h2></div></div><p class="cev-txt">${P(d.b)}</p>
   <div class="choices">${d.ch.map((ch,j)=>`<button class="choice" type="button" data-cev="${j}">${P(ch[0])}</button>`).join('')}</div>`)}
 function chooseClassEvent(j){const s=cevS;if(!s)return;const ch=s.ch[+j];if(!ch)return;cevS=null;let res=ch[1]();
+ if(res===KEEP){saveG();drawHUD();return}if(res&&res.quiet){cevOpen=false;closeSheet();saveG();drawHUD();drawView();return}
  if(res&&res.mini){const x=s.x;cevOpen=false;playMini({sub:x.sub,n:3,title:'Contrôle surprise de '+SUBJ[x.sub]},sc=>{const v=clamp(Math.round((G.know[x.sub]/100*10+sc*10)*2)/2,0,20);
    G.grades.push({sub:x.sub,v,day:G.day,sd:schoolDay(G.day),surprise:1});cAppr(x.sub,v>=14?2:v<8?-1:0);cKnow(x.sub,2);note(`Contrôle surprise de ${SUBJ[x.sub]} : ${fmtG(v)}/20`);
    miniResult(`${fmtG(v)}/20`,`Contrôle surprise de ${SUBJ[x.sub]} · ${v>=14?x.prof+' est impressionné·e':v>=10?'Correct':'À retravailler'}`);saveG();drawHUD();drawView()});return}
- res=P(String(res));note(res);
- openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">📚 ${SUBJ[s.x.sub]} · ${s.x.prof}</span><h2>${P(ch[0])}</h2></div></div><p class="cev-txt">${res}</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);
+ res=P(String(res)).replace(/\n/g,'<br>');note(res.replace(/<br>/g,' '));
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${s.eb||`📚 ${SUBJ[s.x.sub]} · ${s.x.prof}`}</span><h2>${P(ch[0])}</h2></div></div><p class="cev-txt">${res}</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);
  checkObjectives();saveG();drawHUD();if(view==='day')drawView()}
 /* appréciation du prof (bulletin, fiche des profs) */
 const APPR_TXT=v=>v>=8?'Très bonne participation, élève impliqué·e.':v>=3?'Participation régulière et pertinente.':v>-3?'Doit participer davantage.':v>-8?'Bavardages à surveiller.':'Comportement à revoir : attitude perturbatrice.';
 const BEH_TXT=v=>v>=80?'Exemplaire':v>=60?'Correct':v>=40?'À améliorer':'Préoccupant';
+/* ---------- vie scolaire : matin, retards et absences, cour, devoirs, sanctions (style BitLife) ----------
+   G.vs : abs (absences [{day,slot,sub,with}]), late (retards), sick (jours « malade »), skip (cours séchés : clé de phase → 1),
+   hw (devoirs), disc (sanctions [{day,k,lvl}]), excl (exclu·e jusqu'au jour…), phoneDay (téléphone confisqué), wake (choix du matin).
+   Tous les pop-ups passent par vsPop (mêmes boutons que les événements de cours, temps en pause). */
+function vsInit(){G.vs=G.vs||{};const v=G.vs;v.abs=v.abs||[];v.late=v.late||[];v.sick=v.sick||{};v.skip=v.skip||{};v.hw=v.hw||[];v.disc=v.disc||[];v.hwn=v.hwn||0;return v}
+function vsPop(o){cevOpen=true;cevS={eb:o.eb||'🏫 Vie scolaire',x:{},ch:o.ch};
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${o.eb||'🏫 Vie scolaire'}</span><h2>${P(o.t)}</h2></div></div><p class="cev-txt">${P(o.b)}</p>
+  <div class="choices">${o.ch.map((ch,j)=>`<button class="choice" type="button" data-cev="${j}">${P(ch[0])}</button>`).join('')}</div>`)}
+const KEEP={keep:1};
+const vsHome=()=>{const v=vsInit();return !!(v.sick[G.day]||(v.excl&&G.day<=v.excl)||v.expelled)};
+const vsAbsent=ph=>{const v=vsInit();return !!(vsHome()||(ph&&v.skip[ph.key]))};
+
+/* ----- sanctions disciplinaires : du plus léger au plus grave ----- */
+const DISC=['Remarque du professeur','Avertissement oral','Confiscation du téléphone','Heure de colle','Plusieurs heures de colle','Convocation chez le CPE','Convocation chez le proviseur','Convocation des parents','Exclusion temporaire','Conseil de discipline','Exclusion définitive'];
+const DISC_IC=['🗣️','⚠️','📵','⏰','⏰⏰','🚪','🏛️','👪','🚫','⚖️','⛔'];
+/* niveau = gravité de la faute + récidive (fautes des 30 derniers jours) + ajustement selon la réaction */
+function discLevel(g){const v=vsInit(),n=v.disc.filter(d=>G.day-d.day<=30).length;return clamp(Math.round(g+Math.floor(n/3)),0,10)}
+function applyDisc(k,lvl,who){const v=vsInit();lvl=clamp(Math.round(lvl),0,10);if(lvl<0)return '';v.disc.push({day:G.day,k,lvl});v.disc=v.disc.slice(-60);clsInit();G.st.caughtToday=true;
+ cBeh(-(2+lvl*1.5));let x='';
+ if(lvl===2)v.phoneDay=G.day;
+ if(lvl===3||lvl===4){G.cls.colles+=lvl===4?3:1;G.energy=clamp(G.energy-10,0,100);parentReact('colle');x=lvl===4?' (3 heures, mercredi après-midi)':' (mercredi après-midi)'}
+ if(lvl>=5&&lvl<=6)parentReact('carnet');
+ if(lvl===7){parentReact('colle');G.family.forEach(f=>famChange(f.id,-6))}
+ if(lvl===8){v.excl=G.day+2;G.family.forEach(f=>famChange(f.id,-10));x=' : 2 jours sans venir au lycée'}
+ if(lvl===9){const heavy=v.disc.filter(d=>d.lvl>=8).length>=2;if(heavy){lvl=10}else{v.excl=G.day+5;x=' : exclusion de 5 jours avec sursis'}}
+ if(lvl===10){v.expelled=G.day;setTimeout(expelledSheet,600)}
+ if(lvl>=5)fPotins(`[Anonyme] : ${myHandle()} convoqué·e ${lvl>=6?'chez le proviseur':'chez le CPE'}… ça sent pas bon 👀`.replace('convoqué·e',P('convoqué·e')));
+ const m=`${DISC_IC[lvl]} ${DISC[lvl]}${x}`;note('Sanction : '+m+(k?' ('+k+')':''));return m}
+function expelledSheet(){cevOpen=true;cevS=null;openSheet(sheetHead('Exclusion définitive',"Le conseil de discipline a tranché.")+`<p class="cev-txt">${P("Après trop de problèmes cette année, tu es exclu·e définitivement du lycée. Ta dernière année s'arrête ici.")}</p><div class="row"><button class="gbtn" type="button" id="gRestartOk">Recommencer une partie</button></div>`)}
+/* faute grave surprise : le joueur choisit sa réaction avant la sanction */
+function discReact(o){const g=o.g,who=o.who,ac=o.accuse;
+ vsPop({eb:o.eb||'🚨 Surpris·e !',t:o.t,b:o.b+' Comment tu réagis ?',ch:[
+  ['Reconnaître les faits',()=>{cBeh(2);return 'Tu reconnais tout calmement. '+applyDisc(o.k,discLevel(g)-1)}],
+  ["T'excuser",()=>{cBeh(1);const m=applyDisc(o.k,discLevel(g)-(Math.random()<.5?2:1));return 'Tu présentes tes excuses. '+(m||'On en reste là.')}],
+  ['Mentir',()=>Math.random()<.4?'Ton mensonge passe… cette fois. Aucune sanction.':'Personne ne te croit. '+applyDisc(o.k,discLevel(g)+2)],
+  ...(ac?[[`Accuser ${CNAME(ac)}`,()=>{mark(ac,'trahison');if(Math.random()<.35)return `On te croit : c'est ${CNAME(ac)} qui est puni·e à ta place.`.replace('puni·e',CG(ac,'puni·e'))+cRel(ac,-20);return 'Personne ne te croit, et ça se retourne contre toi. '+applyDisc(o.k,discLevel(g)+2)+cRel(ac,-10)}]]:[]),
+  ['Contester la sanction',()=>Math.random()<.2?'Tu argumentes bien : la sanction est levée.':'Ça ne passe pas. '+applyDisc(o.k,discLevel(g)+1)]]})
+ return KEEP}
+
+/* ----- le matin ----- */
+function vsMorning(){const v=vsInit();if(v.wake===G.day||!schoolDay(G.day)||weekday()>=5||vsHome())return;v.wake=G.day;
+ vsPop({eb:'☀️ '+fmtDay(G.day,true),t:'Le réveil sonne',b:`Il est ${fmtT(G.min)}. Premier cours : ${SUBJ[firstSub()]||'les cours'} à 8 h.`,ch:[
+  ['Se lever et aller en cours',()=>{G.energy=clamp(G.energy-2,0,100);return 'Tu te prépares et tu pars au lycée à l\'heure.'}],
+  ['Dormir un peu plus longtemps',()=>{G.energy=clamp(G.energy+10,0,100);if(Math.random()<.6){v.lateFirst=G.day;return 'Ces 20 minutes de plus… tu vas sûrement arriver en retard. +10 énergie.'}return 'Tu te rendors un peu, mais tu arrives juste à l\'heure. +10 énergie.'}],
+  ['Faire semblant d\'être malade',()=>{v.sick[G.day]=1;G.energy=clamp(G.energy+20,0,100);G.place='maison';
+   const fr=NPCS.filter(n=>G.rel[n.id].ami>=30);fr.forEach((n,i)=>setTimeout(()=>pushMsg(n.id,'them',pickR(["Coucou ! On m'a dit que tu étais malade, ça va ? Repose-toi bien ! 🫶","T'es où ?? Ah t'es malade… soigne-toi bien 🤒","On s'ennuie sans toi en cours, reviens vite !"]),),1500+i*1200));
+   if(Math.random()<.12){G.family.forEach(f=>famChange(f.id,-6));return 'Tes parents ne sont pas dupes : « Tu as l\'air en pleine forme… » Tu restes quand même à la maison, mais ils sont déçus.'}
+   return 'Tu tousses de façon convaincante. Tu restes à la maison aujourd\'hui. +20 énergie.'+(fr.length?` ${fr.length} camarade${fr.length>1?'s':''} vont prendre de tes nouvelles.`:'')}]]})}
+function firstSub(){try{return TT[weekday()][0]}catch(e){return null}}
+
+/* ----- avant chaque cours : entrer, retard, sécher ----- */
+function vsBeforeClass(ph){const v=vsInit();if(vsHome())return;
+ if(v.skipNext&&v.skipNext.day===G.day){v.skipNext=null;skipClass(ph,null,'dans la cour');toast(`🏃 Tu sèches ${SUBJ[ph.sub]} en restant dans la cour`);return}
+ const late=v.lateFirst===G.day&&ph.slot===0;
+ vsPop({eb:`🔔 ${SUBJ[ph.sub]} · ${ph.prof[0]}`,t:late?'Tu es en retard !':`Cours de ${SUBJ[ph.sub]}`,b:late?`Il est 8 h 10, le cours de ${SUBJ[ph.sub]} a déjà commencé.`:`La sonnerie retentit. ${ph.prof[0]} attend devant la salle.`,ch:[
+  ...(late?[]:[['Entrer en classe normalement',()=>'Tu t\'installes à ta place.']]),
+  ['Arriver en retard',()=>lateClass(ph)],
+  ['Sécher le cours tout·e seul·e',()=>skipClass(ph,null)],
+  ['Sécher le cours avec un·e camarade',()=>{pickSkipBuddy(ph);return KEEP}]]})}
+function lateClass(ph){const v=vsInit();v.late.push({day:G.day,sub:ph.sub});G.acts=Math.max(1,G.acts-1);
+ const n=v.late.filter(l=>G.day-l.day<=14).length,s=ph.prof[1];let m=`Tu entres en retard. ${ph.prof[0]} note l'heure dans le cahier d'appel.`;
+ if(n>=5)m+=' '+applyDisc('retards répétés',discLevel(3));else if(n>=3&&s>=2)m+=' '+applyDisc('retards',discLevel(1));else if(s===3){cAppr(ph.sub,-1);m+=` « Ce n'est pas un moulin, ici ! »`}
+ return m}
+function skipClass(ph,buddy,where){const v=vsInit();v.skip[ph.key]=1;v.abs.push({day:G.day,slot:ph.slot,sub:ph.sub,with:buddy||null});G.place='cour';
+ let m=`Tu sèches ${SUBJ[ph.sub]}${buddy?' avec '+CNAME(buddy):''}${where?' '+where:''}. Absence injustifiée.`;
+ if(buddy)m+=cRel(buddy,5);
+ if(Math.random()<.18){m+=` Un surveillant vous repère dans la cour…`;cAppr(ph.sub,-2)}
+ const sanc=absenceCheck(ph);if(sanc)m+=' '+sanc;return m}
+/* absences : avertissement si plusieurs le même jour, CPE si consécutives, colle et parents si répétées, sanction disciplinaire en cas de récidive importante */
+function absenceCheck(ph){const v=vsInit(),today=v.abs.filter(a=>a.day===G.day),r14=v.abs.filter(a=>G.day-a.day<=14).length,r30=v.abs.filter(a=>G.day-a.day<=30).length;
+ const consec=today.some(a=>a.slot===ph.slot-1);
+ if(r30>=10)return applyDisc('absences, récidive',8);
+ if(r14>=6)return applyDisc('absences répétées',7);
+ if(r14>=4)return applyDisc('absences répétées',3);
+ if(consec)return applyDisc('cours consécutifs séchés',5);
+ if(today.length>=2)return applyDisc('plusieurs absences dans la journée',1);
+ return ''}
+function pickSkipBuddy(ph){const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.rel[a.id].ami).slice(0,5).map(n=>n.id);
+ vsPop({eb:`🏃 Sécher ${SUBJ[ph.sub]}`,t:'Avec qui ?',b:'Tu glisses discrètement la proposition…',ch:[...L.map(id=>[`${CNAME(id)} (amitié ${G.rel[id].ami})`,()=>{
+   const f=FICHES[id],p=clamp(G.rel[id].ami/90+(1-f.stud)*.45-.15,0,.95);
+   if(Math.random()<p)return `${CNAME(id)} accepte : « Allez, on y va ! »`+'\n'+skipClass(ph,id);
+   vsPop({eb:`🏃 Sécher ${SUBJ[ph.sub]}`,t:CG(id,`${CNAME(id)} refuse`),b:CG(id,`« Non, je peux pas, ${f.stud>.6?'j\'ai trop besoin de ce cours':'je me suis déjà fait·e choper la dernière fois'}. »`),ch:[['Entrer quand même en cours',()=>'Tu entres en classe.'],['Arriver en retard',()=>lateClass(ph)],['Sécher tout·e seul·e',()=>skipClass(ph,null)]]});return KEEP}]),
+  ['Finalement, entrer en cours',()=>'Tu entres en classe.']]})}
+
+/* ----- dans la cour : activités et actions à risque ----- */
+const COUR_ACT=[['ballon','⚽','Jouer au ballon'],['cartes','🃏','Faire une partie de cartes'],['musique','🎧','Écouter de la musique'],['photos','📸','Prendre des photos avec tes amis'],['blague','😜','Faire une blague à un·e camarade'],
+ ['connaitre','👋','Faire connaissance avec un nouvel élève'],['groupe','👥',"Rejoindre un groupe d'élèves"],['dejeuner','🍽️','Déjeuner avec tes amis']];
+const COUR_RISK=[['bagarre','👊','Se bagarrer avec un élève',4],['insulte','🤬',"Insulter quelqu'un",2],['secher','🏃','Sécher le cours suivant',0],['farce','🪤','Faire une farce à un prof',4],['zone','🚧','Aller dans une zone interdite',2],['degrader','🖊️','Dégrader du matériel',5],['dispute','🔥','Participer à une dispute entre groupes',3]];
+function courCard(ph){if(!['recre','dej'].includes(ph.type)||!schoolDay(G.day)||vsHome())return '';const done=G.done[ph.key+'cour']||0;
+ return `<div class="card"><span class="eyebrow">Dans la cour · ${2-done>0?2-done+' action'+(2-done>1?'s':'')+' possible'+(2-done>1?'s':''):'plus d\'action pour cette pause'}</span>
+ <p class="muted" style="margin:4px 0 8px">${P("Pour discuter, flirter ou te déclarer, touche un·e camarade présent·e.")}</p>
+ <div class="acts">${COUR_ACT.filter(a=>a[0]!=='dejeuner'||ph.type==='dej').map(a=>`<button class="act" type="button" data-cour="${a[0]}" ${done>=2?'disabled':''}><span class="ico">${a[1]}</span><span>${P(a[2])}</span></button>`).join('')}</div>
+ <span class="eyebrow" style="display:block;margin-top:12px">Actions à risque</span>
+ <div class="acts">${COUR_RISK.filter(a=>a[0]!=='bagarre'||NPCS.some(n=>G.rel[n.id].ami<0)).map(a=>`<button class="act" type="button" data-cour="${a[0]}" ${done>=2?'disabled':''}><span class="ico">${a[1]}</span><span>${a[2]}</span><small class="r-${a[3]>=4?'hi':a[3]>=2?'mid':'lo'}">${a[3]>=4?'Risque élevé':a[3]>=2?'Risque moyen':'Risque faible'}</small></button>`).join('')}</div></div>`}
+function presentIds(ph){const map=presence(ph);return (map[G.place]||[]).filter(isNpc)}
+function courDo(k){const ph=phase();if(!['recre','dej'].includes(ph.type))return;const dk=ph.key+'cour';if((G.done[dk]||0)>=2)return;
+ const here=presentIds(ph),any=here.length?here:NPCS.map(n=>n.id),pk=()=>pickR(any),sv=p=>Math.random()<p;let r;
+ const fin=m=>{G.done[dk]=(G.done[dk]||0)+1;if(m===KEEP)return;note(P(m));vsPop({eb:'🏫 Dans la cour',t:'',b:m,ch:[['Continuer',()=>({quiet:1})]]})};
+ const pickNpc=(t,list,fn)=>vsPop({eb:'🏫 Dans la cour',t,b:'Avec qui ?',ch:list.slice(0,6).map(id=>[`${CNAME(id)} (amitié ${G.rel[id].ami})`,()=>fn(id)])});
+ switch(k){
+  case 'ballon':{const L=any.slice(0,3);G.energy=clamp(G.energy-6,0,100);r=`Partie de foot improvisée avec ${L.map(CNAME).join(', ')} ⚽`+L.map(id=>cRel(id,FICHES[id].spo>.5?4:2)).join('');break}
+  case 'cartes':{const L=any.slice(0,2);r=`Partie de cartes avec ${L.map(CNAME).join(' et ')}. ${sv(.5)?'Tu gagnes !':'Tu perds de peu.'}`+L.map(id=>cRel(id,2)).join('');break}
+  case 'musique':G.energy=clamp(G.energy+6,0,100);r='Écouteurs sur les oreilles, tu souffles un peu. +6 énergie.';break;
+  case 'photos':{const L=any.filter(id=>G.rel[id].ami>=20).slice(0,3);r=L.length?`Séance photo avec ${L.map(CNAME).join(', ')} 📸`+L.map(id=>cRel(id,3)).join(''):'Personne de proche dans le coin… tu prends un selfie toute seule.'.replace('toute seule',P('tout·e seul·e'));break}
+  case 'blague':pickNpc('Faire une blague',any,id=>{const ok=FICHES[id].hum>.45||G.rel[id].ami>=40;return(ok?`${CNAME(id)} éclate de rire 😂`:CG(id,`${CNAME(id)} n'apprécie pas du tout…`))+cRel(id,ok?4:-4)});fin(KEEP);return;
+  case 'connaitre':{const id=NPCS.slice().sort((a,b)=>(G.met[a.id]||0)-(G.met[b.id]||0)||G.rel[a.id].ami-G.rel[b.id].ami)[0].id;G.met[id]=(G.met[id]||0)+1;r=`Tu vas parler à ${CNAME(id)}. « ${pickR(VOICE[id].start)} »`+cRel(id,5);break}
+  case 'groupe':vsPop({eb:'🏫 Dans la cour',t:"Rejoindre un groupe",b:'Quel groupe ?',ch:Object.values(GROUPS).map(g=>[`${g.ic} ${g.n}`,()=>{const avg=g.m.reduce((a,id)=>a+G.rel[id].ami,0)/g.m.length;const ok=avg>=15||sv(.4);return ok?`${g.n} te font une place 😊`+g.m.map(id=>cRel(id,2)).join(''):`${g.n} t'ignorent un peu… Tu restes quelques minutes puis tu repars.`+g.m.slice(0,2).map(id=>cRel(id,-1)).join('')}])});fin(KEEP);return;
+  case 'dejeuner':{const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.rel[a.id].ami).slice(0,3).map(n=>n.id);G.energy=clamp(G.energy+8,0,100);r=`Tu déjeunes avec ${L.map(CNAME).join(', ')} 🍽️ +8 énergie.`+L.map(id=>cRel(id,3)).join('');break}
+  case 'bagarre':pickNpc('Se bagarrer',NPCS.filter(n=>G.rel[n.id].ami<0).map(n=>n.id),id=>{G.energy=clamp(G.energy-15,0,100);mark(id,'rivalite');relChange(id,-10);
+    fPotins(`🥊 Bagarre dans la cour entre ${myHandle()} et ${WHO[id].handle} !! Tout le monde a filmé 😳`);
+    if(sv(.75))return discReact({k:'bagarre',g:6,t:'Un surveillant vous sépare',b:`La bagarre avec ${CNAME(id)} attire tout le monde. Un surveillant arrive en courant.`,accuse:id});return `Vous vous battez avant que les autres vous séparent. Personne d'adulte n'a vu… −15 énergie.`});fin(KEEP);return;
+  case 'insulte':pickNpc("Insulter quelqu'un",any,id=>{relChange(id,-8);if(sv(.3))return discReact({k:'insulte',g:3,t:'Un surveillant a entendu',b:`Ton insulte envers ${CNAME(id)} n'est pas passée inaperçue.`});return CG(id,`${CNAME(id)} est blessé·e.`)+' · '+CNAME(id)+' : amitié −8'});fin(KEEP);return;
+  case 'secher':vsInit().skipNext={day:G.day};r='Tu décides de rester dans la cour au lieu d\'aller au prochain cours…';break;
+  case 'farce':{const p=pickR(Object.values(PROFS))[0];if(sv(.45)){fin(discReact({k:'farce à un prof',g:5,t:`${p} t'a vu·e`.replace('vu·e',P('vu·e')),b:`Ta farce (de la craie dans le sac de ${p}) est découverte.`}));return}any.slice(0,2).forEach(id=>relChange(id,3));r=`Ta farce à ${p} fait rire toute la cour 😂 Personne ne sait que c'est toi.`;break}
+  case 'zone':if(sv(.35)){fin(discReact({k:'zone interdite',g:3,t:'Un surveillant te rattrape',b:'Tu traînes derrière le gymnase, là où c\'est interdit.'}));return}r=sv(.5)?'Derrière le gymnase, tu trouves un coin tranquille. Personne ne t\'a vu·e.':'Tu explores les couloirs du bâtiment C fermé. Frissons garantis.';break;
+  case 'degrader':if(sv(.5)){fin(discReact({k:'dégradation',g:6,t:'Pris·e sur le fait',b:'Tu graves ton prénom sur une table du foyer quand un CPE passe.'}));return}r='Tu tagues discrètement un mur des toilettes. Personne ne t\'a vu·e… pour l\'instant.';break;
+  case 'dispute':{const gs=Object.values(GROUPS),a=gs[0],b=gs[1];G.energy=clamp(G.energy-5,0,100);a.m.forEach(id=>relChange(id,2));b.m.forEach(id=>relChange(id,-3));
+   if(sv(.4)){fin(discReact({k:'dispute entre groupes',g:4,t:'Les surveillants interviennent',b:`${a.n} et ${b.n} s'accrochent, tu es en plein milieu.`}));return}r=`Tu prends parti pour ${a.n} contre ${b.n}. Ça crie fort, puis tout le monde se disperse.`;break}
+ }
+ fin(r);saveG();drawHUD()}
+
+/* ----- devoirs ----- */
+const HW_SUBJ=['francais','philo','maths','physique','espagnol','eps','histoire','anglais'];
+const HW_DESC={francais:['Commentaire d\'un poème de Baudelaire','Relevé des figures de style p. 84','Dissertation : le personnage de roman'],philo:['Dissertation : « Peut-on être libre sans loi ? »','Explication d\'un texte de Descartes','Fiche sur la notion de vérité'],
+ maths:['Exercices 12 à 18 sur les dérivées','Problème sur la fonction exponentielle','Exercices de probabilités p. 210'],physique:['Exercices sur les concentrations','Compte rendu du TP de titrage','Exercices de mécanique p. 156'],
+ espagnol:['Rédaction : « Mi ciudad ideal »','Conjugaison du passé simple','Compréhension d\'un article de El País'],eps:['Fiche d\'échauffement à préparer','Analyse de ta course de demi-fond','Règles du volley à apprendre'],
+ histoire:['Fiche sur la guerre froide','Croquis de la Caraïbe','Révision : la Guadeloupe depuis 1946'],anglais:['Essay: « Is social media a good thing? »','Vocabulaire unité 5 à apprendre','Résumé d\'un article du Guardian']};
+const HW_ST={todo:['À faire','mid'],done:['Terminé','ok'],late:['En retard','hi'],rendu:['Rendu','ok'],rendulate:['Rendu en retard','mid'],nonrendu:['Non rendu','hi']};
+function nextSubDay(sub){for(let d=G.day+1;d<G.day+21;d++){const sd=schoolDay(d),wd=wdOf(d);if(sd&&wd<5&&TT[wd].includes(sub))return d}return G.day+7}
+function hwAssign(prev){const v=vsInit();if(!HW_SUBJ.includes(prev.sub)||vsAbsent(prev)||v.hw.some(h=>h.sub===prev.sub&&['todo','done','late'].includes(h.st))||Math.random()>.35)return;
+ const due=nextSubDay(prev.sub);v.hw.push({id:++v.hwn,sub:prev.sub,desc:pickR(HW_DESC[prev.sub]),given:G.day,due,st:'todo',q:0});v.hw=v.hw.slice(-40);
+ toast(`📚 Devoir de ${SUBJ[prev.sub]} pour le ${fmtDay(due,true)}`);note(`Nouveau devoir de ${SUBJ[prev.sub]} pour le ${fmtDay(due,true)}`)}
+/* au début du cours de la matière, le jour J : le prof ramasse */
+function hwCollect(ph){const v=vsInit();let m=[];v.hw.filter(h=>h.sub===ph.sub&&G.day>=h.due&&['todo','done','late'].includes(h.st)).forEach(h=>{
+  if(h.st==='done'){if(h.copied&&Math.random()<.3*ph.prof[1]){h.st='rendu';h.q=0;cAppr(ph.sub,-4);m.push(`${ph.prof[0]} remarque que ton devoir est copié !`);setTimeout(()=>discReact({k:'devoir copié',g:3,t:'Devoir copié',b:`${ph.prof[0]} a reconnu la copie de ${CNAME(h.copied)}.`,accuse:h.copied}),900);return}
+   h.st=G.day>h.due?'rendulate':'rendu';const d=h.st==='rendulate'?-1:h.q>=.75?3:h.q>=.45?1:-1;cAppr(ph.sub,d);m.push(h.st==='rendulate'?`Devoir rendu en retard : ${ph.prof[0]} fait une remarque.`:h.q>=.75?`Devoir rendu : très bon travail !`:h.q>=.45?'Devoir rendu : travail correct.':'Devoir rendu, mais incomplet.')}
+  else if(h.st==='todo'){h.st='late';cAppr(ph.sub,-1);m.push(`Devoir de ${SUBJ[ph.sub]} pas fait : ${ph.prof[0]} te laisse jusqu'au prochain cours, en retard.`)}
+  else if(h.st==='late'&&G.day>h.due){h.st='nonrendu';cAppr(ph.sub,-3);m.push(`Devoir de ${SUBJ[ph.sub]} non rendu : mauvaise appréciation.`)}});
+ if(m.length){const t=m.join(' ');note(t);toast('📚 '+m[0])}}
+const vsCard=()=>hwCard();
+function hwCard(){const v=vsInit(),open=v.hw.filter(h=>['todo','done','late'].includes(h.st));
+ return `<div class="card"><div class="ph-top"><span class="eyebrow">🏫 Vie scolaire · devoirs</span><span><button class="linkbtn" type="button" data-vsopen>Bilan</button> · <button class="linkbtn" type="button" data-hw="list">Mes devoirs</button></span></div>${open.length?open.slice(0,3).map(h=>`<div class="prof"><div><b>${SUBJ[h.sub]}</b><span class="muted"> · pour le ${fmtDay(h.due,true)}</span></div><span class="hwst r-${HW_ST[h.st][1]}">${HW_ST[h.st][0]}</span></div>`).join(''):'<p class="muted">Aucun devoir à faire pour le moment.</p>'}</div>`}
+function hwSheet(){const v=vsInit(),L=v.hw.slice().reverse();
+ openSheet(sheetHead('Mes devoirs',`${L.filter(h=>['todo','late'].includes(h.st)).length} à faire`)+(L.length?`<div class="card list">${L.map(h=>`<div class="hw"><div class="prof"><div><b>${SUBJ[h.sub]}</b><span class="muted"> · ${PROFS[h.sub][0]}</span></div><span class="hwst r-${HW_ST[h.st][1]}">${HW_ST[h.st][0]}</span></div>
+  <p style="margin:2px 0">${h.desc}</p><small class="muted">Donné le ${fmtDay(h.given,true)} · à rendre le ${fmtDay(h.due,true)}${h.q&&h.st!=='todo'?` · qualité ${Math.round(h.q*100)} %`:''}</small>
+  ${['todo','late'].includes(h.st)?`<div class="chips" style="margin-top:6px"><button class="chip" type="button" data-hw="do" data-hid="${h.id}">✍️ Faire maintenant</button><button class="chip" type="button" data-hw="help" data-hid="${h.id}">🤝 Demander de l'aide</button><button class="chip" type="button" data-hw="copy" data-hid="${h.id}">📋 Copier</button><button class="chip" type="button" data-hw="skip" data-hid="${h.id}">🙅 Ne pas le faire</button></div>`:''}</div>`).join('')}</div>`:'<p class="muted">Aucun devoir pour le moment. Les profs en donnent après certains cours.</p>'))}
+function hwAct(a,hid){const v=vsInit(),h=v.hw.find(x=>x.id===+hid);if(a==='list'){hwSheet();return}if(!h)return;
+ if(a==='do'){if(G.energy<8){toast("Pas assez d'énergie");return}G.energy=clamp(G.energy-8,0,100);
+  playMini({sub:h.sub,n:3,title:`Devoir de ${SUBJ[h.sub]}`},sc=>{h.q=clamp(sc*.7+G.know[h.sub]/100*.3,0,1);h.st='done';cKnow(h.sub,3);G.studied[h.sub]=1;note(`Devoir de ${SUBJ[h.sub]} terminé (${Math.round(h.q*100)} %)`);
+   miniResult('Devoir terminé',`${SUBJ[h.sub]} · qualité ${Math.round(h.q*100)} % · à rendre le ${fmtDay(h.due,true)}`);saveG();drawHUD();drawView()});return}
+ if(a==='skip'){h.st=G.day>=h.due?'nonrendu':'late';h.skip=1;if(h.st==='nonrendu')cAppr(h.sub,-3);toast('Tu laisses tomber ce devoir…');saveG();hwSheet();return}
+ const L=NPCS.slice().sort((x,y)=>G.rel[y.id].ami-G.rel[x.id].ami).slice(0,5).map(n=>n.id);
+ vsPop({eb:`📚 ${SUBJ[h.sub]}`,t:a==='help'?'Demander de l\'aide':'Copier le devoir',b:a==='help'?'À qui tu demandes ?':'Sur qui tu copies ?',ch:[...L.map(id=>[`${CNAME(id)} (amitié ${G.rel[id].ami})`,()=>{const f=FICHES[id],ok=G.rel[id].ami>=(a==='help'?20:35)||Math.random()<(a==='help'?.35:.15);
+   if(!ok)return CG(id,`${CNAME(id)} refuse : « Débrouille-toi, je suis débordé·e. »`)+cRel(id,-1);
+   if(a==='help'){h.q=clamp(.5+f.stud*.4+G.know[h.sub]/400,0,1);h.st='done';cKnow(h.sub,2);return `${CNAME(id)} t'explique tout au téléphone 🤝 Devoir terminé (${Math.round(h.q*100)} %).`+cRel(id,3)}
+   h.q=clamp(.4+f.stud*.5,0,1);h.st='done';h.copied=id;return `${CNAME(id)} t'envoie une photo de sa copie. Devoir « terminé »… mais attention si le prof s'en rend compte.`+cRel(id,1)}]),['Annuler',()=>({quiet:1})]]})}
+
+/* ----- indicateurs et appréciations personnalisées ----- */
+function profComment(k){const c=clsInit(),v=vsInit(),a=c.appr[k]||0,p=c.part[k]||0,hw=v.hw.filter(h=>h.sub===k),bad=hw.filter(h=>['nonrendu','late','rendulate'].includes(h.st)).length,good=hw.filter(h=>h.st==='rendu'&&h.q>=.7).length,
+ abs=v.abs.filter(x=>x.sub===k).length,g=G.grades.filter(x=>x.sub===k).slice(-4),avg=g.length?g.reduce((s,x)=>s+x.v,0)/g.length:null;const L=[];
+ if(a>=6&&p>=3)L.push('Élève sérieux·se et investi·e.');else if(a>=2)L.push('Des efforts encourageants.');
+ if(p<1&&G.day>14)L.push('Manque de participation en classe.');
+ if(bad>=2)L.push('Les devoirs ne sont pas régulièrement réalisés.');else if(good>=2)L.push('Travail personnel régulier et soigné.');
+ if(avg!=null&&avg<9)L.push('Travail personnel insuffisant.');
+ if(a<=-4)L.push('Élève souvent distrait·e et bavard·e.');
+ if(abs>=2)L.push('Absences trop nombreuses.');
+ return P(L.length?L.join(' '):'Trimestre en cours : peu d\'éléments pour le moment.')}
+function vieScolaireSheet(){const c=clsInit(),v=vsInit(),g=G.grades.slice(-30),avg=g.length?g.reduce((s,x)=>s+x.v,0)/g.length:null,
+ apprAvg=Object.values(c.appr).reduce((s,x)=>s+x,0)/Math.max(1,Object.keys(c.appr).length),friends=NPCS.filter(n=>G.rel[n.id].ami>=50).length,
+ colles=c.colles,dis=v.disc.slice().reverse();
+ const ind=(ic,t,val,sub)=>`<div class="vsi"><span class="ico">${ic}</span><div><b>${t}</b><small class="muted">${sub}</small></div><b>${val}</b></div>`;
+ openSheet(sheetHead('Vie scolaire',fmtDay(G.day,true))+`<div class="card list">
+  ${ind('📊','Notes',avg!=null?fmtG(avg)+'/20':'–',g.length+' note'+(g.length>1?'s':''))}
+  ${ind('🧭','Comportement',BEH_TXT(c.beh),`${v.late.length} retard${v.late.length>1?'s':''} · ${v.abs.length} absence${v.abs.length>1?'s':''} · ${v.disc.length} sanction${v.disc.length>1?'s':''}${colles?` · ${colles} h de colle`:''}`)}
+  ${ind('🤝','Relations',friends+' ami'+(friends>1?'s':''),'Profs : '+(apprAvg>=3?'ils t\'apprécient':apprAvg<=-3?'plutôt agacés':'neutres'))}
+  ${ind('📚','Devoirs',v.hw.filter(h=>['todo','late'].includes(h.st)).length+' à faire',`${v.hw.filter(h=>h.st==='rendu').length} rendus · ${v.hw.filter(h=>h.st==='nonrendu').length} non rendus`)}</div>
+  <div class="row"><button class="gbtn ghost" type="button" data-hw="list">📚 Mes devoirs</button></div>
+  <div class="sec-title">Appréciations des professeurs</div><div class="card list">${Object.keys(SUBJ).map(k=>`<div class="bul"><div class="prof"><span>${SUBJ[k]} <small class="muted">${PROFS[k][0]}</small></span></div><small class="muted">${profComment(k)}</small></div>`).join('')}</div>
+  <div class="sec-title">Sanctions</div>${dis.length?`<div class="card list">${dis.slice(0,15).map(d=>`<div class="prof"><span>${DISC_IC[d.lvl]} ${DISC[d.lvl]}<small class="muted"> · ${d.k||''}</small></span><small class="muted">${fmtDay(d.day,true)}</small></div>`).join('')}</div>`:'<p class="muted">Aucune sanction. Bravo !</p>'}`)}
+
+/* ---------- base de connaissances : Guadeloupe et fiche personnelle de chaque camarade ----------
+   GP_LIEUX : connaissances communes (tout le monde peut en parler). KB[id] : souvenirs et préférences propres à chacun·e
+   (un·e camarade ne raconte jamais être allé·e sur une île qui n'est pas dans sa liste « iles »).
+   Action « ❓ Poser une question » sur la fiche d'un·e camarade : ASKQ (catégories), askAnswer (réponse selon l'amitié). */
+const GP_LIEUX={
+ 'Pointe-à-Pitre':'le centre-ville, ses marchés, ses rues animées et ses boutiques','Les Abymes':"une grosse commune juste à côté de Pointe-à-Pitre et de l'aéroport",
+ 'Baie-Mahault':'Jarry, la grande zone commerciale','Le Gosier':'les plages, les restos et les sorties','Sainte-Anne':'la plage, le marché et son ambiance',
+ 'Saint-François':'la marina, les restos et les activités nautiques','Le Moule':"la côte atlantique et ses plages",'Sainte-Rose':'la nature, les rivières et la mer',
+ 'Deshaies':'Grande-Anse et le jardin botanique','Basse-Terre':'le chef-lieu, ses administrations et son marché','Petit-Bourg':'entre la ville et la forêt',
+ "Morne-à-l'Eau":'son cimetière aux tombes en damier','Capesterre-Belle-Eau':'les bananeraies et les chutes du Carbet'};
+const GP_ILES={'Marie-Galante':"l'île aux cent moulins, ses plages et ses distilleries",'Les Saintes':'la baie et Terre-de-Haut','La Désirade':'une île calme, avec des falaises sauvages',
+ 'Petite-Terre':'une réserve naturelle avec des lagons et des iguanes','Martinique':"l'île sœur, avec Fort-de-France",'Dominique':'les rivières et la forêt',
+ 'Saint-Martin':'les plages et les boutiques','Saint-Barthélemy':'une petite île très chic'};
+/* res : commune · avant : ancien lieu · lycee : ancien établissement (null = au lycée depuis la seconde) · raison : [clé, réponse] · gt : Grande-Terre ou Basse-Terre
+   shop / sortie : lieux préférés · iles : îles où la personne est vraiment allée · expr : ses expressions · sens : sujets sensibles · fs / parents / apres : réponses perso · sort : aime sortir (0-1) */
+const KB={
+ ines:{res:'Les Abymes',avant:'Fort-de-France, en Martinique',lycee:'un lycée de Fort-de-France',raison:['demenagement',"Ma mère a eu un poste d'infirmière ici, alors on a quitté la Martinique en seconde."],gt:'gt',
+  shop:'Destreland',sortie:'Plage de Sainte-Anne',iles:['Martinique','Les Saintes'],expr:['mon cœur','en vrai'],sens:[],sort:.8,
+  fs:"Un petit frère, Enzo, il a 9 ans. Je m'occupe souvent de lui le soir.",parents:"Je vis avec ma mère et mon petit frère.",apres:"Je récupère Enzo, puis je m'entraîne à danser dans ma chambre."},
+ kylian:{res:'Saint-François',avant:null,lycee:null,raison:null,gt:'gt',shop:'Jarry',sortie:'Marina de Saint-François',iles:['Marie-Galante','La Désirade'],expr:['wsh','ça dit quoi','tkt'],sens:[],sort:.8,
+  fs:"nan fils unique",parents:"ouais, mon père est pêcheur et ma mère a un commerce",apres:"entraînement de foot, et le week-end je vais pêcher avec mon père"},
+ maelle:{res:'Le Gosier',avant:null,lycee:null,raison:null,gt:'gt',shop:'Destreland',sortie:'Bas-du-Fort',iles:['Les Saintes','Saint-Martin','Martinique'],expr:['genre','littéralement',"c'est abusé"],sens:['parents'],sort:1,
+  fs:"Une grande sœur, elle est étudiante à Paris. Elle me manque genre littéralement.",parents:"Je suis une semaine chez ma mère au Gosier, une semaine chez mon père à Pointe-à-Pitre. Depuis le divorce c'est comme ça.",apres:"Entraînement de pom-pom, et j'organise les soirées du week-end."},
+ noah:{res:'Le Moule',avant:null,lycee:null,raison:null,gt:'gt',shop:'Milénis',sortie:'Chutes du Carbet',iles:['Marie-Galante'],expr:['frère','ptdr','tranquille'],sens:[],sort:.6,
+  fs:"Deux grandes sœurs et une petite. La maison est jamais calme ptdr.",parents:"Oui, mes parents sont profs tous les deux.",apres:"Basket, et je cuisine avec ma grand-mère le mercredi."},
+ jade:{res:'Sainte-Anne',avant:null,lycee:null,raison:null,gt:'gt',shop:'centre-ville de Pointe-à-Pitre',sortie:'Pointe des Châteaux',iles:['La Désirade','Petite-Terre'],expr:['en vrai'],sens:['parents'],sort:.3,
+  fs:"non, je suis fille unique.",parents:"je vis avec ma grand-mère. mes parents travaillent en métropole.",apres:"je lis, j'écris, et quand le ciel est dégagé je regarde les étoiles."},
+ kenza:{res:'Baie-Mahault',avant:'Le Gosier',lycee:'un lycée du Gosier',raison:['demenagement',"On a déménagé à Baie-Mahault, c'était plus pratique pour le travail de mes parents."],gt:'gt',
+  shop:'Destreland',sortie:'Les Salines au Gosier',iles:['Saint-Barthélemy','Saint-Martin','Martinique'],expr:['bébé','jsp','trop mignon'],sens:[],sort:1,
+  fs:"Un grand frère en BTS. Il surveille tous les garçons qui m'approchent 🙄",parents:"Oui, mon père est avocat et ma mère a un institut de beauté.",apres:"Danse, shopping avec Meisha, et des photos pour Insta 😘"},
+ eva:{res:'Petit-Bourg',avant:null,lycee:null,raison:null,gt:'bt',shop:'Milénis',sortie:'Grande-Anse à Deshaies',iles:['Les Saintes','Dominique'],expr:["oh c'est trop mignon",'en vrai'],sens:[],sort:.5,
+  fs:"Une petite sœur, Lou, elle a 8 ans et elle veut tout faire comme moi 🌸",parents:"Je vis avec ma mère et mon beau-père.",apres:"Je dessine, et je retrouve Kylian après son entraînement."},
+ noemie:{res:"Morne-à-l'Eau",avant:null,lycee:null,raison:null,gt:'gt',shop:'Jarry',sortie:'Plage de la Caravelle',iles:['Martinique'],expr:['wesh','vas-y','on est ensemble',"t'es chaud ?"],sens:[],sort:.7,
+  fs:"Trois grands frères, tous footeux. C'est avec eux que j'ai appris à jouer.",parents:"Je vis avec ma mère et mes frères.",apres:"Entraînement de foot, et après je regarde les matchs des Bleues."},
+ jessica:{res:'Les Abymes',avant:null,lycee:null,raison:null,gt:'gt',shop:'Milénis',sortie:'Jardin botanique de Deshaies',iles:['Marie-Galante','Les Saintes'],expr:['tranquille',"c'est carré"],sens:[],sort:.4,
+  fs:"Un petit frère, Hugo, 12 ans. Je lui fais réviser tous les soirs 📚",parents:"Oui, ils sont pharmaciens tous les deux.",apres:"Cours particuliers le lundi et le mercredi, sinon pâtisserie et sudokus 😊"},
+ meisha:{res:'Baie-Mahault',avant:null,lycee:null,raison:null,gt:'gt',shop:'Jarry',sortie:'Bas-du-Fort',iles:['Martinique','Saint-Martin'],expr:['jsuis morte','on va shopper','de ouf'],sens:['parents'],sort:1,
+  fs:"Non, mais Kenza c'est ma jumelle, ça compte 😂",parents:"Je vis avec ma mère et ma grand-mère. Mon père travaille en Martinique, il rentre un week-end sur deux.",apres:"Shopping, la rubrique mode du journal, et TikTok 🛍️"},
+ anais:{res:'Sainte-Rose',avant:null,lycee:null,raison:null,gt:'bt',shop:'Destreland',sortie:'La Soufrière',iles:['Les Saintes','Petite-Terre'],expr:['allez !','trop fort','on se capte'],sens:[],sort:.8,
+  fs:"Deux petits frères jumeaux, ils tiennent pas en place 😂",parents:"Oui ! Mon père entraîne une équipe de foot et ma mère est kiné.",apres:"Hand, et footing au lever du soleil sur la plage 💪"},
+ sacha:{res:'Pointe-à-Pitre',avant:null,lycee:null,raison:null,gt:'gt',shop:'centre-ville de Pointe-à-Pitre',sortie:'Plage de Sainte-Anne',iles:['Marie-Galante','Dominique'],expr:['gros','vibe',"c'est carré"],sens:['pere'],sort:.6,
+  fs:"Un demi-frère plus âgé.",parents:"Ouais. Ma mère chante du gwo ka, mon père a sa boîte… on se comprend pas trop, lui et moi.",apres:"Je fais du son, de la guitare, du skate."}};
+const KB_SORTIE={'Plage de Sainte-Anne':'à la plage de Sainte-Anne','Marina de Saint-François':'à la marina de Saint-François','Bas-du-Fort':'à Bas-du-Fort, au Gosier','Chutes du Carbet':'aux chutes du Carbet',
+ 'Pointe des Châteaux':'à la Pointe des Châteaux','Les Salines au Gosier':'aux Salines, au Gosier','Grande-Anse à Deshaies':'à Grande-Anse, à Deshaies','Plage de la Caravelle':'à la plage de la Caravelle',
+ 'Jardin botanique de Deshaies':'au jardin botanique de Deshaies','La Soufrière':'à la Soufrière, en rando'};
+const ASKQ=[['🏝️ La Guadeloupe',[['pap','Tu connais bien Pointe-à-Pitre ?'],['commune','Tu habites dans quelle commune ?'],['gtbt','Tu préfères Grande-Terre ou Basse-Terre ?']]],
+ ['🛍️ Le shopping',[['destmil','Tu préfères Destreland ou Milénis ?'],['jarry','Tu vas souvent faire du shopping à Jarry ?'],['habits','Tu achètes tes vêtements où ?']]],
+ ['🌅 Les sorties',[['plage','Tu vas souvent à la plage ?'],['sagos','Tu préfères Sainte-Anne ou Le Gosier ?'],['sors','Tu sors souvent avec tes amis ?']]],
+ ['⛵ Les voyages',[['saintes','Tu es déjà allé·e aux Saintes ?'],['mg','Tu connais Marie-Galante ?'],['mq','Tu es déjà allé·e en Martinique ?']]],
+ ['🏠 La vie perso',[['raison','Pourquoi tu as changé de lycée ?'],['fs','Tu as des frères et sœurs ?'],['parents','Tu habites avec tes deux parents ?']]],
+ ['⏰ Les habitudes',[['apres','Tu fais quoi après les cours ?'],['wedest','Tu passes souvent tes week-ends à Destreland ?'],['maison','Tu préfères rester chez toi ou sortir ?']]]];
+const ASK_SENS={parents:['parents','raison'],pere:['parents']};
+/* réponse : courte si on se connaît peu (amitié < 20), plus détaillée entre ami·e·s (≥ 50) ; les sujets sensibles restent fermés tant que l'amitié est < 50 */
+function askAnswer(id,q){const K=KB[id],a=G.rel[id].ami,tier=a<20?0:a<50?1:2,ile=n=>K.iles.includes(n);let A,B='';
+ const sens=K.sens.some(s=>(ASK_SENS[s]||[s]).includes(q));
+ if(sens&&a<50)return {t:pickR(["Je préfère ne pas trop en parler, c'est encore récent.","Hmm… on en parlera une autre fois, ok ?","C'est un peu compliqué chez moi. Je préfère pas en parler."]),d:0,closed:1};
+ switch(q){
+  case 'pap':A=K.res==='Pointe-à-Pitre'?"Grave, j'habite là-bas !":K.shop.includes('Pointe-à-Pitre')?"Oui, j'y vais souvent pour les boutiques.":"Un peu, j'y passe de temps en temps.";B="J'aime bien le marché et les rues commerçantes, ça bouge.";break;
+  case 'commune':A=`J'habite ${/^(Les|Le) /.test(K.res)?K.res.replace(/^Les /,'aux ').replace(/^Le /,'au '):'à '+K.res}.`;B=K.avant?`Avant, j'habitais à ${K.avant}.`:`C'est ${GP_LIEUX[K.res]||'tranquille'}.`;break;
+  case 'gtbt':A=K.gt==='bt'?"Basse-Terre ! La forêt, les rivières, la Soufrière…":"Grande-Terre, pour les plages.";B=K.gt==='bt'?"C'est plus vert, plus calme.":"Mais Basse-Terre pour les randos, c'est pas mal non plus.";break;
+  case 'destmil':A=K.shop==='Milénis'?"Milénis, c'est plus près de chez moi.":K.shop==='Destreland'?"Destreland, y a plus de boutiques !":`Ni l'un ni l'autre, moi c'est ${K.shop==='Jarry'?'Jarry':'le centre de Pointe-à-Pitre'}.`;B=K.shop==='Destreland'?"On y va souvent le samedi.":"";break;
+  case 'jarry':A=K.shop==='Jarry'?"Oui, tout le temps !":"Pas trop, y a toujours des bouchons là-bas, c'est fatigant.";B=id==='meisha'?"Ma mère a sa boutique là-bas.":K.res==='Baie-Mahault'?"C'est à côté de chez moi.":"";break;
+  case 'habits':A=`Surtout ${K.shop==='centre-ville de Pointe-à-Pitre'?'en ville, à Pointe-à-Pitre':K.shop==='Jarry'?'à Jarry':'à '+K.shop}.`;B=K.sort>.8?"Et un peu en ligne, je l'avoue 😅":"";break;
+  case 'plage':A=K.sort>.6?"Oui, dès que je peux !":"De temps en temps.";B=`Mon coin préféré, c'est ${KB_SORTIE[K.sortie]||K.sortie}.`;break;
+  case 'sagos':A=K.res==='Le Gosier'||/Gosier/.test(K.sortie)?'Le Gosier, sans hésiter.':K.res==='Sainte-Anne'||/Sainte-Anne/.test(K.sortie)?'Sainte-Anne, sans hésiter.':pickR(['Sainte-Anne, pour la plage.','Le Gosier, pour les sorties.']);B="L'eau est trop belle là-bas.";break;
+  case 'sors':A=K.sort>.8?"Oui, tout le temps !":K.sort>.5?"Ça dépend, le week-end surtout.":"Pas tant que ça, je suis plutôt casanier·ère.";B=K.sort>.5?`Souvent ${KB_SORTIE[K.sortie]||K.sortie}.`:"Je préfère les petits groupes.";break;
+  case 'saintes':case 'mg':case 'mq':{const n={saintes:'Les Saintes',mg:'Marie-Galante',mq:'Martinique'}[q];
+   if(ile(n)){A=n==='Martinique'&&id==='ines'?"J'ai grandi là-bas !":`Oui, j'y suis déjà allé·e !`;B=n==='Martinique'&&id==='ines'?"Fort-de-France me manque un peu parfois.":`J'ai adoré ${n==='Les Saintes'?'la baie de Terre-de-Haut':n==='Marie-Galante'?'les plages et les champs de canne':'Fort-de-France'}.`}
+   else{A="Jamais, en vrai.";B=`Il paraît que c'est ${GP_ILES[n]}. J'aimerais bien y aller un jour.`}break}
+  case 'raison':A=K.raison?K.raison[1]:"J'ai pas changé, moi ! Je suis là depuis la seconde.";B=K.raison?(K.lycee?`Avant j'étais dans ${K.lycee}.`:''):"Et toi, pourquoi tu es arrivé·e ici ?";break;
+  case 'fs':A=K.fs;break;
+  case 'parents':A=K.parents;break;
+  case 'apres':A=K.apres;break;
+  case 'wedest':A=K.shop==='Destreland'?"Pas tous, mais souvent le samedi !":"Non, pas trop.";B=K.shop!=='Destreland'?`Moi c'est plutôt ${K.shop}.`:'';break;
+  case 'maison':A=K.sort>.6?"Sortir, toujours !":K.sort<.4?"Rester chez moi, franchement.":"Un peu des deux.";B=K.sort<.4?"Un bon livre, ça me suffit.":"Rester enfermé·e, c'est pas pour moi.";break}
+ let t=tier===0?A:tier===1?A+(B&&Math.random()<.5?' '+B:''):A+(B?' '+B:'');
+ if(K.expr.length&&Math.random()<(tier?.6:.3)){const e=pickR(K.expr);t=Math.random()<.5?e.replace(/^./,c=>c.toUpperCase())+(/[!?]$/.test(e)?' ':', ')+t.replace(/^./,c=>c.toLowerCase()):t.replace(/[.!]?$/,'')+', '+e+(/[!?]$/.test(e)?'':'.')}
+ if(id==='jade'||id==='kylian')t=t.toLowerCase();
+ return {t:genderize(t,id),d:sens?3:tier===2?2:1}}
+function askSheet(id,out){const k=phase().key+id,n=Object.keys(G.done).filter(x=>x.startsWith(k+'ask')).length,left=Math.max(0,3-n);
+ openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>Poser une question</h2><p class="muted" style="margin:2px 0 0">à ${WHO[id].name} · ${left} question${left>1?'s':''} possible${left>1?'s':''} maintenant</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ ${out||''}${ASKQ.map(([c,L])=>`<span class="eyebrow" style="display:block;margin-top:10px">${c}</span><div class="choices">${L.map(([q,l])=>`<button class="choice" type="button" data-ask="${q}" data-id="${id}" ${G.done[k+'ask'+q]||!left?'disabled':''}>${CG(id,l)}</button>`).join('')}</div>`).join('')}
+ <div class="row"><button class="gbtn ghost" type="button" data-pback="${id}">Retour</button></div>`)}
+function askDo(id,q){const k=phase().key+id;if(G.done[k+'ask'+q])return;G.done[k+'ask'+q]=1;G.askd=G.askd||{};const first=!G.askd[id+q];G.askd[id+q]=1;
+ const r=askAnswer(id,q),ql=CG(id,ASKQ.flatMap(x=>x[1]).find(x=>x[0]===q)[1]);const ch=first&&r.d?relChange(id,r.d):'';G.met[id]=(G.met[id]||0)+1;
+ note(`Question à ${WHO[id].name} : ${ql}`);
+ askSheet(id,`<div class="card"><p style="margin:0"><b>Toi :</b> ${esc(ql)}</p><p style="margin:6px 0 0"><b>${WHO[id].name} :</b> « ${esc(r.t)} »</p>${ch?`<small class="muted">${esc(ch)}</small>`:r.closed?'<small class="muted">Sujet sensible : il faudra être plus proches pour en parler.</small>':''}</div>`);saveG();drawHUD()}
+/* pour l'IA : ce que la personne sait et a vécu, et les règles pour en parler */
+function kbNote(id){const K=KB[id];if(!K)return '';
+ return `Ta vie en Guadeloupe : tu habites ${K.res}${K.avant?` (avant : ${K.avant})`:''}. ${K.raison?`Tu es arrivé·e dans ce lycée parce que : ${K.raison[1]}`:'Tu es dans ce lycée depuis la seconde.'} Shopping préféré : ${K.shop}. Sortie préférée : ${K.sortie}. Îles où tu es vraiment allé·e : ${K.iles.join(', ')} (les autres, tu les connais seulement de réputation : n'invente jamais de souvenir là-bas). Expressions que tu utilises parfois : ${K.expr.join(', ')}.${K.sens.length?` Sujet sensible : ${K.sens.includes('pere')?'ta relation avec ton père':'la situation de tes parents'} ; tu n'en parles qu'à tes ami·e·s proches (amitié ≥ 50), sinon tu changes de sujet poliment.`:''}
+Tu connais la Guadeloupe comme n'importe quel·le lycéen·ne d'ici : Pointe-à-Pitre, Les Abymes, Jarry (bouchons), Destreland, Milénis, Bas-du-Fort, Sainte-Anne, Saint-François, Le Gosier, Deshaies, la Soufrière, les chutes du Carbet, Marie-Galante, Les Saintes, La Désirade, la Martinique… Si ${nameOf('me')} est peu proche de toi, réponds brièvement ; si c'est un·e ami·e, donne plus de détails.`}
+
 
 function openNote(ph){
  openSheet(`<div class="who"><div style="flex:1"><h2>Écrire un mot en cachette</h2><p class="muted" style="margin:2px 0 0">${ph.prof[0]} est ${SEV[ph.prof[1]].toLowerCase()} : attention.</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
@@ -4352,6 +4637,7 @@ $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
  if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
+ {const b=t.closest('[data-hw],[data-ask],[data-askopen],[data-pback]');if(b){if(b.dataset.hw)hwAct(b.dataset.hw,b.dataset.hid);else if(b.dataset.ask)askDo(b.dataset.id,b.dataset.ask);else if(b.dataset.askopen)askSheet(b.dataset.askopen);else openPerson(b.dataset.pback);return}}
  if(igClick(t))return;
  {let m;if(m=t.closest('[data-mglv]')){const f=mgLevelGo;mgLevelGo=null;if(f)f(m.dataset.mglv);return}if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
   if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
@@ -4424,6 +4710,9 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-bul]')){const x=G.bulletins.find(y=>y.tri===+b.dataset.bul);if(x)openSheet(bulletinSheet(x),true);return}
  if(b=t.closest('[data-bacres]')){openSheet(bacSheet(G.bac.result),true);return}
  if(b=t.closest('[data-ca]')){classAct(b.dataset.ca);return}
+ if(b=t.closest('[data-cour]')){courDo(b.dataset.cour);return}
+ if(b=t.closest('[data-hw]')){hwAct(b.dataset.hw,b.dataset.hid);return}
+ if(t.closest('[data-vsopen]')){vieScolaireSheet();return}
  if(t.closest('[data-evalgame]')){evalGame();return}
  if(t.closest('[data-clubs]')){openSheet(clubsSheet());return}
  if(b=t.closest('[data-clubgo]')){clubGo(b.dataset.clubgo);return}

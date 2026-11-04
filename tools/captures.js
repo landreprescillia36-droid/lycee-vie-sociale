@@ -20,7 +20,7 @@ const url = 'file://' + path.join(root, 'index.html');
   const phone = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
   phone.on('pageerror', e => errors.push('atelier : ' + e.message));
   await phone.goto(url);
-  await phone.waitForTimeout(600);
+  await phone.waitForSelector('#loader', { state: 'hidden', timeout: 20000 });
   await phone.screenshot({ path: path.join(out, 'atelier-telephone.png'), fullPage: true });
 
   // 1 bis. écran du jeu au format téléphone (en-tête, stories, bouton « Agir »), puis le menu ⚙ et le choix « Agir »
@@ -28,13 +28,14 @@ const url = 'file://' + path.join(root, 'index.html');
   await phone.click('#bPlay');
   await phone.waitForTimeout(400);
   if (await phone.isVisible('#famGo')) await phone.click('#famGo');
-  await phone.waitForTimeout(800);
-  if (await phone.isVisible('#sheet')) await phone.evaluate(() => closeSheet());
+  await phone.waitForSelector('#loader', { state: 'hidden', timeout: 20000 });
+  // pause et fermeture des pop-ups (réveil, avant-cours, événements) pour les captures
+  await phone.evaluate(() => { G.paused = true; cevS = null; cevOpen = false; closeSheet(); });
   await phone.screenshot({ path: path.join(out, 'jeu-telephone.png') });
   await phone.click('#gMenu');
   await phone.waitForTimeout(300);
   await phone.screenshot({ path: path.join(out, 'jeu-menu.png') });
-  await phone.evaluate(() => closeSheet());
+  await phone.evaluate(() => { cevS = null; cevOpen = false; closeSheet(); });
   await phone.click('#gAct');
   await phone.waitForTimeout(300);
   await phone.screenshot({ path: path.join(out, 'jeu-agir.png') });
