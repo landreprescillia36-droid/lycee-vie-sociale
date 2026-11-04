@@ -22,15 +22,15 @@
 <div class="wrap" id="atelier">
   <header>
     <p class="brand">Novalya <span>· dernière année de lycée</span></p>
-    <h1 id="atTitle">Atelier d'avatar</h1>
-    <p id="atSub">Crée le personnage qui entrera au lycée.</p>
+    <h1 id="atTitle">Création de novas</h1>
+    <p id="atSub">Crée le nova qui rentrera au lycée.</p>
     <p class="vers"><span id="atVers"></span> · <button type="button" class="linkbtn" onclick="forceUpdate()">Mettre à jour l'appli</button></p>
   </header>
 
   <section class="idcard" aria-label="Identité">
     <div class="idnames">
         <div class="field">
-          <label for="nom" id="nomLbl">Prénom du personnage</label>
+          <label for="nom" id="nomLbl">Prénom du nova</label>
           <div class="inwrap"><input id="nom" type="text" maxlength="24" autocomplete="off"><button class="dice" id="diceNom" type="button" aria-label="Prénom au hasard" title="Prénom au hasard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button></div>
         </div>
         <div class="field" id="nomFamBox">
@@ -48,7 +48,7 @@
   <div class="studio">
     <section class="stage" aria-label="Aperçu">
       <div class="segs" id="viewSeg" role="group" aria-label="Vue"><button class="sub" type="button" data-pv="portrait">Portrait</button><button class="sub" type="button" data-pv="full">En pied</button></div>
-      <div class="portrait" id="portrait"></div>
+      <div class="pv-wrap"><div class="portrait" id="portrait"></div><button class="colwheel" id="bColors" type="button" aria-label="Couleurs du nova"></button><button class="atmus" id="bAtMus" type="button" aria-label="Musique"></button><div class="colpop" id="colPop" hidden></div></div>
       <div class="adjust" id="adjust" hidden>
         <span class="lbl" id="adjLbl">Ajuster</span>
         <div class="tools" id="tools"></div>

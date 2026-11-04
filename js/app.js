@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='62';
+const APP_VERSION='63';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1553,7 +1553,7 @@ function applyParcours(g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen;Object
 const SEXES=[['f','Fille'],['m','Garçon'],['nb','Non-binaire']],ORIS=['hetero','homo','bi','pan','ace'];
 const oriShort=(o,g)=>({hetero:'Hétéro',homo:g==='f'?'Homosexuelle':g==='m'?'Homosexuel':'Homosexuel·le',bi:'Bi',pan:'Pan',ace:g==='f'?'Asexuelle':g==='m'?'Asexuel':'Asexuel·le'})[o];
 function attracted(o,g,h){if(o==='ace')return false;if(o==='bi'||o==='pan')return true;return o==='homo'?g===h:g!==h}
-function oriHint(g,o){if(o==='ace')return "Pas d'histoire de cœur : ton personnage vivra surtout des amitiés.";const who=o==='bi'||o==='pan'?'tout le monde':o==='homo'?{f:'des filles',m:'des garçons',nb:'des personnes non-binaires'}[g]:{f:'des garçons',m:'des filles',nb:'des filles et des garçons'}[g];return `Ton personnage pourra vivre des histoires de cœur avec ${who}. Chaque camarade a aussi sa propre attirance.`}
+function oriHint(g,o){if(o==='ace')return "Pas d'histoire de cœur : ton personnage vivra surtout des amitiés.";const who=o==='bi'||o==='pan'?'tout le monde':o==='homo'?{f:'des filles',m:'des garçons',nb:'des personnes non-binaires'}[g]:{f:'des garçons',m:'des filles',nb:'des filles et des garçons'}[g];return `Ton nova pourra vivre des histoires de cœur avec ${who}. Chaque camarade a aussi sa propre attirance.`}
 function drawIdent(){drawParcours();if(editFam)return;
  $('segSexe').innerHTML=SEXES.map(([k,l])=>`<button class="sub" type="button" data-sx="${k}" aria-pressed="${state.sexe===k}">${l}</button>`).join('');
  $('segOri').innerHTML=ORIS.map(k=>`<button class="sub" type="button" data-or="${k}" aria-pressed="${state.orient===k}">${oriShort(k,state.sexe)}</button>`).join('');
@@ -3050,7 +3050,7 @@ function sleepNow(){
 }
 
 /* ---------- musique de fond : boucle originale générée en direct (Web Audio) ---------- */
-const MUS={ctx:null,master:null,delay:null,noise:null,timer:null,step:0,next:0,on:false};
+const MUS={ctx:null,master:null,delay:null,noise:null,timer:null,step:0,next:0,on:false,mode:'jeu'};
 const MUSKEY='lycee-musique';
 const musPref=()=>{try{return localStorage.getItem(MUSKEY)!=='off'}catch(e){return true}};
 const NOTEF=n=>440*Math.pow(2,(n-69)/12);
@@ -3076,19 +3076,29 @@ function musNoise(t,vol,type,freq,dur){const c=MUS.ctx,s=c.createBufferSource(),
  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);s.connect(f);f.connect(g);g.connect(MUS.master);s.start(t);s.stop(t+dur+.02)}
 function musKick(t){const c=MUS.ctx,o=c.createOscillator(),g=c.createGain();o.frequency.setValueAtTime(110,t);o.frequency.exponentialRampToValueAtTime(42,t+.14);
  g.gain.setValueAtTime(.32,t);g.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(g);g.connect(MUS.master);o.start(t);o.stop(t+.32)}
-function musStep(st,t){
+/* musique de la création de novas : pop douce et rêveuse (clochettes, accords de piano électrique), plus lente que celle du lycée */
+const A_CH=[[53,57,60,64],[50,53,57,60],[46,50,53,57],[48,52,55,58]],A_BASS=[41,38,34,36];
+const A_MEL=[[72,0,76,79,0,77,76,0, 74,0,0,72,74,0,77,0, 76,0,74,72,0,69,0,72, 70,0,72,0,74,0,0,0],[81,0,79,0,77,0,76,0, 74,0,76,77,0,74,0,0, 72,0,74,0,76,0,79,0, 77,0,76,0,72,0,0,0]];
+function musStepA(st,t){const e=60/72/2,i=st%32,bar=Math.floor(i/8),pos=i%8;
+ if(pos===0)A_CH[bar].forEach((n,k)=>{musTone(NOTEF(n),t+k*.06,e*8,'sine',.04,.08,1.2,true,1400);musTone(NOTEF(n+12),t+k*.06,e*3,'triangle',.012,.01,.8,true,2600)});
+ if(pos===0||pos===5)musTone(NOTEF(A_BASS[bar]),t,e*(pos===0?5:3),'sine',.13,.04,.4,false);
+ if(pos===4)musNoise(t,.025,'bandpass',2600,.18);if(pos%2===0)musNoise(t,.008,'highpass',8000,.04);
+ const m=A_MEL[Math.floor(st/32)%2][i];if(m){musTone(NOTEF(m),t,e*2.2,'sine',.06,.005,.6,true);musTone(NOTEF(m)*2,t,e*1.2,'sine',.015,.005,.4,true)}}
+const musStepLen=()=>MUS.mode==='atelier'?60/72/2:60/84/2;
+function musMode(m){if(MUS.mode===m)return;MUS.mode=m;MUS.step=0}
+function musStep(st,t){if(MUS.mode==='atelier'){musStepA(st,t);return}
  const e=60/84/2,i=st%32,bar=Math.floor(i/8),pos=i%8,ph=G?phase():{type:'matin'},night=G&&(G.min<420||G.min>=1260),calm=ph.type==='eval'||ph.type==='bac';
  if(pos===0)M_CH[bar].forEach((n,k)=>{musTone(NOTEF(n),t,e*8+.4,'triangle',.035,.5,.7,false,950);musTone(NOTEF(n)*1.004,t,e*8+.4,'sine',.03,.6,.7,false)});
  if(pos===0||pos===4||(pos===7&&bar%2))musTone(NOTEF(M_BASS[bar]+(pos===7?7:0)),t,e*(pos===7?1:3),'sine',.16,.02,.2,false);
  if(!night&&!calm){if(pos===0||pos===4)musKick(t);if(pos===2||pos===6)musNoise(t,.05,'bandpass',1800,.12);if(pos%2)musNoise(t,.018,'highpass',7000,.05)}
  const m=M_MEL[Math.floor(st/32)%2][i];if(m&&!calm)musTone(NOTEF(m),t,e*1.8,'sine',night?.045:.07,.02,.3,true);
 }
-function musTick(){const c=MUS.ctx;while(MUS.next<c.currentTime+.15){musStep(MUS.step,MUS.next);MUS.next+=60/84/2;MUS.step=(MUS.step+1)%64}}
+function musTick(){const c=MUS.ctx;while(MUS.next<c.currentTime+.15){musStep(MUS.step,MUS.next);MUS.next+=musStepLen();MUS.step=(MUS.step+1)%64}}
 function musStart(){if(!musInit())return;const c=MUS.ctx;if(c.state==='suspended')c.resume();if(MUS.on)return;MUS.on=true;MUS.next=c.currentTime+.1;MUS.step=0;MUS.master.gain.cancelScheduledValues(c.currentTime);MUS.master.gain.setValueAtTime(.001,c.currentTime);MUS.master.gain.linearRampToValueAtTime(.32,c.currentTime+1.5);MUS.timer=setInterval(musTick,25);drawMusicBtn()}
 function musStop(){if(!MUS.on)return;MUS.on=false;clearInterval(MUS.timer);if(MUS.ctx){const c=MUS.ctx;MUS.master.gain.cancelScheduledValues(c.currentTime);MUS.master.gain.setValueAtTime(MUS.master.gain.value,c.currentTime);MUS.master.gain.linearRampToValueAtTime(.001,c.currentTime+.4)}drawMusicBtn()}
 function musAuto(){if(musPref())musStart();else drawMusicBtn()}
-function drawMusicBtn(){const b=$('gMusic');if(!b)return;const on=MUS.on;b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>${on?'':'<path d="M3 3l18 18"/>'}</svg>`;b.setAttribute('aria-label',on?'Couper la musique':'Activer la musique');b.setAttribute('aria-pressed',on)}
-document.addEventListener('pointerdown',()=>{if(!$('game').hidden&&musPref()&&!MUS.on)musStart()});
+function drawMusicBtn(){const ab=$('bAtMus');if(ab){ab.innerHTML=MUS.on?'🎵':'🔇';ab.setAttribute('aria-pressed',MUS.on);ab.setAttribute('aria-label',MUS.on?'Couper la musique':'Activer la musique')}const b=$('gMusic');if(!b)return;const on=MUS.on;b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>${on?'':'<path d="M3 3l18 18"/>'}</svg>`;b.setAttribute('aria-label',on?'Couper la musique':'Activer la musique');b.setAttribute('aria-pressed',on)}
+document.addEventListener('pointerdown',()=>{musMode($('game').hidden?'atelier':'jeu');if(musPref()&&!MUS.on)musStart()});
 document.addEventListener('visibilitychange',()=>{if(MUS.ctx){if(document.hidden)MUS.ctx.suspend();else if(MUS.on)MUS.ctx.resume()}});
 
 /* ---------- HUD ---------- */
@@ -4948,7 +4958,7 @@ $('famGo').onclick=()=>{
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
  note('Bienvenue au lycée ! Les cours commencent à 8h.');saveG();showGame();feteDay();saveG();
 };
-function showGame(){
+function showGame(){musMode('jeu');
  if(!G){showFamille(false);return}
  {const l=$('loader');if(l&&l.hidden&&l.querySelector){loadShow('Chargement du lycée…');setTimeout(()=>loadHide(),0)}}
  $('atelier').hidden=true;$('famille').hidden=true;$('game').hidden=false;document.body.classList.add('playing');
@@ -4956,10 +4966,10 @@ function showGame(){
  view='home';drawGame();window.scrollTo(0,0);musAuto();
 }
 function setAtelierMode(){const fm=!!editFam,f=fm&&famDraft[editFam.i];
- $('atTitle').textContent=fm?`Apparence de ${state.name||f.role}`:"Atelier d'avatar";
- $('atSub').textContent=fm?`${f.role} · visage, cheveux et tenue.`:'Crée le personnage qui entrera au lycée.';
- $('idBlock').hidden=fm;$('bSave').hidden=fm;$('bPlay').hidden=fm;$('codeBox').hidden=fm;$('bFamDone').hidden=!fm;$('nomLbl').textContent=fm?'Prénom':'Prénom du personnage';$('nomFamBox').hidden=fm;}
-function editFamLook(i){withLoader("Ouverture de l'atelier…",()=>editFamLook0(i))}
+ $('atTitle').textContent=fm?`Apparence de ${state.name||f.role}`:'Création de novas';
+ $('atSub').textContent=fm?`${f.role} · visage, cheveux et tenue.`:'Crée le nova qui rentrera au lycée.';
+ $('idBlock').hidden=fm;$('bSave').hidden=fm;$('bPlay').hidden=fm;$('codeBox').hidden=fm;$('bFamDone').hidden=!fm;$('nomLbl').textContent=fm?'Prénom':'Prénom du nova';$('nomFamBox').hidden=fm;}
+function editFamLook(i){withLoader('Création de novas…',()=>editFamLook0(i))}
 function editFamLook0(i){
  const f=famDraft[i];editFam={i,saved:state};
  state=normalize(f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i)));state.name=f.name;
@@ -4984,9 +4994,9 @@ function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;
   if(now<end&&(now-ldT0<(min||1500)||!okSince||now-okSince<600)){setTimeout(chk,120);return}fin()};
  (document.fonts&&document.fonts.ready||Promise.resolve()).then(chk,chk)}
 function withLoader(t,fn){const l=$('loader');if(!l||!l.querySelector||typeof requestAnimationFrame!=='function'){fn();return}loadShow(t);requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{loadHide()}},40))}
-function showAtelier(){withLoader("Ouverture de l'atelier…",showAtelier0)}
+function showAtelier(){withLoader('Création de novas…',showAtelier0)}
 function showAtelier0(){
- closeSheet();musStop();$('game').hidden=true;$('gFabs').hidden=true;$('famille').hidden=true;document.body.classList.remove('playing');$('atelier').hidden=false;
+ closeSheet();musMode('atelier');$('game').hidden=true;$('gFabs').hidden=true;$('famille').hidden=true;document.body.classList.remove('playing');$('atelier').hidden=false;
  $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;refresh();window.scrollTo(0,0);
 }
 $('bPlay').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(me()))}catch(e){}if(G)showGame();else showFamille(false)};
@@ -4994,5 +5004,14 @@ $('bPlay').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(me()))}catch
 nom.value=me().name;$('nomFam').value=me().nom||'';drawTabs();drawSubs();refresh();
 $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;
 $('bRestart').onclick=askRestart;
+/* cercle des couleurs au-dessus du nova : toutes les couleurs du personnage au même endroit */
+function colPopDraw(){const P=$('colPop'),jean=typeof JEAN_ART!=='undefined'&&JEAN_ART[state.bottom],dr=state.dress&&state.dress!=='aucune';
+ const rows=[['skin','Peau',SKIN],['hairColor','Cheveux',HAIR],['iris','Yeux',IRIS],...(dr?[['dressColor','Robe',CLOTH]]:[['topColor','Haut',CLOTH],...(jean?[]:[['bottomColor','Bas',BOTC]])]),['shoesColor','Chaussures',SHOEC]];
+ P.innerHTML=`<div class="colpop-h"><b>Couleurs</b><button type="button" class="linkbtn" data-colclose>Fermer</button></div>`+rows.map(([k,l,C])=>`<div class="colrow"><span>${l}</span><div class="colsw">${C.map(c=>`<button type="button" class="sw${state[k]===c?' on':''}" style="background:${c}" data-colk="${k}" data-colv="${c}" aria-label="${l} ${c}"></button>`).join('')}</div></div>`).join('')}
+$('bColors').onclick=()=>{const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false}else P.hidden=true};
+$('colPop').addEventListener('click',e=>{const b=e.target.closest('[data-colk]');if(b){state[b.dataset.colk]=b.dataset.colv;refresh();colPopDraw();return}if(e.target.closest('[data-colclose]'))$('colPop').hidden=true});
+$('bAtMus').onclick=e=>{e.stopPropagation();musMode('atelier');const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(x){}on?musStart():musStop();drawMusicBtn()};
+drawMusicBtn();
+
 if(G)showGame();
 loadHide(2500);
