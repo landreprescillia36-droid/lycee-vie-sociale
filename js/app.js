@@ -440,28 +440,30 @@ function jeanSVG(G,s,p,t){const b=s.bottomColor,PR=JEAN_PROF[t],Y0=376,wx=sideX(
  const SL=JEAN_PROF.slim,body=y=>y<480?sideX(G,Math.min(y,470))+2:legX(G,lerpT(LEG_O,y))+2;
  const outer=y=>{const u=Math.min(1,(y-Y0)/(856-Y0)),uu=(y-Y0)/(HEM-Y0);if(t==='bermuda')return Math.max(body(y),body(y)+(sm(PR.o,uu)-sm(SL.o,u))*HU*.6);if(t==='slim')return body(y);let bs=0;for(let j=-4;j<=4;j++)bs+=body(Math.max(Y0,y+j*12));bs/=9;return Math.max(body(y),bs+(sm(PR.o,u)-sm(SL.o,u))*HU)};/* autres coupes : corps adouci + leur écart avec le slim sur la planche */
  const CR=Y0+(HEM-Y0)*.2;/* entrejambe */
- const inner=y=>{if(y<CR)return 0;const u=Math.min(1,(y-Y0)/(856-Y0));const bi=legX(G,lerpT(LEG_I,y))-1;return t==='slim'?Math.max(1.2,bi):Math.max(1.2,Math.min(bi,sm(PR.g,u)*HU))};
- const leg=k=>{let o=`M200,${Y0+4} L${f(200+k*wx)},${Y0}`;for(let y=Y0+4;y<=HEM;y+=6)o+=` L${f(200+k*outer(y))},${y}`;o+=` L${f(200+k*outer(HEM))},${HEM} Q${f(200+k*(outer(HEM)+inner(HEM))/2)},${HEM+4} ${f(200+k*inner(HEM))},${HEM}`;for(let y=HEM;y>=CR;y-=6)o+=` L${f(200+k*inner(y))},${y}`;return o+` L200,${CR-10}Z`};
+ const inner0=y=>{if(y<CR)return 0;const u=Math.min(1,(y-Y0)/(856-Y0));const bi=legX(G,lerpT(LEG_I,y))-1;return t==='slim'?Math.max(1.2,bi):Math.max(1.2,Math.min(bi,sm(PR.g,u)*HU))};
+ const inner=y=>y<CR?0:inner0(y)*Math.min(1,(y-CR)/30);/* entrejambe sans encoche */
+ const leg=k=>{let o=`M200,${Y0+4} L${f(200+k*wx)},${Y0}`;for(let y=Y0+3;y<=HEM;y+=3)o+=` L${f(200+k*outer(y))},${y}`;o+=` L${f(200+k*outer(HEM))},${HEM} Q${f(200+k*(outer(HEM)+inner(HEM))/2)},${HEM+4} ${f(200+k*inner(HEM))},${HEM}`;for(let y=HEM;y>=CR;y-=3)o+=` L${f(200+k*inner(y))},${y}`;return o+` L200,${CR-10}Z`};
  let o=`<defs><linearGradient id="${q}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.25)}"/><stop offset=".3" stop-color="${b}"/><stop offset=".5" stop-color="${shade(b,.06)}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.25)}"/></linearGradient>
- <pattern id="${q}tw" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V4" stroke="#fff" stroke-opacity=".09" stroke-width="1.2"/><path d="M2,0 V4" stroke="#000" stroke-opacity=".06" stroke-width=".8"/></pattern>
+ <pattern id="${q}tw" width="1.8" height="1.8" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)"><path d="M0,0 V1.8" stroke="#fff" stroke-opacity=".07" stroke-width=".6"/><path d="M.9,0 V1.8" stroke="#000" stroke-opacity=".05" stroke-width=".4"/></pattern><linearGradient id="${q}fv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity=".13"/><stop offset=".6" stop-color="#fff" stop-opacity=".1"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
  <radialGradient id="${q}f" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>`;
- [-1,1].forEach(k=>{const D=leg(k);o+=`<path d="${D}" fill="url(#${q}g)"/><path d="${D}" fill="url(#${q}tw)"/>`;
-  /* délavé des cuisses et des genoux, plis de l'aine (moustaches) */
-  const xm=200+k*(outer(560)+inner(560))/2;o+=`<ellipse cx="${f(xm)}" cy="${f(Y0+(HEM-Y0)*.33)}" rx="${f((outer(560)-inner(560))*.3)}" ry="${f((HEM-Y0)*.16)}" fill="url(#${q}f)"/>`;
-  if(t!=='bermuda')o+=`<ellipse cx="${f(200+k*(outer(680)+inner(680))/2)}" cy="680" rx="${f((outer(680)-inner(680))*.28)}" ry="30" fill="url(#${q}f)" opacity=".7"/>`;
-  [0,1,2].forEach(i=>{o+=LN(`M${f(200+k*(inner(CR+6)+3))},${CR+4+i*6} Q${f(200+k*(inner(CR+6)+12))},${CR+i*6} ${f(200+k*(inner(CR+6)+22+i*3))},${CR-6+i*6}`,dk,1,.22)});
+ [-1,1].forEach(k=>{const D=leg(k),cid=q+'c'+(k<0?'L':'R');o+=`<defs><clipPath id="${cid}"><path d="${D}"/></clipPath></defs><path d="${D}" fill="url(#${q}g)"/><path d="${D}" fill="url(#${q}tw)"/><g clip-path="url(#${cid})">`;
+  /* délavé doux sur le devant de la jambe (bande verticale), contour net */
+  o+=`<path d="${D}" fill="url(#${q}fv)"/>`;
+  [0,1].forEach(i=>{o+=LN(`M${f(200+k*(3+i*2))},${CR-4+i*7} Q${f(200+k*(12+i*3))},${CR-8+i*7} ${f(200+k*(24+i*4))},${CR-14+i*7}`,dk,.8,.18)});
   /* couture extérieure, ourlet */
   o+=LN(`M${f(200+k*(wx-2))},${Y0+14} ${Array.from({length:Math.floor((HEM-Y0-20)/6)},(_,j)=>{const y=Y0+20+j*6;return `L${f(200+k*(outer(y)-1.6))},${y}`}).join(' ')}`,dk,1,.35);
-  if(t!=='bermuda')o+=LN(`M${f(200+k*(outer(HEM-8)-.5))},${HEM-7} L${f(200+k*(inner(HEM-8)+.5))},${HEM-7}`,ts,1,.6,'2.5 2');
+  if(t!=='bermuda')o+=LN(`M${f(200+k*(outer(HEM-6)-.8))},${HEM-6} L${f(200+k*(inner(HEM-6)+.8))},${HEM-6}`,ts,.9,.75,'2 1.6')+LN(`M${f(200+k*(outer(HEM-9)-.8))},${HEM-9} L${f(200+k*(inner(HEM-9)+.8))},${HEM-9}`,shade(b,-.4),.8,.4);
   /* poche avant arrondie + surpiqûre, petite poche */
-  o+=LN(`M${f(200+k*(wx-2))},${Y0+16} Q${f(200+k*(wx-14))},${Y0+44} ${200+k*24},${Y0+17}`,dk,1.2,.45)+LN(`M${f(200+k*(wx-3.5))},${Y0+17} Q${f(200+k*(wx-15.5))},${Y0+42} ${200+k*25.5},${Y0+18}`,ts,1.1,.85,'2.5 2');
-  if(k<0)o+=LN(`M${f(200-wx+8)},${Y0+20} L${f(200-wx+14)},${Y0+28} M${f(200-wx+5)},${Y0+24} L${f(200-wx+11)},${Y0+32}`,ts,1,.6,'2 2')});
+  const pa=200+k*Math.max(18,wx*.45),pe=200+k*(outer(Y0+42)-.5);
+  o+=`<path d="M${f(pa)},${Y0+13} Q${f(pa+k*4)},${Y0+38} ${f(pe)},${Y0+42} L${f(pe)},${Y0+13}Z" fill="${shade(b,-.12)}" opacity=".55"/>`+LN(`M${f(pa)},${Y0+13} Q${f(pa+k*4)},${Y0+38} ${f(pe)},${Y0+42}`,shade(b,-.45),1.2,.8)+LN(`M${f(pa-k*2.2)},${Y0+13} Q${f(pa+k*2.5)},${Y0+41} ${f(pe)},${Y0+45}`,ts,.9,.9,'2 1.6');
+  if(k>0)o+=LN(`M${f(pa+k*5)},${Y0+15} L${f(pa+k*5)},${Y0+26} L${f(pe-k*6)},${Y0+28} L${f(pe-k*6)},${Y0+15}`,ts,.8,.75,'2 1.6');
+  o+=`</g><path d="${D}" fill="none" stroke="${shade(b,-.42)}" stroke-width="1" stroke-linejoin="round" opacity=".7"/>`});
  /* ceinture, passants, bouton, braguette */
  o+=`<path d="M${f(200-wx)},${Y0} Q200,${Y0+5} ${f(200+wx)},${Y0} L${f(200+wx+.6)},${Y0+13} Q200,${Y0+18} ${f(200-wx-.6)},${Y0+13}Z" fill="${shade(b,.05)}"/><path d="M${f(200-wx)},${Y0} Q200,${Y0+5} ${f(200+wx)},${Y0} L${f(200+wx+.6)},${Y0+13} Q200,${Y0+18} ${f(200-wx-.6)},${Y0+13}Z" fill="url(#${q}tw)"/>`
-  +LN(`M${f(200-wx)},${Y0+2.5} Q200,${Y0+7.5} ${f(200+wx)},${Y0+2.5}`,ts,1,.8,'2.5 2')+LN(`M${f(200-wx-.6)},${Y0+11} Q200,${Y0+16} ${f(200+wx+.6)},${Y0+11}`,ts,1,.8,'2.5 2')+LN(`M${f(200-wx-.6)},${Y0+13} Q200,${Y0+18} ${f(200+wx+.6)},${Y0+13}`,dk,1.2,.5)
+  +LN(`M${f(200-wx)},${Y0+2.5} Q200,${Y0+7.5} ${f(200+wx)},${Y0+2.5}`,ts,.9,.9,'2 1.6')+LN(`M${f(200-wx-.6)},${Y0+11} Q200,${Y0+16} ${f(200+wx+.6)},${Y0+11}`,ts,.9,.9,'2 1.6')+LN(`M${f(200-wx-.6)},${Y0+13} Q200,${Y0+18} ${f(200+wx+.6)},${Y0+13}`,dk,1.2,.5)
   +[-1,1].map(k=>[wx-7,22].map(x=>`<rect x="${f(200+k*x-1.7)}" y="${Y0-1}" width="3.4" height="15" rx="1.2" fill="${shade(b,-.12)}"/>`).join('')).join('')
   +`<circle cx="200" cy="${Y0+7.5}" r="2.6" fill="#c8a24a"/><circle cx="200" cy="${Y0+7.5}" r="1.2" fill="#a07d2e"/>`
-  +LN(`M205,${Y0+16} L205,${CR-16} Q205,${CR-8} 199,${CR-4}`,ts,1.1,.85,'2.5 2')+LN(`M200,${Y0+15} L200,${CR-6}`,dk,1.2,.4);
+  +LN(`M205,${Y0+16} L205,${CR-16} Q205,${CR-8} 199,${CR-4}`,ts,.9,.9,'2 1.6')+LN(`M200,${Y0+15} L200,${CR-6}`,dk,1.2,.4);
  if(t==='bermuda')[-1,1].forEach(k=>{const y=HEM-12,a=200+k*(outer(y)+1.5),c=200+k*(inner(y)-.5);o+=`<path d="M${f(a)},${y} L${f(c)},${y} L${f(c)},${HEM+2} Q${f((a+c)/2)},${HEM+5} ${f(a)},${HEM+2}Z" fill="${shade(b,.14)}"/>`+LN(`M${f(a)},${y} L${f(c)},${y}`,dk,1.2,.55)+LN(`M${f(a)},${y+5} L${f(c)},${y+5}`,'#fff',.8,.25)});
  return o}
 function jupeSVG(G,s,p,t,wx0){const b=s.bottomColor,H=G.HH,PR=JUPE_PROF[t],R=PR.r,n=R.length-1,Y0=376,wx=sideX(G,Y0)+1.5,WR=46.3,hy=Math.round(Y0+JUPE_PROF.jpatineuse.h*WR)/* toutes les jupes à la longueur de la jupe patineuse (choix de Prescillia) */,dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
