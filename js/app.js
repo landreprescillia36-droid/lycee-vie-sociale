@@ -693,15 +693,16 @@ function jacketParts(G,s,p,sx){
  return {torso:t,sleeves:sl};
 }
 /* colliers des filles d'après ta planche « Accessoires » : pendentif rond, pendentif diamant, collier prénom, multi-rangs, choker */
-function chainV(y0,yv,w){const pts=[];for(let i=0;i<=20;i++){const t=i/20,x=(1-t)*(1-t)*(200-w)+2*(1-t)*t*200+t*t*(200+w),y=(1-t)*(1-t)*y0+2*(1-t)*t*(2*yv-y0)+t*t*y0;pts.push([x,y])}
- const d='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L');return LN(d,GOLD_D,1.6,.9)+LN(d,GOLD,1,1)}
+/* chaîne qui part des côtés du cou (là où il rejoint les épaules), épouse la base du cou puis descend en V sur le buste */
+function chainV(y0,yv,w){const sy=212+(y0-224)*.4,d=`M183.5,${sy} C${200-w*.75},${sy+8} ${200-w*.45},${yv-5} 200,${yv} C${200+w*.45},${yv-5} ${200+w*.75},${sy+8} 216.5,${sy}`;
+ return `<path d="M183.5,${sy} Q200,${sy-7} 216.5,${sy}" fill="none" stroke="${GOLD_D}" stroke-width="1.1" opacity=".35"/>`+LN(d,GOLD_D,1.3,.85)+LN(d,GOLD,.8,1)}
 function necklaceSVG(s){const n=s.necklace,gem=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r+1}" fill="${GOLD}"/><circle cx="${x}" cy="${y}" r="${r}" fill="#eef3f7"/><path d="M${x-r*.6},${y} L${x},${y-r*.6} L${x+r*.6},${y} L${x},${y+r*.6}Z" fill="#fff"/>`;
  const losange=(x,y,h,band)=>`<path d="M${x},${y-h} L${x+h*.7},${y} L${x},${y+h} L${x-h*.7},${y}Z" fill="${band?'#c9ced4':GOLD}"/><path d="M${x},${y-h+1.6} L${x+h*.7-1.4},${y} L${x},${y+h-1.6} L${x-h*.7+1.4},${y}Z" fill="#f1f5f8"/><path d="M${x},${y-h+3} L${x+1.6},${y} L${x},${y+h-3} L${x-1.6},${y}Z" fill="#fff"/>`;
  switch(n){
-  case 'pendrond':return chainV(224,262,24)+LN('M200,261 L200,265',GOLD,1)+gem(200,270,4.4);
-  case 'penddiam':return chainV(224,262,24)+LN('M200,261 L200,263',GOLD,1)+losange(200,272,8);
-  case 'prenom':{const t=esc((s.name||'Baby').slice(0,10));return chainV(224,258,24)+`<text x="200" y="270" text-anchor="middle" font-family="'Brush Script MT','Segoe Script','Lucida Handwriting',cursive" font-style="italic" font-weight="700" font-size="${t.length>6?12:15}" fill="${GOLD}" stroke="${GOLD_D}" stroke-width=".35">${t}</text>`}
-  case 'multi':return chainV(220,244,23)+chainV(223,266,25)+chainV(226,290,27)+[[244,0],[266,0],[290,0]].map(([y])=>gem(200,y+1,1.8)).join('')+[-1,1].map(k=>`<circle cx="${200+k*11}" cy="262" r="1.4" fill="${GOLD_L}"/><circle cx="${200+k*13}" cy="286" r="1.4" fill="${GOLD_L}"/><circle cx="${200+k*9}" cy="241" r="1.2" fill="${GOLD_L}"/>`).join('');
+  case 'pendrond':return chainV(224,246,22)+LN('M200,245 L200,248',GOLD,.8)+gem(200,252,3.6);
+  case 'penddiam':return chainV(224,246,22)+LN('M200,245 L200,247',GOLD,.8)+losange(200,253,6);
+  case 'prenom':{const t=esc((s.name||'Baby').slice(0,10));return chainV(224,244,22)+`<text x="200" y="253" text-anchor="middle" font-family="'Brush Script MT','Segoe Script','Lucida Handwriting',cursive" font-style="italic" font-weight="700" font-size="${t.length>6?9:11}" fill="${GOLD}" stroke="${GOLD_D}" stroke-width=".35">${t}</text>`}
+  case 'multi':return chainV(220,236,20)+chainV(224,250,23)+chainV(228,266,26)+[[236,0],[250,0],[266,0]].map(([y])=>gem(200,y+1,1.5)).join('')+[-1,1].map(k=>`<circle cx="${200+k*8}" cy="247" r="1.1" fill="${GOLD_L}"/><circle cx="${200+k*10}" cy="262" r="1.1" fill="${GOLD_L}"/>`).join('');
   case 'choker':return `<path d="M185,198 Q200,203 215,198 L215,206 Q200,211 185,206Z" fill="#141214"/><path d="M185,199 Q200,204 215,199" fill="none" stroke="#3a3438" stroke-width="1"/>`+LN('M200,208 L200,212','#c9ced4',1)+losange(200,219,6.5,1);
   default:return ''}}
 function accSVG(G,s){let o=necklaceSVG(s);const bc=s.bagColor,bd=shade(bc,-.3);
