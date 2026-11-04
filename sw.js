@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v49';
+const VERSION = 'v50';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -82,8 +82,18 @@ const FICHIERS = [
   ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha'].map(n => `assets/chambres/${n}.jpg`),
 ];
 
+/* Connexion lente : les images, polices et icônes déjà téléchargées sont reprises de l'ancien cache (pas de re-téléchargement
+   à chaque mise à jour) ; seuls le code et les nouveaux fichiers passent par le réseau. */
+const LOURD = u => /^(assets|fonts|icons)\//.test(u);
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FICHIERS.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil((async () => {
+    const c = await caches.open(CACHE), olds = (await caches.keys()).filter(k => k.startsWith('lycee-') && k !== CACHE);
+    await Promise.all(FICHIERS.map(async u => {
+      if (LOURD(u)) for (const k of olds) { const r = await (await caches.open(k)).match(u); if (r) { await c.put(u, r); return } }
+      try { await c.add(new Request(u, { cache: 'reload' })) } catch (_) { /* fichier repris plus tard, à la demande */ }
+    }));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', e => {
@@ -92,16 +102,25 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
+const vu = new Set();   // images revérifiées en arrière-plan une fois par session
 self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const req = e.request, url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== location.origin) return;
+  const rel = url.pathname.replace(/^.*?\/(assets|fonts|icons)\//, '$1/');
   e.respondWith(caches.open(CACHE).then(async c => {
-    try {
-      const r = await fetch(req, { cache: 'no-cache' });   // revalide auprès du serveur : jamais de vieille copie
+    if (LOURD(rel)) {                                      // images : tout de suite depuis le cache, mise à jour discrète ensuite
+      const hit = await c.match(req, { ignoreSearch: true });
+      const maj = () => fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r });
+      if (hit) { if (!vu.has(rel)) { vu.add(rel); e.waitUntil(maj().catch(() => {})) } return hit }
+      try { return await maj() } catch (_) { return Response.error() }
+    }
+    try {                                                  // code : réseau d'abord, mais pas plus de 4 s d'attente
+      const r = await Promise.race([fetch(req, { cache: 'no-cache' }), new Promise((_, no) => setTimeout(() => no(new Error('lent')), 4000))]);
       if (r.ok) c.put(req, r.clone());
       return r;
-    } catch (_) {                                          // hors ligne : la copie en cache
-      return (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? c.match('index.html') : Response.error());
+    } catch (_) {                                          // hors ligne ou trop lent : la copie en cache
+      const hit = (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? await c.match('index.html') : null);
+      return hit || fetch(req);
     }
   }));
 });
