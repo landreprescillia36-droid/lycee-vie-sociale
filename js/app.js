@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='67';
+const APP_VERSION='68';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -318,14 +318,16 @@ function nose(t,sk,skDD){
  }}
 /* bouches décalquées sur la planche de Prescillia (MOUTH_ART, js/bouches-art.js) : vrais pixels du dessin ;
    la couleur des lèvres suit la peau (même rapport que lip=mix(peau, rose) entre la peau du joueur et celle du modèle) */
-const MOUTHS=typeof MOUTH_ART!=='undefined'?Object.keys(MOUTH_ART):['naturelle'],MOUTH_REF_SKIN='#a65e3f',MOUTH_OLD={sourire:'remontante',grand:'entrouverte',neutre:'fermee',surpris:'entrouverte',malicieux:'asymetrique',moue:'ronde'};
+const MOUTHS=typeof MOUTH_ART!=='undefined'?Object.keys(MOUTH_ART):['naturelle'],MOUTHS_G=MOUTHS.filter(k=>/^g[a-z]/.test(k)&&MOUTH_ART[k].length>4),MOUTHS_F=MOUTHS.filter(k=>!MOUTHS_G.includes(k)),MOUTH_REF_SKIN='#a65e3f',MOUTH_OLD={sourire:'remontante',grand:'entrouverte',neutre:'fermee',surpris:'entrouverte',malicieux:'asymetrique',moue:'ronde'};
+const MOUTH_TEETH=['ggrand'];
 function mouth(t,lip,sk,p){
  if(typeof MOUTH_ART==='undefined')return '';
- const k=MOUTH_ART[t]?t:(MOUTH_OLD[t]||'naturelle'),[x,y,w,h]=MOUTH_ART[k];
- const g=rgb(lip).map((v,i)=>v/Math.max(1,rgb(mix(MOUTH_REF_SKIN,'#d9546a',.42))[i]));
+ const k=MOUTH_ART[t]?t:(MOUTH_OLD[t]||'naturelle'),[x,y,w,h,bsk]=MOUTH_ART[k];
+ /* bouches des garçons : la zone garde la peau de la planche, recolorée vers la peau du nova */
+ const g=bsk?rgb(sk).map((v,i)=>v/Math.max(1,rgb(bsk)[i])):rgb(lip).map((v,i)=>v/Math.max(1,rgb(mix(MOUTH_REF_SKIN,'#d9546a',.42))[i]));
  const same=g.every(v=>Math.abs(v-1)<.03),id=p+'mf';
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
-  +`<image href="assets/bouches/${k}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`;
+  +`<image href="assets/bouches/${k}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`+(MOUTH_TEETH.includes(k)?`<image href="assets/bouches/${k}-dents.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:'');
 }
 /* ---------- corps réaliste ---------- */
 const GEO={f:{SH:70,WH:50,HH:59,au:15,f:1},m:{SH:80,WH:58,HH:58,au:18,f:0},nb:{SH:74,WH:53,HH:58,au:16,f:0}};
@@ -1257,6 +1259,7 @@ function glasses(t,dx,cy,sc,ex){
 /* ---------- données de l'interface ---------- */
 const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En cœur',rectangle:'Rectangulaire',diamant:'Diamant',triangle:'Triangle inversé',trapeze:'Trapèze',losange:'Losange',anguleux:'Anguleux',allonge:'Allongé',nets:'Nets',
  bouton:'Bouton',rond:'Rond doux',naturel:'Naturel',doux:'Doux',petit:'Petit',pointu:'Fin',aucun:'Aucun',
+ gfermee:'Fermée',gfine:'Fine',gmoyenne:'Moyenne',glarge:'Large',gpleine:'Pleine',gsourirel:'Sourire léger',gsourire:'Sourire',ggrand:'Grand sourire',gneutre:'Neutre',gserieux:'Sérieux',gnasale:'Bouche nasale',
  fine:'Fine',moyenne:'Moyenne',pleine:'Pleine',coeur:'En cœur',rectangle:'Rectangulaire',ronde:'Ronde',pulpeuse:'Légèrement pulpeuse',trespulpeuse:'Très pulpeuse',asymetrique:'Asymétrique',superfine:'Avec une lèvre supérieure fine',inferieure:'Avec une lèvre inférieure plus pleine',tombante:'Aux commissures tombantes',remontante:'Aux commissures remontantes',entrouverte:'Bouche légèrement ouverte',fermee:'Bouche fermée',glossy:'Style glossy',mat:'Style mat',ombre:'Style ombré',glosscentre:'Avec gloss au centre',naturelle:'Naturelle',
  fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
  grands:'Grands',brillants:'Brillants',amande:'Amandes',ronds:'Ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
@@ -1489,7 +1492,7 @@ const TABS=[
   {id:'face',label:'Forme',opts:FACE_KEYS,vb:hv('60 40 280 300')},
   {id:'skin',label:'Peau',cols:SKIN},
   {id:'nose',label:'Nez',opts:['bouton','rond','petit','pointu','aucun'],vb:hv('150 208 100 80'),adj:'nose'},
-  {id:'mouth',label:'Bouche',opts:MOUTHS,vb:hv('145 248 110 76'),adj:'mouth'},
+  {id:'mouth',label:'Bouche',opts:MOUTHS_F,optsM:MOUTHS_G,vb:hv('145 248 110 76'),adj:'mouth'},
   {id:'freckles',label:'Taches de rousseur',opts:['aucune','legeres','beaucoup'],vb:hv('115 195 170 95')},
   {id:'barbe',label:'Barbe',noF:1,opts:['aucune','duvet','barbe3j','moustache','bouc','collier','courte'],vb:hv('100 215 200 125')}]},
  {label:'Yeux',subs:[
@@ -1530,7 +1533,10 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 const BO_F=['puce','pcercles','gcercles','perles','etoile'],COL_F=['pendrond','penddiam','prenom','multi','choker'];
 function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anneaux'):BO_F.includes(s.earrings)?s.earrings:'aucune',co=COL_F.includes(s.necklace)?s.necklace:'aucun';
  if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace===co&&s.glasses==='aucune'&&s.earrings===bo)return s;return {...s,hat:'aucun',bag:'aucun',necklace:co,glasses:'aucune',earrings:bo}}
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(s)}
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(boucheSexe(s))}
+/* bouches : les garçons ont les bouches de leur planche, les filles celles de la leur */
+const MOUTH_GF={fine:'gfine',moyenne:'gmoyenne',pleine:'gpleine',remontante:'gsourirel',fermee:'gfermee',naturelle:'gmoyenne',superfine:'gfine',rectangle:'glarge',entrouverte:'ggrand'};
+function boucheSexe(s){if(typeof MOUTH_ART==='undefined')return s;const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
 function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];return s}
@@ -1587,7 +1593,7 @@ const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'amande',cils:'naturels',iris
  m:{face:'allonge',skin:SKIN[2],eyes:'amande',cils:'naturels',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
 const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
-$('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
+$('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
 function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
 function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
@@ -1620,7 +1626,7 @@ function drawGrid(){
   grid.innerHTML=S.cols.map(c=>`<button class="sw" type="button" data-v="${c}" aria-label="Couleur ${c}" aria-pressed="${state[S.id]===c}" style="background:${c}"></button>`).join('');}
  else{grid.className='grid';
   grid.className='grid'+(S.tall?' tall':'');
-  grid.innerHTML=S.opts.map((o,i)=>`<button class="opt" type="button" data-v="${o}" aria-pressed="${state[S.id]===o}"><span class="th">${render({...state,[S.id]:o},S.vb,'t'+i,!!S.bg)}</span><span>${S.tall?bodyLbl(o):(L[o]||o)}</span></button>`).join('');}
+  grid.innerHTML=(S.optsM&&state.sexe==='m'?S.optsM:S.opts).map((o,i)=>`<button class="opt" type="button" data-v="${o}" aria-pressed="${state[S.id]===o}"><span class="th">${render({...state,[S.id]:o},S.vb,'t'+i,!!S.bg)}</span><span>${S.tall?bodyLbl(o):(L[o]||o)}</span></button>`).join('');}
  const A=S.adj&&ADJ[S.adj];
  adjust.hidden=!A;
  if(A){$('adjLbl').textContent=A.label;
@@ -1719,7 +1725,7 @@ const NPC_LOOK={ines:{sexe:'f',face:'ovale',skin:'#d4975f',eyes:'doux',iris:'#7a
  anais:{sexe:'f',face:'ovale',skin:'#9a6140',eyes:'amande',iris:'#4b4124',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'aucune',freckles:'legeres',hair:'bafro',hairColor:'#1c1412',edges:'aucun',top:'tanksport',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  potins:{bottom:'droit',shoes:'basses'}};
 NPC_LOOK.potins={hair:'carreondule'};
-[...NPCS,POTINS].forEach(n=>{n.av=basNeuf(Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{}))});
+[...NPCS,POTINS].forEach(n=>{n.av=boucheSexe(basNeuf(Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{})))});
 let avUid=0;
 const uid=()=>'g'+(avUid++)+'_';
 const GKEY='atelier-partie-v3', RECHARGE=10*60*1000, BONUS_MAX=5;
