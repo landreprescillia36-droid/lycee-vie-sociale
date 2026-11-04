@@ -469,7 +469,16 @@ function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,40
  const dn=(['droit','large','flare','short'].includes(t)&&DENIM.includes(b))||['slim','mom','bootcut','bermuda'].includes(t),st=dn?'#d6a35c':shade(b,-.22);
  const d=`<defs><linearGradient id="${p}pl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.22)}"/><stop offset=".45" stop-color="${shade(b,.1)}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.18)}"/></linearGradient><pattern id="${p}ht" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1" cy="2" r=".8" fill="#fff" fill-opacity=".28"/><circle cx="4" cy="5" r=".8" fill="#000" fill-opacity=".12"/></pattern><pattern id="${p}tw" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V5" stroke="#000" stroke-opacity=".07" stroke-width="1.4"/></pattern></defs>`;
  let o='';
- if(JUPES[t]||t==='jupejean')return d+jupeSVG(G,s,p,t,wx);
+ if(t==='jupejean'){/* jupe trapèze courte en jean : surpiqûres dorées, bouton, poches */
+  const sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+9},462 ${200+H+19},512 ${200+H+25},548 Q200,553 ${200-H-25},548 C${200-H-19},512 ${200-H-9},462 ${fx(200-wx)},404Z`,ts='#d6a35c';
+  o+=`<path d="${sk}" fill="url(#${p}pl)"/><path d="${sk}" fill="url(#${p}tw)"/>`;
+  o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},418 Q200,424 ${fx(200-wx-1)},418Z" fill="${shade(b,-.06)}"/>`;
+  o+=LN(`M${fx(200-wx)},417 Q200,423 ${fx(200+wx)},417`,ts,1.3,.9,'3 2')+LN('M204,420 L204,551',ts,1.3,.9,'3 2')+LN(`M${200-H-21},540 Q200,548 ${200+H+21},540`,ts,1.3,.9,'3 2');
+  o+=LN(`M${fx(200-wx+3)},421 Q${fx(200-wx+14)},446 174,424 M${fx(200+wx-3)},421 Q${fx(200+wx-14)},446 226,424`,ts,1.3,.9,'3 2')+`<circle cx="200" cy="411" r="2.6" fill="#c8a24a"/>`;
+  o+=LN(`M${200-H+4},476 L${200-H-10},544 M${200+H-4},476 L${200+H+10},544`,dk,1.6,.3);
+  return d+o;
+ }
+ if(JUPES[t])return d+jupeSVG(G,s,p,t,wx);
  if(t==='jupe'){
   const sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+8},470 ${200+H+24},520 ${200+H+30},568 Q200,582 ${200-H-30},568 C${200-H-24},520 ${200-H-8},470 ${fx(200-wx)},404Z`;
   o+=`<path d="${sk}" fill="url(#${p}pl)"/>`;
@@ -701,7 +710,7 @@ function body(s,p,sk,skD,skDD,skL){
  if(boot)o+=shoesSVG(s,sk,G,skD,skL,p);
  o+=topSVG(G,T,s,p,{TF,LM,c,dk,lt,cont,sk,skDD,h});
  /* jupe taille haute : le haut est rentré dans la jupe (on redessine le haut de la jupe par-dessus le haut, jusqu'au bas du haut, sans couvrir les bras) */
- if((JUPES[s.bottom]||s.bottom==='jupejean')&&!(s.dress&&s.dress!=='aucune'&&DR[s.dress])&&(!s.jacket||s.jacket==='aucune')&&(T.h||400)<=440){const yb=(T.h||400)+2;const arms=[-1,1].map(k=>`<path d="${armD(G,k,520,()=>9)}" fill="#000"/><path d="${handD(G,k)}" fill="#000" stroke="#000" stroke-width="6"/>`).join('');
+ if(JUPES[s.bottom]&&!(s.dress&&s.dress!=='aucune'&&DR[s.dress])&&(!s.jacket||s.jacket==='aucune')&&(T.h||400)<=440){const yb=(T.h||400)+2;const arms=[-1,1].map(k=>`<path d="${armD(G,k,520,()=>9)}" fill="#000"/><path d="${handD(G,k)}" fill="#000" stroke="#000" stroke-width="6"/>`).join('');
   o+=`<defs><mask id="${p}jtk" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="900"><rect x="0" y="360" width="400" height="${yb-360}" fill="#fff"/>${arms}</mask></defs><g mask="url(#${p}jtk)">${jupeSVG(G,s,p+'u',s.bottom,0)}</g>`}
  o+=accSVG(G,s);
  return d+o;
@@ -1401,9 +1410,8 @@ WEAR.set.items.push(
 (()=>{const F={top:['crop','ajuste','epaules','blouse','henley','asym','salopette'],bottom:['flare','yoga','jupe'],dress:['nuisette','tshirtdress','portefeuille','bretelles','madras','pull'],jacket:['matelassee','cardigan'],shoes:['fourrees','bottes'],hat:['foulard'],necklace:['perles','rasdecou'],glasses:['coeur'],earrings:['anneaux','etoiles']};
  Object.values(WEAR).forEach(W=>W.items.forEach(it=>{if(it.g)return;if(it.set)it.g='f';else if(F[it.s]&&F[it.s].includes(it.v))it.g='f'}))})();
 /* bas des filles : ta planche « Bas pour filles » (18 pièces) ; les anciens bas restent pour les garçons et pour les tenues déjà portées */
-WEAR.bottom.items.forEach(it=>{if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
-WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'f',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'f',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'f',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'f',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'f',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'f',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'f',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'droit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'large',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
-const wearVis=it=>!it.g||state.sexe==='nb'||it.g===state.sexe;
+WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'wip',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'wip',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'wip',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'wip',nw:1},{s:'bottom',v:'droit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'wip',nw:1},{s:'bottom',v:'large',c:'#8eaed3',n:'Jean large',r:'BF',g:'wip',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'wip',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'wip',nw:1});
+const wearVis=it=>it.g!=='wip'&&(!it.g||state.sexe==='nb'||it.g===state.sexe);/* g:'wip' = pas encore validé par Prescillia */
 const wearHas=k=>WEAR[k].items.some(it=>wearVis(it)&&it.v!=='aucune'&&it.v!=='aucun');
 const CATLBL={f:'Catalogue filles',m:'Catalogue garçons',nb:'Catalogue complet'};
 const TABS=[
