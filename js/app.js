@@ -693,8 +693,9 @@ function jacketParts(G,s,p,sx){
  return {torso:t,sleeves:sl};
 }
 /* sacs d'école décalqués sur ta planche (js/sacs-art.js) : sac à main porté à l'épaule gauche, bretelles du sac à dos sur les deux épaules */
-function sacSVG(G,s){if(typeof SAC_ART==='undefined'||!SAC_ART[s.bag])return '';const A=SAC_ART[s.bag],R=SAC_ART._ref[s.bag],k=.446*(G.SH||70)/70,X=v=>200+(v-R.cx)*k,Y=v=>236+(v-395)*k;
- const im=`<image href="assets/sacs/${s.bag}.png" x="${fx(X(A.x))}" y="${fx(Y(A.y))}" width="${fx(A.w*k)}" height="${fx(A.h*k)}" preserveAspectRatio="none"/>`;
+function sacSVG(G,s){if(typeof SAC_ART==='undefined'||!SAC_ART[s.bag])return '';const A=SAC_ART[s.bag],R=SAC_ART._ref[s.bag],kx=((G.SH||70)+8)/240,ky=.47,X=v=>200+(v-R.cx)*kx,Y=v=>236+(v-395)*ky;/* largeur : épaules de la planche (240 px) → épaules du nova ; hauteur : épaule → bas du sweat */
+ const x0=s.bag==='sacmain'?X(548)-(548-A.x)*ky*.85:X(A.x);/* sac à main : l'anse reste sur l'épaule, le sac garde ses proportions */
+ const im=`<image href="assets/sacs/${s.bag}.png" x="${fx(x0)}" y="${fx(Y(A.y))}" width="${fx(A.w*(s.bag==='sacmain'?ky*.85:kx))}" height="${fx(A.h*ky)}" preserveAspectRatio="none"/>`;
  return s.bag==='sacados'?im+`<g transform="translate(400,0) scale(-1,1)">${im}</g>`:im}
 function accSVG(G,s){let o=sacSVG(G,s);const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
@@ -1260,7 +1261,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En c�
  uni:'Uni',degrade:'Dégradé',pois:'Pois',rayures:'Rayures',rayons:'Rayons'};
 const HAIR_F=['tresse','longs','longsondules','ondulescote','frange','carre','carreondule','carreplongeant','carreretrousse','queue','queuehaute','couettes','chignon','demichignon','macarons','boucles','boucleslongues'];
 const HAIR_M=['court','texture','banane','piques','meche','fondu','plaque','raie','rideau','rase'];
-const REFS={BF:'ta planche « Bas pour filles »',GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
+const REFS={SAC:'ta planche « Sac à main / à dos »',BF:'ta planche « Bas pour filles »',GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
 const VECT="Rendu vectoriel stylisé : la texture photographique et l'éclairage réel ne sont pas reproduits.";
 const NOREF="Aucune image de référence fournie : proposition à valider ou à remplacer par ta propre référence.";
 const CAT_H=[['all','Toutes'],['court','Courts'],['mi','Mi-longs'],['long','Longs'],['lisse','Lisses'],['ondule','Ondulés'],['boucle','Bouclés'],['crepu','Crépus'],['tresse','Tresses'],['chignon','Chignons'],['queue','Queues de cheval'],['attache','Attachées']];
@@ -1424,7 +1425,7 @@ const WEAR={
   {s:'shoes',v:'bottes',c:'#1f2127',n:'Bottes hautes noires',r:'T'},
   {s:'shoes',v:'montantes',c:'#1f2127',n:'Baskets montantes noires',r:null},{s:'shoes',v:'sandales',c:'#7a5236',n:'Sandales à brides',r:null}]},
  acc:{l:'Accessoires',vb:hv('40 0 320 300'),items:[
-  {s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,vb:hv('55 175 110 100')}]}
+  {s:'bag',v:'sacados',n:'Sac à dos',r:'SAC',vb:hv('40 150 320 300')},{s:'bag',v:'sacmain',n:'Sac à main',r:'SAC',g:'f',vb:hv('40 150 320 300')},{s:'earrings',v:'aucune',n:"Sans boucles d'oreilles",vb:hv('55 175 110 100')},{s:'earrings',v:'anneaux',n:'Créoles dorées',r:null,vb:hv('55 175 110 100')}]}
 };
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
@@ -1510,9 +1511,10 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
 const SACS=['sacmain','sacados'];/* sacs d'école : les seuls sacs gardés */
 function noAcc(s){const sac=SACS.includes(s.bag)?s.bag:'aucun';if(s.hat==='aucun'&&(s.bag==='aucun'||SACS.includes(s.bag))&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:sac,necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
-function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(s)}
+function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return sacEcole(basNeuf(s),hash((s.name||'')+(s.nom||'')))}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
+function sacEcole(s,seed){if(!s)return s;if(s.sexe==='m'&&s.bag!=='sacados')s.bag='sacados';else if(!SACS.includes(s.bag))s.bag=(seed!=null?seed%2:0)?'sacados':'sacmain';return s}
 function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):normalize(DEFAULT)}catch(e){return normalize(DEFAULT)}})();
 /* joues, rides et baby hairs ne se choisissent plus dans l'atelier : on les retire de l'avatar du joueur */
@@ -1698,7 +1700,7 @@ const NPC_LOOK={ines:{sexe:'f',face:'ovale',skin:'#d4975f',eyes:'doux',iris:'#7a
  anais:{sexe:'f',face:'ovale',skin:'#9a6140',eyes:'amande',iris:'#4b4124',brows:'epais',nose:'rond',mouth:'remontante',cheeks:'aucune',freckles:'legeres',hair:'bafro',hairColor:'#1c1412',edges:'aucun',top:'tanksport',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',dress:'aucune',jacket:'aucune',hat:'aucun',bag:'aucun',necklace:'aucun',earrings:'aucune',glasses:'aucune',shoes:'basses',shoesColor:'#f4f1ea',bgPattern:'uni',bgColor:'#fde8d4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}},
  potins:{bottom:'droit',shoes:'basses'}};
 NPC_LOOK.potins={hair:'carreondule'};
-[...NPCS,POTINS].forEach(n=>{n.av=basNeuf(Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{}))});
+[...NPCS,POTINS].forEach((n,i)=>{n.av=sacEcole(basNeuf(Object.assign(normalize(n.av),{dress:'aucune'},NPC_LOOK[n.id]||{})),hash(n.id))});
 let avUid=0;
 const uid=()=>'g'+(avUid++)+'_';
 const GKEY='atelier-partie-v3', RECHARGE=10*60*1000, BONUS_MAX=5;
