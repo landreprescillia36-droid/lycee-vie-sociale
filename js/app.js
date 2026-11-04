@@ -147,7 +147,7 @@ function render(s,vb,p,showBg){
  const hc=s.hairColor, hD=shade(hc,-.38), hL=shade(hc,.28);
  const F=faceOf(s), E=EYES[s.eyes]||EYES.grands;
  const lip=mix(sk,'#d9546a',.42);
- const eo=F.eo||0, dx=52+a.eyesX, cy=205+eo+a.eyesY, sc=a.eyesS, mo=s.sexe==='m'?(faceKey(s.face)==='allonge'?24:17):Math.max(0,F.mo||0), no=mo*.6;
+ const eo=F.eo||0, dx=52+a.eyesX, cy=205+eo+a.eyesY+(s.sexe==='m'?5:0)/* garçons : yeux un peu plus bas */, sc=a.eyesS, mo=s.sexe==='m'?(faceKey(s.face)==='allonge'?24:17):Math.max(0,F.mo||0), no=mo*.6;
  let o=`<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
  <radialGradient id="${p}sk" cx="45%" cy="38%" r="68%"><stop offset="0" stop-color="${skL}"/><stop offset=".6" stop-color="${sk}"/><stop offset="1" stop-color="${skD}"/></radialGradient>
  <linearGradient id="${p}hr" x1="0" y1="0" x2=".45" y2="1"><stop offset="0" stop-color="${hL}"/><stop offset=".45" stop-color="${hc}"/><stop offset="1" stop-color="${hD}"/></linearGradient>
