@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='41';
+const APP_VERSION='42';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -171,7 +171,7 @@ function render(s,vb,p,showBg){
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
- if(big&&F.chin&&s.sexe!=='m')o+=`<defs><filter id="${p}cs" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="${p}csc"><rect x="${s.sexe==='m'?182:186}" y="${F.chin-60}" width="${s.sexe==='m'?36:28}" height="90"/></clipPath></defs><g clip-path="url(#${p}csc)"><path d="${F.d}" transform="translate(0,${s.sexe==='m'?9:7})" fill="${mix(skDD,'#000',.2)}" opacity="${s.sexe==='m'?.45:.65}" filter="url(#${p}cs)"/></g>`;
+ if(0&&big&&F.chin&&s.sexe!=='m')o+=`<defs><filter id="${p}cs" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="${p}csc"><rect x="${s.sexe==='m'?182:186}" y="${F.chin-60}" width="${s.sexe==='m'?36:28}" height="90"/></clipPath></defs><g clip-path="url(#${p}csc)"><path d="${F.d}" transform="translate(0,${s.sexe==='m'?9:7})" fill="${mix(skDD,'#000',.2)}" opacity="${s.sexe==='m'?.45:.65}" filter="url(#${p}cs)"/></g>`;
  /* garçons : trait de la mâchoire, des joues jusqu'au menton (planche de Prescillia) */
  const jaw=s.sexe==='m'&&FACE_ART.m[faceKey(s.face)];
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
@@ -626,7 +626,7 @@ function body(s,p,sk,skD,skDD,skL){
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M158,226 C152,206 172,194 200,194 C228,194 248,206 242,226Z" fill="${dk}"/>`;
  if(T.hood2)o+=`<path d="M146,234 C140,200 162,182 200,180 C238,182 260,200 254,234 L226,234 Q214,206 200,204 Q186,206 174,234Z" fill="${shade(c,-.12)}"/>`+LN('M156,226 C156,204 174,192 200,190 C226,192 244,204 244,226',shade(c,-.4),1.4,.4);
- const nw=s.sexe==='m'?16.5:15;o+=s.sexe==='m'?`<path d="M${200-nw},150 L${200-nw},224 Q200,234 ${200+nw},224 L${200+nw},150Z" fill="${mix(skD,sk,.55)}"/>`:`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${skD}"/><ellipse cx="200" cy="190" rx="15" ry="9" fill="${skDD}" opacity=".35"/>`;
+ const nw=s.sexe==='m'?16.5:15;o+=s.sexe==='m'?`<path d="M${200-nw},150 L${200-nw},224 Q200,234 ${200+nw},224 L${200+nw},150Z" fill="${mix(skD,sk,.55)}"/>`:`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${mix(skD,sk,.55)}"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
  if(!boot)o+=shoesSVG(s,sk,G,skD,skL,p);
@@ -731,7 +731,7 @@ function topSVG(G,T,s,p,K){
  if(T.btn1)o+=`<circle cx="200" cy="292" r="2.4" fill="${shade(c,-.25)}"/>`;
  if(G.f&&T.neck==='cv')o+=LN('M190,300 Q196,306 200,316 M210,300 Q204,306 200,316',skDD,1.6,.22);
  if(G.f&&T.neck==='cami')o+=LN('M190,274 Q197,280 200,287 M210,274 Q203,280 200,287',skDD,1.8,.24);
- else if(!['asym','square','tube','halter','tank','scoop','v','cv','scoopw','cami'].includes(T.neck)&&!T.collar&&!T.turtle&&!T.hood2&&!T.pcolm&&!T.crew)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
+ else if(!['asym','square','tube','halter','tank','scoop','v','cv','scoopw','cami','off'].includes(T.neck)&&!T.collar&&!T.turtle&&!T.hood2&&!T.pcolm&&!T.crew)o+=LN('M185,217 Q200,231 215,217',dk,3,.6);
  if(T.neck==='scoop')o+=LN('M185,217 Q200,250 215,217',dk,2.6,.6);
  if(T.neck==='v'&&!T.hood2&&!T.pcol&&!T.pcolm)o+=LN('M185,217 L200,262 L215,217',dk,2.6,.6);
  if(T.neck==='tube')o+=LN(`M${fx(200-sideX(G,268))},268 Q200,262 ${fx(200+sideX(G,268))},268`,lt,3,.7);
