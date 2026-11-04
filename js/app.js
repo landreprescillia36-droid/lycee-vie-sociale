@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='40';
+const APP_VERSION='41';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3604,9 +3604,10 @@ const CEV=[
 function cPart(sub){const c=clsInit();c.part[sub]=(c.part[sub]||0)+1;G.cb+=.5}
 function classEventTick(n){
  if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase();if(ph.type!=='cours')return;
- const c=clsInit();if(c.ev.key!==ph.key)c.ev={key:ph.key,n:0,last:ph.start};const e=c.ev;
- if(e.n>=2||G.min-ph.start<8||G.min-e.last<18||G.min>ph.end-6)return;
- if(Math.random()<1-Math.pow(.988,n))openClassEvent(ph)}
+ const c=clsInit();if(c.ev.key!==ph.key){/* au début du cours : 1 événement presque toujours (85 %), parfois un 2e (40 %), à des heures tirées au sort */
+  const len=ph.end-ph.start,at=[];if(Math.random()<.85)at.push(ph.start+8+Math.floor(Math.random()*(len*.45)));if(at.length&&Math.random()<.4)at.push(Math.min(ph.end-8,at[0]+20+Math.floor(Math.random()*(len*.35))));c.ev={key:ph.key,n:0,last:ph.start,at}}
+ const e=c.ev;e.at=e.at||[];
+ if(e.n<e.at.length&&G.min>=e.at[e.n]&&G.min<ph.end-3)openClassEvent(ph)}
 function openClassEvent(ph,force){const c=clsInit(),sub=ph.sub,prof=ph.prof[0];
  const x={ph,sub,prof,sev:ph.prof[1],nb:neighborOf(ph),pron:profSex(prof)==='f'?'elle':'il'};
  let L=CEV.filter(v=>!v.ok||v.ok(x));if(force)L=L.filter(v=>v.id===force);
