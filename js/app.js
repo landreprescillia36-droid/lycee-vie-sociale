@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='51';
+const APP_VERSION='52';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2076,7 +2076,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[]}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -2559,8 +2559,8 @@ function evalSheet(e){return sheetHead(`Évaluation du jour ${e.sd}`,`Trimestre 
 function evalCatch(){const wd=weekday();let d=G.day;if(wd===4&&G.min<1020)d-=7;else if(wd!==4)d-=wd>4?wd-4:wd+3;const sd=d>=1?schoolDay(d):null;if(sd&&sd<=TRI_END[2]&&!G.evals.some(e=>e.sd===sd))runEval(sd)}
 function runEval(sdArg){
  const sd=sdArg||schoolDay(G.day);if(!sd||sd>TRI_END[2]||G.evals.some(e=>e.sd===sd))return;
- const bon=(G.evalBonus||{})[schoolDayToCal(sd)]||{},grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=clamp(examGrade(k)+(bon[k]||0),0,20);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
- const e={sd,tri:triOf(sd),grades,glob:r2(mean(Object.values(grades)))};G.evals.push(e);
+ const bon=(G.evalBonus||{})[schoolDayToCal(sd)]||{},grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=clamp(Math.round((examGrade(k)+(bon[k]||0)+mgBonus(k))*2)/2,0,20);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
+ const e={sd,tri:triOf(sd),grades,glob:r2(mean(Object.values(grades))),pts:{...(G.mgPts||{})}};G.evals.push(e);G.mgPts={};
  note(`Évaluation du vendredi : ${fmtG(e.glob)}/20 de note globale`);if(!G.asleep)toast(`📝 Évaluation : ${fmtG(e.glob)}/20`);
  if(e.glob>=14)parentReact('bonne');else if(e.glob<9)parentReact('mauvaise');
  popSheet(evalSheet(e));
@@ -3740,6 +3740,124 @@ function mathQ(){const r=n=>Math.floor(Math.random()*n),k=r(7);
  if(k===4){const n=[2,3,4,5][r(4)];return [`Dérivée de x${'⁰¹²³⁴⁵'[n]} ?`,...[`${n}x${n-1>1?'⁰¹²³⁴⁵'[n-1]:''}`,`x${'⁰¹²³⁴⁵'[n-1]}`,`${n}x${'⁰¹²³⁴⁵'[n]}`,`${n+1}x${'⁰¹²³⁴⁵'[n]}`]]}
  if(k===5){const n=[4,5,6,7,8,9,11,12][r(8)];return [`√${n*n} = ?`,...opts(n,()=>n+(r(2)?1:-1)*(1+r(3)))]}
  const a=4+r(8)*2,b=a+2*(1+r(4)),c=b+(b-a);return [`Moyenne de ${a}, ${b} et ${c} ?`,...opts(b,()=>b+(r(2)?1:-1)*(1+r(3)))]}
+/* ---------- mini-jeux par matière et par niveau (facile / moyen / difficile) ----------
+   MGQ[matière][niveau] : [question, bonne réponse, mauvaises réponses…] ; maths et physique ont en plus des calculs tirés au sort.
+   Points : réussite parfaite = +1 / +2 / +3 selon le niveau (G.mgPts), comptés dans la note de l'évaluation suivante. */
+const MG_LV=[['facile','Facile',1],['moyen','Moyen',2],['difficile','Difficile',3]];
+const MGQ={
+ francais:{
+  facile:[["Quelle phrase est sans faute ?","Les enfants sont partis tôt.","Les enfant sont partis tôt.","Les enfants sont parti tôt.","Les enfants son partis tôt."],
+   ["Conjugue « finir » au présent avec « nous ».","nous finissons","nous finisons","nous finirons","nous finîmes"],["Complète : « Hier, ils ___ au cinéma. »","sont allés","sont allé","ont allés","sont aller"],
+   ["Quel mot est bien écrit ?","appeler","apeller","appeller","apeler"],["Conjugue « être » à l'imparfait avec « vous ».","vous étiez","vous êtiez","vous seriez","vous étez"],
+   ["Complète : « Il faut que tu ___ tes devoirs. »","fasses","fais","feras","faisais"],["Quel est le pluriel de « un cheval » ?","des chevaux","des chevals","des chevaus","des chevaux-s"],
+   ["Complète : « Elle s'est ___ les mains. »","lavé","lavée","lavées","laver"],["« Ils ___ leur livre. » (avoir, présent)","ont","on","sont","onts"],["Quel mot est un adverbe ?","rapidement","rapide","rapidité","rapider"]],
+  moyen:[["Un synonyme de « courageux » ?","brave","peureux","timide","lent"],["Le contraire de « généreux » ?","avare","gentil","riche","partageur"],["« Cette obscure clarté » est…","un oxymore","une comparaison","une litote","une anaphore"],
+   ["« Il pleut des cordes » est…","une métaphore","une comparaison","un oxymore","une litote"],["« Je meurs de faim » est…","une hyperbole","un euphémisme","une antithèse","un chiasme"],
+   ["Remets dans l'ordre : « livre / Paul / un / lit »","Paul lit un livre.","Un livre Paul lit.","Lit Paul un livre.","Livre un lit Paul."],
+   ["« Il nous a quittés » pour « il est mort », c'est…","un euphémisme","une hyperbole","une métaphore","une anaphore"],["Un synonyme de « rapidement » ?","promptement","lentement","calmement","doucement"],
+   ["« Rome, l'unique objet de mon ressentiment ! Rome… » : la répétition est…","une anaphore","une ellipse","une litote","un oxymore"],["Le contraire de « ancien » ?","moderne","vieux","antique","passé"]],
+  difficile:[["Un texte qui cherche à convaincre par des arguments est…","argumentatif","narratif","descriptif","poétique"],["La thèse d'un texte, c'est…","l'idée que l'auteur défend","le résumé de l'histoire","le titre","la conclusion seulement"],
+   ["« Le travail éloigne de nous trois grands maux : l'ennui, le vice et le besoin. » (Voltaire) Quelle est la thèse ?","Le travail est bénéfique","Le travail est ennuyeux","Le vice est utile","Il faut éviter le travail"],
+   ["Un exemple sert à…","illustrer un argument","contredire la thèse","résumer le texte","décrire un personnage"],["Le registre qui fait sourire en se moquant des défauts est…","satirique","tragique","lyrique","épique"],
+   ["Dans une argumentation, un connecteur d'opposition est…","cependant","donc","ensuite","car"],["Le point de vue qui sait tout des personnages est…","omniscient","interne","externe","neutre"],
+   ["Un poème qui exprime les sentiments du poète relève du registre…","lyrique","comique","polémique","épique"],["« Vaincre sans péril, on triomphe sans gloire » : le procédé est…","une antithèse","une métaphore","une périphrase","une hyperbole"],
+   ["Le procédé « Je ne te hais point » (Corneille) pour dire « je t'aime » est…","une litote","une hyperbole","une anaphore","une ellipse"]]},
+ philo:{
+  facile:[["Qui a écrit « Je pense, donc je suis » ?","Descartes","Platon","Sartre","Kant"],["Qui était le maître de Platon ?","Socrate","Aristote","Épicure","Descartes"],["Qui a écrit « L'existentialisme est un humanisme » ?","Sartre","Camus","Pascal","Hegel"],
+   ["La philosophie, étymologiquement, c'est…","l'amour de la sagesse","la science des nombres","l'étude de la nature","l'art de parler"],["Qui a écrit « Ainsi parlait Zarathoustra » ?","Nietzsche","Freud","Marx","Rousseau"],
+   ["Une « définition », c'est…","dire ce qu'est une chose","donner un exemple","poser une question","raconter une histoire"],["Qui a écrit « Le Contrat social » ?","Rousseau","Montesquieu","Voltaire","Diderot"],["Aristote était l'élève de…","Platon","Socrate","Descartes","Kant"]],
+  moyen:[["« L'homme est un loup pour l'homme » est associé à…","Hobbes","Rousseau","Kant","Spinoza"],["L'allégorie de la caverne parle de…","l'accès à la vérité","la politique","la religion","l'amour"],
+   ["Pour Rousseau, l'homme naît…","bon","méchant","ni bon ni mauvais","esclave"],["Complète : « L'homme est condamné à être… »","libre","heureux","seul","juste"],["Freud a découvert…","l'inconscient","la gravité","le contrat social","l'impératif catégorique"],
+   ["Pour Kant, agir moralement, c'est agir…","par devoir","par intérêt","par plaisir","par habitude"],["« Connais-toi toi-même » est la devise reprise par…","Socrate","Nietzsche","Marx","Hume"],["« Le cœur a ses raisons que la raison ne connaît point » est de…","Pascal","Descartes","Rousseau","Bergson"]],
+  difficile:[["Sujet : « Peut-on être libre sans lois ? » La problématique porte sur…","le lien entre liberté et contrainte","la définition de la loi","l'histoire du droit","le bonheur"],
+   ["Quel argument soutient « le travail libère l'homme » ?","Il permet de transformer la nature et de se réaliser","Il fatigue le corps","Il est obligatoire","Il rapporte de l'argent seulement"],
+   ["La thèse de Sartre sur la liberté est…","l'existence précède l'essence","l'homme est déterminé","la liberté est une illusion","seul Dieu est libre"],
+   ["Pour Spinoza, l'homme se croit libre parce qu'il…","ignore les causes qui le déterminent","choisit toujours","obéit aux lois","est raisonnable"],
+   ["« La vérité est-elle toujours bonne à dire ? » oppose surtout…","la morale et la vérité","l'art et la technique","le travail et le loisir","la nature et la culture"],
+   ["Pour Hobbes, l'État est nécessaire pour…","sortir de la guerre de tous contre tous","rendre les hommes riches","imposer une religion","supprimer le travail"],
+   ["Une objection, dans une dissertation, sert à…","discuter la thèse","répéter la thèse","conclure","introduire le sujet"],["Pour Kant, une action morale doit pouvoir être…","universalisée","rentable","agréable","secrète"]]},
+ physique:{
+  facile:[["Le symbole chimique du fer est…","Fe","F","Fr","Ir"],["Le symbole de l'oxygène est…","O","Ox","Og","Oy"],["Le symbole du sodium est…","Na","So","Sd","N"],["H₂O, c'est…","l'eau","le sel","l'oxygène","le sucre"],
+   ["CO₂, c'est…","le dioxyde de carbone","le monoxyde de carbone","le carbone","l'ozone"],["L'unité de la masse est le…","kilogramme","newton","litre","joule"],["Le symbole du carbone est…","C","Ca","Cr","Co"],["Un litre, c'est…","1 dm³","1 m³","1 cm³","10 cm³"]],
+  moyen:[["On dissout 10 g de sel dans 0,5 L. Concentration massique ?","20 g/L","5 g/L","10 g/L","0,05 g/L"],["Masse volumique : 200 g pour 250 mL ?","0,8 g/mL","1,25 g/mL","50 g/mL","0,2 g/mL"],
+   ["Une voiture fait 120 km en 2 h. Vitesse ?","60 km/h","240 km/h","120 km/h","30 km/h"],["Une solution de pH 3 est…","acide","basique","neutre","salée"],["Le pH de l'eau pure est…","7","0","14","1"],
+   ["Un coureur fait 100 m en 10 s. Vitesse ?","10 m/s","1 m/s","100 m/s","0,1 m/s"],["2 g de sucre dans 0,1 L : concentration ?","20 g/L","0,2 g/L","2 g/L","200 g/L"],["Masse volumique de l'eau ?","1 kg/L","10 kg/L","0,1 kg/L","100 kg/L"]],
+  difficile:[["Équilibre : … H₂ + O₂ → … H₂O","2 H₂ + O₂ → 2 H₂O","H₂ + O₂ → H₂O","H₂ + 2 O₂ → 2 H₂O","3 H₂ + O₂ → 2 H₂O"],["Équilibre : CH₄ + … O₂ → CO₂ + … H₂O","CH₄ + 2 O₂ → CO₂ + 2 H₂O","CH₄ + O₂ → CO₂ + H₂O","CH₄ + 3 O₂ → CO₂ + 2 H₂O","CH₄ + 2 O₂ → CO₂ + H₂O"],
+   ["Énergie cinétique d'un objet de 2 kg à 3 m/s (Ec = ½mv²) ?","9 J","6 J","18 J","3 J"],["Énergie potentielle : 1 kg à 10 m (g = 10 N/kg) ?","100 J","10 J","1 J","1 000 J"],
+   ["Puissance d'un appareil de 230 V traversé par 2 A ?","460 W","115 W","232 W","46 W"],["Un objet tombe de 20 m sans frottement. Sa vitesse finale (g = 10) ?","20 m/s","10 m/s","200 m/s","40 m/s"],
+   ["Énergie consommée par 1 000 W pendant 2 h ?","2 kWh","500 Wh","2 000 kWh","20 kWh"],["Équilibre : … Fe + … O₂ → 2 Fe₂O₃","4 Fe + 3 O₂ → 2 Fe₂O₃","2 Fe + 3 O₂ → 2 Fe₂O₃","4 Fe + 2 O₂ → 2 Fe₂O₃","3 Fe + 4 O₂ → 2 Fe₂O₃"]]},
+ espagnol:{
+  facile:[["« el perro »","le chien","le chat","le cheval","l'oiseau"],["« la casa »","la maison","la voiture","la rue","la ville"],["« rojo »","rouge","rose","noir","vert"],["« el libro »","le livre","la lettre","le cahier","le stylo"],
+   ["« la playa »","la plage","la place","la pluie","la piscine"],["« comer »","manger","boire","dormir","courir"],["« el agua »","l'eau","l'air","le feu","la terre"],["« mañana »","demain","hier","aujourd'hui","ce soir"],["« la escuela »","l'école","l'église","l'épicerie","l'escalier"],["« grande »","grand","gros","gras","gris"]],
+  moyen:[["« Yo ___ estudiante. »","soy","estoy","hay","tengo"],["« Nosotros ___ (hablar) español. »","hablamos","hablan","habláis","hablo"],["« Ella ___ (tener) quince años. »","tiene","tene","tienes","tengo"],["« Ayer yo ___ (ir) al cine. »","fui","iba","voy","fue"],
+   ["Traduis « j'ai faim ».","tengo hambre","soy hambre","estoy hambre","hay hambre"],["« ¿Qué tal? » veut dire…","Comment ça va ?","Qu'est-ce que c'est ?","Quelle heure est-il ?","Où es-tu ?"],["« Me gusta » veut dire…","j'aime","je veux","je dois","je peux"],["« Vosotros ___ (comer) mucho. »","coméis","comen","comemos","comes"]],
+  difficile:[["Traduis : « Si j'avais de l'argent, je voyagerais. »","Si tuviera dinero, viajaría.","Si tengo dinero, viajo.","Si tenía dinero, viajaba.","Si tendría dinero, viajara."],
+   ["Corrige : « Ayer yo voy a la playa. »","Ayer fui a la playa.","Ayer iré a la playa.","Ayer vaya a la playa.","Ayer iba la playa."],["« Aunque llueva, saldremos » veut dire…","Même s'il pleut, nous sortirons.","Comme il pleut, nous sortons.","Il pleut, donc nous restons.","Quand il pleuvra, nous partirons."],
+   ["Traduis : « Il faut que tu viennes. »","Es necesario que vengas.","Es necesario que vienes.","Hay que vienes.","Tienes que vendrás."],["« Llevo dos años estudiando » signifie…","J'étudie depuis deux ans.","J'ai étudié deux ans auparavant.","J'étudierai deux ans.","Je porte deux ans d'études."],
+   ["Corrige : « Ella es cansada hoy. »","Ella está cansada hoy.","Ella son cansada hoy.","Ella esta cansado hoy.","Ella es cansado hoy."]]},
+ eps:{
+  facile:[["Avec une raquette et un volant, on joue au…","badminton","tennis","squash","ping-pong"],["Le sport avec un panier à 3,05 m est le…","basket","volley","handball","netball"],["Au football, combien de joueurs par équipe sur le terrain ?","11","10","9","7"],
+   ["On utilise des gants pour la…","boxe","natation","course","gymnastique"],["Au volley, combien de touches maximum par équipe ?","3","2","4","5"],["Le sport avec des haies, c'est…","l'athlétisme","le judo","le rugby","l'aviron"],["Au handball, combien de joueurs par équipe ?","7","6","11","5"],["Au tennis, après 40-40, on dit…","égalité","match","set","zéro"]],
+  moyen:[["Je cours 400 m en 80 s. Vitesse ?","5 m/s","4 m/s","8 m/s","3,2 m/s"],["À 10 km/h, combien de temps pour 5 km ?","30 min","50 min","20 min","1 h"],["Je cours à 12 km/h pendant 15 min. Distance ?","3 km","12 km","1,5 km","6 km"],
+   ["Pour un squat, le muscle principal est…","le quadriceps","le biceps","le pectoral","le deltoïde"],["Les pompes travaillent surtout…","les pectoraux et les triceps","les mollets","les ischio-jambiers","les abdominaux obliques"],["Le muscle du mollet est…","le triceps sural","le biceps","le quadriceps","le trapèze"],
+   ["En montant les escaliers, quel muscle travaille le plus ?","les fessiers et quadriceps","les biceps","les pectoraux","les trapèzes"],["Un 100 m en 12,5 s, c'est une vitesse de…","8 m/s","10 m/s","12,5 m/s","6 m/s"]],
+  difficile:[["Fréquence cardiaque max théorique à 17 ans (220 − âge) ?","203 bpm","183 bpm","220 bpm","170 bpm"],["Zone d'endurance (60-70 % de FCmax = 200) ?","120 à 140 bpm","60 à 70 bpm","160 à 180 bpm","180 à 200 bpm"],
+   ["Pour progresser en endurance, le meilleur programme est…","3 séances par semaine à allure modérée","1 sprint par mois","courir au maximum tous les jours","s'étirer uniquement"],
+   ["Un athlète passe de 13 s à 12,4 s au 100 m. Progression ?","environ 4,6 %","6 %","0,6 %","12,4 %"],["Le fractionné consiste à…","alterner efforts intenses et récupérations","courir lentement longtemps","marcher","s'étirer entre les séries"],
+   ["Après un effort intense, il faut…","récupérer et s'hydrater","recommencer tout de suite","manger beaucoup de sucre","s'arrêter de boire"]]},
+ histoire:{
+  facile:[["L'esclavage est aboli en Guadeloupe en…","1848","1789","1802","1946"],["La Révolution française commence en…","1789","1848","1914","1815"],["La Première Guerre mondiale commence en…","1914","1939","1918","1870"],
+   ["La capitale de l'Espagne est…","Madrid","Barcelone","Séville","Lisbonne"],["Qui a mené la France libre en 1940 ?","Charles de Gaulle","Napoléon","Jean Jaurès","Léon Blum"],["La Guadeloupe est située dans…","la mer des Caraïbes","l'océan Indien","la Méditerranée","le Pacifique"],
+   ["Victor Schœlcher est associé à…","l'abolition de l'esclavage","la Révolution","la guerre froide","la décolonisation"],["Le premier homme sur la Lune (1969) est…","Neil Armstrong","Youri Gagarine","Buzz Aldrin","Thomas Pesquet"]],
+  moyen:[["Ordre chronologique ?","Révolution → abolition 1848 → départementalisation","Départementalisation → Révolution → abolition","Abolition → Révolution → départementalisation","Révolution → départementalisation → abolition"],
+   ["Ordre chronologique ?","1ʳᵉ Guerre mondiale → 2ᵉ Guerre mondiale → chute du mur de Berlin","2ᵉ Guerre → 1ʳᵉ Guerre → mur de Berlin","Mur de Berlin → 1ʳᵉ Guerre → 2ᵉ Guerre","1ʳᵉ Guerre → mur de Berlin → 2ᵉ Guerre"],
+   ["La « guerre froide », c'est…","l'opposition entre les blocs américain et soviétique","une guerre en Sibérie","la guerre de 1914","une guerre civile française"],["La décolonisation, c'est…","l'accès des colonies à l'indépendance","la conquête de colonies","l'abolition de l'esclavage","la création de l'ONU"],
+   ["Pointe-à-Pitre se trouve sur…","Grande-Terre","Basse-Terre","Marie-Galante","La Désirade"],["Fort-de-France est la capitale de…","la Martinique","la Guadeloupe","la Guyane","Haïti"],["La mondialisation désigne…","l'intensification des échanges dans le monde","la création des continents","la guerre froide","la colonisation"],
+   ["Un « DROM » est…","un département et région d'outre-mer","un pays indépendant","une colonie","une collectivité européenne"]],
+  difficile:[["Une cause de la Première Guerre mondiale ?","Le jeu des alliances entre puissances","La chute du mur de Berlin","La crise de 1929","La décolonisation"],
+   ["Une conséquence de la loi de départementalisation de 1946 ?","L'application progressive des lois françaises en Guadeloupe","L'indépendance de la Guadeloupe","Le retour de l'esclavage","La fin de la langue créole"],
+   ["Sur une carte des flux, des flèches épaisses indiquent…","des échanges importants","des frontières","des montagnes","des fleuves"],["Une conséquence de la crise de 1929 ?","Un chômage massif","La fin de la guerre froide","L'abolition de l'esclavage","La création de l'euro"],
+   ["Face à un document historique, on commence par…","identifier l'auteur, la date et la nature","donner son avis","résumer l'époque entière","recopier le texte"],["Une cause de la chute de l'URSS en 1991 ?","Les difficultés économiques et les réformes de Gorbatchev","La Première Guerre mondiale","La crise de 1929","La Révolution française"]]},
+ anglais:{
+  facile:[["« a dog »","un chien","un chat","un oiseau","un cheval"],["« the house »","la maison","la souris","la ville","la rue"],["« to eat »","manger","boire","dormir","marcher"],["Complète : « She ___ a student. »","is","are","am","be"],
+   ["« blue »","bleu","blanc","noir","vert"],["« Thank you »","merci","bonjour","pardon","au revoir"],["Complète : « I ___ 17 years old. »","am","is","have","are"],["« the school »","l'école","le magasin","la plage","le stade"],["« beautiful »","beau / belle","bon","bleu","grand"],["« tomorrow »","demain","hier","aujourd'hui","toujours"]],
+  moyen:[["Le prétérit de « go » ?","went","goed","gone","goes"],["Le prétérit de « buy » ?","bought","buyed","brought","buy"],["Complète : « I have lived here ___ 2020. »","since","for","during","ago"],["Complète : « If it rains, I ___ stay home. »","will","would","am","was"],
+   ["Choisis la bonne phrase.","She doesn't like coffee.","She don't like coffee.","She not like coffee.","She doesn't likes coffee."],["« To look forward to » veut dire…","avoir hâte de","regarder devant","chercher","se souvenir"],["Complète : « He is taller ___ me. »","than","that","then","as"],["« I'm used to » veut dire…","j'ai l'habitude de","j'utilisais","je suis utile","je me suis servi"]],
+  difficile:[["Traduis : « Je n'ai jamais vu ce film. »","I have never seen this film.","I never saw never this film.","I didn't never see this film.","I haven't saw this film."],
+   ["Corrige : « She have been working here since two years. »","She has been working here for two years.","She have worked here since two years.","She has worked here since two years ago.","She is working here since two years."],
+   ["« Had I known, I would have come » signifie…","Si j'avais su, je serais venu·e.","J'avais su que je viendrais.","Je savais et je suis venu·e.","Si je sais, je viendrai."],["Traduis : « Il faut que tu partes. »","You need to leave.","You must to leave.","It's need you leave.","You have leave."],
+   ["« Despite the rain, they played » : despite =","malgré","à cause de","pendant","grâce à"],["Corrige : « The informations are useful. »","The information is useful.","The informations is useful.","The information are useful.","The informations were useful."]]}
+};
+/* calculs tirés au sort (maths, et conversions en physique) */
+function mgGen(sub,lv){const r=n=>Math.floor(Math.random()*n),opts=(ok,f)=>{const s=new Set([String(ok)]);let g=0;while(s.size<4&&g++<60){const v=String(f());if(v!==String(ok))s.add(v)}return [...s]};
+ if(sub==='maths'){
+  if(lv==='facile'){const k=r(4),a=12+r(80),b=3+r(9);if(k===0)return [`${a} + ${b*7} = ?`,...opts(a+b*7,()=>a+b*7+(r(2)?1:-1)*(1+r(9)))];if(k===1)return [`${a+40} − ${b*5} = ?`,...opts(a+40-b*5,()=>a+40-b*5+(r(2)?1:-1)*(1+r(9)))];
+   if(k===2){const x=4+r(9);return [`${x} × ${b} = ?`,...opts(x*b,()=>x*b+(r(2)?1:-1)*(1+r(8)))]}const x=3+r(9);return [`${x*b} ÷ ${b} = ?`,...opts(x,()=>x+(r(2)?1:-1)*(1+r(3)))]}
+  if(lv==='moyen'){const k=r(4);if(k===0){const p=[10,15,20,25,30,50][r(6)],n=[40,60,80,120,200,300][r(6)];return [`${p} % de ${n} = ?`,...opts(n*p/100,()=>n*p/100+(r(2)?1:-1)*(2+r(10)))]}
+   if(k===1){const a=1+r(4),b=2+r(4),c=1+r(4);return [`${a}/${b} + ${c}/${b} = ?`,...opts(`${a+c}/${b}`,()=>`${a+c+(r(2)?1:-1)}/${b+r(2)}`)]}
+   if(k===2){const x=2+r(9),a=2+r(6),b=1+r(15);return [`Résous : ${a}x + ${b} = ${a*x+b}`,...opts('x = '+x,()=>'x = '+(x+(r(2)?1:-1)*(1+r(4))))]}
+   const n=[4,5,6,8,10][r(5)];return [`Un dé à ${n} faces : probabilité de faire 1 ?`,...opts(`1/${n}`,()=>`${1+r(2)}/${n+(r(2)?1:-1)*(1+r(2))}`)]}
+  const k=r(4);if(k===0){const a=2+r(6),n=2+r(3);return [`Dérivée de f(x) = ${a}x${'⁰¹²³⁴⁵'[n]}`,...opts(`${a*n}x${n-1>1?'⁰¹²³⁴⁵'[n-1]:''}`,()=>`${a*n+(r(2)?a:-1)}x${'⁰¹²³⁴⁵'[n-1+r(2)]}`)]}
+  if(k===1){const u=1+r(5),q=2+r(2),n=3+r(3);return [`Suite géométrique : u₀ = ${u}, raison ${q}. u${'₀₁₂₃₄₅₆₇'[n]} = ?`,...opts(u*q**n,()=>[u*q**(n-1),u*q**(n+1),u*q**n+u,u*(q+1)**n,u+q*n][r(5)])]}
+  if(k===2){const n=2+r(5);return [`ln(e${'⁰¹²³⁴⁵⁶⁷'[n]}) = ?`,...opts(n,()=>n+(r(2)?1:-1)*(1+r(2)))]}
+  const p=[.2,.3,.4,.5][r(4)],q=[.5,.6,.7][r(3)];return [`A et B indépendants, P(A) = ${String(p).replace('.',',')}, P(B) = ${String(q).replace('.',',')}. P(A ∩ B) = ?`,...opts(String(+(p*q).toFixed(2)).replace('.',','),()=>String(+(p*q+(r(2)?.1:-.05)*(1+r(2))).toFixed(2)).replace('.',','))]}
+ if(sub==='physique'&&lv==='facile'&&Math.random()<.5){const k=r(3),v=1+r(9);if(k===0)return [`${v} km = ? m`,...opts(v*1000,()=>v*[10,100,10000][r(3)])];if(k===1)return [`${v*250} mL = ? L`,...opts(String(v*.25).replace('.',','),()=>String(v*[2.5,.025,25][r(3)]).replace('.',','))];return [`${v} h = ? min`,...opts(v*60,()=>v*[100,30,600][r(3)])]}
+ return null}
+function mgPick(sub,lv,n){G.mgSeen=G.mgSeen||{};const key=sub+'-'+lv,bank=((MGQ[sub]||{})[lv])||[],seen=G.mgSeen[key]||[],out=[];
+ const fresh=bank.map((q,i)=>i).filter(i=>!seen.includes(i));let pool=shuf(fresh.length>=n?fresh:bank.map((q,i)=>i));
+ for(let i=0;i<n;i++){const g=(sub==='maths'||(sub==='physique'&&i%2===0))?mgGen(sub,lv):null;if(g){out.push(g);continue}const j=pool.shift();if(j==null)break;out.push(bank[j]);seen.push(j)}
+ G.mgSeen[key]=seen.slice(-Math.max(1,bank.length-n));return out}
+/* points : réussite parfaite = +1/+2/+3 ; presque parfait = un point de moins ; raté au niveau moyen ou difficile = −1 */
+function mgPoints(sub,lv,sc){const L=MG_LV.find(x=>x[0]===lv)[2],p=sc>=.999?L:sc>=.74?L-1:sc<.34&&L>1?-1:0;G.mgPts=G.mgPts||{};G.mgPts[sub]=clamp((G.mgPts[sub]||0)+p,-6,12);return p}
+const mgBonus=k=>clamp(((G.mgPts||{})[k]||0)*.5,-2,3);
+/* choix du niveau avant l'exercice */
+function mgLevelSheet(sub,title,start){const pts=(G.mgPts||{})[sub]||0;
+ openSheet(sheetHead(title,`${SUBJ[sub]} · points d'exercices : ${pts>0?'+':''}${pts} (comptent dans la prochaine évaluation)`)+`<div class="choices">${MG_LV.map(([k,l,p])=>`<button class="choice" type="button" data-mglv="${k}">${l}<small>Réussite parfaite : +${p} point${p>1?'s':''}${p>1?' · raté : −1':''}</small></button>`).join('')}</div>`);
+ mgLevelGo=start}
+let mgLevelGo=null;
+const mgHas=s=>s==='maths'||!!MGQ[s];
+const mgPtsLine=(sub,pt)=>pt==null?'':`<p class="story-text"><b>${pt>0?'+'+pt:pt} point${Math.abs(pt)>1?'s':''}</b> en ${SUBJ[sub]} · total ${(G.mgPts[sub]>0?'+':'')+G.mgPts[sub]} (≈ ${(mgBonus(sub)>0?'+':'')+String(mgBonus(sub)).replace('.',',')} sur la prochaine note)</p>`;
+
 function quizFor(sub,n){if(sub==='maths')return Array.from({length:n},mathQ);
  if(PAIRS[sub]){const L=shuf(PAIRS[sub]).slice(0,n);return L.map(([w,t])=>[`Traduis « ${w} »`,t,...shuf(PAIRS[sub].filter(p=>p[1]!==t)).slice(0,3).map(p=>p[1])])}
  return shuf(QUIZ[sub]||QUIZ.francais).slice(0,n)}
@@ -3753,14 +3871,14 @@ function miniTick(){if(!mg)return;mg.left-=.1;const b=$('mgBar');if(b)b.style.wi
  if(mg.left<=0){mg.kind==='quiz'?miniEnd(mg.ok/mg.Q.length):mg.kind==='memoire'?miniEnd(mg.found/mg.P.length*.9):miniEnd(mg.hits/mg.goal)}}
 const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div><b id="mgSec" class="mg-sec"></b></div><div class="bar mg-bar"><i id="mgBar" style="width:100%"></i></div>`;
 /* opts : {sub, subs (évaluation : une question par matière), title, n, t} */
-function playMini(o,done){miniStop();const subs=o.subs||[o.sub],kind=o.subs?'quiz':MINI_KIND(o.sub);
- mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub};mg.left=mg.t;
- if(kind==='quiz'){mg.Q=o.subs?subs.map(s=>{const q=quizFor(s,1)[0];q.sub=s;return q}):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
+function playMini(o,done){miniStop();const subs=o.subs||[o.sub],kind=o.subs||o.lv?'quiz':MINI_KIND(o.sub);
+ mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub,lv:o.lv};mg.left=mg.t;
+ if(kind==='quiz'){mg.Q=o.subs?subs.map(s=>{const q=quizFor(s,1)[0];q.sub=s;return q}):o.lv?mgPick(o.sub,o.lv,o.n||5):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
  else if(kind==='memoire'){const P=shuf(PAIRS[o.sub]).slice(0,6);mg.P=P;mg.cards=shuf(P.flatMap((p,i)=>[{i,t:p[0]},{i,t:p[1]}]));mg.open=[];mg.found=0;mg.tries=0;drawMemo()}
  else{mg.hits=0;mg.goal=10;drawReflex()}
  mg.timer=setInterval(miniTick,100);miniTick()}
 function drawQuiz(){const q=mg.Q[mg.i],ans=shuf(q.slice(1));mg.cur={ok:q[1],sub:q.sub};
- openSheet(mgHead(mg.title,`${MINI_NAME.quiz}${q.sub?' · '+SUBJ[q.sub]:''} · question ${mg.i+1}/${mg.Q.length}`)+`<p class="story-text mg-q">${q[0]}</p><div class="choices">${ans.map(a=>`<button class="choice" type="button" data-mgq="${esc(a)}">${esc(a)}</button>`).join('')}</div>`,true)}
+ openSheet(mgHead(mg.title,`${mg.lv?MG_LV.find(x=>x[0]===mg.lv)[1]:MINI_NAME.quiz}${q.sub?' · '+SUBJ[q.sub]:''} · question ${mg.i+1}/${mg.Q.length}`)+`<p class="story-text mg-q">${q[0]}</p><div class="choices">${ans.map(a=>`<button class="choice" type="button" data-mgq="${esc(a)}">${esc(a)}</button>`).join('')}</div>`,true)}
 function quizPick(a,btn){if(!mg||mg.kind!=='quiz'||mg.lock)return;const good=a===mg.cur.ok;if(good)mg.ok++;mg.res.push({sub:mg.cur.sub,good});mg.lock=true;
  $('sheetBody').querySelectorAll('[data-mgq]').forEach(b=>{if(b.dataset.mgq===mg.cur.ok)b.classList.add('mg-good');else if(b===btn)b.classList.add('mg-bad');b.disabled=true});
  setTimeout(()=>{if(!mg)return;mg.lock=false;mg.i++;if(mg.i>=mg.Q.length)miniEnd(mg.ok/mg.Q.length);else drawQuiz()},good?450:900)}
@@ -3776,14 +3894,16 @@ const scoreLbl=s=>s>=.85?'Excellent ! 🌟':s>=.65?'Bien joué 👍':s>=.4?'Pas 
 function miniResult(title,line,extra){openSheet(sheetHead(title,line)+(extra||'')+`<div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`)}
 /* révisions : le mini-jeu remplace le +8 fixe (de +3 à +12 selon le score) */
 function reviseGame(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
- G.energy=clamp(G.energy-cost,0,100);G.studied[s]=1;saveG();drawHUD();
- playMini({sub:s,title:'Révisions de '+SUBJ[s]},sc=>{const g=gainK(s,3+Math.round(9*sc));G.know[s]=clamp(G.know[s]+g,0,100);G.st.games=(G.st.games||0)+1;note(`Révisions de ${SUBJ[s]} (mini-jeu : ${Math.round(sc*100)} %)`);
-  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[s]} +${g} % de chances de réussite (${G.know[s]} %)`);saveG();drawHUD();drawView()})}
+ const go=lv=>{G.energy=clamp(G.energy-cost,0,100);G.studied[s]=1;saveG();drawHUD();
+ playMini({sub:s,lv,n:lv?4:undefined,t:lv?40:undefined,title:'Révisions de '+SUBJ[s]},sc=>{const g=gainK(s,3+Math.round(9*sc));G.know[s]=clamp(G.know[s]+g,0,100);G.st.games=(G.st.games||0)+1;const pt=lv?mgPoints(s,lv,sc):null;note(`Révisions de ${SUBJ[s]} (mini-jeu : ${Math.round(sc*100)} %)`);
+  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[s]} +${g} % de chances de réussite (${G.know[s]} %)`,mgPtsLine(s,pt));saveG();drawHUD();drawView()})};
+ mgHas(s)?mgLevelSheet(s,'Révisions de '+SUBJ[s],go):go()}
 /* exercice en cours : 3 questions, de −8 à +8 selon la réussite (puis niveau et facilités) */
-function classGame(ph){G.acts--;G.energy=clamp(G.energy-ACTS.exo.e,0,100);G.cb+=.5;saveG();
- playMini({sub:ph.sub,n:3,t:MINI_KIND(ph.sub)==='quiz'?25:undefined,title:`Exercice de ${SUBJ[ph.sub]}`},sc=>{const g=clamp(gainK(ph.sub,Math.round(16*sc-8)),-8,8);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);if(sc>=.65)G.cb+=.5;
+function classGame(ph){const go=lv=>{G.acts--;G.energy=clamp(G.energy-ACTS.exo.e,0,100);G.cb+=.5;saveG();
+ playMini({sub:ph.sub,lv,n:lv?3:3,t:lv?30:MINI_KIND(ph.sub)==='quiz'?25:undefined,title:`Exercice de ${SUBJ[ph.sub]}`},sc=>{const g=clamp(gainK(ph.sub,Math.round(16*sc-8)),-8,8);G.know[ph.sub]=clamp(G.know[ph.sub]+g,0,100);if(sc>=.65)G.cb+=.5;const pt=lv?mgPoints(ph.sub,lv,sc):null;
   const msg=sc>=.65?gtxt(`${ph.prof[0]} est content·e de ton exercice !`,profSex(ph.prof[0])):sc>=.5?'Exercice moyen, tu progresses un peu.':'Exercice raté… tu perds un peu confiance dans cette matière.';note(msg);
-  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} ${g>=0?'+':''}${g} %`,`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})}
+  miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} ${g>=0?'+':''}${g} %`,mgPtsLine(ph.sub,pt)+`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})};
+ mgHas(ph.sub)?mgLevelSheet(ph.sub,`Exercice de ${SUBJ[ph.sub]}`,go):go()}
 /* évaluation du vendredi : une question par matière ; bonne réponse +1,5 sur la note, mauvaise −0,5 */
 function evalGame(){if(G.evalBonus[G.day]){toast('Tu as déjà rendu ta copie');return}
  playMini({subs:Object.keys(SUBJ),t:75,title:'Évaluation commune'},(sc,m)=>{const b={};(m.res||[]).forEach(r=>{b[r.sub]=r.good?1.5:-.5});G.evalBonus[G.day]=b;
@@ -4233,7 +4353,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(t.id==='gRestartOk'){restartGame();return}
  if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
  if(igClick(t))return;
- {let m;if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
+ {let m;if(m=t.closest('[data-mglv]')){const f=mgLevelGo;mgLevelGo=null;if(f)f(m.dataset.mglv);return}if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
   if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
   if(m=t.closest('[data-tutortalk]')){tutorTalk(+m.dataset.tutortalk);return}
   if(t.closest('[data-revquick]')){const w=Object.keys(SUBJ).sort((a,b)=>G.know[a]-G.know[b]).slice(0,3);revise(pickR(w));return}}
