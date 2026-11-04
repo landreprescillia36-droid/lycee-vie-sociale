@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='43';
+const APP_VERSION='44';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -860,6 +860,16 @@ function sideburns(s,A,col,fit,cid){const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb
  for(let v=vb;v>=y0;v-=5){const u=(v-y0)/(vb-y0);P.push([faceEdge(s,v,k)-k*(Math.max(14,Math.abs(q[0]-faceEdge(s,y0,k)))*(1-u)+7*u),v])}
  const d='M'+P.map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
  return `<g filter="url(#${id}b)"><path d="${d}" fill="url(#${id})"/><path d="${d}" fill="url(#${id}p)" opacity=".6" mask=""/></g>`}).join('')}
+const HTINT={},HTINT_GO={};
+function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;
+ const T=tab.map(a=>a.map(Number)),im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
+  const d=x.getImageData(0,0,c.width,c.height),a=d.data,W=c.width,H=c.height,L=new Float32Array(W*H);
+  for(let i=0;i<W*H;i++)L[i]=(a[i*4]*.299+a[i*4+1]*.587+a[i*4+2]*.114)/255;
+  const n=T[0].length-1;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){const i=yy*W+xx,up=yy>0?L[i-W]:L[i],dn=yy<H-1?L[i+W]:L[i],v=clamp((up+2*L[i]+dn)/4,0,1),q=v*n,j=Math.min(n-1,Math.floor(q)),u=q-j;
+   for(let ch=0;ch<3;ch++)a[i*4+ch]=Math.round((T[ch][j]+(T[ch][j+1]-T[ch][j])*u)*255)}
+  x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;
+  document.querySelectorAll(`image[data-hk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('filter')})}catch(e){/* fichier ouvert en local (file://) : le filtre SVG reste */}};
+ im.src=`assets/coiffures/${f}.png`;return null}
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
@@ -868,14 +878,17 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
  /* l'image est posée deux fois : derrière le corps (les cheveux de l'arrière passent derrière les épaules)
     et devant, découpée pour ne garder que la tête et les mèches qui tombent sur la poitrine */
  if(A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf'+part,cid=p+'hac';
-  if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16,tab=[[],[],[]];
+  let tab=null;if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16;tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${HAIR_G.includes(s.hair)?'.15 .35':'.45 1.3'}"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
   const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
-  const img=G0+`<image href="assets/coiffures/${s.hair}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${fid})"`}/>`+G1;
+  /* couleur : l'image est reteinte une fois dans un canvas (hairTint) puis réutilisée, sans filtre SVG (certains téléphones
+     n'affichaient plus les cheveux filtrés) ; en attendant, le filtre sert de secours */
+  const imgOf=f=>{const T=same?null:hairTint(f,hc,tab);return `<image href="${T||`assets/coiffures/${f}.png`}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/>`};
+  const img=G0+imgOf(s.hair)+G1;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
-  if(part==='back'&&A.dos)return flt+img.replace(`${s.hair}.png`,`${s.hair}-dos.png`);   /* cheveux sous les épaules : vides remplis de mèches, derrière le corps */
+  if(part==='back'&&A.dos)return flt+G0+imgOf(s.hair+'-dos')+G1;   /* cheveux sous les épaules : vides remplis de mèches, derrière le corps */
   if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
   return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${A.crane?`<mask id="${cid}k"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="${faceOf(s).d}" fill="#000" stroke="#fff" stroke-width="9"/></mask><mask id="${cid}l"><rect x="-400" y="125" width="1200" height="1000" fill="#fff"/><path d="${faceOf(s).d}" fill="#000"/></mask>${G0}<path d="${A.crane}" fill="${s.skin}" mask="url(#${cid}k)"/><path d="${A.crane}" fill="none" stroke="${mix(s.skin,'#6a2e14',.42)}" stroke-width="2.4" opacity=".5" mask="url(#${cid}l)"/>${G1}`:''}${img}${A.tempe&&(!fit||HAIR_FADE[s.hair])?sideburns(s,A,same?A.main:hc,fit,cid):''}${A.acc?G0+`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`+G1:''}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
