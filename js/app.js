@@ -2491,6 +2491,7 @@ function advance(n){
   if(G.min%60===0&&!G.asleep){npcPing();familyPing();followTick();checkObjectives()}
  }
  const ph=phase();
+ if(ph.key===G.phaseKey)classEventTick(n);
  if(ph.key!==G.phaseKey){const prev=G.lastPhase;G.phaseKey=ph.key;G.lastPhase=ph;onPhaseChange(prev,ph)}
  evalCatch();checkPlans();drawClock();if(G.min%5===0)saveG();
 }
@@ -2528,6 +2529,7 @@ const APP=v=>v>=16?'Excellent trimestre, bravo.':v>=14?'Très bon travail, conti
 const MENT=v=>v>=16?'Félicitations du conseil de classe':v>=14?'Compliments':v>=12?'Encouragements':v>=10?'Passage validé':v>=8?'Mise en garde travail':'Avertissement travail';
 function bulletinSheet(b){return sheetHead(`Bulletin du ${b.tri===1?'1er':b.tri+'e'} trimestre`,`Moyenne générale ${fmtG(b.avg)}/20 · ${b.ok?'moyenne atteinte ✅':'moyenne non atteinte ❌'}`)
  +`<div class="card list">${Object.keys(SUBJ).filter(k=>b.subs[k]!=null).map(k=>`<div class="bul"><div class="prof"><span>${SUBJ[k]} <small class="muted">${PROFS[k][0]}</small></span><b>${fmtG(b.subs[k])}/20</b></div><small class="muted">${APP(b.subs[k])}</small></div>`).join('')}</div>
+ ${G.cls?`<div class="card"><span class="eyebrow">Vie de classe</span><p>Comportement : <b>${BEH_TXT(G.cls.beh)}</b>${G.cls.colles?` · ${G.cls.colles} heure${G.cls.colles>1?'s':''} de colle`:''}</p>${Object.keys(SUBJ).filter(k=>G.cls.appr[k]).map(k=>`<p class="muted" style="margin:4px 0 0">${SUBJ[k]} : ${P(APPR_TXT(G.cls.appr[k]))}</p>`).join('')}</div>`:''}
  <div class="card"><span class="eyebrow">Appréciation générale</span><p><b>${MENT(b.avg)}</b> · ${b.n} évaluation${b.n>1?'s':''} ce trimestre.</p></div>`}
 function makeBulletin(t){
  if(G.bulletins.some(b=>b.tri===t))return;
@@ -2932,7 +2934,7 @@ function hudTick(){
  const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden)advance(mg?1:(G.speed||1))},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden&&!cevOpen)advance(mg?1:(G.speed||1))},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -3294,7 +3296,7 @@ function placeBody(ph,place,map){
 }
 function drawMates(){
  $('gView').innerHTML=`<div class="sec-title">Groupes</div>${groupsHTML()}<div class="sec-title">Camarades</div><div class="list">${NPCS.map(n=>`<button class="card mate" type="button" data-mate="${n.id}"><div class="relrow"><div class="av">${avatarOf(n.id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(n.id))}</span><small>${statusOf(n.id)}</small></div>${gaugesHTML(n.id)}<span class="muted">${esc(ressentiShort(n.id))}</span></div></div></button>`).join('')}</div>
- <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
+ <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}${G.cls&&G.cls.appr[k]?` · ${G.cls.appr[k]>=3?'t\'apprécie 😊':G.cls.appr[k]<=-3?gtxt('agacé·e',profSex(n))+' 😒':'neutre'}`:''}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
 }
 function drawMessages(){
  const ids=[...NPCS.map(n=>n.id),...G.family.map(f=>f.id)];
@@ -3330,8 +3332,8 @@ function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
 function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
-$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
+function closeSheet(){if(cevS)return;cevOpen=false;$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&cevS)return;if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
 function openFiche(id){
  const f=FICHES[id],n=WHO[id];
@@ -3475,6 +3477,152 @@ function punish(ph){
  else{msg=`${prof} te met une heure de colle !`;G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
  G.know[ph.sub]=clamp(G.know[ph.sub]-2,0,100);return '😬 '+msg;
 }
+/* ---------- événements pendant les cours (style BitLife) ----------
+   Pendant une heure de cours, une fenêtre peut s'ouvrir au hasard (pas à chaque cours, 2 au plus) : question du prof,
+   camarade qui demande de l'aide, mot qui passe, téléphone qui vibre… Le temps est en pause tant que le joueur n'a pas choisi.
+   Conséquences : chances de réussite (G.know), appréciation du prof (G.cls.appr), participation (G.cls.part),
+   comportement (G.cls.beh), amitié, et sanctions graduées selon la sévérité du prof et la répétition (G.cls.infr). */
+const CQ={
+ maths:[["Quelle est la dérivée de f(x) = 3x² ?","6x","3x","6x²"],["Quelle est la dérivée de exp(x) ?","exp(x)","x·exp(x−1)","1/x"],["Combien vaut ln(1) ?","0","1","e"],
+  ["La limite de 1/x quand x tend vers +∞ est…","0","+∞","1"],["Une primitive de 2x est…","x²","2","2x²"],["Si P(A) = 0,3, alors P(non A) vaut…","0,7","0,3","1,3"],
+  ["La dérivée de ln(x) est…","1/x","ln(x)/x","x"],["Combien vaut e⁰ ?","1","0","e"]],
+ francais:[["« Cette obscure clarté » est…","un oxymore","une métaphore","une litote"],["Dans « Il se tait », le verbe est…","pronominal","transitif direct","au passif"],
+  ["« Je meurs de soif » est…","une hyperbole","un euphémisme","une anaphore"],["Le participe passé de « résoudre » est…","résolu","résout","résoud"],
+  ["Qui a écrit « Cahier d'un retour au pays natal » ?","Aimé Césaire","Léopold Senghor","Victor Hugo"],["Répéter un mot en début de vers s'appelle…","une anaphore","une ellipse","un chiasme"],
+  ["« Il n'est pas bête » pour dire « il est intelligent », c'est…","une litote","une hyperbole","une antithèse"],["Le registre qui fait pleurer s'appelle…","pathétique","comique","épique"]],
+ philo:[["Qui a écrit « Je pense, donc je suis » ?","Descartes","Platon","Nietzsche"],["« L'homme est condamné à être libre » est une phrase de…","Sartre","Kant","Rousseau"],
+  ["L'allégorie de la caverne est de…","Platon","Aristote","Spinoza"],["Pour Kant, agir par devoir, c'est agir selon…","la morale","l'intérêt","le désir"],
+  ["« Autrui » désigne…","l'autre que moi","la société","l'État"],["Ce qui existe en dehors de l'esprit, c'est le…","réel","sujet","langage"],
+  ["Qui a parlé de « l'inconscient » ?","Freud","Descartes","Hegel"],["Un argument qui tourne en rond est…","un cercle vicieux","une thèse","une antithèse"]],
+ physique:[["Combien de mL dans 1 L ?","1000 mL","100 mL","10 mL"],["La formule de la concentration massique est…","Cm = m / V","Cm = V / m","Cm = m × V"],
+  ["Un acide a un pH…","inférieur à 7","égal à 7","supérieur à 7"],["L'unité de l'énergie est le…","joule","watt","newton"],
+  ["La vitesse de la lumière dans le vide est environ…","300 000 km/s","300 km/s","3 000 km/s"],["P = U × I donne…","la puissance","la tension","la résistance"],
+  ["La formule de l'eau est…","H₂O","HO₂","H₂O₂"],["0,5 kg, c'est…","500 g","50 g","5 g"]],
+ svt:[["L'ADN se trouve surtout dans…","le noyau","la membrane","le cytoplasme"],["La photosynthèse produit…","du dioxygène","du dioxyde de carbone","de l'azote"],
+  ["Les cellules sexuelles sont produites par…","la méiose","la mitose","la photosynthèse"],["Le volcan de la Guadeloupe est…","la Soufrière","la montagne Pelée","le Piton de la Fournaise"],
+  ["Les globules blancs servent à…","nous défendre","transporter l'oxygène","coaguler le sang"],["Une mutation est…","une modification de l'ADN","une maladie","une cellule"]],
+ anglais:[["Traduis « je n'ai jamais vu ça ».","I have never seen that","I never see that","I didn't never saw that"],["Le prétérit de « go » est…","went","goed","gone"],
+  ["« Despite » veut dire…","malgré","depuis","pendant"],["Complète : « If I ___ rich, I would travel. »","were","am","will be"],
+  ["« To look forward to » veut dire…","avoir hâte de","regarder devant","rechercher"],["Le pluriel de « child » est…","children","childs","childes"]],
+ espagnol:[["« Yo ___ estudiante. »","soy","estoy","hay"],["Comment dit-on « la plage » ?","la playa","la plaza","la piscina"],
+  ["Le passé simple de « tener » (yo) est…","tuve","tení","tenía"],["« Aunque » veut dire…","bien que","alors","aussi"],
+  ["Comment dit-on « demain » ?","mañana","ayer","hoy"],["« Me gusta » veut dire…","j'aime","je veux","je dois"]],
+ histoire:[["L'esclavage est aboli en Guadeloupe en…","1848","1789","1802"],["La Guadeloupe devient un département en…","1946","1848","1958"],
+  ["La guerre froide oppose…","les États-Unis et l'URSS","la France et l'Allemagne","la Chine et le Japon"],["Le mur de Berlin tombe en…","1989","1961","1991"],
+  ["L'ONU est créée en…","1945","1918","1958"],["La capitale de l'Australie est…","Canberra","Sydney","Melbourne"],["Qui a été le premier président de la Ve République ?","Charles de Gaulle","François Mitterrand","Georges Pompidou"]],
+ eps:[["Au volley, combien de joueurs par équipe sur le terrain ?","6","5","7"],["Le muscle de la cuisse à l'avant est…","le quadriceps","le biceps","le mollet"],
+  ["Avant l'effort, il faut…","s'échauffer","s'étirer fort","manger beaucoup"],["Au basket, un panier hors de la zone vaut…","3 points","2 points","1 point"],
+  ["Le cœur d'un ado au repos bat environ…","70 fois par minute","20 fois par minute","150 fois par minute"],["Au handball, on joue à…","7","11","5"]]
+};
+const CNAME=id=>WHO[id].name,CG=(id,t)=>gtxt(t,FICHES[id]?FICHES[id].g:'f');
+let cevOpen=false,cevS=null;
+function clsInit(){G.cls=G.cls||{};const c=G.cls;c.appr=c.appr||{};c.part=c.part||{};c.infr=c.infr||[];c.beh=c.beh??70;c.colles=c.colles||0;c.ev=c.ev||{};c.seen=c.seen||{};return c}
+const cRecent=()=>clsInit().infr.filter(x=>G.day-x.day<=10).length;
+function cAppr(sub,d){const c=clsInit();c.appr[sub]=clamp((c.appr[sub]||0)+d,-20,20)}
+function cBeh(d){const c=clsInit();c.beh=clamp(c.beh+d,0,100)}
+function cKnow(sub,g){const v=g>0?gainK(sub,g):g;G.know[sub]=clamp(G.know[sub]+v,0,100);return v}
+/* surpris·e par le prof : selon la sévérité (1 à 3) et les écarts des 10 derniers jours */
+const cCaught=(ph,base)=>Math.random()<base*(.5+.35*ph.prof[1])*(1+.2*cRecent());
+/* sanction graduée : remarque → mot dans le carnet → heure de colle */
+function cSanction(ph,what){const c=clsInit(),[prof,s]=ph.prof,n=cRecent();c.infr.push({day:G.day,sub:ph.sub});c.infr=c.infr.slice(-30);G.st.caughtToday=true;
+ const lvl=clamp(s-1+(n>=2?1:0)+(n>=4?1:0)-(s===1&&n<2?1:0),0,2);let m;
+ if(lvl<=0){m=`${prof} te fait une remarque devant la classe${what?' ('+what+')':''}.`;cAppr(ph.sub,-2);cBeh(-3)}
+ else if(lvl===1){m=`${prof} écrit un mot dans ton carnet${what?' ('+what+')':''}.`;cAppr(ph.sub,-3);cBeh(-6);parentReact('carnet')}
+ else{m=`${prof} te met une heure de colle${what?' ('+what+')':''} !`;cAppr(ph.sub,-4);cBeh(-10);c.colles++;G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
+ return '😬 '+m}
+const cRel=(id,da,dl)=>{const r=relChange(id,da,dl);return r?' · '+r:''};
+/* camarade qui parle : de préférence quelqu'un qui t'apprécie (les relations décident) */
+function cPal(ph,minAmi){const nb=neighborOf(ph),L=NPCS.filter(n=>G.rel[n.id].ami>=(minAmi??10)&&n.id!==nb);return L.length&&Math.random()<.6?pickR(L).id:nb}
+function cGossip(from){const others=NPCS.filter(n=>n.id!==from).map(n=>n.id),couple=(G.couples||[]).find(c=>!c.includes(from)),x=pickR(others);
+ const L=[[x,`Tu as vu ce qui s'est passé hier avec ${CNAME(x)} ?`,CG(x,`${CNAME(x)} s'est fait·e recaler par un prof devant tout le monde 😭`)],
+  [x,`Psst… tu sais pourquoi ${CNAME(x)} fait la tête ?`,CG(x,`${CNAME(x)} s'est embrouillé·e avec quelqu'un sur Insta hier soir 👀`)],
+  [x,`T'as vu la nouvelle tenue de ${CNAME(x)} ? 😂`,`Franchement ça lui va bien… ou pas, à toi de voir 😂`]];
+ if(couple)L.push([couple[0],`Il paraît que ${CNAME(couple[0])} et ${CNAME(couple[1])}, c'est compliqué en ce moment…`,`Ils se sont disputés à la récré, tout le monde a entendu 😬`]);
+ if(G.rival&&G.rival!==from)L.push([G.rival,`${CNAME(G.rival)} parle encore de toi dans ton dos…`,CG(G.rival,`${CNAME(G.rival)} dit que tu te la racontes depuis le début de l'année 🙄`)]);
+ return pickR(L)}
+const CEV=[
+ /* 1. le prof pose une question sur la matière */
+ {id:'question',w:3,run(x){const q=pickR(CQ[x.sub]||CQ.maths),opts=q.slice(1).map((a,i)=>[a,i===0]).sort(()=>Math.random()-.5);
+  return{t:`Cours de ${SUBJ[x.sub]}`,b:`${x.prof} te regarde et te demande : « ${q[0]} »`,ch:[...opts.map(([a,ok])=>['Répondre : '+a,()=>ok?(cKnow(x.sub,3),cAppr(x.sub,2),cPart(x.sub),cBeh(1),`✅ Bonne réponse ! ${x.prof} hoche la tête, ${x.pron} apprécie ta participation.`):(cAppr(x.sub,0),`❌ Ce n'était pas ça : la bonne réponse était « ${q[1]} ». ${x.prof} corrige sans s'énerver.`)]),
+   ['Ne pas répondre',()=>{cAppr(x.sub,-1);return `${x.prof} soupire : « Il faudrait suivre un peu… »`}],
+   ['Faire semblant de ne pas avoir entendu',()=>{if(Math.random()<.3+.15*x.sev){cAppr(x.sub,-2);cBeh(-2);return `${x.prof} n'est pas dupe : « Je vois que tu es ailleurs. » Quelques rires dans la classe.`}return `${x.prof} finit par interroger quelqu'un d'autre. Ouf.`}]]}}},
+ /* 2. un camarade demande de l'aide sur la leçon */
+ {id:'aide',w:2,run(x){const id=x.nb;return{t:`${CNAME(id)} a besoin d'aide`,b:`${CNAME(id)}, assis·e à côté de toi, se penche discrètement : « Hé, tu as compris ce qu'${x.pron} vient d'expliquer ? Moi je suis complètement perdu·e ! »`.replace(/assis·e|perdu·e/g,w=>CG(id,w)),ch:[
+   ['Lui expliquer le cours',()=>{if(cCaught(x.ph,.18))return cSanction(x.ph,'bavardage')+cRel(id,2);const k=G.know[x.sub]>=45;cKnow(x.sub,k?2:0);return (k?`Tu lui réexpliques calmement, ça t'aide à mieux comprendre aussi.`:`Tu essaies… mais tu t'emmêles un peu.`)+cRel(id,k?5:2)}],
+   ['Lui répondre rapidement',()=>cCaught(x.ph,.08)?cSanction(x.ph,'bavardage'):`Tu lui glisses l'essentiel en deux mots.`+cRel(id,2)],
+   ['Lui dire de suivre',()=>`« Écoute le prof, tu verras. » ${CNAME(id)} lève les yeux au ciel.`+cRel(id,-1)],
+   ["L'ignorer",()=>CG(id,`${CNAME(id)} se sent un peu vexé·e.`)+cRel(id,-3)],
+   ['Lui faire une blague',()=>{if(cCaught(x.ph,.22))return cSanction(x.ph,'fou rire')+cRel(id,FICHES[id].hum>.5?2:0);return (FICHES[id].hum>.5?`${CNAME(id)} étouffe un fou rire.`:CG(id,`${CNAME(id)} ne rit pas : « Sérieux, j'ai besoin d'aide là… »`))+cRel(id,FICHES[id].hum>.5?3:-1)}]]}}},
+ /* 3. un camarade essaie de discuter (mot qui passe) */
+ {id:'discute',w:2,run(x){const id=cPal(x.ph,10),[tg,line,ans]=cGossip(id);return{t:`Un mot de ${CNAME(id)}`,b:`${CNAME(id)} te fait passer un petit mot : « ${line} »`,ch:[
+   ['Répondre au mot',()=>cCaught(x.ph,.15)?cSanction(x.ph,'mot en classe')+' Le mot est confisqué.'+cRel(id,1):`Vous vous échangez quelques mots en cachette.`+cRel(id,3)],
+   ["Lui demander ce qui s'est passé",()=>cCaught(x.ph,.2)?cSanction(x.ph,'bavardage')+cRel(id,1):`${CNAME(id)} te chuchote : « ${ans} »`+cRel(id,3)],
+   ['Lui faire signe de se taire',()=>{cBeh(1);return `Tu poses un doigt sur tes lèvres. ${CNAME(id)} range son mot.`+cRel(id,-1)}],
+   ['Ne pas répondre',()=>`Tu fais comme si tu n'avais rien vu.`+cRel(id,-2)]]}}},
+ /* 4. autres événements */
+ {id:'feuille',w:1,run(x){const id=x.nb;return{t:'Une feuille ?',b:`${CNAME(id)} chuchote : « T'aurais pas une feuille à me passer ? »`,ch:[
+   ['Lui en donner une',()=>`Tu lui tends une feuille.`+cRel(id,3)],['Lui en donner deux, au cas où',()=>`« T'es un·e vrai·e ! »`.replace(/un·e vrai·e/,P('un·e vrai·e'))+cRel(id,4)],['Dire que tu n\'en as plus',()=>`${CNAME(id)} demande à quelqu'un d'autre.`+cRel(id,-1)]]}}},
+ {id:'copier',w:1,run(x){const id=x.nb;return{t:'Copier ?',b:`Pendant l'exercice, ${CNAME(id)} murmure : « Tu me laisses copier ? Juste la 2… »`,ch:[
+   ['Le laisser copier',()=>cCaught(x.ph,.25)?cSanction(x.ph,'triche')+cRel(id,1):`${CNAME(id)} recopie en vitesse.`+cRel(id,4)],
+   ["Lui expliquer comment faire",()=>{cKnow(x.sub,1);return `Tu lui montres la méthode sans donner la réponse.`+cRel(id,3)}],
+   ['Cacher ta feuille',()=>`Tu caches ta copie avec ton bras.`+cRel(id,-3)],['Prévenir le prof',()=>{cAppr(x.sub,1);mark(id,'trahison');return CG(id,`${x.prof} reprend ${CNAME(id)}. Ton voisin·e te lance un regard noir.`)+cRel(id,-10)}]]}}},
+ {id:'boulette',w:1,run(x){const id=pickR(NPCS.filter(n=>n.id!==x.nb)).id;return{t:'Une boulette de papier !',b:`Une boulette de papier atterrit sur ta table. Au fond, ${CNAME(id)} se retient de rire.`,ch:[
+   ['La relancer',()=>cCaught(x.ph,.3)?cSanction(x.ph,'boulette'):`Bien visé ! ${CNAME(id)} pouffe de rire.`+cRel(id,3)],
+   ['La déplier pour lire',()=>`Dessus, un dessin du prof avec une moustache 😂`+cRel(id,2)],["L'ignorer",()=>{cBeh(1);return `Tu la jettes à la poubelle en sortant.`}],['Le dire au prof',()=>{cAppr(x.sub,1);return `${x.prof} reprend ${CNAME(id)} sèchement.`+cRel(id,-6)}]]}}},
+ {id:'volontaire',w:1.2,run(x){const q=pickR(CQ[x.sub]||CQ.maths);return{t:'Un volontaire ?',b:`${x.prof} : « Quelqu'un pour venir au tableau ? »`,ch:[
+   ['Lever la main',()=>{const ok=Math.random()<.3+G.know[x.sub]/130;cPart(x.sub);if(ok){cKnow(x.sub,4);cAppr(x.sub,3);cBeh(1);return `Tu vas au tableau et tu réussis l'exercice. ${x.prof} te félicite !`}cAppr(x.sub,1);return `Tu te trompes un peu au tableau, mais ${x.prof} salue ta participation.`}],
+   ['Baisser les yeux',()=>`${x.prof} choisit quelqu'un d'autre.`],
+   ['Désigner ton voisin',()=>CG(x.nb,`${CNAME(x.nb)} se lève en te fusillant du regard 😅`)+cRel(x.nb,FICHES[x.nb].hum>.5?1:-3)]]}}},
+ {id:'tombe',w:.8,run(x){const id=pickR(NPCS).id;return{t:'Tout par terre',b:CG(id,`La trousse de ${CNAME(id)} tombe : stylos et feuilles partout. Quelques élèves rigolent.`),ch:[
+   ["L'aider à ramasser",()=>`Tu l'aides à tout ramasser.`+cRel(id,4)],['Rire avec les autres',()=>CG(id,`${CNAME(id)} est vexé·e.`)+cRel(id,-3)],['Ne rien faire',()=>`Tu continues à écrire.`]]}}},
+ {id:'phone',w:1,run(x){const from=pickR(NPCS).id;return{t:'Ton téléphone vibre',b:`Bzz… Ton téléphone vibre dans ton sac. Sur l'écran : un message de ${CNAME(from)}.`,ch:[
+   ['Lire le message en cachette',()=>cCaught(x.ph,.25)?cSanction(x.ph,'téléphone')+' Ton téléphone est confisqué jusqu\'à la fin du cours.':`« ${pickR(VOICE[from].start)} »`+cRel(from,1)],
+   ['Répondre discrètement',()=>cCaught(x.ph,.38)?cSanction(x.ph,'téléphone')+' Ton téléphone est confisqué jusqu\'à la fin du cours.':`Tu réponds sous la table.`+cRel(from,3)],
+   ['Le mettre en silencieux',()=>{cBeh(1);return 'Tu coupes le son sans le regarder.'}]]}}},
+ {id:'controle',w:.4,run(x){return{t:'Contrôle surprise !',b:`${x.prof} : « Rangez vos affaires, petite interrogation surprise ! » Toute la classe soupire.`,ch:[
+   ['Faire de ton mieux',()=>({mini:1})],['Rendre copie blanche',()=>{const v=0;G.grades.push({sub:x.sub,v,day:G.day,sd:schoolDay(G.day),surprise:1});cAppr(x.sub,-3);return `0/20… ${x.prof} n'apprécie pas du tout.`}]]}}},
+ {id:'dort',w:.8,run(x){const id=pickR(NPCS).id;return{t:CG(id,`${CNAME(id)} s'est endormi·e`),b:CG(id,`${CNAME(id)} dort sur son bureau, la tête dans les bras. ${x.prof} ne l'a pas encore vu·e.`),ch:[
+   ['Le ou la réveiller discrètement',()=>CG(id,`${CNAME(id)} sursaute : « Merci, t'es un·e ange… »`).replace('un·e ange',P('un·e ange'))+cRel(id,4)],
+   ['Le dire tout haut',()=>{mark(id,'abandon');return `Toute la classe rit. ${x.prof} réveille ${CNAME(id)} sèchement.`+cRel(id,-8)}],
+   ['Le prendre en photo',()=>cCaught(x.ph,.25)?cSanction(x.ph,'téléphone'):`La photo fera rire tout le monde à la récré…`+cRel(id,-2)],['Le laisser dormir',()=>'Chacun ses problèmes.']]}}},
+ {id:'binome',w:1,run(x){const L=NPCS.slice().sort(()=>Math.random()-.5).slice(0,3).map(n=>n.id);return{t:'Travail en binôme',b:`${x.prof} : « Mettez-vous par deux pour l'exercice. » Avec qui ?`,ch:[
+   ...L.map(id=>[`Avec ${CNAME(id)}`,()=>{const g=FICHES[id].stud>.6?3:FICHES[id].stud<.35?0:2;cKnow(x.sub,g);cPart(x.sub);return (g>=3?CG(id,`${CNAME(id)} est très fort·e : vous avancez vite.`):g?`Vous vous répartissez le travail.`:`Vous discutez plus que vous ne travaillez…`)+cRel(id,4)}]),
+   ['Travailler seul·e',()=>{cKnow(x.sub,2);return 'Tu préfères avancer à ton rythme.'}]].map(c=>[P(c[0]),c[1]])}}},
+ {id:'provoc',w:.8,ok:x=>NPCS.some(n=>G.rel[n.id].ami<0)||G.rival,run(x){const id=G.rival&&Math.random()<.6?G.rival:(NPCS.filter(n=>G.rel[n.id].ami<0)[0]||NPCS[0]).id;
+  return{t:`${CNAME(id)} te cherche`,b:`${CNAME(id)} se retourne et te lance, assez fort pour que les autres entendent : « Encore en train de rêvasser ? »`,ch:[
+   ['Répondre du tac au tac',()=>cCaught(x.ph,.35)?cSanction(x.ph,'dispute'):`Ta réplique fait rire la classe. ${CNAME(id)} se tait.`+cRel(id,-2)],
+   ['Ignorer',()=>{cBeh(2);return 'Tu ne lui fais pas ce plaisir.'}],['Le dire au prof',()=>{cAppr(x.sub,1);return `${x.prof} reprend ${CNAME(id)}.`+cRel(id,-4)}],['Sourire et laisser couler',()=>`« Bien essayé. » Ça le déstabilise.`+cRel(id,1)]]}}},
+ {id:'place',w:.6,run(x){const id=pickR(NPCS.filter(n=>n.id!==x.nb)).id;return{t:'Changer de place ?',b:`${CNAME(id)} te demande tout bas : « On échange de place ? Je vois rien d'ici. »`,ch:[
+   ['Accepter',()=>`Vous échangez discrètement.`+cRel(id,3)],['Refuser',()=>`« Désolé·e, je suis bien ici. »`.replace('Désolé·e',P('Désolé·e'))+cRel(id,-1)]]}}},
+ {id:'motdoux',w:.6,ok:x=>NPCS.some(n=>G.rel[n.id].amour>=30),run(x){const id=NPCS.slice().sort((a,b)=>G.rel[b.id].amour-G.rel[a.id].amour)[0].id;return{t:'Un mot plié en quatre',b:`Un petit mot circule jusqu'à toi. Dessus, l'écriture de ${CNAME(id)} : « Tu fais quoi après les cours ? 🙈 »`,ch:[
+   ['Répondre « avec toi, si tu veux 😊 »',()=>cCaught(x.ph,.15)?cSanction(x.ph,'mot en classe')+' Le mot est lu à voix haute… 😳'+cRel(id,1,2):`${CNAME(id)} rougit en lisant ta réponse.`+cRel(id,2,5)],
+   ['Répondre gentiment, sans plus',()=>`Tu réponds poliment.`+cRel(id,2)],['Ranger le mot sans répondre',()=>`Tu le glisses dans ta trousse.`+cRel(id,0,-2)]]}}}
+];
+function cPart(sub){const c=clsInit();c.part[sub]=(c.part[sub]||0)+1;G.cb+=.5}
+function classEventTick(n){
+ if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase();if(ph.type!=='cours')return;
+ const c=clsInit();if(c.ev.key!==ph.key)c.ev={key:ph.key,n:0,last:ph.start};const e=c.ev;
+ if(e.n>=2||G.min-ph.start<8||G.min-e.last<18||G.min>ph.end-6)return;
+ if(Math.random()<1-Math.pow(.988,n))openClassEvent(ph)}
+function openClassEvent(ph,force){const c=clsInit(),sub=ph.sub,prof=ph.prof[0];
+ const x={ph,sub,prof,sev:ph.prof[1],nb:neighborOf(ph),pron:profSex(prof)==='f'?'elle':'il'};
+ let L=CEV.filter(v=>!v.ok||v.ok(x));if(force)L=L.filter(v=>v.id===force);
+ L=L.map(v=>[v,v.w*(c.seen[v.id]===G.day?.15:1)]);let r=Math.random()*L.reduce((a,b)=>a+b[1],0),i=0;while(i<L.length-1&&r>L[i][1]){r-=L[i][1];i++}
+ const ev=L[i][0],d=ev.run(x);c.ev.n=(c.ev.n||0)+1;c.ev.last=G.min;c.seen[ev.id]=G.day;
+ cevOpen=true;cevS={ev:ev.id,x,ch:d.ch};
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">📚 ${SUBJ[sub]} · ${prof}</span><h2>${P(d.t)}</h2></div></div><p class="cev-txt">${P(d.b)}</p>
+  <div class="choices">${d.ch.map((ch,j)=>`<button class="choice" type="button" data-cev="${j}">${P(ch[0])}</button>`).join('')}</div>`)}
+function chooseClassEvent(j){const s=cevS;if(!s)return;const ch=s.ch[+j];if(!ch)return;cevS=null;let res=ch[1]();
+ if(res&&res.mini){const x=s.x;cevOpen=false;playMini({sub:x.sub,n:3,title:'Contrôle surprise de '+SUBJ[x.sub]},sc=>{const v=clamp(Math.round((G.know[x.sub]/100*10+sc*10)*2)/2,0,20);
+   G.grades.push({sub:x.sub,v,day:G.day,sd:schoolDay(G.day),surprise:1});cAppr(x.sub,v>=14?2:v<8?-1:0);cKnow(x.sub,2);note(`Contrôle surprise de ${SUBJ[x.sub]} : ${fmtG(v)}/20`);
+   miniResult(`${fmtG(v)}/20`,`Contrôle surprise de ${SUBJ[x.sub]} · ${v>=14?x.prof+' est impressionné·e':v>=10?'Correct':'À retravailler'}`);saveG();drawHUD();drawView()});return}
+ res=P(String(res));note(res);
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">📚 ${SUBJ[s.x.sub]} · ${s.x.prof}</span><h2>${P(ch[0])}</h2></div></div><p class="cev-txt">${res}</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);
+ checkObjectives();saveG();drawHUD();if(view==='day')drawView()}
+/* appréciation du prof (bulletin, fiche des profs) */
+const APPR_TXT=v=>v>=8?'Très bonne participation, élève impliqué·e.':v>=3?'Participation régulière et pertinente.':v>-3?'Doit participer davantage.':v>-8?'Bavardages à surveiller.':'Comportement à revoir : attitude perturbatrice.';
+const BEH_TXT=v=>v>=80?'Exemplaire':v>=60?'Correct':v>=40?'À améliorer':'Préoccupant';
+
 function openNote(ph){
  openSheet(`<div class="who"><div style="flex:1"><h2>Écrire un mot en cachette</h2><p class="muted" style="margin:2px 0 0">${ph.prof[0]} est ${SEV[ph.prof[1]].toLowerCase()} : attention.</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <span class="muted">Pour qui ?</span><div class="chips">${NPCS.map((n,i)=>`<button class="chip" type="button" data-nto="${n.id}" aria-pressed="${i===0}">${n.name}</button>`).join('')}</div>
@@ -4039,6 +4187,7 @@ EVENTS.push(...EVENTS2);
 $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
+ if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
  if(igClick(t))return;
  {let m;if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
   if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
