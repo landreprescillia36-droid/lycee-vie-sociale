@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='42';
+const APP_VERSION='43';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1734,7 +1734,15 @@ function placesFor(t){return t==='recre'||t==='matin'?['cour','cdi','foyer']:t==
 
 /* ---------- personnes ---------- */
 const avOf=id=>id==='me'?me():isFam(id)?famById(id).av:WHO[id].av;
-function avatarOf(id){return render(avOf(id),AVB,uid(),true)}
+/* petites pastilles (fil, stories, photos) : chaque apparence n'est dessinée qu'une fois dans une planche cachée (#avSprite),
+   puis réutilisée avec <use> : beaucoup moins d'images et de filtres à afficher, le téléphone ne « perd » plus les cheveux */
+const AVS={},AVS_N={n:0};
+function avUse(av,vb,bg){const sp=typeof document!=='undefined'&&document.getElementById&&document.getElementById('avSprite');if(!sp||!sp.querySelector)return render(av,vb,uid(),bg);
+ const k=vb+'|'+(bg?1:0)+'|'+JSON.stringify(av);let id=AVS[k];
+ if(!id){id=AVS[k]='avs'+(++AVS_N.n);const s=render(av,vb,id,bg),inner=s.slice(s.indexOf('>')+1,s.lastIndexOf('</svg>'));
+  const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=`<g id="${id}">${inner}</g>`;sp.querySelector('defs').appendChild(tmp.firstChild)}
+ return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><use href="#${id}"/></svg>`}
+function avatarOf(id){return avUse(avOf(id),AVB,true)}
 const slug=n=>'@'+((n||'moi').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'moi');
 const myHandle=()=>slug(me().name)+(me().nom?'.'+slug(me().nom).slice(1):'');
 const isFam=id=>typeof id==='string'&&id.startsWith('fam');
@@ -1916,7 +1924,7 @@ function photoSVG(ph){
  const sc=ph.scene==='chambre'&&ROOMS[ph.author]?ROOMS[ph.author]:ph.scene;
  let o=`<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`+sceneSVG(sc,p);
  ppl.forEach((id,i)=>{const cx=300+(i-(n-1)/2)*w*.66;
-  o+=render(avOf(id),PHB,uid(),false).replace('<svg ',`<svg x="${(cx-w/2).toFixed(1)}" y="${(400-w).toFixed(1)}" width="${w.toFixed(1)}" height="${w.toFixed(1)}" `)});
+  o+=avUse(avOf(id),PHB,false).replace('<svg ',`<svg x="${(cx-w/2).toFixed(1)}" y="${(400-w).toFixed(1)}" width="${w.toFixed(1)}" height="${w.toFixed(1)}" `)});
  return o+'</svg>';
 }
 const tagLine=ph=>{const t=ph.people.filter(x=>x!==ph.author);return t.length?`<div class="tags">avec ${t.map(x=>`<span class="mention">${handleOf(x)}</span>`).join(', ')}</div>`:''};
