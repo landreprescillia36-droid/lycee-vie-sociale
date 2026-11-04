@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='59';
+const APP_VERSION='60';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -397,22 +397,35 @@ function handDet(G,k,sk){const w=armPts(G,k).wx,X=i=>fx(w-k*i),Y=d=>fx(AY(442+d)
   [[1.4,48.6,3.4,52.8],[4.6,49.4,6.8,54.6],[7.9,49,9.6,54.4]].map(([a,b,c,d])=>L(`M${X(a)},${Y(b)} Q${X((a+c)/2+.6)},${Y((b+d)/2)} ${X(c)},${Y(d)}`,.4,.6)).join('')}
 function legD(G,k,foot){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
  return `M${x(H)},432 C${x(H+1)},480 ${x(60)},525 ${x(59)},563 C${x(57)},595 ${x(50)},640 ${x(48)},661 C${x(49)},680 ${x(51)},695 ${x(50.6)},705 C${x(51)},730 ${x(50)},745 ${x(49.5)},750 C${x(48)},770 ${x(46)},780 ${x(44)},795 C${x(42)},808 ${x(37)},822 ${x(35)},${foot?`838 C${x(36)},841 ${x(44)},846 ${x(46)},866 L${x(0)},866 C${x(1)},846 ${x(9)},841 ${x(11.5)},838`:`840 L${x(11.5)},840`} C${x(11.5)},822 ${x(11.8)},808 ${x(12)},795 C${x(11.5)},780 ${x(10.5)},760 ${x(10)},750 C${x(9)},730 ${x(8.5)},715 ${x(8.5)},705 C${x(8.5)},690 ${x(8.5)},670 ${x(8.5)},661 C${x(7)},640 ${x(6)},625 ${x(5.8)},616 C${x(4)},595 ${x(2)},575 ${x(2)},563 C${x(2)},530 ${x(1)},500 ${x(0)},478Z`}
-const BOTTOMS=['droit','large','flare','cordon','jogging','yoga','short','jupe','jupejean','cycliste'];
+/* jupes courtes : y = bas de la jupe, w = évasement au bas (par rapport aux hanches), c = arrondi des hanches */
+const JUPES={jplis:{y:540,w:30,c:7,plis:1},jcarreaux:{y:536,w:27,c:7,plis:1},jfendue:{y:528,w:6,c:3},jmoulante:{y:520,w:4,c:2},jpatineuse:{y:534,w:40,c:8}};
+const BOTTOMS=['droit','large','flare','cordon','jogging','yoga','short','jupe','jupejean','cycliste','jplis','jcarreaux','jfendue','jmoulante','jpatineuse','habpattes','habdroit','cargo','jogglarge','joggajust','lin','slim','mom','bootcut','bermuda'];
 function pantsLegD(G,k,t){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
  switch(t){
   case 'large':return `M${x(H+2)},428 C${x(H+5)},540 ${x(66)},700 ${x(70)},858 Q${x(36)},868 ${x(1)},858 L${x(1)},478 L${x(1)},434Z`;
   case 'cordon':return `M${x(H+2)},428 C${x(H+4)},540 ${x(62)},700 ${x(63)},854 Q${x(34)},860 ${x(2)},854 L${x(1)},478 L${x(1)},434Z`;
   case 'flare':return `M${x(H+1)},428 C${x(H+2)},520 ${x(53)},598 ${x(52)},650 C${x(54)},730 ${x(66)},800 ${x(72)},858 Q${x(40)},866 ${x(3)},858 C${x(6)},800 ${x(9)},724 ${x(11)},650 C${x(8)},592 ${x(3)},526 ${x(1)},478 L${x(1)},434Z`;
   case 'yoga':return `M${x(H)},428 C${x(H+1)},520 ${x(51)},598 ${x(49)},650 C${x(52)},730 ${x(62)},800 ${x(68)},858 Q${x(38)},864 ${x(4)},858 C${x(7)},800 ${x(10)},724 ${x(11)},650 C${x(8)},592 ${x(3)},526 ${x(0)},478 L${x(1)},434Z`;
+  /* bas des filles d'après ta planche « Bas pour filles » */
+  case 'slim':return `M${x(H+1)},428 C${x(H+2)},490 ${x(61.5)},525 ${x(61)},563 C${x(59)},600 ${x(51)},640 ${x(50)},661 C${x(52)},700 ${x(49)},760 ${x(46)},795 C${x(43)},815 ${x(39)},835 ${x(38)},852 L${x(9.5)},852 C${x(10.5)},820 ${x(10.5)},790 ${x(8.5)},750 C${x(7)},720 ${x(7)},680 ${x(7)},661 C${x(5)},630 ${x(4)},610 ${x(3.5)},590 C${x(1)},560 ${x(0.5)},520 ${x(0)},478 L${x(1)},434Z`;
+  case 'mom':return `M${x(H+2)},428 C${x(H+5)},520 ${x(64)},600 ${x(60)},680 C${x(57)},760 ${x(52)},820 ${x(49)},854 L${x(7)},854 C${x(7)},800 ${x(6)},700 ${x(4)},620 C${x(3)},560 ${x(2)},520 ${x(1)},478 L${x(1)},434Z`;
+  case 'bootcut':return `M${x(H+1)},428 C${x(H+2)},510 ${x(58)},600 ${x(52)},661 C${x(55)},740 ${x(62)},810 ${x(64)},858 Q${x(36)},864 ${x(4)},858 C${x(6)},790 ${x(8)},720 ${x(8)},661 C${x(6)},600 ${x(2)},530 ${x(1)},478 L${x(1)},434Z`;
+  case 'bermuda':return `M${x(H+2)},428 C${x(H+5)},500 ${x(H+7)},560 ${x(H+7)},612 L${x(3)},612 C${x(3)},560 ${x(2)},520 ${x(1)},478 L${x(1)},434Z`;
+  case 'habpattes':return `M${x(H+2)},428 C${x(H+6)},540 ${x(71)},700 ${x(73)},860 Q${x(37)},866 ${x(0)},860 L${x(0)},478 L${x(1)},434Z`;
+  case 'habdroit':return `M${x(H+1)},428 C${x(H+3)},540 ${x(60)},690 ${x(60)},856 L${x(3)},856 C${x(4)},700 ${x(3)},560 ${x(1)},478 L${x(1)},434Z`;
+  case 'cargo':return `M${x(H+3)},428 C${x(H+7)},540 ${x(68)},700 ${x(68)},858 Q${x(36)},866 ${x(1)},858 L${x(1)},478 L${x(1)},434Z`;
+  case 'jogglarge':return `M${x(H+3)},428 C${x(H+6)},540 ${x(66)},700 ${x(68)},856 Q${x(36)},864 ${x(1)},856 L${x(1)},478 L${x(1)},434Z`;
+  case 'lin':return `M${x(H+2)},428 C${x(H+5)},540 ${x(66)},700 ${x(69)},858 Q${x(36)},866 ${x(1)},858 L${x(1)},478 L${x(1)},434Z`;
+  case 'joggajust':
   case 'jogging':return `M${x(H+3)},428 C${x(H+8)},540 ${x(62)},690 ${x(54)},814 L${x(44)},848 L${x(10)},848 L${x(5)},814 C${x(3)},700 ${x(2)},560 ${x(1)},478 L${x(1)},434Z`;
   case 'cycliste':return `M${x(H)},428 C${x(H+1)},480 ${x(H-1)},540 ${x(52)},596 Q${x(28)},604 ${x(4)},596 L${x(1)},478 L${x(1)},434Z`;
   case 'short':return `M${x(H+1)},428 C${x(H+3)},480 ${x(H+3)},520 ${x(H+2)},560 L${x(5)},560 L${x(1)},478 L${x(1)},434Z`;
   default:return `M${x(H+1)},428 C${x(H+2)},540 ${x(56)},690 ${x(56)},854 L${x(5)},854 C${x(6)},700 ${x(4)},560 ${x(1)},478 L${x(1)},434Z`;
  }}
-const DENIM=['#86a6cc','#5b7fb5','#2f4a78','#9aa0a6','#1f2127'];
+const DENIM=['#86a6cc','#5b7fb5','#2f4a78','#9aa0a6','#1f2127','#3f5f94','#8eaed3','#4f6f9f','#3e5a88','#7e9cc4','#2c3f6b'];
 const LN=(dd,col,w,op,dash)=>`<path d="${dd}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op??1}"${dash?` stroke-dasharray="${dash}"`:''}/>`;
 function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,404)+1.5,dk=shade(b,-.3);
- const dn=['droit','large','flare','short'].includes(t)&&DENIM.includes(b),st=dn?'#d6a35c':shade(b,-.22);
+ const dn=(['droit','large','flare','short'].includes(t)&&DENIM.includes(b))||['slim','mom','bootcut','bermuda'].includes(t),st=dn?'#d6a35c':shade(b,-.22);
  const d=`<defs><linearGradient id="${p}pl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.22)}"/><stop offset=".45" stop-color="${shade(b,.1)}"/><stop offset=".7" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.18)}"/></linearGradient><pattern id="${p}ht" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="1" cy="2" r=".8" fill="#fff" fill-opacity=".28"/><circle cx="4" cy="5" r=".8" fill="#000" fill-opacity=".12"/></pattern><pattern id="${p}tw" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(-35)"><path d="M0,0 V5" stroke="#000" stroke-opacity=".07" stroke-width="1.4"/></pattern></defs>`;
  let o='';
  if(t==='jupejean'){/* jupe trapèze courte en jean : surpiqûres dorées, bouton, poches */
@@ -424,6 +437,16 @@ function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,40
   o+=LN(`M${200-H+4},476 L${200-H-10},544 M${200+H-4},476 L${200+H+10},544`,dk,1.6,.3);
   return d+o;
  }
+ if(JUPES[t]){const J=JUPES[t],hy=J.y,hw=H+J.w,c1=`${200+H+J.c}`;let sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+J.c},440 ${200+hw-(J.w>20?8:1)},${hy-50} ${200+hw},${hy} Q200,${hy+7} ${200-hw},${hy} C${200-hw+(J.w>20?8:1)},${hy-50} ${200-H-J.c},440 ${fx(200-wx)},404Z`;
+  o+=`<path d="${sk}" fill="url(#${p}pl)"/>`;
+  if(t==='jcarreaux')o+=`<defs><pattern id="${p}pld" width="18" height="18" patternUnits="userSpaceOnUse"><rect width="18" height="18" fill="none"/><path d="M0,4 H18 M0,13 H18" stroke="${shade(b,-.45)}" stroke-width="2.2" opacity=".55"/><path d="M4,0 V18 M13,0 V18" stroke="${shade(b,-.45)}" stroke-width="2.2" opacity=".55"/><path d="M0,8.5 H18 M8.5,0 V18" stroke="${shade(b,.5)}" stroke-width="1" opacity=".5"/></pattern></defs><path d="${sk}" fill="url(#${p}pld)"/>`;
+  if(J.plis)for(let i=-3;i<=3;i++){const xt=200+i*wx/3.4,xb=200+i*hw/3.4;o+=LN(`M${fx(xt)},420 L${fx(xb)},${hy+2}`,dk,1.8,.45)+LN(`M${fx(xt+4)},420 L${fx(xb+7)},${hy+2}`,shade(b,.25),1.1,.35)}
+  if(t==='jpatineuse')[-2,-1,0,1,2].forEach(i=>{o+=LN(`M${200+i*14},${hy-60} Q${200+i*20},${hy-25} ${200+i*24},${hy+3}`,dk,1.8,.35)});
+  if(t==='jmoulante')[0,1,2].forEach(i=>{o+=LN(`M${200-H+6},${448+i*18} Q200,${456+i*18} ${200+H-6},${448+i*18}`,dk,1.2,.2)});
+  if(t==='jfendue'){const sx=200-H*.45;o+=`<path d="M${fx(sx-5)},${hy+2} L${fx(sx)},${hy-34} L${fx(sx+5)},${hy+2}Z" fill="${shade(s.skin,-.08)}"/>`+LN(`M${fx(sx-5)},${hy+2} L${fx(sx)},${hy-34} L${fx(sx+5)},${hy+2}`,dk,1.2,.6)}
+  o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},${J.band||418} Q200,${(J.band||418)+6} ${fx(200-wx-1)},${J.band||418}Z" fill="${shade(b,-.08)}"/>`;
+  return d+o;
+ }
  if(t==='jupe'){
   const sk=`M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 C${200+H+8},470 ${200+H+24},520 ${200+H+30},568 Q200,582 ${200-H-30},568 C${200-H-24},520 ${200-H-8},470 ${fx(200-wx)},404Z`;
   o+=`<path d="${sk}" fill="url(#${p}pl)"/>`;
@@ -432,18 +455,24 @@ function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,40
   return d+o;
  }
  o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${200+H+1},432 L${200+H+1},448 L${200-H-1},448 L${200-H-1},432Z" fill="${shade(b,.02)}"/>`;
- [-1,1].forEach(k=>{const D=pantsLegD(G,k,t);o+=`<path d="${D}" fill="url(#${p}pl)"/>`+(dn?`<path d="${D}" fill="url(#${p}tw)"/>`:'')+(t==='jogging'?`<path d="${D}" fill="url(#${p}ht)"/>`:'')});
+ [-1,1].forEach(k=>{const D=pantsLegD(G,k,t);o+=`<path d="${D}" fill="url(#${p}pl)"/>`+(dn?`<path d="${D}" fill="url(#${p}tw)"/>`:'')+(['jogging','jogglarge','joggajust'].includes(t)&&lum(b)>.35?`<path d="${D}" fill="url(#${p}ht)"/>`:'')});
  if(t==='yoga')o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},432 Q200,438 ${fx(200-wx-1)},432Z" fill="${shade(b,.14)}"/>`;
  else o+=LN(`M${fx(200-wx)},417 Q200,423 ${fx(200+wx)},417`,dk,1.5,.5);
  if(dn){o+=LN('M206,420 C208,444 206,460 200,474',st,1.4,.9,'3 2')+LN(`M${fx(200-wx+3)},421 Q${fx(200-wx+14)},446 174,424`,st,1.4,.9,'3 2')+LN(`M${fx(200+wx-3)},421 Q${fx(200+wx-14)},446 226,424`,st,1.4,.9,'3 2')
   +[-1,1].map(k=>`<ellipse cx="${200+k*28}" cy="${t==='short'?500:566}" rx="11" ry="${t==='short'?26:64}" fill="#fff" opacity=".1"/>`).join('')
   +`<rect x="${fx(200-wx+10)}" y="404" width="4" height="13" fill="${dk}" opacity=".5"/><rect x="${fx(200+wx-14)}" y="404" width="4" height="13" fill="${dk}" opacity=".5"/><circle cx="200" cy="411" r="2.6" fill="#c8a24a"/>`
-  +(t!=='short'?[-1,1].map(k=>LN(`M${200+k*(H+1)},440 C${200+k*(H+2)},560 ${200+k*56},700 ${200+k*56},840`,st,1.2,.6,'3 2')).join(''):'');}
+  +(t!=='short'&&t!=='bermuda'?(()=>{const sm={slim:46,mom:52,bootcut:52}[t]||56,se={slim:37,mom:47,bootcut:60}[t]||56;return [-1,1].map(k=>LN(`M${200+k*(H+1)},440 C${200+k*(H+2)},560 ${200+k*sm},700 ${200+k*se},840`,st,1.2,.6,'3 2')).join('')})():'');}
  else if(t!=='yoga')o+=LN('M200,420 L200,470',dk,1.5,.35);
- if(t==='jogging'||t==='cordon')o+=LN('M196,418 C194,436 190,446 188,458 M204,418 C206,436 210,446 212,458',lum(b)>.8?'#a9a294':'#f4f1ea',2,.95);
- if(t==='jogging')[-1,1].forEach(k=>{o+=`<path d="M${200+k*45},818 L${200+k*9},818 L${200+k*10},848 L${200+k*44},848Z" fill="${dk}" opacity=".3"/>`;for(let j=0;j<7;j++)o+=LN(`M${200+k*(13+j*5)},821 L${200+k*(13+j*5)},846`,dk,1,.35)});
- if(['large','cordon','jogging'].includes(t))[-1,1].forEach(k=>{o+=LN(`M${200+k*44},620 Q${200+k*36},680 ${200+k*44},760 M${200+k*22},700 Q${200+k*30},760 ${200+k*24},830 M${200+k*50},500 Q${200+k*40},540 ${200+k*46},580`,dk,2,.22)});
- if(['large','flare','cordon','yoga'].includes(t))[-1,1].forEach(k=>{o+=LN(`M${200+k*60},842 Q${200+k*40},852 ${200+k*8},846`,dk,2,.3)});
+ if(['habpattes','habdroit'].includes(t))[-1,1].forEach(k=>{o+=LN(`M${200+k*30},452 L${200+k*(t==='habpattes'?37:31)},852`,dk,1.3,.35)+LN(`M${200+k*31.5},452 L${200+k*(t==='habpattes'?38.5:32.5)},852`,shade(b,.3),1,.3)});
+ if(['habpattes','habdroit','lin','cargo'].includes(t))o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},420 Q200,426 ${fx(200-wx-1)},420Z" fill="${shade(b,-.06)}"/>`+[-1,1].map(k=>LN(`M${fx(200+k*(wx-3))},422 Q${fx(200+k*(wx-12))},446 ${200+k*27},424`,dk,1.3,.4)).join('');
+ if(t==='cargo')[-1,1].forEach(k=>{const a=200+k*50,c=200+k*67;o+=`<path d="M${a},592 L${c},590 L${c+k*1},652 L${a},654Z" fill="${shade(b,-.06)}"/>`+LN(`M${a},592 L${c},590 L${c+k*1},652 L${a},654Z`,dk,1.3,.5)+`<path d="M${a-k*1},586 L${c+k*1},584 L${c+k*1},600 L${a-k*1},602Z" fill="${shade(b,.04)}"/>`+LN(`M${a-k*1},602 L${c+k*1},600`,dk,1.2,.5)});
+ if(t==='lin')[-1,1].forEach(k=>{o+=LN(`M${200+k*20},424 Q${200+k*22},470 ${200+k*26},520`,dk,1.3,.3)+LN(`M${200+k*34},424 Q${200+k*36},470 ${200+k*40},510`,dk,1.1,.22)+LN(`M${200+k*44},620 Q${200+k*38},700 ${200+k*46},790`,dk,1.6,.16)});
+ if(t==='bermuda')[-1,1].forEach(k=>{o+=`<path d="M${fx(200+k*(H+7))},596 L${200+k*3},596 L${200+k*3},612 L${fx(200+k*(H+7))},612Z" fill="${shade(b,.08)}"/>`+LN(`M${fx(200+k*(H+7))},596 L${200+k*3},596`,dk,1.3,.5)});
+ if(t==='jogglarge'||t==='joggajust')o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},424 Q200,430 ${fx(200-wx-1)},424Z" fill="${shade(b,.06)}"/>`+[0,1,2].map(i=>LN(`M${fx(200-wx)},${409+i*5} Q200,${415+i*5} ${fx(200+wx)},${409+i*5}`,dk,.9,.25)).join('');
+ if(t==='jogging'||t==='cordon'||t==='jogglarge'||t==='joggajust')o+=LN('M196,418 C194,436 190,446 188,458 M204,418 C206,436 210,446 212,458',lum(b)>.8?'#a9a294':'#f4f1ea',2,.95);
+ if(t==='jogging'||t==='joggajust')[-1,1].forEach(k=>{o+=`<path d="M${200+k*45},818 L${200+k*9},818 L${200+k*10},848 L${200+k*44},848Z" fill="${dk}" opacity=".3"/>`;for(let j=0;j<7;j++)o+=LN(`M${200+k*(13+j*5)},821 L${200+k*(13+j*5)},846`,dk,1,.35)});
+ if(['large','cordon','jogging','jogglarge','cargo','habpattes','mom'].includes(t))[-1,1].forEach(k=>{o+=LN(`M${200+k*44},620 Q${200+k*36},680 ${200+k*44},760 M${200+k*22},700 Q${200+k*30},760 ${200+k*24},830 M${200+k*50},500 Q${200+k*40},540 ${200+k*46},580`,dk,2,.22)});
+ if(['large','flare','cordon','yoga','jogglarge','cargo','habpattes','lin','bootcut'].includes(t))[-1,1].forEach(k=>{o+=LN(`M${200+k*60},842 Q${200+k*40},852 ${200+k*8},846`,dk,2,.3)});
  if(t==='short')[-1,1].forEach(k=>{o+=LN(`M${200+k*(H+2)},552 L${200+k*5},552`,dk,2,.4)});
  if(t==='cycliste'){o+=`<path d="M${fx(200-wx)},404 Q200,410 ${fx(200+wx)},404 L${fx(200+wx+1)},424 Q200,430 ${fx(200-wx-1)},424Z" fill="${shade(b,.1)}"/>`;[-1,1].forEach(k=>{o+=LN(`M${fx(200+k*legX(G,51))},590 Q${fx(200+k*legX(G,28))},597 ${fx(200+k*legX(G,5))},590`,dk,2,.4)+LN(`M${fx(200+k*legX(G,G.HH-2))},450 Q${fx(200+k*legX(G,G.HH+1))},520 ${fx(200+k*legX(G,50))},588`,shade(b,.25),3,.35)})}
  return d+o;
@@ -1146,7 +1175,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En c�
  uni:'Uni',degrade:'Dégradé',pois:'Pois',rayures:'Rayures',rayons:'Rayons'};
 const HAIR_F=['tresse','longs','longsondules','ondulescote','frange','carre','carreondule','carreplongeant','carreretrousse','queue','queuehaute','couettes','chignon','demichignon','macarons','boucles','boucleslongues'];
 const HAIR_M=['court','texture','banane','piques','meche','fondu','plaque','raie','rideau','rase'];
-const REFS={GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
+const REFS={BF:'ta planche « Bas pour filles »',GL:'ta planche « Coiffures pour garçon »',C3:'ta planche « chignon haut »',L3:'ta planche « cheveux lâchés (longs) »',L2:'ta planche « cheveux lâchés (longs) »',R3:'ta planche « raie sur le côté »',F3:'ta planche « dégradé haut »',W2:'ta planche « cheveux lâchés (ondulés) »',T2:'ta planche « bouclé effilé » (face, profil, dos)',G2:'ta planche « dégradé bouclé » (face, profil, dos)',D:'ton dessin sur l’avatar chauve',I:'ta capture du jeu (coiffure d’Inès)',R:'ta référence « mi-longs raie au milieu »',L:'ta référence « cheveux longs à frange »',B:'ta référence « cheveux bouclés »',G:'ta 1re image (personnage à la tresse)',F:'ta planche de coiffures femmes',M:'ta planche de coiffures hommes',T:'ta capture de tenues',P:'ta capture de pantalons',S:'ta capture de chaussures'};
 const VECT="Rendu vectoriel stylisé : la texture photographique et l'éclairage réel ne sont pas reproduits.";
 const NOREF="Aucune image de référence fournie : proposition à valider ou à remplacer par ta propre référence.";
 const CAT_H=[['all','Toutes'],['court','Courts'],['mi','Mi-longs'],['long','Longs'],['lisse','Lisses'],['ondule','Ondulés'],['boucle','Bouclés'],['crepu','Crépus'],['tresse','Tresses'],['chignon','Chignons'],['queue','Queues de cheval'],['attache','Attachées']];
@@ -1345,6 +1374,9 @@ WEAR.set.items.push(
  {n:'Tenue de Sacha : col roulé et baggy gris',r:'K',g:'m',x:"La tenue de Sacha telle que tu l'as créée.",set:{bag:'aucun',top:'colroule',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:'#f4f1ea',necklace:'chaine'}});
 (()=>{const F={top:['crop','ajuste','epaules','blouse','henley','asym','salopette'],bottom:['flare','yoga','jupe'],dress:['nuisette','tshirtdress','portefeuille','bretelles','madras','pull'],jacket:['matelassee','cardigan'],shoes:['fourrees','bottes'],hat:['foulard'],necklace:['perles','rasdecou'],glasses:['coeur'],earrings:['anneaux','etoiles']};
  Object.values(WEAR).forEach(W=>W.items.forEach(it=>{if(it.g)return;if(it.set)it.g='f';else if(F[it.s]&&F[it.s].includes(it.v))it.g='f'}))})();
+/* bas des filles : ta planche « Bas pour filles » (18 pièces) ; les anciens bas restent pour les garçons et pour les tenues déjà portées */
+WEAR.bottom.items.forEach(it=>{if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
+WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#6b6b72',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#4f6f9f',n:'Jupe en jean',r:'BF',g:'f',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'f',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'f',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'f',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'f',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'f',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'f',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'droit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'large',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
 const wearVis=it=>!it.g||state.sexe==='nb'||it.g===state.sexe;
 const wearHas=k=>WEAR[k].items.some(it=>wearVis(it)&&it.v!=='aucune'&&it.v!=='aucun');
 const CATLBL={f:'Catalogue filles',m:'Catalogue garçons',nb:'Catalogue complet'};
