@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='58';
+const APP_VERSION='59';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -885,6 +885,16 @@ function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTIN
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;
   document.querySelectorAll(`image[data-hk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('filter')})}catch(e){/* fichier ouvert en local (file://) : le filtre SVG reste */}};
  im.src=`assets/coiffures/${f}.png`;return null}
+/* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
+   recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
+const HAIR_PEAU=new Set(['bafro','bafro-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
+function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;STINT_GO[k]=1;HT_PEND++;
+ const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
+  const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){const w=a[i+3];R+=a[i]*w;G+=a[i+1]*w;B+=a[i+2]*w;W+=w}
+  if(W){const t=rgb(sk),q=[t[0]/(R/W),t[1]/(G/W),t[2]/(B/W)];for(let i=0;i<a.length;i+=4)for(let j=0;j<3;j++)a[i+j]=Math.min(255,Math.round(a[i+j]*q[j]))}
+  x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
+ im.src=`assets/coiffures/${f}-peau.png`;return null}
+const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
 function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
@@ -899,7 +909,7 @@ function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';
   const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
   /* couleur : l'image est reteinte une fois dans un canvas (hairTint) puis réutilisée, sans filtre SVG (certains téléphones
      n'affichaient plus les cheveux filtrés) ; en attendant, le filtre sert de secours */
-  const imgOf=f=>{const T=same?null:hairTint(f,hc,tab);return `<image href="${T||`assets/coiffures/${f}.png`}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/>`};
+  const imgOf=f=>{const T=same?null:hairTint(f,hc,tab);return peauImg(f,s.skin,x,y,w,h)+`<image href="${T||`assets/coiffures/${f}.png`}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/>`};
   const img=G0+imgOf(s.hair)+G1;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
@@ -1197,7 +1207,7 @@ const HAIRDB={
  frangedroite:{n:"Frange droite",c:'long lisse frange',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  chignonhaut2:{n:"Chignon haut",c:'chignon attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  raiecotel:{n:"Raie sur le côté",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
- deuxtresses:{n:"Deux tresses",c:'long tresse attache',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
+ deuxtresses:{n:"Deux tresses",c:'long tresse attache lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  serretete:{n:"Avec serre-tête",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  barrette:{n:"Avec barrette",c:'mi lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
  raiemilieu:{n:"Raie au milieu avec mèches",c:'long lisse',r:'I',x:"Reprise de ta planche : vrais pixels du dessin."},
@@ -1352,7 +1362,7 @@ const TABS=[
   {id:'iris',label:'Iris',cols:IRIS},
   {id:'brows',label:'Sourcils',opts:Object.keys(BROWS),vb:hv('112 128 176 100'),adj:'brows'},
   {id:'browColor',label:'Couleur des sourcils',cols:BROWC}]},
- {label:'Cheveux',subs:CAT_H.filter(([k])=>k==='all'||HAIR_ALL.some(h=>HAIRDB[h].c.split(' ').includes(k))).map(([k,l])=>({label:l,hairCat:k})).concat([{id:'hairColor',label:'Couleur',cols:HAIR}])},
+ {label:'Cheveux',subs:CAT_H.filter(([k])=>['lisse','ondule','boucle','crepu'].includes(k)).map(([k,l])=>({label:l,hairCat:k,noF:k==='ondule'?1:undefined}))/* pas encore de coiffure ondulée pour les filles */.concat([{id:'hairColor',label:'Couleur',cols:HAIR}])},
  {label:'Tenue',subs:Object.entries(WEAR).map(([k,W])=>({label:W.l,wear:k}))},
  {label:'Corps',subs:[
   {id:'taille',label:'Taille',opts:Object.keys(TAILLE),vb:FVB,tall:1},
@@ -1780,7 +1790,7 @@ const avBox=vb=>{const [x,y,w,h]=String(vb).split(/[ ,]+/).map(Number),S=Math.ma
 function avImgSvg(vb,url,id){const [x,y,w,h]=avBox(vb);return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-avk="${id}"><image href="${url}" x="${x}" y="${y}" width="${w}" height="${h}"/></svg>`}
 function assetData(u){if(ADU[u])return ADU[u];return ADU[u]=fetch(u).then(r=>r.blob()).then(b=>new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)}))}
 async function avBake(id,av,vb,bg,tries){try{if(typeof fetch==='undefined'||!window.Image)return;
- let s=render(av,vb,'k'+id,bg);if(/data-hk="[^"]+"[^>]*filter=/.test(s)&&tries<12){setTimeout(()=>{bakeQ.push([id,av,vb,bg,tries+1]);bakeRun()},350);return}   /* cheveux pas encore reteints */
+ let s=render(av,vb,'k'+id,bg);if(/data-hk="[^"]+"[^>]*filter=|data-sk="[^"]+"[^>]*opacity="0"/.test(s)&&tries<12){setTimeout(()=>{bakeQ.push([id,av,vb,bg,tries+1]);bakeRun()},350);return}   /* cheveux pas encore reteints */
  const hs=[...new Set([...s.matchAll(/href="(assets\/[^"]+)"/g)].map(m=>m[1]))],du=await Promise.all(hs.map(assetData));hs.forEach((h,i)=>{s=s.split(`href="${h}"`).join(`href="${du[i]}"`)});
  const B=avBox(vb),w=B[2],h=B[3],sc=Math.min(2.4,460/w),W=Math.round(w*sc),H=Math.round(h*sc);
  s=s.replace(/viewBox="[^"]*"/,`viewBox="${B.join(' ')}"`).replace('<svg ',`<svg width="${W}" height="${H}" `);
