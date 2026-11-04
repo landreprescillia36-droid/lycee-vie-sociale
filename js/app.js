@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='52';
+const APP_VERSION='53';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -4520,6 +4520,7 @@ $('famGo').onclick=()=>{
 };
 function showGame(){
  if(!G){showFamille(false);return}
+ {const l=$('loader');if(l&&l.hidden&&l.querySelector){loadShow('Chargement du lycée…');setTimeout(()=>loadHide(),0)}}
  $('atelier').hidden=true;$('famille').hidden=true;$('game').hidden=false;document.body.classList.add('playing');
  if(!G.phaseKey){G.phaseKey=phase().key;G.lastPhase=phase()}
  view='home';drawGame();window.scrollTo(0,0);musAuto();
@@ -4528,7 +4529,8 @@ function setAtelierMode(){const fm=!!editFam,f=fm&&famDraft[editFam.i];
  $('atTitle').textContent=fm?`Apparence de ${state.name||f.role}`:"Atelier d'avatar";
  $('atSub').textContent=fm?`${f.role} · visage, cheveux et tenue.`:'Crée le personnage qui entrera au lycée.';
  $('idBlock').hidden=fm;$('bSave').hidden=fm;$('bPlay').hidden=fm;$('codeBox').hidden=fm;$('bFamDone').hidden=!fm;$('nomLbl').textContent=fm?'Prénom':'Prénom du personnage';$('nomFamBox').hidden=fm;}
-function editFamLook(i){
+function editFamLook(i){withLoader("Ouverture de l'atelier…",()=>editFamLook0(i))}
+function editFamLook0(i){
  const f=famDraft[i];editFam={i,saved:state};
  state=normalize(f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i)));state.name=f.name;
  $('famille').hidden=true;$('atelier').hidden=false;tab=0;sub=0;pview='portrait';setAtelierMode();drawTabs();drawSubs();nom.value=state.name;$('nomFam').value=state.nom||'';refresh();window.scrollTo(0,0);
@@ -4537,7 +4539,17 @@ $('bFamDone').onclick=()=>{const f=famDraft[editFam.i],av=clone(state);f.name=(s
  state=editFam.saved;editFam=null;setAtelierMode();nom.value=state.name;$('nomFam').value=state.nom||'';$('atelier').hidden=true;$('famille').hidden=false;drawFam();window.scrollTo(0,0);toast(`Apparence de ${f.name} enregistrée`)};
 function restartGame(){$('game').hidden=true;$('gFabs').hidden=true;document.body.classList.remove('playing');closeSheet();G=null;try{localStorage.removeItem(GKEY)}catch(e){}cloudPush();if(typeof musStop==='function')musStop();toast('Nouvelle partie : recrée ta famille puis commence');showFamille(false)}
 function askRestart(){openSheet(`<div class="who"><div style="flex:1;min-width:0"><h2>Recommencer la partie ?</h2><p class="muted" style="margin:2px 0 0">Ta progression, tes notes, tes relations et tes messages seront effacés. Ton avatar est conservé.</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="row"><button class="gbtn ghost" type="button" data-close>Annuler</button><button class="gbtn danger" type="button" id="gRestartOk">Oui, recommencer</button></div>`)}
-function showAtelier(){
+/* écran de chargement : reste affiché jusqu'à ce que les images visibles et les portraits soient prêts (6 s au plus) */
+let ldT0=Date.now()-(window.performance?performance.now():0);
+function loadShow(t){const l=$('loader');if(!l)return;l.querySelector('.ld-t').textContent=t||'Chargement…';l.hidden=false;l.classList.remove('out');ldT0=Date.now()}
+function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;const end=Date.now()+6000;
+ const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!bakeQ.length&&!bakeBusy;
+ const fin=()=>{if(l.classList.contains('out'))return;l.classList.add('out');setTimeout(()=>{l.hidden=true;l.classList.remove('out')},320)};
+ const chk=()=>{if(Date.now()-ldT0<(min||500)||(!ready()&&Date.now()<end)){setTimeout(chk,120);return}fin()};
+ (document.fonts&&document.fonts.ready||Promise.resolve()).then(chk,chk)}
+function withLoader(t,fn){const l=$('loader');if(!l||!l.querySelector||typeof requestAnimationFrame!=='function'){fn();return}loadShow(t);requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{loadHide()}},40))}
+function showAtelier(){withLoader("Ouverture de l'atelier…",showAtelier0)}
+function showAtelier0(){
  closeSheet();musStop();$('game').hidden=true;$('gFabs').hidden=true;$('famille').hidden=true;document.body.classList.remove('playing');$('atelier').hidden=false;
  $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;refresh();window.scrollTo(0,0);
 }
@@ -4547,3 +4559,4 @@ nom.value=me().name;$('nomFam').value=me().nom||'';drawTabs();drawSubs();refresh
 $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;
 $('bRestart').onclick=askRestart;
 if(G)showGame();
+loadHide(1500);
