@@ -41,7 +41,7 @@ for hid, (src, x0, y0, x1, y1) in zip(IDS, TILES):
 src = open('js/bouches-art.js').read()
 ART = json.loads(re.search(r'const MOUTH_ART=(\{.*?\});', src, re.S).group(1))
 ART = {k: v for k, v in ART.items() if not k.startswith('g')}
-gm = ART['moyenne']; K = 62 / res['gmoyenne']['mw']; cyg = gm[1] + gm[3] * .45
+gm = ART['moyenne']; K = 50 / res['gmoyenne']['mw']; cyg = gm[1] + gm[3] * .45 - 7   # un peu plus haut, plus près du nez
 for hid, v in res.items():
     ART[hid] = [round(v['x'] * K, 2), round(cyg + v['y'] * K, 2), round(v['w'] * K, 2), round(v['h'] * K, 2), v['skin']]
 open('js/bouches-art.js', 'w').write('/* bouches décalquées par tools/traceur-bouches.py et tools/traceur-bouches-garcons.py sur docs/references/bouches/ — ne pas modifier à la main */\nconst MOUTH_ART=' + json.dumps(ART, separators=(',', ':')) + ';\n')
