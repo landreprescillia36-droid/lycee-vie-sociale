@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='57';
+const APP_VERSION='58';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1344,9 +1344,7 @@ const TABS=[
   {id:'skin',label:'Peau',cols:SKIN},
   {id:'nose',label:'Nez',opts:['bouton','rond','petit','pointu','aucun'],vb:hv('150 208 100 80'),adj:'nose'},
   {id:'mouth',label:'Bouche',opts:MOUTHS,vb:hv('145 248 110 76'),adj:'mouth'},
-  {id:'cheeks',label:'Joues',opts:['aucune','rose','fort'],vb:hv('95 175 210 140')},
   {id:'freckles',label:'Taches de rousseur',opts:['aucune','legeres','beaucoup'],vb:hv('115 195 170 95')},
-  {id:'rides',label:'Rides',opts:['aucune','fines','marquees'],vb:hv('95 110 210 210')},
   {id:'barbe',label:'Barbe',noF:1,opts:['aucune','duvet','barbe3j','moustache','bouc','collier','courte'],vb:hv('100 215 200 125')}]},
  {label:'Yeux',subs:[
   {id:'eyes',label:'Forme',opts:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART):Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
@@ -1354,7 +1352,7 @@ const TABS=[
   {id:'iris',label:'Iris',cols:IRIS},
   {id:'brows',label:'Sourcils',opts:Object.keys(BROWS),vb:hv('112 128 176 100'),adj:'brows'},
   {id:'browColor',label:'Couleur des sourcils',cols:BROWC}]},
- {label:'Cheveux',subs:CAT_H.filter(([k])=>k==='all'||HAIR_ALL.some(h=>HAIRDB[h].c.split(' ').includes(k))).map(([k,l])=>({label:l,hairCat:k})).concat([{id:'hairColor',label:'Couleur',cols:HAIR},{id:'edges',label:'Baby hairs',opts:['aucun','baby'],vb:hv('90 100 220 120')}])},
+ {label:'Cheveux',subs:CAT_H.filter(([k])=>k==='all'||HAIR_ALL.some(h=>HAIRDB[h].c.split(' ').includes(k))).map(([k,l])=>({label:l,hairCat:k})).concat([{id:'hairColor',label:'Couleur',cols:HAIR}])},
  {label:'Tenue',subs:Object.entries(WEAR).map(([k,W])=>({label:W.l,wear:k}))},
  {label:'Corps',subs:[
   {id:'taille',label:'Taille',opts:Object.keys(TAILLE),vb:FVB,tall:1},
@@ -1386,6 +1384,8 @@ const clone=o=>JSON.parse(JSON.stringify(o));
 function noAcc(s){if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:'aucun',necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):clone(DEFAULT)}catch(e){return clone(DEFAULT)}})();
+/* joues, rides et baby hairs ne se choisissent plus dans l'atelier : on les retire de l'avatar du joueur */
+Object.assign(state,{cheeks:'aucune',rides:'aucune',edges:'aucun'});
 let tab=0, sub=0;
 
 /* ---------- interface ---------- */
@@ -1398,15 +1398,16 @@ function drawPortrait(){const full=pview==='full';portrait.classList.toggle('ful
  drawIdent();
  if(document.activeElement!==codeEl) codeEl.value=JSON.stringify(state);}
 /* ---------- parcours : personnalité, raison du changement, ancien lycée, niveau et facilités ---------- */
-const PERSOS={sociable:{l:['Drôle et sociable','Drôle et sociable'],x:"+5 d'amitié avec tout le monde au départ"},timide:{l:['Timide et observatrice','Timide et observateur'],x:'Réservé·e, mais Jade et Jessica se sentent proches de toi (+10)'},ambitieux:{l:['Ambitieuse et travailleuse','Ambitieux et travailleur'],x:'+5 % de réussite dans toutes les matières'},
- sportif:{l:['Sportive et énergique','Sportif et énergique'],x:"EPS +15 % et les sportifs t'apprécient (+8)"},creatif:{l:['Rêveuse et créative','Rêveur et créatif'],x:"Français et philo +6 %, les artistes t'apprécient (+8)"},rebelle:{l:['Rebelle au grand cœur','Rebelle au grand cœur'],x:'Les populaires te remarquent (+8), mais les profs te surveillent'}};
+const PERSOS={sociable:{l:['Drôle et sociable','Drôle et sociable'],x:"+5 d'amitié avec tout le monde au départ"},timide:{l:['Timide et observatrice','Timide et observateur'],x:'Réservé·e, mais Jade et Jessica se sentent proches de toi (+10)'},ambitieux:{l:['Ambitieuse et travailleuse','Ambitieux et travailleur'],x:'Tu progresses un peu plus vite dans toutes les matières'},
+ sportif:{l:['Sportive et énergique','Sportif et énergique'],x:"Tu progresses plus vite en EPS et les sportifs t'apprécient (+8)"},creatif:{l:['Rêveuse et créative','Rêveur et créatif'],x:"Tu progresses plus vite en français et en philo, les artistes t'apprécient (+8)"},rebelle:{l:['Rebelle au grand cœur','Rebelle au grand cœur'],x:'Les populaires te remarquent (+8), mais les profs te surveillent'}};
 const persoL=(k,sx)=>{const p=(PERSOS[k]||PERSOS.sociable).l;return sx==='m'?p[1]:p[0]};
 const RAISONS={demenagement:'Ta famille a déménagé',metropole:'Retour de métropole',specialite:'Une spécialité qui n\'existait pas dans ton ancien lycée',renvoi:'Renvoyé·e de ton ancien lycée',depart:'Un nouveau départ après une année difficile',parents:'La séparation de tes parents'};
 const ANCIENS=['Lycée Baimbridge (Les Abymes)','Lycée Carnot (Pointe-à-Pitre)','Lycée Gerville-Réache (Basse-Terre)','Lycée de Providence (Les Abymes)','Lycée Faustin-Fléret (Morne-à-l\'Eau)','Lycée de Bellevue (Fort-de-France)','Lycée Henri-IV (Paris)','Lycée Montaigne (Bordeaux)'];
-const NIVEAUX={excellent:{l:'Excellent·e',start:58,k:1.3},bon:{l:'Bon niveau',start:48,k:1.15},moyen:{l:'Moyen',start:40,k:1},difficulte:{l:'En difficulté',start:30,k:.85}};
+/* tout le monde part de 0 % : le niveau ne change que la vitesse de progression */
+const NIVEAUX={excellent:{l:'Excellent·e',start:0,k:1.3},bon:{l:'Bon niveau',start:0,k:1.15},moyen:{l:'Moyen',start:0,k:1},difficulte:{l:'En difficulté',start:0,k:.85}};
 const FORTS_MAX=2;
 /* gains de réussite selon le niveau et les facilités : on avance plus ou moins vite */
-function gainK(sub,g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen,f=(s.forts||[]).includes(sub);if(g>0)return Math.max(1,Math.round(g*n.k*(f?1.5:1)));return f?Math.round(g*.6):g}
+function gainK(sub,g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen,f=(s.forts||[]).includes(sub),pk=s.perso==='ambitieux'?1.1:s.perso==='sportif'&&sub==='eps'?1.3:s.perso==='creatif'&&(sub==='francais'||sub==='philo')?1.2:1;if(g>0)return Math.max(1,Math.round(g*n.k*pk*(f?1.5:1)));return f?Math.round(g*.6):g}
 function drawParcours(){let el=$('parcours');if(!el){el=document.createElement('div');el.id='parcours';el.className='ident';$('idBlock').after(el);
   el.addEventListener('click',e=>{const b=e.target.closest('[data-niv],[data-fort]');if(!b)return;
    if(b.dataset.niv)state.niveau=b.dataset.niv;else{const k=b.dataset.fort,F=state.forts||[];state.forts=F.includes(k)?F.filter(x=>x!==k):F.length>=FORTS_MAX?[...F.slice(1),k]:[...F,k]}drawParcours();codeEl.value=JSON.stringify(state)});
@@ -1419,13 +1420,12 @@ function drawParcours(){let el=$('parcours');if(!el){el=document.createElement('
  <div class="field"><label for="pAncien">Ancien lycée</label><input id="pAncien" type="text" maxlength="60" list="pAnciens" autocomplete="off" value="${esc(state.ancien||'')}"><datalist id="pAnciens">${ANCIENS.map(a=>`<option value="${esc(a)}"></option>`).join('')}</datalist></div>
  <div class="field"><span class="lbl" id="lblNiv">Niveau scolaire</span><div class="segs" role="group" aria-labelledby="lblNiv">${Object.entries(NIVEAUX).map(([k,v])=>`<button class="sub" type="button" data-niv="${k}" aria-pressed="${state.niveau===k}">${esc(T(v.l))}</button>`).join('')}</div></div>
  <div class="field"><span class="lbl" id="lblFort">Facilités (${FORTS_MAX} matières max)</span><div class="segs" role="group" aria-labelledby="lblFort">${Object.entries(SUBJ).map(([k,v])=>`<button class="sub" type="button" data-fort="${k}" aria-pressed="${(state.forts||[]).includes(k)}">${esc(v)}</button>`).join('')}</div></div>
- <p class="hint">${esc(T(`Au départ, ${(NIVEAUX[state.niveau]||NIVEAUX.moyen).start} % de chances de réussite dans chaque matière (+12 % dans tes facilités). En cours, tu progresses plus ou moins vite selon ton niveau (×${String((NIVEAUX[state.niveau]||NIVEAUX.moyen).k).replace('.',',')}), et 1,5 fois plus vite dans tes facilités.`))}</p>`}
-function applyParcours(g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen;Object.keys(g.know).forEach(k=>{g.know[k]=n.start+((s.forts||[]).includes(k)?12:0)});
+ <p class="hint">${esc(T(`Tout le monde part de 0 % de chances de réussite dans chaque matière. Ton niveau change seulement la vitesse à laquelle tu progresses (×${String((NIVEAUX[state.niveau]||NIVEAUX.moyen).k).replace('.',',')}), et 1,5 fois plus vite dans tes facilités.`))}</p>`}
+function applyParcours(g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen;Object.keys(g.know).forEach(k=>{g.know[k]=0});
  const add=(ids,d)=>ids.forEach(i=>{if(g.rel[i])g.rel[i].ami=clamp(g.rel[i].ami+d,-30,100)});
- ({sociable:()=>add(NPCS.map(n=>n.id),5),timide:()=>add(['jade','jessica'],10),ambitieux:()=>Object.keys(g.know).forEach(k=>g.know[k]=clamp(g.know[k]+5,0,100)),
-  sportif:()=>{g.know.eps=clamp(g.know.eps+15,0,100);add(GROUPS.sport.m,8)},creatif:()=>{g.know.francais+=6;g.know.philo+=6;add(GROUPS.art.m,8)},rebelle:()=>add(GROUPS.pop.m,8)}[s.perso]||(()=>{}))()}
+ ({sociable:()=>add(NPCS.map(n=>n.id),5),timide:()=>add(['jade','jessica'],10),sportif:()=>add(GROUPS.sport.m,8),creatif:()=>add(GROUPS.art.m,8),rebelle:()=>add(GROUPS.pop.m,8)}[s.perso]||(()=>{}))()}
 const SEXES=[['f','Fille'],['m','Garçon'],['nb','Non-binaire']],ORIS=['hetero','homo','bi','pan','ace'];
-const oriShort=(o,g)=>({hetero:'Hétéro',homo:g==='f'?'Lesbienne':g==='m'?'Gay':'Homo',bi:'Bi',pan:'Pan',ace:g==='f'?'Asexuelle':g==='m'?'Asexuel':'Asexuel·le'})[o];
+const oriShort=(o,g)=>({hetero:'Hétéro',homo:g==='f'?'Homosexuelle':g==='m'?'Homosexuel':'Homosexuel·le',bi:'Bi',pan:'Pan',ace:g==='f'?'Asexuelle':g==='m'?'Asexuel':'Asexuel·le'})[o];
 function attracted(o,g,h){if(o==='ace')return false;if(o==='bi'||o==='pan')return true;return o==='homo'?g===h:g!==h}
 function oriHint(g,o){if(o==='ace')return "Pas d'histoire de cœur : ton personnage vivra surtout des amitiés.";const who=o==='bi'||o==='pan'?'tout le monde':o==='homo'?{f:'des filles',m:'des garçons',nb:'des personnes non-binaires'}[g]:{f:'des garçons',m:'des filles',nb:'des filles et des garçons'}[g];return `Ton personnage pourra vivre des histoires de cœur avec ${who}. Chaque camarade a aussi sa propre attirance.`}
 function drawIdent(){drawParcours();if(editFam)return;
@@ -1676,7 +1676,7 @@ const P=t=>gtxt(t,me().sexe),S=(id,t)=>gtxt(t,sexOf(id));
 const profSex=n=>/^(Mme|Mrs|Sra|Mlle)/.test(n)?'f':'m';
 /* {p:…} = accord avec le joueur ou la joueuse ; le reste s'accorde avec la personne qui parle */
 function genderize(t,speaker){return String(t).replace(/\{p:([^}]+)\}/g,(_,x)=>P(x)).replace(/\{s:([^}]+)\}/g,(_,x)=>S(speaker,x)).replace(/[A-Za-zÀ-ÿ]+·(rice|ère|e|ne|se|le)\b/g,w=>S(speaker,w))}
-const oriLabel=(o,g)=>{const e=g==='f'?'le':g==='m'?'':'·le';return o==='homo'?(g==='f'?'Lesbienne':g==='m'?'Gay':'Homosexuel·le'):o==='hetero'?'Hétérosexuel'+e:o==='bi'?'Bisexuel'+e:o==='pan'?'Pansexuel'+e:'Asexuel'+e};
+const oriLabel=(o,g)=>{const e=g==='f'?'le':g==='m'?'':'·le';return o==='homo'?(g==='f'?'Homosexuelle':g==='m'?'Homosexuel':'Homosexuel·le'):o==='hetero'?'Hétérosexuel'+e:o==='bi'?'Bisexuel'+e:o==='pan'?'Pansexuel'+e:'Asexuel'+e};
 const npcLikesMe=id=>isNpc(id)&&attracted(FICHES[id].o,FICHES[id].g,me().sexe);
 const iLike=id=>isNpc(id)&&attracted(me().orient,me().sexe,FICHES[id].g);
 const objOk=o=>me().orient==='ace'?!o.rom:!o.ace;
