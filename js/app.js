@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='48';
+const APP_VERSION='49';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1446,14 +1446,14 @@ $('detail').addEventListener('click',e=>{const b=e.target.closest('[data-col]');
 function drawGrid(){
  const S=TABS[tab].subs[sub];
  if(S.hairCat||S.wear){curList=catList(S);grid.className='grid cat';adjust.hidden=true;
-  grid.innerHTML=curList.map((e,i)=>`<button class="opt" type="button" data-ci="${i}" aria-pressed="${e.set?!!(catPick.set&&catPick.set.n===e.n&&Object.entries(e.set).every(([k,v])=>state[k]===v)):isAct(e,curList)}"><span class="th">${avUse({...entryState(e),taille:'moyenne'},e.vb,false)}</span><span class="nm">${esc(e.n)}</span>${e.nw?'<span class="refb nw">Nouveau</span>':e.r?'<span class="refb">Réf.</span>':''}</button>`).join('');
+  grid.innerHTML=curList.map((e,i)=>`<button class="opt" type="button" data-ci="${i}" aria-pressed="${e.set?!!(catPick.set&&catPick.set.n===e.n&&Object.entries(e.set).every(([k,v])=>state[k]===v)):isAct(e,curList)}"><span class="th">${render({...entryState(e),taille:'moyenne'},e.vb,'t'+i,false)}</span><span class="nm">${esc(e.n)}</span>${e.nw?'<span class="refb nw">Nouveau</span>':e.r?'<span class="refb">Réf.</span>':''}</button>`).join('');
   drawDetail(S);return}
  $('detail').hidden=true;
  if(S.cols){grid.className='grid swatches';
   grid.innerHTML=S.cols.map(c=>`<button class="sw" type="button" data-v="${c}" aria-label="Couleur ${c}" aria-pressed="${state[S.id]===c}" style="background:${c}"></button>`).join('');}
  else{grid.className='grid';
   grid.className='grid'+(S.tall?' tall':'');
-  grid.innerHTML=S.opts.map((o,i)=>`<button class="opt" type="button" data-v="${o}" aria-pressed="${state[S.id]===o}"><span class=\"th\">${avUse({...state,[S.id]:o},S.vb,!!S.bg)}</span><span>${S.tall?bodyLbl(o):(L[o]||o)}</span></button>`).join('');}
+  grid.innerHTML=S.opts.map((o,i)=>`<button class="opt" type="button" data-v="${o}" aria-pressed="${state[S.id]===o}"><span class="th">${render({...state,[S.id]:o},S.vb,'t'+i,!!S.bg)}</span><span>${S.tall?bodyLbl(o):(L[o]||o)}</span></button>`).join('');}
  const A=S.adj&&ADJ[S.adj];
  adjust.hidden=!A;
  if(A){$('adjLbl').textContent=A.label;
@@ -1754,23 +1754,26 @@ function avUse(av,vb,bg){const sp=typeof document!=='undefined'&&document.getEle
  const k=vb+'|'+(bg?1:0)+'|'+JSON.stringify(av);let id=AVS[k];
  if(id&&AVB_IMG[id])return avImgSvg(vb,AVB_IMG[id],id);
  if(!id){id=AVS[k]='avs'+(++AVS_N.n);const s=render(av,vb,id,bg),inner=s.slice(s.indexOf('>')+1,s.lastIndexOf('</svg>'));
-  const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=`<g id="${id}">${inner}</g>`;sp.querySelector('defs').appendChild(tmp.firstChild);setTimeout(()=>avBake(id,av,vb,bg,0),30)}
+  const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=`<g id="${id}">${inner}</g>`;sp.querySelector('defs').appendChild(tmp.firstChild);bakeQ.push([id,av,vb,bg,0]);bakeRun()}
  return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-avk="${id}"><use href="#${id}"/></svg>`}
 /* chaque avatar est ensuite « cuit » en une seule image (canvas) : le téléphone n'a plus qu'une image à afficher par pastille */
-const AVB_IMG={},ADU={};
+const AVB_IMG={},ADU={},bakeQ=[];let bakeBusy=false;
+/* une seule cuisson à la fois, quand le téléphone est libre : l'affichage ne se bloque jamais */
+function bakeRun(){if(bakeBusy||!bakeQ.length)return;bakeBusy=true;const go=()=>{const j=bakeQ.shift();Promise.resolve(avBake(...j)).finally(()=>{bakeBusy=false;setTimeout(bakeRun,40)})};(window.requestIdleCallback||setTimeout)(go,{timeout:400})}
 /* zone cuite : carré autour du viewBox (une vignette plus large que haute montre aussi ce qui dépasse, ex. les cheveux) */
 const avBox=vb=>{const [x,y,w,h]=String(vb).split(/[ ,]+/).map(Number),S=Math.max(w,h);return [x+w/2-S/2,y+h/2-S/2,S,S].map(v=>+v.toFixed(2))};
 function avImgSvg(vb,url,id){const [x,y,w,h]=avBox(vb);return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-avk="${id}"><image href="${url}" x="${x}" y="${y}" width="${w}" height="${h}"/></svg>`}
 function assetData(u){if(ADU[u])return ADU[u];return ADU[u]=fetch(u).then(r=>r.blob()).then(b=>new Promise(res=>{const f=new FileReader();f.onload=()=>res(f.result);f.readAsDataURL(b)}))}
 async function avBake(id,av,vb,bg,tries){try{if(typeof fetch==='undefined'||!window.Image)return;
- let s=render(av,vb,'k'+id,bg);if(/data-hk="[^"]+"[^>]*filter=/.test(s)&&tries<12){setTimeout(()=>avBake(id,av,vb,bg,tries+1),350);return}   /* cheveux pas encore reteints */
+ let s=render(av,vb,'k'+id,bg);if(/data-hk="[^"]+"[^>]*filter=/.test(s)&&tries<12){setTimeout(()=>{bakeQ.push([id,av,vb,bg,tries+1]);bakeRun()},350);return}   /* cheveux pas encore reteints */
  const hs=[...new Set([...s.matchAll(/href="(assets\/[^"]+)"/g)].map(m=>m[1]))],du=await Promise.all(hs.map(assetData));hs.forEach((h,i)=>{s=s.split(`href="${h}"`).join(`href="${du[i]}"`)});
  const B=avBox(vb),w=B[2],h=B[3],sc=Math.min(2.4,460/w),W=Math.round(w*sc),H=Math.round(h*sc);
  s=s.replace(/viewBox="[^"]*"/,`viewBox="${B.join(' ')}"`).replace('<svg ',`<svg width="${W}" height="${H}" `);
  const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);await im.decode();
  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(im,0,0,W,H);
  let url=c.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=c.toDataURL('image/png');AVB_IMG[id]=url;
- document.querySelectorAll(`svg[data-avk="${id}"]`).forEach(el=>{const [x,y,ww,hh]=avBox(vb);el.innerHTML=`<image href="${url}" x="${x}" y="${y}" width="${ww}" height="${hh}"/>`})}catch(e){/* garde la version <use> */}}
+ document.querySelectorAll(`svg[data-avk="${id}"]`).forEach(el=>{const [x,y,ww,hh]=avBox(vb);el.innerHTML=`<image href="${url}" x="${x}" y="${y}" width="${ww}" height="${hh}"/>`});
+ const g=document.getElementById(id);if(g)g.remove()   /* dessin détaillé libéré de la mémoire */}catch(e){/* garde la version <use> */}}
 function avatarOf(id){return avUse(avOf(id),AVB,true)}
 const slug=n=>'@'+((n||'moi').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'moi');
 const myHandle=()=>slug(me().name)+(me().nom?'.'+slug(me().nom).slice(1):'');
