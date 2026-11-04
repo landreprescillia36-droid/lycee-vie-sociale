@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='39';
+const APP_VERSION='40';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -169,13 +169,15 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
  const outl=mix(sk,'#6a2e14',.42);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=false,rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="207" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="209" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${207-ry*.55} C${xx+6*k},${207-ry*.6} ${xx+8*k},${207+ry*.3} ${xx-2*k},${207+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
- if(F.chin&&s.sexe!=='m')o+=`<defs><filter id="${p}cs" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="${p}csc"><rect x="${s.sexe==='m'?182:186}" y="${F.chin-60}" width="${s.sexe==='m'?36:28}" height="90"/></clipPath></defs><g clip-path="url(#${p}csc)"><path d="${F.d}" transform="translate(0,${s.sexe==='m'?9:7})" fill="${mix(skDD,'#000',.2)}" opacity="${s.sexe==='m'?.45:.65}" filter="url(#${p}cs)"/></g>`;
+ /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
+ const big=vh===240||vh>=600;
+ if(big&&F.chin&&s.sexe!=='m')o+=`<defs><filter id="${p}cs" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="4"/></filter><clipPath id="${p}csc"><rect x="${s.sexe==='m'?182:186}" y="${F.chin-60}" width="${s.sexe==='m'?36:28}" height="90"/></clipPath></defs><g clip-path="url(#${p}csc)"><path d="${F.d}" transform="translate(0,${s.sexe==='m'?9:7})" fill="${mix(skDD,'#000',.2)}" opacity="${s.sexe==='m'?.45:.65}" filter="url(#${p}cs)"/></g>`;
  /* garçons : trait de la mâchoire, des joues jusqu'au menton (planche de Prescillia) */
  const jaw=s.sexe==='m'&&FACE_ART.m[faceKey(s.face)];
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;
- if(F.chin){/* structure du menton (planche) : ombre le long de la mâchoire, menton éclairé, creux sous la lèvre */
+ if(big&&F.chin){/* structure du menton (planche) : ombre le long de la mâchoire, menton éclairé, creux sous la lèvre */
   const ch=F.chin,m=s.sexe==='m'?1:.75,my=285+mo+a.mouthY;
   o+=`<defs><clipPath id="${p}fj"><path d="${F.d}"/></clipPath><filter id="${p}fjb" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="5"/></filter><filter id="${p}fjs" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter><linearGradient id="${p}fjg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}fjm"><rect x="0" y="${ch-150}" width="400" height="150" fill="url(#${p}fjg)"/></mask></defs>`
    +`<g clip-path="url(#${p}fj)"><path d="${F.d}" fill="none" stroke="${skDD}" stroke-width="16" opacity="${.2*m}" filter="url(#${p}fjb)" mask="url(#${p}fjm)"/>`
@@ -2934,7 +2936,7 @@ function hudTick(){
  const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;hudTick();if(!G.paused&&!document.hidden&&!cevOpen)advance(mg?1:(G.speed||1))},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if(!G.paused&&!document.hidden&&!cevOpen)advance(mg?1:(G.speed||1))},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -3332,8 +3334,8 @@ function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
 function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
-function closeSheet(){if(cevS)return;cevOpen=false;$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
-$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&cevS)return;if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
+function closeSheet(){if(cevS&&cevShown())return;cevS=null;cevOpen=false;$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
+$('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&cevS&&cevShown())return;if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
 function openFiche(id){
  const f=FICHES[id],n=WHO[id];
@@ -3516,6 +3518,7 @@ const CQ={
 };
 const CNAME=id=>WHO[id].name,CG=(id,t)=>gtxt(t,FICHES[id]?FICHES[id].g:'f');
 let cevOpen=false,cevS=null;
+const cevShown=()=>{const b=$('sheetBody');return !!(b&&b.querySelector&&b.querySelector('[data-cev]'))};
 function clsInit(){G.cls=G.cls||{};const c=G.cls;c.appr=c.appr||{};c.part=c.part||{};c.infr=c.infr||[];c.beh=c.beh??70;c.colles=c.colles||0;c.ev=c.ev||{};c.seen=c.seen||{};return c}
 const cRecent=()=>clsInit().infr.filter(x=>G.day-x.day<=10).length;
 function cAppr(sub,d){const c=clsInit();c.appr[sub]=clamp((c.appr[sub]||0)+d,-20,20)}
