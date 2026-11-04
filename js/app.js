@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='64';
+const APP_VERSION='65';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -692,7 +692,11 @@ function jacketParts(G,s,p,sx){
   sl+=LN(`M${fx(edge(A.O,330)+k*e)},${fx(AY(330))} Q${fx(edge(A.O,345)+k*(e-6))},${fx(AY(346))} ${fx(edge(A.O,362)+k*e)},${fx(AY(362))}`,dk,1.6,.3);const th=torHalf(G,J.h,J.ext);sl+=capPatch(G,p,k,'jc'+k,c,JKS,JKS,J.closed?th:(x=>colAt(c,JKS,k<0?(x-(200-th))/(192-(200-th)):((200+th)-x)/((200+th)-208))),sx+5,262)});
  return {torso:t,sleeves:sl};
 }
-function accSVG(G,s){let o='';const bc=s.bagColor,bd=shade(bc,-.3);
+/* sacs d'école décalqués sur ta planche (js/sacs-art.js) : sac à main porté à l'épaule gauche, bretelles du sac à dos sur les deux épaules */
+function sacSVG(G,s){if(typeof SAC_ART==='undefined'||!SAC_ART[s.bag])return '';const A=SAC_ART[s.bag],R=SAC_ART._ref[s.bag],k=.446*(G.SH||70)/70,X=v=>200+(v-R.cx)*k,Y=v=>236+(v-395)*k;
+ const im=`<image href="assets/sacs/${s.bag}.png" x="${fx(X(A.x))}" y="${fx(Y(A.y))}" width="${fx(A.w*k)}" height="${fx(A.h*k)}" preserveAspectRatio="none"/>`;
+ return s.bag==='sacados'?im+`<g transform="translate(400,0) scale(-1,1)">${im}</g>`:im}
+function accSVG(G,s){let o=sacSVG(G,s);const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
  if(s.necklace==='perles')for(let i=0;i<=14;i++){const t=i/14,x=(1-t)*(1-t)*184+2*(1-t)*t*200+t*t*216,y=(1-t)*(1-t)*212+2*(1-t)*t*256+t*t*212;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="2.7" fill="#f6f1e6" stroke="#c9bfa9" stroke-width=".6"/>`}
  if(s.necklace==='rasdecou')o+=`<path d="M186,198 Q200,204 214,198 L214,205 Q200,211 186,205Z" fill="#1f2127"/>`;
@@ -1504,7 +1508,8 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
-function noAcc(s){if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:'aucun',necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
+const SACS=['sacmain','sacados'];/* sacs d'école : les seuls sacs gardés */
+function noAcc(s){const sac=SACS.includes(s.bag)?s.bag:'aucun';if(s.hat==='aucun'&&(s.bag==='aucun'||SACS.includes(s.bag))&&s.necklace==='aucun'&&s.glasses==='aucune'&&['aucune','anneaux'].includes(s.earrings))return s;return {...s,hat:'aucun',bag:sac,necklace:'aucun',glasses:'aucune',earrings:s.earrings==='anneaux'?'anneaux':'aucune'}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(s)}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
