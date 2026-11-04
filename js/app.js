@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='53';
+const APP_VERSION='54';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -860,9 +860,9 @@ function sideburns(s,A,col,fit,cid){const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb
  for(let v=vb;v>=y0;v-=5){const u=(v-y0)/(vb-y0);P.push([faceEdge(s,v,k)-k*(Math.max(14,Math.abs(q[0]-faceEdge(s,y0,k)))*(1-u)+7*u),v])}
  const d='M'+P.map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
  return `<g filter="url(#${id}b)"><path d="${d}" fill="url(#${id})"/><path d="${d}" fill="url(#${id}p)" opacity=".6" mask=""/></g>`}).join('')}
-const HTINT={},HTINT_GO={};
-function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;
- const T=tab.map(a=>a.map(Number)),im=new Image();im.onload=()=>{try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
+const HTINT={},HTINT_GO={};let HT_PEND=0;
+function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;HT_PEND++;
+ const T=tab.map(a=>a.map(Number)),im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data,W=c.width,H=c.height,L=new Float32Array(W*H);
   for(let i=0;i<W*H;i++)L[i]=(a[i*4]*.299+a[i*4+1]*.587+a[i*4+2]*.114)/255;
   const n=T[0].length-1;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){const i=yy*W+xx,up=yy>0?L[i-W]:L[i],dn=yy<H-1?L[i+W]:L[i],v=clamp((up+2*L[i]+dn)/4,0,1),q=v*n,j=Math.min(n-1,Math.floor(q)),u=q-j;
@@ -4542,10 +4542,16 @@ function askRestart(){openSheet(`<div class="who"><div style="flex:1;min-width:0
 /* écran de chargement : reste affiché jusqu'à ce que les images visibles et les portraits soient prêts (6 s au plus) */
 let ldT0=Date.now()-(window.performance?performance.now():0);
 function loadShow(t){const l=$('loader');if(!l)return;l.querySelector('.ld-t').textContent=t||'Chargement…';l.hidden=false;l.classList.remove('out');ldT0=Date.now()}
-function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;const end=Date.now()+6000;
- const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!bakeQ.length&&!bakeBusy;
+const LD_IMG={};
+/* images des SVG (coiffures, chaussures, yeux…) : préchargées pour savoir quand elles sont prêtes */
+function svgImgsReady(){let ok=true;document.querySelectorAll('svg image').forEach(el=>{const u=el.getAttribute('href')||el.getAttribute('xlink:href');if(!u||u.startsWith('data:')||el.closest('[hidden]'))return;
+ let im=LD_IMG[u];if(!im){im=LD_IMG[u]=new Image();im.src=u}if(!im.complete)ok=false});return ok}
+function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;const end=Date.now()+15000;let okSince=0;
+ const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!bakeQ.length&&!bakeBusy&&!HT_PEND&&svgImgsReady();
  const fin=()=>{if(l.classList.contains('out'))return;l.classList.add('out');setTimeout(()=>{l.hidden=true;l.classList.remove('out')},320)};
- const chk=()=>{if(Date.now()-ldT0<(min||500)||(!ready()&&Date.now()<end)){setTimeout(chk,120);return}fin()};
+ /* tout doit être prêt pendant 0,6 s d'affilée (le temps que les coiffures recolorées s'affichent) */
+ const chk=()=>{const now=Date.now();if(ready()){okSince=okSince||now}else okSince=0;
+  if(now<end&&(now-ldT0<(min||1500)||!okSince||now-okSince<600)){setTimeout(chk,120);return}fin()};
  (document.fonts&&document.fonts.ready||Promise.resolve()).then(chk,chk)}
 function withLoader(t,fn){const l=$('loader');if(!l||!l.querySelector||typeof requestAnimationFrame!=='function'){fn();return}loadShow(t);requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{loadHide()}},40))}
 function showAtelier(){withLoader("Ouverture de l'atelier…",showAtelier0)}
@@ -4559,4 +4565,4 @@ nom.value=me().name;$('nomFam').value=me().nom||'';drawTabs();drawSubs();refresh
 $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;
 $('bRestart').onclick=askRestart;
 if(G)showGame();
-loadHide(1500);
+loadHide(2500);
