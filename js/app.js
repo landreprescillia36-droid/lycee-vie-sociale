@@ -427,15 +427,15 @@ const LN=(dd,col,w,op,dash)=>`<path d="${dd}" fill="none" stroke="${col}" stroke
 /* jupes de la planche « Bas pour filles » : ceinture large, plis creusés, tartan, fente, godets, jean à revers */
 /* silhouette des jupes mesurée sur ta planche : h = longueur, r = demi-largeur (13 niveaux, de la taille au bas), en multiples de la demi-largeur à la taille */
 const JUPE_PROF={"jplis":{"h":2.752,"r":[0.976,1.056,1.232,1.408,1.536,1.632,1.712,1.776,1.872,1.872,1.952,2.016]},"jcarreaux":{"h":2.667,"r":[0.968,1.063,1.206,1.333,1.444,1.508,1.571,1.635,1.698,1.778,1.81,1.905]},"jfendue":{"h":2.852,"r":[0.984,1.082,1.23,1.426,1.525,1.623,1.705,1.721,1.738,1.787,1.754,1.738]},"jmoulante":{"h":2.732,"r":[0.976,1.073,1.22,1.35,1.447,1.545,1.593,1.659,1.691,1.707,1.707,1.691]},"jpatineuse":{"h":3.145,"r":[0.991,1.077,1.248,1.385,1.521,1.641,1.744,1.846,1.932,2.034,2.154,2.171]},"jupejean":{"h":2.614,"r":[0.976,1.071,1.197,1.323,1.402,1.48,1.528,1.575,1.606,1.638,1.638,1.669]}};
-function jupeSVG(G,s,p,t,wx0){const b=s.bottomColor,H=G.HH,PR=JUPE_PROF[t],R=PR.r,n=R.length-1,Y0=376,wx=sideX(G,Y0)+1.5,hy=Math.round(Y0+PR.h*wx),dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
+function jupeSVG(G,s,p,t,wx0){const b=s.bottomColor,H=G.HH,PR=JUPE_PROF[t],R=PR.r,n=R.length-1,Y0=376,wx=sideX(G,Y0)+1.5,WR=46.3,hy=Math.round(Y0+PR.h*WR),dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
  const rat=u=>{const z=Math.min(n,Math.max(0,u*n)),i=Math.min(n-1,Math.floor(z)),w=z-i;return R[i]+(R[i+1]-R[i])*w};
  /* taille haute : la jupe part de la taille (le plus fin du corps) et suit la courbe mesurée sur la planche, sans jamais être plus étroite que le corps */
- let m=1;for(let y=Y0;y<=Math.min(hy,480);y+=4)m=Math.max(m,(sideX(G,y)+2)/(wx*rat((y-Y0)/(hy-Y0))));
- const half=y=>{const u=(y-Y0)/(hy-Y0);return wx*rat(u)*(1+(m-1)*Math.min(1,u/.4))};
+ let m=1;for(let y=Y0;y<=Math.min(hy,480);y+=4)m=Math.max(m,(sideX(G,y)+2)/(wx+(rat((y-Y0)/(hy-Y0))-1)*WR));
+ const half=y=>{const u=(y-Y0)/(hy-Y0);return (wx+(rat(u)-1)*WR)*(1+(m-1)*Math.min(1,u/.4))};
  const sideL=y=>200-half(y),hw=half(hy);
  const sil=hem=>{let o=`M${f(200-wx)},${Y0} Q200,${Y0+5} ${f(200+wx)},${Y0}`;for(let y=Y0+4;y<=hy;y+=4)o+=` L${f(400-sideL(y))},${y}`;o+=` ${hem} `;for(let y=hy;y>=Y0+4;y-=4)o+=` L${f(sideL(y))},${y}`;return o+'Z'};
 const N=t==='jplis'||t==='jcarreaux'?13:0;let hem=`L${f(200+hw)},${hy}`;
- if(N){for(let i=N;i>=0;i--){const x=200-hw+2*hw*i/N;hem+=` L${f(x)},${hy+(i%2?3.5:0)}`}}
+ if(N){/* bas arrondi comme la jupe patineuse (plus de pointes) */for(let i=N;i>=1;i--){const x=200-hw+2*hw*(i-1)/N;hem+=` Q${f(x+hw/N)},${hy+(i%2?5:-1)} ${f(x)},${hy+2}`}}
  else if(t==='jpatineuse'){for(let i=12;i>=0;i--){const x=200-hw+2*hw*i/12;hem+=` Q${f(x+hw/12)},${hy+(i%2?7:-2)} ${f(x)},${hy+2}`}}
  else hem+=` Q200,${hy+5} ${f(200-hw)},${hy}`;
  const S=sil(hem);let o=`<defs><linearGradient id="${q}g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${shade(b,-.3)}"/><stop offset=".2" stop-color="${b}"/><stop offset=".5" stop-color="${shade(b,.08)}"/><stop offset=".8" stop-color="${b}"/><stop offset="1" stop-color="${shade(b,-.3)}"/></linearGradient>
