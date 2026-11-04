@@ -1,0 +1,2 @@
+/* jeans décalqués par tools/traceur-jeans.py sur docs/references/vetements/planche-jeans-filles.png — ne pas modifier à la main */
+const JEAN_ART={"slim":{"w":119,"h":384,"cx":59.0,"waist":46.5,"hip":59.0},"mom":{"w":130,"h":393,"cx":63.0,"waist":49.0,"hip":61.5},"jdroit":{"w":126,"h":393,"cx":61.5,"waist":47.5,"hip":60.0},"jlarge":{"w":128,"h":393,"cx":62.2,"waist":45.8,"hip":58.5},"bootcut":{"w":127,"h":393,"cx":60.5,"waist":45.5,"hip":59.0},"bermuda":{"w":124,"h":144,"cx":61.2,"waist":44.2,"hip":53.0}};

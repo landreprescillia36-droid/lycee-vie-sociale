@@ -432,7 +432,11 @@ const JEAN_PROF={"slim":{"o":[0.949,1.119,1.322,1.458,1.559,1.627,1.661,1.627,1.
 /* bord des jambes du corps (pour que le jean ne soit jamais plus étroit que la jambe) */
 const LEG_O=[[432,59],[480,60],[563,59],[616,54],[661,48],[705,50.6],[750,49.5],[795,44],[840,36],[866,36]],LEG_I=[[478,0],[563,2],[616,5.8],[661,8.5],[705,8.5],[750,10],[795,12],[840,11.5],[866,11.5]];
 const lerpT=(T,y)=>{if(y<=T[0][0])return T[0][1];for(let i=1;i<T.length;i++)if(y<=T[i][0]){const [a,u]=T[i-1],[b,v]=T[i];return u+(v-u)*(y-a)/(b-a)}return T[T.length-1][1]};
-function jeanSVG(G,s,p,t){const b=s.bottomColor,PR=JEAN_PROF[t],Y0=376,wx=sideX(G,Y0)+1.5,WR=46.3,HEM=t==='bermuda'?Math.round(Y0+(856-Y0)*PR.L):856,q=p+'je',f=fx,dk=shade(b,-.35),lt=shade(b,.25),ts='#d6a35c',n=PR.o.length-1;
+function jeanSVG(G,s,p,t){
+ /* jean décalqué sur ta planche (js/jeans-art.js) : la ceinture à la taille, le bas au-dessus des chaussures ; largeur adaptée à la corpulence */
+ if(typeof JEAN_ART!=='undefined'&&JEAN_ART[t]){const A=JEAN_ART[t],Y0=376,sv=(856-Y0)/JEAN_ART.mom.h,sh=(sideX(G,440)+2)/A.hip,w=A.w*sh,h=A.h*sv;
+  return `<image href="assets/bas/jean-${t}.png" x="${fx(200-A.cx*sh)}" y="${Y0}" width="${fx(w)}" height="${fx(h)}" preserveAspectRatio="none"/>`}
+const b=s.bottomColor,PR=JEAN_PROF[t],Y0=376,wx=sideX(G,Y0)+1.5,WR=46.3,HEM=t==='bermuda'?Math.round(Y0+(856-Y0)*PR.L):856,q=p+'je',f=fx,dk=shade(b,-.35),lt=shade(b,.25),ts='#d6a35c',n=PR.o.length-1;
  const at=(A,u)=>{const z=Math.min(n,Math.max(0,u*n)),i=Math.min(n-1,Math.floor(z)),w=z-i;return A[i]+(A[i+1]-A[i])*w};
  const sm=(A,u)=>(at(A,u-.03)+2*at(A,u)+at(A,u+.03))/4;
  const HU=(sideX(G,440)+2)/1.64;/* unité = hanches : 1,64 × la taille sur la planche */
@@ -737,7 +741,9 @@ function body(s,p,sk,skD,skDD,skL){
  <pattern id="${p}flo" width="22" height="22" patternUnits="userSpaceOnUse"><g fill="#fff" opacity=".75"><circle cx="6" cy="6" r="2"/><circle cx="3.5" cy="6" r="1.4"/><circle cx="8.5" cy="6" r="1.4"/><circle cx="6" cy="3.5" r="1.4"/><circle cx="6" cy="8.5" r="1.4"/></g><circle cx="6" cy="6" r="1" fill="#f2c230"/><circle cx="17" cy="16" r="1.6" fill="#fff" opacity=".6"/></pattern>
  <pattern id="${p}qlt" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0,0 H20 M0,0 V20" stroke="#000" stroke-opacity=".2" stroke-width="1.4"/></pattern></defs>`;
  let o=`<ellipse cx="200" cy="878" rx="80" ry="9" fill="#000" opacity=".13"/>`;
-  o+=[-1,1].map(k=>`<path d="${legD(G,k)}" fill="${LM}"/>`).join('');
+  {/* jean long décalqué : les jambes ne sont dessinées que sous l'ourlet (elles ne dépassent jamais sur les côtés) */
+   const JA=typeof JEAN_ART!=='undefined'&&s.bottom!=='bermuda'&&!(s.dress&&s.dress!=='aucune')&&JEAN_ART[s.bottom],hy=JA?376+JA.h*(856-376)/JEAN_ART.mom.h-6:0;
+   o+=(JA?`<defs><clipPath id="${p}lgc"><rect x="0" y="${fx(hy)}" width="400" height="200"/></clipPath></defs><g clip-path="url(#${p}lgc)">`:'')+[-1,1].map(k=>`<path d="${legD(G,k)}" fill="${LM}"/>`).join('')+(JA?'</g>':'')}
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
  if(T.hood)o+=`<path d="M158,226 C152,206 172,194 200,194 C228,194 248,206 242,226Z" fill="${dk}"/>`;
