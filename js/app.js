@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='65';
+const APP_VERSION='66';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1285,6 +1285,7 @@ const HAIRDB={
  gdegmoyen:{n:'Dégradé moyen',c:'court crepu boucle',r:'GL',g:'m'},
  gdeghaut:{n:'Dégradé haut',c:'court crepu boucle',r:'GL',g:'m'},
  gbuzz:{n:'Buzz cut',c:'court crepu',r:'GL',g:'m'},
+ chauve:{n:'Chauve',c:'court lisse ondule boucle crepu',r:null,g:'m'},
  gcarrecourt:{n:'Carré court',c:'court lisse',r:'GL',g:'m'},
  gcarremoyen:{n:'Carré moyen',c:'mi lisse',r:'GL',g:'m'},
  gcarrelong:{n:'Carré long',c:'mi lisse',r:'GL',g:'m'},
@@ -1376,12 +1377,12 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_G=['gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_G=['chauve','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 /* coiffures retirées du catalogue : remplacées par la plus proche (personnages, parties en cours) */
 const HAIR_SWAP={gcarremoyen:'gcarrecourt',gcarrelong:'gcarrecourt',graiemilieu:'gondule',longs:'raiemilieu',lisselong:'raiemilieu',lisseoreilles:'raiemilieu',longondule:'raiemilieu',longsondules:'raiecotel',ondulescote:'raiecotel',longboucle:'blongs',boucleslongues:'blongs',boucles:'bcarre',miboucle:'bcarre',afro:'bafro',twa:'bcourt',afropuff:'bchignonhaut',ananas:'bchignonhaut',washgo:'bwashgo',bantu:'btwists',bbantu:'btwists',bpuffs:'bafro',macarons:'bafro',boxbraids:'bbox',vanilles:'btwists',locks:'btwists',nattes:'bcollees',btressesarriere:'bcollees',tresse:'deuxtresses',bfoulard:'bafro',bchignonbas:'bchignon',chignon:'chignonhaut2',chignonhaut:'chignonhaut2',demichignon:'bdemiqueue',queue:'queuelisse',queuehaute:'queuehaute2',couettes:'deuxtresses',carre:'carrelisse',carreondule:'carrelisse',carreplongeant:'carrelisse',carreretrousse:'carrelisse',lobraie:'carrelisse',longfrange:'frangedroite',frange:'frangedroite',meches:'mechesdevant',
  degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
 const hairOk=h=>HAIR_ALL.includes(h)?h:(HAIR_SWAP[h]||h);
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
