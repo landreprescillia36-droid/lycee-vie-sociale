@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='66';
+const APP_VERSION='67';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1601,7 +1601,8 @@ function catList(S){
 function entryState(e){if(e.set)return {...state,jacket:'aucune',dress:'aucune',...e.set};const o={...state};o[e.s]=e.v;const cs=COLSLOT[e.s];if(cs&&e.c)o[cs]=e.c;if(e.s==='top'||e.s==='bottom')o.dress='aucune';return o}
 function isAct(e,list){if(e.set||state[e.s]!==e.v)return false;if((e.s==='top'||e.s==='bottom')&&state.dress!=='aucune')return false;
  const same=list.filter(x=>x.s===e.s&&x.v===e.v),cs=COLSLOT[e.s];if(same.length<2||!cs)return same[0]===e;const m=same.find(x=>x.c===state[cs]);return m?m===e:same[0]===e}
-function drawDetail(S){const key=S.hairCat?'hair':S.wear,d=$('detail');
+/* fiche de l'article retirée (demande de Prescillia) : les couleurs se choisissent avec le cercle */
+function drawDetail(S){$('detail').hidden=true;return;const key=S.hairCat?'hair':S.wear,d=$('detail');
  const pk=catPick[key]&&curList.find(x=>x.n===catPick[key].n&&(x.set||isAct(x,curList))),e=pk||curList.find(x=>isAct(x,curList));
  const cs=e&&!e.set&&COLSLOT[e.s],pal=cs&&state[e.s]!=='aucune'&&state[e.s]!=='aucun'?PALS[cs]:null;
  d.hidden=false;d.dataset.slot=cs||'';
