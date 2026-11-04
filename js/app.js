@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='56';
+const APP_VERSION='57';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -379,7 +379,22 @@ function armD(G,k,yEnd,ext,yTop){
  const pr=shProf(G,k,edge(A.O,246)+k*e(246)).filter(q=>k*(q[0]-200)>=G.SH-16);
  return `M${pts(i.slice(-1))} C${fx(sx-k*(au-2))},${fx(AY(250))} ${fx(sx-k*12)},240 ${pts(pr.slice(0,1))} L${pts(pr)} L${pts(o.filter(q=>q[1]>Math.max(246.5,pr[pr.length-1][1]+1)))} L${pts(i)}Z`;
 }
-function handD(G,k){const w=armPts(G,k).wx,Y=v=>fx(AY(v));return `M${fx(w-k*8.5)},${Y(442)} C${fx(w-k*13)},${Y(470)} ${fx(w-k*10)},${Y(510)} ${fx(w+k*1)},${Y(520)} C${fx(w+k*10)},${Y(512)} ${fx(w+k*12)},${Y(472)} ${fx(w+k*8.5)},${Y(442)}Z`}
+/* main d'après le modèle de Prescillia : poignet fin, paume, pouce détaché côté intérieur (avec l'ongle), doigts repliés vers l'intérieur.
+   i = écart vers l'intérieur (vers le corps), d = hauteur depuis le poignet (y 442) */
+const HAND_P=[[-7.6,-6],[-5.2,2],[-6.6,10],[-8.6,22],[-8.9,28],[-8.4,32],[-7.6,35],[-5.8,39],[-3.8,44],[-2,47.3],[0.6,50.5],[4.2,53.6],[6.8,56.2],[8.2,57.8],[10,58.6],[11.4,56.8],[13,55],[14,52.6],[13.4,50.2],[13,48.6],[12.4,47.6],[12.6,46.4],[13.6,44.6],[14.6,42.6],[14.4,40],[14.2,36],[13.2,33],[12.8,29.6],[12.6,22],[10,16],[7.6,9.5],[7,6.5],[5.4,1],[7.6,-6]],HAND_GAP=[[5.6,30],[4.9,34],[4.8,37.5],[5.2,39.8],[6.2,42.2],[8,44.6],[9.4,46],[9.5,44.6],[9,42.4],[8.2,40],[7.4,36.5],[6.4,32.5],[5.6,30]];
+function handD(G,k){const w=armPts(G,k).wx,X=i=>fx(w-k*i),Y=d=>fx(AY(442+d)),cur=P=>{let o=`M${X(P[0][0])},${Y(P[0][1])}`;for(let j=1;j+2<P.length;j+=3)o+=` C${X(P[j][0])},${Y(P[j][1])} ${X(P[j+1][0])},${Y(P[j+1][1])} ${X(P[j+2][0])},${Y(P[j+2][1])}`;return o+'Z'};const A=armPts(G,k),iO=(w-edge(A.O,436))/k,iI=(w-edge(A.I,436))/k,P=HAND_P.slice();
+ /* le haut de la main reprend la largeur réelle du poignet, puis s'affine comme sur le modèle */
+ P[0]=[iO,-6];P[1]=[iO,3];P[P.length-1]=[iI,-6];P[P.length-2]=[iI,3];return cur(P)+' '+cur(HAND_GAP)}
+/* main remplie avec le même dégradé que le bras (mêmes bornes), pour qu'on ne voie pas la jonction au poignet */
+function handSVG(G,k,sk,p){const n=(armD(G,k).match(/-?\d+(\.\d+)?/g)||[]).map(Number),xs=n.filter((v,i)=>i%2===0),a=Math.min(...xs),b=Math.max(...xs),
+  skD=mix(sk,'#5a2412',.2),skL=mix(sk,'#ffd9b8',.22),st=k<0?[[0,skD],[.42,skL],[1,sk]]:[[0,sk],[.58,skL],[1,skD]],id=p+'hd'+(k<0?'L':'R');
+ return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${fx(a)}" y1="0" x2="${fx(b)}" y2="0">${st.map(([o,c])=>`<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient><path d="${handD(G,k)}" fill="url(#${id})" fill-rule="evenodd"/>`+handDet(G,k,sk)}
+/* ombres et détails de la main : creux entre pouce et index, ongle du pouce, séparations des doigts */
+function handDet(G,k,sk){const w=armPts(G,k).wx,X=i=>fx(w-k*i),Y=d=>fx(AY(442+d)),dk=shade(sk,-.22),lt=mix(sk,'#ffffff',.35),L=(d,o,sw)=>`<path d="${d}" fill="none" stroke="${dk}" stroke-width="${sw||.7}" stroke-linecap="round" opacity="${o}"/>`;
+ return L(`M${X(5.6)},${Y(30)} C${X(4.9)},${Y(34)} ${X(4.8)},${Y(37.5)} ${X(5.2)},${Y(39.8)} C${X(6.2)},${Y(42.2)} ${X(8)},${Y(44.6)} ${X(9.4)},${Y(46)}`,.45)+
+  L(`M${X(9.4)},${Y(46)} Q${X(10.8)},${Y(47.4)} ${X(12.5)},${Y(47)}`,.4)+
+  `<ellipse cx="${X(11.6)}" cy="${Y(43.2)}" rx="1.25" ry="1.8" transform="rotate(${-k*20} ${X(11.6)} ${Y(43.2)})" fill="${lt}" opacity=".85"/>`+
+  [[1.4,48.6,3.4,52.8],[4.6,49.4,6.8,54.6],[7.9,49,9.6,54.4]].map(([a,b,c,d])=>L(`M${X(a)},${Y(b)} Q${X((a+c)/2+.6)},${Y((b+d)/2)} ${X(c)},${Y(d)}`,.4,.6)).join('')}
 function legD(G,k,foot){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
  return `M${x(H)},432 C${x(H+1)},480 ${x(60)},525 ${x(59)},563 C${x(57)},595 ${x(50)},640 ${x(48)},661 C${x(49)},680 ${x(51)},695 ${x(50.6)},705 C${x(51)},730 ${x(50)},745 ${x(49.5)},750 C${x(48)},770 ${x(46)},780 ${x(44)},795 C${x(42)},808 ${x(37)},822 ${x(35)},${foot?`838 C${x(36)},841 ${x(44)},846 ${x(46)},866 L${x(0)},866 C${x(1)},846 ${x(9)},841 ${x(11.5)},838`:`840 L${x(11.5)},840`} C${x(11.5)},822 ${x(11.8)},808 ${x(12)},795 C${x(11.5)},780 ${x(10.5)},760 ${x(10)},750 C${x(9)},730 ${x(8.5)},715 ${x(8.5)},705 C${x(8.5)},690 ${x(8.5)},670 ${x(8.5)},661 C${x(7)},640 ${x(6)},625 ${x(5.8)},616 C${x(4)},595 ${x(2)},575 ${x(2)},563 C${x(2)},530 ${x(1)},500 ${x(0)},478Z`}
 const BOTTOMS=['droit','large','flare','cordon','jogging','yoga','short','jupe','jupejean','cycliste'];
@@ -542,7 +557,7 @@ function dressSVG(G,s,p,K,J){
  if(D.strap)o+=LN(`M${D.neck==='square'||D.neck==='sweet'?172:178},262 L162,${fx(shY(G,-1,162)+1)} M${D.neck==='square'?228:222},262 L238,${fx(shY(G,1,238)+1)}`,c,D.strap);
  if(D.sl){const ex=()=>D.sx,yTop=D.neck==='off'?248:null;[-1,1].forEach(k=>{o+=`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}dr)"/>`+(D.madras?`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}mad)"/>`:'')+(D.rib?`<path d="${armD(G,k,D.sl,ex,yTop)}" fill="url(#${p}rib)"/>`:'')+(yTop?'':capPatch(G,p,k,'dr'+k,c,JKS,JKS,Math.max(G.HH+D.flare,torHalf(G,372,D.ext||0)),D.sx,Math.min(262,D.sl-6)))})}
  if(G.f&&D.sl&&!(s.jacket&&JK[s.jacket]))[-1,1].forEach(k=>{o+=bustLine(G,k,c,D.sx,D.neck==='off'?254:258)});
- o+=J.sleeves+[-1,1].map(k=>{const w=armPts(G,k).wx;return `<path d="${handD(G,k)}" fill="${sk}"/><ellipse cx="${fx(w-k*9)}" cy="${fx(AY(460))}" rx="3.6" ry="9" transform="rotate(${k*14} ${fx(w-k*9)} ${fx(AY(460))})" fill="${shade(sk,-.08)}"/>`}).join('');
+ o+=J.sleeves+[-1,1].map(k=>{const w=armPts(G,k).wx;return `${handSVG(G,k,sk,p)}`}).join('');
  return o;
 }
 const JK={kimono:{h:500,ext:13,open:46,flo:1,wide:1,trim:1,sl:396},matelassee:{h:378,ext:10,closed:1,quilt:1,collar:'stand',band:1},cardigan:{h:486,ext:11,open:22,rib:1,btn:1,pockets:1},
@@ -697,7 +712,7 @@ function topSVG(G,T,s,p,K){
  const sleeve=(k,col,yEnd,ext,yTop)=>`<path d="${armD(G,k,yEnd,ext,yTop)}" fill="${col===TF?`url(#${p}tp${k<0?'L':'R'})`:col===LM?`url(#${p}lm${k<0?'L':'R'})`:col}"/>`;
  const cuff=(k,col,y0,y1,e)=>{const A=armPts(G,k),Y0=fx(AY(y0)),Y1=fx(AY(y1));return `<path d="M${fx(edge(A.O,y0)+k*e)},${Y0} L${fx(edge(A.O,y1)+k*e)},${Y1} L${fx(edge(A.I,y1)-k*e)},${Y1} L${fx(edge(A.I,y0)-k*e)},${Y0}Z" fill="${col}"/>`};
  const arms=()=>[-1,1].map(k=>`<path d="${armD(G,k)}" fill="url(#${p}lm${k<0?'L':'R'})"/>`).join('');
- const hands=()=>[-1,1].map(k=>{const w=armPts(G,k).wx;return `<path d="${handD(G,k)}" fill="${sk}"/><ellipse cx="${fx(w-k*9)}" cy="${fx(AY(460))}" rx="3.6" ry="9" transform="rotate(${k*14} ${fx(w-k*9)} ${fx(AY(460))})" fill="${shade(sk,-.08)}"/>`}).join('');
+ const hands=()=>[-1,1].map(k=>{const w=armPts(G,k).wx;return `${handSVG(G,k,sk,p)}`}).join('');
  const hemBand=(y,col,ext)=>{const x=sideX(G,y)+ext;return `<path d="M${fx(200-x)},${y-13} L${fx(200+x)},${y-13} L${fx(200+x)},${y} L${fx(200-x)},${y}Z" fill="${col}"/><path d="M${fx(200-x)},${y-13} L${fx(200+x)},${y-13} L${fx(200+x)},${y} L${fx(200-x)},${y}Z" fill="url(#${p}rib)"/>`};
  if(T.vest){
   const U=lum(c)>.5?'#1f2127':'#f4f1ea',VG={...G,SH:G.SH-8};
