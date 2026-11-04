@@ -425,10 +425,16 @@ function pantsLegD(G,k,t){const x=v=>fx(200+k*legX(G,v)),H=G.HH;
 const DENIM=['#86a6cc','#5b7fb5','#2f4a78','#9aa0a6','#1f2127','#3f5f94','#8eaed3','#4f6f9f','#3e5a88','#7e9cc4','#2c3f6b'];
 const LN=(dd,col,w,op,dash)=>`<path d="${dd}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" opacity="${op??1}"${dash?` stroke-dasharray="${dash}"`:''}/>`;
 /* jupes de la planche « Bas pour filles » : ceinture large, plis creusés, tartan, fente, godets, jean à revers */
-function jupeSVG(G,s,p,t,wx){const b=s.bottomColor,H=G.HH,J=JUPES[t]||{y:548,w:14,c:5},hy=J.y,hw=H+J.w,dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
- const sideL=y=>{const u=(y-404)/(hy-404);return 200-(wx+(hw-wx)*Math.pow(u,J.w>20?1.6:1.1))-(J.w<=8?Math.sin(u*Math.PI)*3:0)};
- const sil=hem=>{let o=`M${f(200-wx)},404 Q200,410 ${f(200+wx)},404`;for(let y=410;y<=hy;y+=6)o+=` L${f(400-sideL(y))},${y}`;o+=` ${hem} `;for(let y=hy;y>=410;y-=6)o+=` L${f(sideL(y))},${y}`;return o+'Z'};
- const N=t==='jplis'||t==='jcarreaux'?13:0;let hem=`L${f(200+hw)},${hy}`;
+/* silhouette des jupes mesurée sur ta planche : h = longueur, r = demi-largeur (13 niveaux, de la taille au bas), en multiples de la demi-largeur à la taille */
+const JUPE_PROF={"jplis":{"h":2.752,"r":[0.976,1.056,1.232,1.408,1.536,1.632,1.712,1.776,1.872,1.872,1.952,2.016]},"jcarreaux":{"h":2.667,"r":[0.968,1.063,1.206,1.333,1.444,1.508,1.571,1.635,1.698,1.778,1.81,1.905]},"jfendue":{"h":2.852,"r":[0.984,1.082,1.23,1.426,1.525,1.623,1.705,1.721,1.738,1.787,1.754,1.738]},"jmoulante":{"h":2.732,"r":[0.976,1.073,1.22,1.35,1.447,1.545,1.593,1.659,1.691,1.707,1.707,1.691]},"jpatineuse":{"h":3.145,"r":[0.991,1.077,1.248,1.385,1.521,1.641,1.744,1.846,1.932,2.034,2.154,2.171]},"jupejean":{"h":2.614,"r":[0.976,1.071,1.197,1.323,1.402,1.48,1.528,1.575,1.606,1.638,1.638,1.669]}};
+function jupeSVG(G,s,p,t,wx0){const b=s.bottomColor,H=G.HH,PR=JUPE_PROF[t],R=PR.r,n=R.length-1,Y0=376,wx=sideX(G,Y0)+1.5,hy=Math.round(Y0+PR.h*wx),dk=shade(b,-.35),lt=shade(b,.22),q=p+'j',f=fx;
+ const rat=u=>{const z=Math.min(n,Math.max(0,u*n)),i=Math.min(n-1,Math.floor(z)),w=z-i;return R[i]+(R[i+1]-R[i])*w};
+ /* taille haute : la jupe part de la taille (le plus fin du corps) et suit la courbe mesurée sur la planche, sans jamais être plus étroite que le corps */
+ let m=1;for(let y=Y0;y<=Math.min(hy,480);y+=4)m=Math.max(m,(sideX(G,y)+2)/(wx*rat((y-Y0)/(hy-Y0))));
+ const half=y=>{const u=(y-Y0)/(hy-Y0);return wx*rat(u)*(1+(m-1)*Math.min(1,u/.4))};
+ const sideL=y=>200-half(y),hw=half(hy);
+ const sil=hem=>{let o=`M${f(200-wx)},${Y0} Q200,${Y0+5} ${f(200+wx)},${Y0}`;for(let y=Y0+4;y<=hy;y+=4)o+=` L${f(400-sideL(y))},${y}`;o+=` ${hem} `;for(let y=hy;y>=Y0+4;y-=4)o+=` L${f(sideL(y))},${y}`;return o+'Z'};
+const N=t==='jplis'||t==='jcarreaux'?13:0;let hem=`L${f(200+hw)},${hy}`;
  if(N){for(let i=N;i>=0;i--){const x=200-hw+2*hw*i/N;hem+=` L${f(x)},${hy+(i%2?3.5:0)}`}}
  else if(t==='jpatineuse'){for(let i=12;i>=0;i--){const x=200-hw+2*hw*i/12;hem+=` Q${f(x+hw/12)},${hy+(i%2?7:-2)} ${f(x)},${hy+2}`}}
  else hem+=` Q200,${hy+5} ${f(200-hw)},${hy}`;
@@ -442,22 +448,22 @@ function jupeSVG(G,s,p,t,wx){const b=s.bottomColor,H=G.HH,J=JUPES[t]||{y:548,w:1
  o+=`<g clip-path="url(#${q}c)">`;
  if(t==='jcarreaux')o+=`<path d="${S}" fill="url(#${q}g)" opacity=".35"/>`;
  if(N){/* plis creux : un pan sur deux dans l'ombre, arêtes claires, du haut des hanches au bas */
-  const y0=t==='jcarreaux'?470:440;for(let i=0;i<N;i++){const xa=200-wx+2*wx*i/N,xb=200-wx+2*wx*(i+1)/N,ha=200-hw+2*hw*i/N,hb=200-hw+2*hw*(i+1)/N;
+  const y0=Y0+(t==='jcarreaux'?66:36);for(let i=0;i<N;i++){const xa=200-wx+2*wx*i/N,xb=200-wx+2*wx*(i+1)/N,ha=200-hw+2*hw*i/N,hb=200-hw+2*hw*(i+1)/N;
    if(i%2)o+=`<path d="M${f(xa+(xb-xa)*.5)},${y0} L${f(xb)},${y0} L${f(hb)},${hy+4} L${f(ha+(hb-ha)*.35)},${hy+4}Z" fill="#000" opacity="${t==='jcarreaux'?.28:.32}"/>`;
-   o+=LN(`M${f(xb)},${y0-12} L${f(hb)},${hy+3}`,i%2?lt:dk,i%2?1:1.4,i%2?.45:.55)}}
- if(t==='jpatineuse')for(let i=0;i<12;i++){const x=200-hw+2*hw*(i+.5)/12,xt=200-wx+2*wx*(i+.5)/12;o+=`<path d="M${f(xt)},430 Q${f((xt+x)/2)},${hy-30} ${f(x-hw/12*.7)},${hy+6} L${f(x+hw/12*.7)},${hy+6} Q${f((xt+x)/2+3)},${hy-30} ${f(xt+1)},430Z" fill="${i%2?'#000':'#fff'}" opacity="${i%2?.22:.08}"/>`}
- if(t==='jmoulante'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[0,1].forEach(i=>{o+=LN(`M${f(200-H+4)},${452+i*14} Q200,${462+i*14} ${f(200+H-4)},${452+i*14}`,dk,1.1,.18)});[-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-6)},420 Q${200+k*(H-6)},470 ${200+k*(hw-8)},${hy-2}`,dk,1,.25)})}
- if(t==='jfendue'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[-1,1].forEach(k=>{o+=LN(`M${200+k*16},420 Q${200+k*19},470 ${200+k*21},${hy}`,dk,1.1,.45)+LN(`M${200+k*17.2},420 Q${200+k*20.2},470 ${200+k*22.2},${hy}`,lt,.8,.25)});
+   o+=LN(`M${f(xb)},${Y0+18} L${f(hb)},${hy+3}`,i%2?lt:dk,i%2?1:1.4,i%2?.45:.55)}}
+ if(t==='jpatineuse')for(let i=0;i<12;i++){const x=200-hw+2*hw*(i+.5)/12,xt=200-wx+2*wx*(i+.5)/12;o+=`<path d="M${f(xt)},${Y0+26} Q${f((xt+x)/2)},${hy-30} ${f(x-hw/12*.7)},${hy+6} L${f(x+hw/12*.7)},${hy+6} Q${f((xt+x)/2+3)},${hy-30} ${f(xt+1)},${Y0+26}Z" fill="${i%2?'#000':'#fff'}" opacity="${i%2?.22:.08}"/>`}
+ if(t==='jmoulante'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[0,1].forEach(i=>{o+=LN(`M${f(200-H+4)},${Y0+48+i*14} Q200,${Y0+58+i*14} ${f(200+H-4)},${Y0+48+i*14}`,dk,1.1,.18)});[-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-6)},${Y0+16} Q${200+k*(H-6)},${Y0+66} ${200+k*(hw-8)},${hy-2}`,dk,1,.25)})}
+ if(t==='jfendue'){o+=`<path d="${S}" fill="url(#${q}gr)"/>`;[-1,1].forEach(k=>{o+=LN(`M${200+k*16},${Y0+16} Q${200+k*19},${Y0+66} ${200+k*21},${hy}`,dk,1.1,.45)+LN(`M${200+k*17.2},${Y0+16} Q${200+k*20.2},${Y0+66} ${200+k*22.2},${hy}`,lt,.8,.25)});
   const sx=200+H*.42;o+=`<path d="M${f(sx-6)},${hy+3} L${f(sx-.6)},${hy-38} L${f(sx+.6)},${hy-38} L${f(sx+6)},${hy+3}Z" fill="${shade(s.skin,-.06)}"/>`+LN(`M${f(sx-6)},${hy+3} L${f(sx-.6)},${hy-38} M${f(sx+.6)},${hy-38} L${f(sx+6)},${hy+3}`,dk,1.1,.7)}
- if(t==='jupejean'){const ts='#d6a35c';o+=`<path d="${S}" fill="url(#${q}dn)"/>`+`<ellipse cx="200" cy="${(404+hy)/2+8}" rx="${H*.55}" ry="${(hy-404)*.38}" fill="#fff" opacity=".05"/>`;
-  o+=LN(`M206,420 C208,450 207,470 201,484`,ts,1.2,.9,'2.5 2')+LN(`M209,420 L209,474`,dk,1,.35);
-  [-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-4)},421 Q${200+k*(wx-16)},448 ${200+k*26},423`,ts,1.2,.9,'2.5 2')+LN(`M${200+k*(wx-4)},421 Q${200+k*(wx-16)},448 ${200+k*26},423`,dk,1,.3)+`<circle cx="${200+k*(wx-6)}" cy="424" r="1.6" fill="#c8a24a"/>`});
+ if(t==='jupejean'){const ts='#d6a35c';o+=`<path d="${S}" fill="url(#${q}dn)"/>`+`<ellipse cx="200" cy="${(Y0+hy)/2+8}" rx="${H*.55}" ry="${(hy-Y0)*.38}" fill="#fff" opacity=".05"/>`;
+  o+=LN(`M206,${Y0+16} C208,${Y0+46} 207,${Y0+66} 201,${Y0+80}`,ts,1.2,.9,'2.5 2')+LN(`M209,${Y0+16} L209,${Y0+70}`,dk,1,.35);
+  [-1,1].forEach(k=>{o+=LN(`M${200+k*(wx-4)},${Y0+17} Q${200+k*(wx-16)},${Y0+44} ${200+k*26},${Y0+19}`,ts,1.2,.9,'2.5 2')+LN(`M${200+k*(wx-4)},${Y0+17} Q${200+k*(wx-16)},${Y0+44} ${200+k*26},${Y0+19}`,dk,1,.3)+`<circle cx="${200+k*(wx-6)}" cy="${Y0+20}" r="1.6" fill="#c8a24a"/>`});
   o+=`<path d="M${f(200-hw-1)},${hy-11} L${f(200+hw+1)},${hy-11} L${f(200+hw+1)},${hy+3} Q200,${hy+8} ${f(200-hw-1)},${hy+3}Z" fill="${shade(b,.14)}"/>`+LN(`M${f(200-hw)},${hy-11} L${f(200+hw)},${hy-11}`,dk,1.2,.5)+LN(`M${f(200-hw+2)},${hy-6} Q200,${hy-2} ${f(200+hw-2)},${hy-6}`,'#fff',1,.3)}
  o+=`<path d="${S}" fill="url(#${q}v)"/></g>`;
  /* ceinture large (passants, bouton, braguette pour le tartan et le jean) */
- const bh=t==='jpatineuse'||t==='jplis'?18:16;
- o+=`<path d="M${f(200-wx)},404 Q200,410 ${f(200+wx)},404 L${f(200+wx+.8)},${404+bh} Q200,${410+bh} ${f(200-wx-.8)},${404+bh}Z" fill="${t==='jcarreaux'?`url(#${q}tt)`:shade(b,.04)}"/>`+LN(`M${f(200-wx-.8)},${404+bh} Q200,${410+bh} ${f(200+wx+.8)},${404+bh}`,dk,1.3,.55)+LN(`M${f(200-wx)},405 Q200,411 ${f(200+wx)},405`,lt,1,.35);
- if(t==='jcarreaux'||t==='jupejean'){o+=[-1,1].map(k=>`<rect x="${f(200+k*(wx-9)-1.6)}" y="404" width="3.2" height="${bh+1}" rx="1" fill="${shade(b,-.15)}"/>`).join('')+`<circle cx="200" cy="${404+bh/2+2}" r="2.4" fill="${t==='jupejean'?'#c8a24a':'#d8d4cc'}"/>`;if(t==='jcarreaux')o+=LN(`M204,${408+bh} C206,${430+bh} 205,${444+bh} 200,${452+bh}`,dk,1.2,.55)}
+ const bh=t==='jpatineuse'||t==='jplis'?18:16,W0=Y0;
+ o+=`<path d="M${f(200-wx)},${W0} Q200,${W0+5} ${f(200+wx)},${W0} L${f(200+half(W0+bh))},${W0+bh} Q200,${W0+bh+5} ${f(200-half(W0+bh))},${W0+bh}Z" fill="${t==='jcarreaux'?`url(#${q}tt)`:shade(b,.04)}"/>`+LN(`M${f(200-half(W0+bh))},${W0+bh} Q200,${W0+bh+5} ${f(200+half(W0+bh))},${W0+bh}`,dk,1.3,.55)+LN(`M${f(200-wx)},${W0+1} Q200,${W0+6} ${f(200+wx)},${W0+1}`,lt,1,.35);
+ if(t==='jcarreaux'||t==='jupejean'){o+=[-1,1].map(k=>`<rect x="${f(200+k*(wx-9)-1.6)}" y="${W0}" width="3.2" height="${bh+1}" rx="1" fill="${shade(b,-.15)}"/>`).join('')+`<circle cx="200" cy="${W0+bh/2+2}" r="2.4" fill="${t==='jupejean'?'#c8a24a':'#d8d4cc'}"/>`;if(t==='jcarreaux')o+=LN(`M204,${W0+4+bh} C206,${W0+26+bh} 205,${W0+40+bh} 200,${W0+48+bh}`,dk,1.2,.55)}
  return o}
 function bottomsSVG(G,s,p){const t=s.bottom,b=s.bottomColor,H=G.HH,wx=sideX(G,404)+1.5,dk=shade(b,-.3);
  const dn=(['droit','large','flare','short'].includes(t)&&DENIM.includes(b))||['slim','mom','bootcut','bermuda'].includes(t),st=dn?'#d6a35c':shade(b,-.22);
@@ -694,6 +700,9 @@ function body(s,p,sk,skD,skDD,skL){
  if(!(s.dress&&s.dress!=='aucune'&&DR[s.dress]))o+=bottomsSVG(G,s,p);
  if(boot)o+=shoesSVG(s,sk,G,skD,skL,p);
  o+=topSVG(G,T,s,p,{TF,LM,c,dk,lt,cont,sk,skDD,h});
+ /* jupe taille haute : le haut est rentré dans la jupe (on redessine le haut de la jupe par-dessus le haut, jusqu'au bas du haut, sans couvrir les bras) */
+ if((JUPES[s.bottom]||s.bottom==='jupejean')&&!(s.dress&&s.dress!=='aucune'&&DR[s.dress])&&(!s.jacket||s.jacket==='aucune')&&(T.h||400)<=440){const yb=(T.h||400)+2;const arms=[-1,1].map(k=>`<path d="${armD(G,k,520,()=>9)}" fill="#000"/><path d="${handD(G,k)}" fill="#000" stroke="#000" stroke-width="6"/>`).join('');
+  o+=`<defs><mask id="${p}jtk" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="900"><rect x="0" y="360" width="400" height="${yb-360}" fill="#fff"/>${arms}</mask></defs><g mask="url(#${p}jtk)">${jupeSVG(G,s,p+'u',s.bottom,0)}</g>`}
  o+=accSVG(G,s);
  return d+o;
 }
