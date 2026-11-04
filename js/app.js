@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='68';
+const APP_VERSION='69';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -988,7 +988,9 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
  const sx=(faceHW(d,150)+3)/104,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
- return {sx,sy,t:`translate(200,205) scale(${fx(sx)}) translate(-200,-205)`}}
+ const k=HFIT[0],dy=HFIT[1];/* coiffure posée sur le crâne : plus enveloppante, ligne des cheveux plus basse (planche « Vestes hommes ») */
+ return {sx:sx*k,sy:sy*k,t:`translate(200,${205+dy}) scale(${fx(sx*k)}) translate(-200,-205)`}}
+let HFIT=[1.1,9];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
