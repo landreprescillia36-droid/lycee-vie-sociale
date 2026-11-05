@@ -196,7 +196,7 @@ function render(s,vb,p,showBg){
  const nf={aucune:0,legeres:18,beaucoup:44}[s.freckles]??0;
  if(nf) o+=`<g fill="${skDD}" opacity=".5">`+FRECK.slice(0,nf).map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${(q[1]+a.eyesY*.4).toFixed(1)}" r="${q[2].toFixed(2)}"/>`).join('')+`</g>`;
  /* barbes : décalquées sur la planche de Prescillia (tools/traceur-barbes.py), reteintes à la couleur des cheveux */
- if(s.barbe&&typeof BEARD_ART!=='undefined'&&BEARD_ART[s.barbe]){const B=BEARD_ART[s.barbe],[x,y,w,h,l0,lm,l1]=B,my=285+mo+a.mouthY,f='barbes/'+s.barbe,bh=shade(hc,-.3),dk=shade(hc,-.8),lt=shade(hc,-.1),tab=[[],[],[]];
+ if(s.barbe&&typeof BEARD_ART!=='undefined'&&BEARD_ART[s.barbe]){const B=BEARD_ART[s.barbe],[x,y,w,h,l0,lm,l1]=B,my=285+mo+a.mouthY,f='barbes/'+s.barbe,gr=s.barbeGris,bh=gr?mix(shade(hc,-.3),'#8c8c8c',.35):shade(hc,-.3),dk=shade(hc,-.8),lt=gr?'#d9d7d2':shade(hc,-.1),tab=[[],[],[]];
   for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,bh,clamp((v-l0)/(lm-l0),0,1)):mix(bh,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
   const T=hairTint(f,bh,tab),fid=p+'bdf';
   if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
@@ -975,7 +975,7 @@ function neckZone(s,FY){const F=faceOf(s),k=F.d+FY;if(NZ[k])return NZ[k];const d
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
 /* garçons : oreilles plus basses (demande de Prescillia) */
-const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=227;
+const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=207;
 function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?31:27)-1.5,EY=earY(s);
  return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
@@ -1522,6 +1522,13 @@ WEAR.set.items.push(
  {n:'Tenue de Sacha : col roulé et baggy gris',r:'K',g:'m',x:"La tenue de Sacha telle que tu l'as créée.",set:{bag:'aucun',top:'colroule',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:'#f4f1ea',necklace:'chaine'}});
 (()=>{const F={top:['crop','ajuste','epaules','blouse','henley','asym','salopette'],bottom:['flare','yoga','jupe'],dress:['nuisette','tshirtdress','portefeuille','bretelles','madras','pull'],jacket:['matelassee','cardigan'],shoes:['fourrees','bottes'],hat:['foulard'],necklace:['perles','rasdecou'],glasses:['coeur'],earrings:['anneaux','etoiles']};
  Object.values(WEAR).forEach(W=>W.items.forEach(it=>{if(it.g)return;if(it.set)it.g='f';else if(F[it.s]&&F[it.s].includes(it.v))it.g='f'}))})();
+/* ensembles « Réf. » des filles : refaits avec les nouveaux bas (jeans et jupes de la planche) */
+const BAS_JEAN={jdroit:'#3f5f94',jlarge:'#8eaed3',bootcut:'#2c3f6b',bermuda:'#4f6f9f',slim:'#3e5a88',mom:'#7e9cc4'};
+WEAR.set.items.forEach(it=>{const b=it.set&&it.set.bottom;if(it.g!=='f'||!b||it.set.dress&&it.set.dress!=='aucune')return;
+ const BS={droit:'jdroit',large:'jlarge',yoga:'jpatineuse',flare:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis',jupejean:'jplis'};
+ const nb=BS[b];if(!nb)return;it.set.bottom=nb;
+ if(BAS_JEAN[nb]){const c=it.set.bottomColor||'';const blue=c&&(()=>{const [r,g,bl]=rgb(c);return bl>r+20})();if(!blue)it.set.bottomColor=BAS_JEAN[nb]}})
+ ;[['baggy gris','jean large'],['jean gris','jean large'],[', short et',', bermuda en jean et'],['Ensemble rose épaules dénudées','Haut rose épaules dénudées et jupe patineuse'],['pantalon noir','jean large']].forEach(([x,y])=>WEAR.set.items.forEach(it=>{if(it.g==='f'&&!it.nw)it.n=it.n.replace(x,y)}));
 /* bas des filles : ta planche « Bas pour filles » (18 pièces) ; les anciens bas restent pour les garçons et pour les tenues déjà portées */
 WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'wip',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'wip',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'wip',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'jdroit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'jlarge',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
 WEAR.bottom.items.forEach(it=>{if(it.r==='BF')return;if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
@@ -1563,7 +1570,7 @@ const ICON={
  in:'<path d="M2 10h6M5 7l3 3-3 3M18 10h-6M15 7l-3 3 3 3"/>',out:'<path d="M8 10H2M5 7l-3 3 3 3M12 10h6M15 7l3 3-3 3"/>',
  minus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M14 14l4 4"/>',plus:'<circle cx="9" cy="9" r="6"/><path d="M6 9h6M9 6v6M14 14l4 4"/>'};
 
-const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',face:'ovale',skin:SKIN[3],nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',
+const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',rides:'aucune',barbe:'aucune',barbeGris:0,face:'ovale',skin:SKIN[3],nose:'rond',mouth:'remontante',cheeks:'rose',freckles:'legeres',
  eyes:'amande',cils:'naturels',iris:IRIS[0],brows:'epais',hair:'blongs',hairColor:HAIR[0],top:'epaules',topColor:'#ece2cc',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',dressColor:'#ece2cc',jacket:'aucune',jacketColor:'#5b5a3c',hat:'aucun',hatColor:'#1f2127',bag:'aucun',bagColor:'#7a5236',necklace:'aucun',edges:'aucun',sexe:'f',orient:'hetero',
  glasses:'aucune',earrings:'aucune',browColor:'',bgPattern:'uni',bgColor:BGC[1],
  perso:'sociable',raison:'demenagement',ancien:'Lycée Baimbridge',niveau:'moyen',forts:[],
@@ -2051,7 +2058,9 @@ function famAvatar(role,seed){
  s.top=old?p(['chemise','colroule']):p(['tshirt','chemise','capuche','colroule']);const c=p(COMBOS);s.topColor=c[0];s.bgColor=c[1];s.bgPattern='uni';
  s.sexe=fem?'f':'m';s.bottom=p(fem&&!old?['droit','flare','large','jupe']:['droit','large']);s.bottomColor=p(BOTC.slice(0,7));s.shoes=p(old?['basses','retro']:['basses','running','retro','sandales']);s.shoesColor=p(SHOEC.slice(0,4));
  s.glasses=old&&r()<.6?'dorees':r()<.15?'rondes':'aucune';s.earrings=fem&&r()<.5?p(['perles','anneaux']):'aucune';
- if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','brb5j','brbcourte','brbmoyenne','brbmoustache','brbgoatee','brbmentonniere','brbtaillee','brbfine']);
+ /* les papas ont tous une barbe, avec des reflets gris (demande de Prescillia) */
+ if(/Père|Beau-père/.test(role)&&!old){s.barbe=p(['brb5j','brbcourte','brbmoyenne','brbcomplete','brbgoatee','brbmentonniere','brbtaillee','brbprecise','brbetendue']);s.barbeGris=1}
+ else if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','brb5j','brbcourte','brbmoyenne','brbmoustache','brbgoatee','brbmentonniere','brbtaillee','brbfine']);
  if(adult){if(s.eyes==='grands')s.eyes=fem?'amande':'doux';s.cheeks='aucune';s.adj.eyesS=.92;s.adj.mouthY=2;s.hairColor=mix(s.hairColor,'#a8a39b',.16)}
  return basNeuf(s);
 }
