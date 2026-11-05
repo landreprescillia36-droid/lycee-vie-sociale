@@ -754,7 +754,7 @@ function body(s,p,sk,skD,skDD,skL){
  <pattern id="${p}qlt" width="20" height="20" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0,0 H20 M0,0 V20" stroke="#000" stroke-opacity=".2" stroke-width="1.4"/></pattern></defs>`;
  let o=`<ellipse cx="200" cy="878" rx="80" ry="9" fill="#000" opacity=".13"/>`;
   {/* jean long décalqué : les jambes ne sont dessinées que sous l'ourlet (elles ne dépassent jamais sur les côtés) */
-   const JA=typeof JEAN_ART!=='undefined'&&s.bottom!=='bermuda'&&s.bottom!=='jupejean'&&!(s.dress&&s.dress!=='aucune')&&JEAN_ART[s.bottom],hy=JA?376+JA.h*(856-376)/JEAN_ART.mom.h-6:0;
+   const JA=typeof JEAN_ART!=='undefined'&&s.bottom!=='bermuda'&&s.bottom!=='jupejean'&&!(s.dress&&s.dress!=='aucune')&&JEAN_ART[s.bottom],hy=JA?(JEAN_PROF[s.bottom]||s.bottom==='joggajust'?376+JA.h*(856-376)/JEAN_ART.mom.h-6:900):0;/* pantalons longs décalqués : les jambes restent cachées (elles ne dépassent pas entre les deux jambes du pantalon) */
    o+=(JA?`<defs><clipPath id="${p}lgc"><rect x="0" y="${fx(hy)}" width="400" height="200"/></clipPath></defs><g clip-path="url(#${p}lgc)">`:'')+[-1,1].map(k=>`<path d="${legD(G,k)}" fill="${LM}"/>`).join('')+(JA?'</g>':'')}
  o+=`<path d="${torsoD(G,478,0,'flat')}" fill="${sk}"/><ellipse cx="200" cy="398" rx="2.2" ry="3.5" fill="${skDD}" opacity=".45"/>`;
  if(G.f)o+=LN('M170,360 Q186,372 200,378 Q214,372 230,360',skD,1.5,.25);
@@ -763,7 +763,10 @@ function body(s,p,sk,skD,skDD,skL){
  const nw=s.sexe==='m'?16.5:15;o+=s.sexe==='m'?`<path d="M${200-nw},150 L${200-nw},224 Q200,234 ${200+nw},224 L${200+nw},150Z" fill="${mix(skD,sk,.55)}"/>`:`<path d="M185,150 L185,220 Q200,230 215,220 L215,150Z" fill="${mix(skD,sk,.55)}"/>`;
  if(T.neck==='off'||T.neck==='asym'||T.neck==='deepv')o+=LN('M168,226 Q182,231 194,227 M206,227 Q218,231 232,226',skDD,1.6,.35);
  const boot=s.shoes==='bottes';
- if(!boot)o+=shoesSVG(s,sk,G,skD,skL,p);
+ /* pantalon long décalqué : la chaussure ne dépasse pas au-dessus de l'ourlet (entre les deux jambes du pantalon) */
+ const JL=typeof JEAN_ART!=='undefined'&&JEAN_ART[s.bottom]&&!JEAN_PROF[s.bottom]&&!['jupejean','joggajust'].includes(s.bottom)&&!(s.dress&&s.dress!=='aucune')?376+JEAN_ART[s.bottom].h*(856-376)/JEAN_ART.mom.h-10:0;
+ const shoeW=x=>JL?`<defs><clipPath id="${p}shc"><rect x="0" y="${fx(JL)}" width="400" height="200"/></clipPath></defs><g clip-path="url(#${p}shc)">${x}</g>`:x;
+ if(!boot)o+=shoeW(shoesSVG(s,sk,G,skD,skL,p));
  if(!(s.dress&&s.dress!=='aucune'&&DR[s.dress]))o+=bottomsSVG(G,s,p);
  if(boot)o+=shoesSVG(s,sk,G,skD,skL,p);
  o+=topSVG(G,T,s,p,{TF,LM,c,dk,lt,cont,sk,skDD,h});

@@ -138,9 +138,63 @@ def smooth(v, sig=5):
     if not ok.any(): return np.zeros_like(v)
     idx = np.arange(len(v)); v = np.interp(idx, idx[ok], v[ok])
     return ndimage.gaussian_filter1d(v, sig, mode='nearest')
+DEG = {'habpattes': 1, 'habdroit': 1, 'cargo': 1, 'jogglarge': 1, 'joggajust': 2, 'lin': 1}
+def straighten(n, img, sv):
+    """jambes droites : les 4 bords des jambes (extérieur et intérieur, gauche et droite) suivent une droite
+    (une courbe douce pour les joggings) ; chaque ligne est réétirée entre ces bords : plus de zigzag."""
+    if n not in DEG: return img
+    al = img[..., 3] > 127; H_, W_ = al.shape
+    ys = [y for y in range(H_) if al[y].any()]; t, bt = ys[0], ys[-1]
+    y0 = int((500 - 376) / sv)            # sous les hanches
+    yb = bt - 3
+    E = {k: [] for k in ('l1', 'r1', 'l2', 'r2')}; Y2 = []; Y1 = []; EO = []
+    for y in range(y0, yb):
+        rr = [r_ for r_ in runs(al[y]) if r_[1] - r_[0] >= 4]
+        if len(rr) >= 2: E['l1'].append(rr[0][0]); E['r1'].append(rr[0][1]); E['l2'].append(rr[-1][0]); E['r2'].append(rr[-1][1]); Y2.append(y)
+        if rr: Y1.append(y); EO.append((rr[0][0], rr[-1][1]))
+    if len(Y1) < 10: return img
+    Y1 = np.array(Y1); EO = np.array(EO, float)
+    d = DEG[n]
+    fo_l = np.polyfit(Y1, EO[:, 0], d); fo_r = np.polyfit(Y1, EO[:, 1], d)
+    # entrejambe : première ligne à partir de laquelle les deux jambes sont séparées la plupart du temps
+    two = np.zeros(H_, bool); two[Y2] = True
+    crotch = next((y for y in range(y0, yb) if two[y:y + 20].mean() > .6), H_)
+    sel = [k for k, y in enumerate(Y2) if y >= crotch]
+    if len(sel) > 10:
+        Y2a = np.array(Y2)[sel]; fi_l = np.polyfit(Y2a, np.array(E['r1'])[sel], d); fi_r = np.polyfit(Y2a, np.array(E['l2'])[sel], d)
+    else: fi_l = fi_r = None
+    top_ = [np.where(al[y])[0] for y in range(t + 6, t + 50) if al[y].any()]; CX = float(np.median([(q.min() + q.max()) / 2 for q in top_]))
+    out = img.copy(); xs = np.arange(W_, dtype=np.float32)
+    def put(row, a0, a1, b0, b1, y):
+        m_ = (xs >= b0) & (xs <= b1)
+        src = a0 + (xs[m_] - b0) * (a1 - a0) / max(1e-3, b1 - b0)
+        for c in range(4): row[m_, c] = np.interp(src, xs, img[y, :, c])
+    for y in range(y0, bt + 1):
+        rr = [r_ for r_ in runs(al[y]) if r_[1] - r_[0] >= 2]
+        if not rr: continue
+        w = min(1, (y - y0) / 25)          # transition douce sous les hanches
+        L, R = np.polyval(fo_l, y), np.polyval(fo_r, y)
+        hw_ = (R - L) / 2; L, R = CX - hw_, CX + hw_   # les deux jambes symétriques
+        L = rr[0][0] + (L - rr[0][0]) * w; R = rr[-1][1] + (R - rr[-1][1]) * w
+        row = np.zeros((W_, 4), np.float32)
+        if fi_l is not None and y >= crotch:
+            IL, IR = np.polyval(fi_l, y), np.polyval(fi_r, y)
+            gw_ = (IR - IL) / 2; IL, IR = CX - gw_, CX + gw_
+            if IL >= IR - 1: IL = IR = (IL + IR) / 2
+            wg = min(1, (y - crotch) / 30); mg = (IL + IR) / 2; IL = mg + (IL - mg) * wg; IR = mg + (IR - mg) * wg   # l'entrejambe s'ouvre en douceur
+            if len(rr) >= 2: sl, sr = (rr[0][0], rr[0][1]), (rr[-1][0], rr[-1][1])
+            else: mid = (rr[0][0] + rr[-1][1]) / 2; sl, sr = (rr[0][0], mid), (mid, rr[-1][1])
+            put(row, sl[0], sl[1], L, IL, y); put(row, sr[0], sr[1], IR, R, y)
+        else:
+            put(row, rr[0][0], rr[-1][1], L, R, y)
+        out[y] = row
+    return out
+
 def fit_body(n, img):
-    al = img[..., 3] > 127; al = ndimage.binary_opening(al, iterations=1); H_, W_ = al.shape
-    top = [np.where(al[y])[0] for y in range(3, 9)]
+    al = img[..., 3] > 127; al = ndimage.binary_opening(al, iterations=1)
+    lb_, nl_ = ndimage.label(al); al = lb_ == (np.argmax(ndimage.sum(al, lb_, range(1, nl_ + 1))) + 1)
+    img = img.copy(); img[..., 3] *= al; H_, W_ = al.shape
+    top = [np.where(al[y])[0] for y in range(6, 50) if al[y].any()]
     cx = float(np.median([(q.min() + q.max()) / 2 for q in top]))
     ref_y = int(round(ART['mom']['h'] * .12))
     q = np.where(al[min(ref_y, H_ - 1)])[0]; hip = (q.max() - q.min()) / 2
@@ -162,9 +216,10 @@ def fit_body(n, img):
         yav = 376 + y * sv; src = xs.copy()
         w1 = 1 if yav <= 450 else max(0, 1 - (yav - 450) / 70)
         if w1 > 0: k = 1 + (K1[y] - 1) * w1; src = C0[y] + (xs - C0[y]) * k
-        w2 = 0 if (yav < 560 or n == 'jupejean') else min(1, (yav - 560) / 100)
+        w2 = 0 if (yav < 560 or n != 'joggajust') else min(1, (yav - 560) / 100)   # seul le jogging ajusté (chevillères) suit la jambe ; les autres gardent leur forme, les pieds restent sous l'ourlet
         if w2 > 0: src = np.where(xs < cx, src - DL[y] * w2, src - DR[y] * w2)
         for c in range(4): out[y, :, c] = np.interp(src, xs, img[y, :, c], left=0, right=0)
+    out = straighten(n, out, sv)
     # contour lissé (les marches d'escalier du détourage disparaissent)
     A_ = out[..., 3] / 255.
     B_ = cv2.GaussianBlur(A_.astype(np.float32), (0, 0), 1.6)
@@ -188,7 +243,11 @@ for n, (a, m) in store.items():
     al = np.minimum(al, cv2.GaussianBlur(al.astype(np.float32), (0, 0), .6) + .15) * m + cv2.GaussianBlur(al.astype(np.float32), (0, 0), .6) * (~m) * .5   # bords adoucis
     rgba = np.dstack([a[..., ::-1], al * 255]).astype(np.float32)[t:bt + 1, l:rr + 1]
     big = cv2.resize(rgba, None, fx=K, fy=K, interpolation=cv2.INTER_CUBIC)
-    big = fit_body(n, np.clip(big, 0, 255))
+    PAD = 40
+    big = np.pad(np.clip(big, 0, 255), ((0, 0), (PAD, PAD), (0, 0)))
+    big = fit_body(n, big)
+    cols = np.where((big[..., 3] > 0).any(0))[0]; c0_ = max(0, cols.min() - 1); big = big[:, c0_:cols.max() + 2]
+    shift = PAD - c0_
     big = np.clip(big, 0, 255).astype(np.uint8)
     from PIL import Image
     Image.fromarray(big, 'RGBA').save(os.path.join(R, f'assets/bas/jean-{n}.png'), optimize=True)
@@ -198,6 +257,6 @@ for n, (a, m) in store.items():
     hw = float(np.median([(q.max() - q.min()) / 2 for q in top]))
     yh = min(bt - t, int(round(ref * .12)))   # hanches : même hauteur sous la ceinture pour toutes les pièces
     hip = (np.where(mm[yh])[0].max() - np.where(mm[yh])[0].min()) / 2
-    art[n] = dict(w=int(big.shape[1]), h=int(big.shape[0]), cx=round(float(cx) * K, 1), waist=round(float(hw) * K, 1), hip=round(float(hip) * K, 1))
+    art[n] = dict(w=int(big.shape[1]), h=int(big.shape[0]), cx=round(float(cx) * K + shift, 1), waist=round(float(hw) * K, 1), hip=round(float(hip) * K, 1))
     print(n, art[n])
 open(os.path.join(R, 'js/pantalons-art.js'), 'w').write('/* pantalons et jupe en jean décalqués par tools/traceur-pantalons.py sur docs/references/vetements/planche-bas-filles.png — ne pas modifier à la main */\nObject.assign(JEAN_ART,' + json.dumps(art, separators=(',', ':')) + ');\n')
