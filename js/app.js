@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='78';
+const APP_VERSION='79';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3837,7 +3837,7 @@ function punish(ph){
  G.st.caughtToday=true;const [prof,s]=ph.prof;let msg;
  if(s===1)msg=`${prof} te fait une remarque devant toute la classe.`;
  else if(s===2){msg=`${prof} écrit un mot dans ton carnet !`;parentReact('carnet')}
- else{msg=`${prof} te met une heure de colle !`;G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
+ else{msg=`${prof} te met une heure de colle !`+profColle(ph,'comportement en classe');G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
  G.know[ph.sub]=clamp(G.know[ph.sub]-2,0,100);return '😬 '+msg;
 }
 /* ---------- événements pendant les cours (style BitLife) ----------
@@ -3892,7 +3892,7 @@ function cSanction(ph,what){const c=clsInit(),[prof,s]=ph.prof,n=cRecent();c.inf
  const lvl=clamp(s-1+(n>=2?1:0)+(n>=4?1:0)-(s===1&&n<2?1:0),0,2);let m;
  if(lvl<=0){m=`${prof} te fait une remarque devant la classe${what?' ('+what+')':''}.`;cAppr(ph.sub,-2);cBeh(-3)}
  else if(lvl===1){m=`${prof} écrit un mot dans ton carnet${what?' ('+what+')':''}.`;cAppr(ph.sub,-3);cBeh(-6);parentReact('carnet')}
- else{m=`${prof} te met une heure de colle${what?' ('+what+')':''} !`;cAppr(ph.sub,-4);cBeh(-10);c.colles++;G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
+ else{m=`${prof} te met une heure de colle${what?' ('+what+')':''} !`+profColle(ph,what||'comportement en classe');cAppr(ph.sub,-4);cBeh(-10);G.energy=clamp(G.energy-10,0,100);parentReact('colle')}
  return '😬 '+m}
 const cRel=(id,da,dl)=>{const r=relChange(id,da,dl);return r?' · '+r:''};
 /* camarade qui parle : de préférence quelqu'un qui t'apprécie (les relations décident) */
@@ -3977,14 +3977,21 @@ const RET_APPR={bon:'Travail sérieux et attitude correcte pendant la retenue.',
 const MOTIF_TXT={bavardage:'bavardages répétés en classe','téléphone en cours':'utilisation du téléphone en cours','sommeil en cours':'sommeil en classe',retards:'retards répétés','retards répétés':'retards répétés',
  'absences répétées':'absences injustifiées répétées','cours consécutifs séchés':'cours séchés','plusieurs absences dans la journée':'absences dans la même journée',bagarre:'bagarre dans la cour',insulte:'insultes envers un élève',
  'farce à un prof':'farce envers un professeur','zone interdite':'présence dans une zone interdite','dégradation':'dégradation du matériel','dispute entre groupes':'participation à une dispute entre groupes','devoir copié':'devoir copié',
- 'retenue non effectuée':'retenue non effectuée','refus de travailler en retenue':'refus de travailler pendant la retenue'};
+ 'retenue non effectuée':'retenue non effectuée','heures de colle répétées':'heures de colle répétées en cours','comportement en classe':'comportement en classe','refus de travailler en retenue':'refus de travailler pendant la retenue'};
 const motifOf=k=>MOTIF_TXT[k]||k||'comportement perturbateur en classe';
 /* une faute (niveau 3 à 7) → convocation au bureau à la prochaine pause */
 function provConvoc(k,lvl){const p=provInit();if(p.conv.some(c=>c.st==='due'&&c.motif===k))return '';p.conv.push({id:++p.n,day:G.day,motif:k,lvl,st:'due'});p.rep=clamp(p.rep-3,0,100);
  toast('📩 Convocation chez la proviseure à la prochaine pause');note(`Convocation chez la proviseure (${motifOf(k)})`);return ' : convocation chez la proviseure'}
+/* heure de colle donnée par un prof en cours : vraie retenue (agenda, rappel, séance jouable) ;
+   deux colles en deux semaines → convocation chez la proviseure à la prochaine pause */
+function profColle(ph,what){const p=provInit(),r=provSchedule(what,1);p.hist.unshift({day:G.day,t:'⏰',txt:`Heure de colle (${ph.prof[0]}, ${SUBJ[ph.sub]})`});
+ note(`Retenue de 1 h ${fmtDay(r.day,true)} à ${fmtT(r.start)} (${ph.prof[0]})`);
+ const n=p.hist.filter(h=>h.t==='⏰'&&/^Heure de colle/.test(h.txt)&&G.day-h.day<=14).length;
+ const cv=n>=2?provConvoc('heures de colle répétées',4):'';return ` Retenue ${fmtDay(r.day,true)} à ${fmtT(r.start)}${r.dur>1?` (${r.dur} h au total)`:''}.`+(cv?' 📩 Et convocation chez la proviseure à la prochaine pause.':'')}
 /* jour de la retenue : 1 h ou 2 h → prochain jour de cours à 17 h ; 4 h → mercredi suivant, de 17 h à 21 h */
 function retDay(dur){for(let d=G.day+1;d<G.day+30;d++){if(!schoolDay(d)||wdOf(d)>=5)continue;if(dur<4||wdOf(d)===2)return d}return G.day+2}
-function provSchedule(motif,dur){const p=provInit(),d=retDay(dur),r={id:++p.n,day:d,start:1020,dur,motif,st:'prevue'};p.ret.push(r);clsInit();G.cls.colles+=dur;return r}
+function provSchedule(motif,dur){const p=provInit(),d=retDay(dur),old=p.ret.find(x=>x.st==='prevue'&&x.day===d&&x.dur+dur<=4&&!x.warn);if(old){old.dur+=dur;old.made=G.day;clsInit();G.cls.colles+=dur;return old}/* déjà une retenue ce jour-là : elle dure plus longtemps */
+ const r={id:++p.n,day:d,start:1020,dur,motif,st:'prevue',made:G.day};p.ret.push(r);clsInit();G.cls.colles+=dur;return r}
 const retDate=r=>`${fmtDay(r.day,true)}`,retHeure=r=>`${fmtT(r.start)} – ${fmtT(r.start+r.dur*60)}`;
 function retCard(r){return `<div class="card prov-ret"><div class="prov-row"><span>Durée de la retenue</span><b>${r.dur} heure${r.dur>1?'s':''}</b></div><div class="prov-row"><span>Date</span><b>${retDate(r)}</b></div><div class="prov-row"><span>Horaire</span><b>${retHeure(r)}</b></div></div>`}
 /* pop-up « Vous êtes convoqué·e ! » à la prochaine pause, puis le bureau */
