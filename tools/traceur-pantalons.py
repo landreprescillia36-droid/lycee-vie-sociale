@@ -220,7 +220,13 @@ def straighten(n, img, sv, sh):
         # couture entre les deux jambes (léger trait foncé)
         ci = int(round(CX)); st0 = max(crotch, y0)
         for y in range(st0, H_):
-            if out[y, ci, 3] > 127: out[y, ci, :3] *= .9
+            if out[y, ci, 3] > 127:
+                # léger espace entre les jambes : s'ouvre depuis l'entrejambe (0 → 1,6 px), bords ombrés
+                g = min(1.6, (y - st0) / 40 * 1.6)
+                for x in range(ci - 3, ci + 4):
+                    dd = abs(x + .5 - CX)
+                    if dd < g / 2 + .5: out[y, x, 3] *= float(np.clip(dd - g / 2, 0, 1))
+                    elif dd < g / 2 + 2.5: out[y, x, :3] *= .86
     return out
 
 def fit_body(n, img):
