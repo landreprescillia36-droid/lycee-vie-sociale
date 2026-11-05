@@ -989,17 +989,17 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
 const TEMPLE={top:90,bot:186,inT:34,inB:4};
 function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
- const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.3:-.08),line=shade(base,-.55);
+ const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.42:-.15),line=shade(base,-.7),c2=shade(base,lum(base)>.35?-.6:-.45),c3=shade(base,lum(base)>.35?-.22:.12);
  /* contour des tempes : du bord du crâne vers le front, ligne nette légèrement irrégulière (pas de flou) */
  const inner=(k,y)=>{const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=(T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4))*(u>.75?Math.max(0,1-(u-.75)/.25):1)-(u>.75?6*Math.pow((u-.75)/.25,1.5):0),j=Math.sin(y*1.7+k)*1.4+Math.sin(y*.63)*1.1+Math.sin(y*3.1)*.6;return 200+k*(hw-inset+j)};
  const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=3){o.push([200+k*(faceHW(d,y)+6),y]);I.push([inner(k,y),y])}return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
  const edge=k=>{let o='';for(let y=T.top+16;y<=T.bot;y+=3)o+=(o?' L':'M')+fx(inner(k,y))+','+y;return o};
  /* remplissage = la texture de la coiffure elle-même (l'image décalquée), descendue sur la tempe, sur une base de la couleur des cheveux */
  const cp=`${id}c`,fit=hairFit(s),[ix,iy,iw,ih]=A.img,same=base===A.main,href=(same?null:HTINT[s.hair+'|'+hc])||`assets/coiffures/${s.hair}.png`;
- const copy=(dy,n)=>`<g transform="translate(0,${dy})"><g transform="${fit?fit.t:''}"><image href="${href}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"${same||href.startsWith('data:')?'':' style="filter:brightness(.9)"'}/></g></g>`;
- return `<defs><clipPath id="${cp}">${[-1,1].map(k=>`<path d="${side(k)}"/>`).join('')}</clipPath><linearGradient id="${id}m" gradientUnits="userSpaceOnUse" x1="0" y1="${T.top}" x2="0" y2="${T.top+18}"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="${id}k" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400"><rect x="0" y="0" width="400" height="400" fill="url(#${id}m)"/></mask></defs>
-  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(46,1)}${copy(26,2)}</g></g>`+
-  [-1,1].map(k=>LN(edge(k),line,1.3,.75)).join('')}
+ const copy=(dy,n)=>`<g opacity=".45" transform="translate(0,${dy}) translate(200,150) scale(.55) translate(-200,-150)"><g transform="${fit?fit.t:''}"><image href="${href}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"${same||href.startsWith('data:')?'':' style="filter:brightness(.9)"'}/></g></g>`;
+ return `<defs><clipPath id="${cp}">${[-1,1].map(k=>`<path d="${side(k)}"/>`).join('')}</clipPath><pattern id="${id}h" width="3.2" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><path d="M.8,0 L.8,2.6" stroke="${c2}" stroke-width=".8" stroke-linecap="round"/><path d="M2.4,1.4 L2.4,4" stroke="${c3}" stroke-width=".55" stroke-linecap="round" opacity=".7"/></pattern><linearGradient id="${id}m" gradientUnits="userSpaceOnUse" x1="0" y1="${T.top}" x2="0" y2="${T.top+18}"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="${id}k" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400"><rect x="0" y="0" width="400" height="400" fill="url(#${id}m)"/></mask></defs>
+  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(80,1)}${copy(110,2)}<rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="url(#${id}h)"/></g></g>`+
+  [-1,1].map(k=>LN(edge(k),line,1.6,.95)).join('')}
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
