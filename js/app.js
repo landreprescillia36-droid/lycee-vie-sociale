@@ -988,7 +988,7 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
    jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
 const TEMPLE={top:108,bot:186,inT:24,inB:4};
-function templeFill(s,p){if(s.sexe!=='m'||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
+function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
  const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,-.12),c2=shade(base,-.35);
  const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=4){const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=T.inT*(1-u)+T.inB*u,j=Math.sin(y*1.7+k)*1.6+Math.sin(y*.63)*1.1;
    o.push([200+k*(hw+4),y]);I.push([200+k*(hw-inset+j),y])}
@@ -1001,14 +1001,15 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
  const sx=(faceHW(d,150)+3)/104,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
- const k=HFIT[0],dy=HFIT[1];/* coiffure posée sur le crâne : plus enveloppante, ligne des cheveux plus basse (planche « Vestes hommes ») */
+ const nw=HAIR_NEW.includes(s.hair),k=nw?HFIT[0]:1,dy=nw?HFIT[1]:0;/* coiffure posée sur le crâne : plus enveloppante, ligne des cheveux plus basse (planche « Vestes hommes ») */
  return {sx:sx*k,sy:sy*k,t:`translate(200,${205+dy}) scale(${fx(sx*k)}) translate(-200,-205)`}}
-let HFIT=[1.1,9];
+let HFIT=[1.1,9];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
+const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
 const HAIR_FADE={gdeghaut:198};
-function sideburns(s,A,col,fit,cid){return '';/* remplacé par templeFill (implantation continue aux tempes) */const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb')+'fd';
+function sideburns(s,A,col,fit,cid){if(HAIR_NEW.includes(s.hair))return '';/* remplacé par templeFill (implantation continue aux tempes) */const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb')+'fd';
  const grad=`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${fx(fit?205+(Math.min(...A.tempe.map(q=>q[1]))-205)*fit.sy-8:150)}" x2="0" y2="${vb}"><stop offset="0" stop-color="${col}" stop-opacity="1"/><stop offset=".7" stop-color="${col}" stop-opacity=".85"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="${id}b" x="-30%" y="-10%" width="160%" height="120%"><feGaussianBlur stdDeviation="1.6"/></filter><pattern id="${id}p" width="3" height="3" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="${shade(col,-.4)}" opacity=".5"/></pattern></defs>`;
  return grad+A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,205+(q0[1]-205)*fit.sy]:q0,k=q[0]<200?-1:1,y0=q[1]-10;
  const P=[[q[0]-k*4,y0]];for(let v=y0;v<=vb;v+=5)P.push([faceEdge(s,v,k)+k*1.2,v]);
