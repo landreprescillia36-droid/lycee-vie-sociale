@@ -121,6 +121,62 @@ for n, x0, x1, ya, yb in P:
     cv2.imwrite(f'{SP}/mask-{n}.png', np.dstack([a, (m * 255).astype(np.uint8)]))
     store[n] = (a.copy(), m.copy())
 
+# --- ajustement au corps de l'avatar (fille, corpulence moyenne : tools/fille-corps.json) :
+#     1) la ceinture et les hanches épousent la taille (chaque ligne du haut est élargie ou resserrée jusqu'au bord du corps) ;
+#     2) chaque jambe du pantalon est recentrée sur la jambe de l'avatar, pour que les pieds sortent bien du bas.
+BODY = json.load(open(os.path.join(R, 'tools/fille-corps.json')))
+def bodyAt(key, y):
+    ks = sorted(int(k) for k in BODY[key]); y = min(max(y, ks[0]), ks[-1])
+    return float(np.interp(y, ks, [BODY[key][str(k)] for k in ks]))
+def runs(row):
+    q = np.where(row)[0]
+    if not len(q): return []
+    cut = np.where(np.diff(q) > 1)[0]
+    return [(int(a[0]), int(a[-1])) for a in np.split(q, cut + 1)]
+def smooth(v, sig=5):
+    v = np.array(v, float); ok = ~np.isnan(v)
+    if not ok.any(): return np.zeros_like(v)
+    idx = np.arange(len(v)); v = np.interp(idx, idx[ok], v[ok])
+    return ndimage.gaussian_filter1d(v, sig, mode='nearest')
+def fit_body(n, img):
+    al = img[..., 3] > 127; al = ndimage.binary_opening(al, iterations=1); H_, W_ = al.shape
+    top = [np.where(al[y])[0] for y in range(3, 9)]
+    cx = float(np.median([(q.min() + q.max()) / 2 for q in top]))
+    ref_y = int(round(ART['mom']['h'] * .12))
+    q = np.where(al[min(ref_y, H_ - 1)])[0]; hip = (q.max() - q.min()) / 2
+    sh = BODY['hip'] / hip; sv = (856 - 376) / ART['mom']['h']
+    K1, C0, DL, DR = [], [], [], []
+    for y in range(H_):
+        yav = 376 + y * sv; rr = runs(al[y]); big_ = [r_ for r_ in rr if r_[1] - r_[0] >= 4]
+        if big_:
+            l, r = big_[0][0], big_[-1][1]
+            K1.append((r - l) / 2 / (bodyAt('side', yav) / sh + .5)); C0.append((l + r) / 2)
+        else: K1.append(np.nan); C0.append(np.nan)
+        Ls = [r_ for r_ in big_ if (r_[0] + r_[1]) / 2 < cx]; Rs = [r_ for r_ in big_ if (r_[0] + r_[1]) / 2 >= cx]
+        lc = cx - ((bodyAt('legO', yav) + bodyAt('legI', yav)) / 2) / sh; rc = cx + ((bodyAt('legO', yav) + bodyAt('legI', yav)) / 2) / sh
+        sep = len(Ls) and len(Rs)
+        DL.append(lc - (Ls[0][0] + Ls[-1][1]) / 2 if sep else np.nan); DR.append(rc - (Rs[0][0] + Rs[-1][1]) / 2 if sep else np.nan)
+    K1, C0, DL, DR = smooth(K1, 3), smooth(C0, 3), smooth(DL, 6), smooth(DR, 6)
+    out = np.zeros_like(img); xs = np.arange(W_, dtype=np.float32)
+    for y in range(H_):
+        yav = 376 + y * sv; src = xs.copy()
+        w1 = 1 if yav <= 450 else max(0, 1 - (yav - 450) / 70)
+        if w1 > 0: k = 1 + (K1[y] - 1) * w1; src = C0[y] + (xs - C0[y]) * k
+        w2 = 0 if (yav < 560 or n == 'jupejean') else min(1, (yav - 560) / 100)
+        if w2 > 0: src = np.where(xs < cx, src - DL[y] * w2, src - DR[y] * w2)
+        for c in range(4): out[y, :, c] = np.interp(src, xs, img[y, :, c], left=0, right=0)
+    # contour lissé (les marches d'escalier du détourage disparaissent)
+    A_ = out[..., 3] / 255.
+    B_ = cv2.GaussianBlur(A_.astype(np.float32), (0, 0), 1.6)
+    A2 = np.clip((B_ - .35) / .3, 0, 1)
+    # couleur des pixels qui deviennent visibles au bord : celle du voisin opaque le plus proche
+    inside = A_ > .5
+    if (~inside).any():
+        idx = ndimage.distance_transform_edt(~inside, return_distances=False, return_indices=True)
+        for c in range(3): out[..., c] = np.where(inside, out[..., c], out[..., c][idx[0], idx[1]])
+    out[..., 3] = A2 * 255
+    return out
+
 # --- sortie à l'échelle des jeans : la hauteur du pantalon droit (taille → ourlet) = celle du jean mom
 ref = None
 ys_ = np.where(store['habdroit'][1].any(1))[0]; ref = ys_.max() - ys_.min() + 1
@@ -132,6 +188,7 @@ for n, (a, m) in store.items():
     al = np.minimum(al, cv2.GaussianBlur(al.astype(np.float32), (0, 0), .6) + .15) * m + cv2.GaussianBlur(al.astype(np.float32), (0, 0), .6) * (~m) * .5   # bords adoucis
     rgba = np.dstack([a[..., ::-1], al * 255]).astype(np.float32)[t:bt + 1, l:rr + 1]
     big = cv2.resize(rgba, None, fx=K, fy=K, interpolation=cv2.INTER_CUBIC)
+    big = fit_body(n, np.clip(big, 0, 255))
     big = np.clip(big, 0, 255).astype(np.uint8)
     from PIL import Image
     Image.fromarray(big, 'RGBA').save(os.path.join(R, f'assets/bas/jean-{n}.png'), optimize=True)
