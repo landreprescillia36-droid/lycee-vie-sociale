@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='76';
+const APP_VERSION='77';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3573,12 +3573,71 @@ function clubCard(){const L=myClubs();if(!L.length)return `<div class="card"><sp
  const evening=G.min>=1020&&G.min<1320;
  return `<div class="card"><span class="eyebrow">Tes clubs <button class="linkbtn" type="button" data-clubs>gérer</button></span>${L.map(k=>{const c=CLUBS[k],today=clubToday().includes(k),done=G.done[G.day+'club'+k];
   return `<div class="prof"><span>${c.ic} <b>${c.n}</b> <small class="muted">${(G.clubXP[k]||0)} séance${(G.clubXP[k]||0)>1?'s':''} · ${DAYS[c.wd].toLowerCase()} soir</small></span>${today&&!done?(evening?`<button class="gbtn" type="button" data-clubgo="${k}">Y aller</button>`:G.min<1020?'<small class="muted">ce soir</small>':'<small class="muted">trop tard</small>'):done?'<small class="muted">fait ✅</small>':''}</div>`}).join('')}</div>`}
+/* ---------- maison : appeler, inviter à sortir ou à la maison, télé, ordinateur, film en famille ---------- */
+const HOME_ACTS=[['call','📞','Appeler quelqu\'un','au téléphone'],['out','🌴','Inviter à sortir','un·e camarade'],['invite','🏠','Inviter à la maison','parler en vrai'],
+ ['tv','📺','Regarder la télé','+8 énergie · 1 h'],['pc','💻','Jouer sur l\'ordinateur','+6 énergie · 1 h'],['film','🎬','Film en famille','2 h · famille']];
+const guestHere=()=>!!(G.guest&&G.guest.day===G.day&&G.min<G.guest.until);
+function homeOff(k){const ph=phase();if(k==='tv')return G.done[ph.key+'tv']?'déjà fait':'';if(k==='pc')return G.done[ph.key+'pc']?'déjà fait':'';
+ if(k==='film')return G.done[G.day+'film']?'déjà fait aujourd\'hui':!G.family.length&&!guestHere()?'personne':'';
+ if(k==='invite')return guestHere()?'déjà quelqu\'un':G.min>=21*60?'trop tard':'';return ''}
+function guestTick(){if(G.guest&&!guestHere()&&!G.guest.gone){G.guest.gone=1;note(`${WHO[G.guest.id].name} est rentré·e chez ${ilElle(G.guest.id)==='il'?'lui':'elle'}`)}}
+function pickMateSheet(title,sub,act,filt){const L=NPCS.map(n=>n.id).filter(filt||(()=>true)).sort((a,b)=>G.rel[b].ami-G.rel[a].ami);
+ openSheet(sheetHead(title,sub)+`<div class="choices">${L.map(id=>`<button class="choice" type="button" data-hpick="${act}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>${esc(fullNameOf(id))}<small>amitié ${G.rel[id].ami}${coupleOf(id)==='me'?' · en couple 💞':''}</small></span></span></button>`).join('')}</div>`)}
+function homeAct(k){const ph=phase(),gst=guestHere()?G.guest.id:null;
+ if(k==='call'){pickMateSheet('Appeler quelqu\'un','Qui veux-tu appeler ?','call');return}
+ if(k==='out'){pickMateSheet('Inviter à sortir','Tu lui écris pour proposer une sortie','out');return}
+ if(k==='invite'){if(homeOff('invite')){toast(homeOff('invite'));return}pickMateSheet('Inviter à la maison','Qui veux-tu inviter chez toi ?','invite');return}
+ if(k==='tv'){if(homeOff('tv'))return;G.done[ph.key+'tv']=1;const show=pickR(['un épisode de ta série','le match de foot','un concours de cuisine','les infos de Guadeloupe la 1ère','une émission de téléréalité','un documentaire sur les fonds marins']);
+  let t=`📺 Tu regardes ${show}. +8 énergie`;G.energy=clamp(G.energy+8,0,100);
+  if(gst){const ch=relChange(gst,3,0);t+=` · avec ${WHO[gst].name}${ch?' ('+ch.split(' : ')[1]+')':''}`}
+  else if(G.family.length&&Math.random()<.5){const f=pickR(G.family);famChange(f.id,2);t+=` · ${f.name} s'installe à côté de toi`}
+  advance(60);note(t.replace('📺 ',''));toast(t);saveG();drawHUD();drawView();return}
+ if(k==='pc'){if(homeOff('pc'))return;openSheet(sheetHead('💻 Sur l\'ordinateur','Qu\'est-ce que tu fais ?')+`<div class="choices">${[['jeu','🎮 Jouer à un jeu vidéo','+6 énergie · un·e camarade peut te rejoindre en ligne'],['videos','▶️ Regarder des vidéos','+6 énergie'],['musique','🎧 Écouter de la musique','+5 énergie']].map(([v,l,sm])=>`<button class="choice" type="button" data-hpc="${v}">${l}<small>${sm}</small></button>`).join('')}</div>`);return}
+ if(k==='film'){if(homeOff('film'))return;
+  openSheet(sheetHead('🎬 Regarder un film','Avec qui ? Choisis aussi le genre.')+`<div class="choices">${G.family.map(f=>`<label class="choice fl-pick"><input type="checkbox" data-fpick="${f.id}" checked> ${esc(f.name)} <small>${f.role}</small></label>`).join('')}${gst?`<label class="choice fl-pick"><input type="checkbox" data-fpick="${gst}" checked> ${WHO[gst].name} <small>invité·e</small></label>`:''}</div>
+  <div class="choices">${FILMS.map(([g,l])=>`<button class="choice" type="button" data-hfilm="${g}">${l}</button>`).join('')}</div>`);return}}
+const FILMS=[['comedie','😂 Une comédie'],['action','💥 Un film d\'action'],['horreur','👻 Un film d\'horreur'],['anime','🧸 Un dessin animé'],['romance','💞 Une comédie romantique'],['antilles','🌴 Un film antillais']];
+/* goûts de chaque caractère de la famille : genre aimé / détesté */
+const FILM_TASTE={'Protecteur·rice':['anime','horreur'],'Strict·e':['antilles','horreur'],'Cool':['action','romance'],'Drôle':['comedie','antilles'],'Souvent absent·e':['action','anime'],'Curieux·se':['antilles','comedie']};
+function homeFilm(g){const who=[...document.querySelectorAll('[data-fpick]')].filter(x=>x.checked).map(x=>x.dataset.fpick);
+ if(!who.length){toast('Choisis au moins une personne');return}
+ G.done[G.day+'film']=1;const nm=FILMS.find(x=>x[0]===g)[1].replace(/^\S+\s/,'').toLowerCase();let res=[];
+ who.forEach(id=>{if(isFam(id)){const f=G.family.find(x=>x.id===id),T=FILM_TASTE[f&&f.trait]||[];const d=T[0]===g?7:T[1]===g?1:4;famChange(id,d);res.push(`${f.name} ${T[0]===g?'a adoré':T[1]===g?'s\'est endormi·e':'a passé un bon moment'}`)}
+  else{const ch=relChange(id,4,G.partner===id||iLike(id)&&g==='romance'?3:0);res.push(`${WHO[id].name} a bien aimé${ch?' ('+ch.split(' : ')[1]+')':''}`)}});
+ G.energy=clamp(G.energy+10,0,100);advance(120);const t=`🎬 Soirée film (${nm}) : ${res.join(', ')}. +10 énergie`;note(t.replace('🎬 ',''));closeSheet();toast('🎬 Bonne soirée film !');
+ openSheet(sheetHead('🎬 Soirée film',nm)+`<p class="story-text">${esc(res.join(' · '))}.</p><p class="muted">+10 énergie · 2 heures passées</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);saveG();drawHUD();drawView()}
+function homePc(v){const ph=phase();G.done[ph.key+'pc']=1;let t;
+ if(v==='jeu'){G.energy=clamp(G.energy+6,0,100);const gam=NPCS.map(n=>n.id).filter(id=>(LIKE[id]||[]).some(w=>/jeu|console|fifa/.test(w))&&G.rel[id].ami>=20);
+  if(gam.length&&Math.random()<.6){const id=pickR(gam),ch=relChange(id,4,0);t=`🎮 ${WHO[id].name} te rejoint en ligne, vous enchaînez les parties${ch?' ('+ch.split(' : ')[1]+')':''}. +6 énergie`}
+  else t='🎮 Tu joues à ton jeu préféré. +6 énergie'}
+ else if(v==='videos'){G.energy=clamp(G.energy+6,0,100);t='▶️ Tu regardes des vidéos sans voir le temps passer. +6 énergie'}
+ else{G.energy=clamp(G.energy+5,0,100);t='🎧 Tu écoutes ta playlist, ça fait du bien. +5 énergie'}
+ if(guestHere()){const ch=relChange(G.guest.id,2,0);t+=` · avec ${WHO[G.guest.id].name}`}
+ advance(60);note(t.replace(/^\S+ /,''));closeSheet();toast(t);saveG();drawHUD();drawView()}
+function homePick(act,id){const r=G.rel[id],n=WHO[id].name,ph=phase();
+ if(act==='call'){closeSheet();advance(5);
+  if(r.ami<10||G.done[G.day+'callno'+id]){G.done[G.day+'callno'+id]=1;toast(`📞 Ça sonne… ${n} ne décroche pas.`);note(`${n} n'a pas répondu à ton appel`);saveG();drawView();return}
+  note(`Tu as appelé ${n}`);openTalk(id,{call:1});return}
+ if(act==='out'){closeSheet();pushMsg(id,'me',pickR(['Ça te dit qu\'on sorte ?','On se fait une sortie ?','Tu veux sortir avec moi ce week-end ? (en ami·e 😄)']));
+  let line,da=0;if(r.ami<30){line=pickR(["On se connaît pas encore assez pour ça…","Hmm, peut-être quand on se connaîtra mieux 😅"])}
+  else if(Math.random()<sortieChance(id)&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');pl.status='accepted';line=`Ok, ${PLACE_OUT[pl.place]} ${planWhen(pl)} !`;da=2;note(`${n} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`)}
+  else{line=pickR(["Désolé·e, je peux pas…","Une autre fois peut-être","Hmm… pas cette fois"]);da=-1}
+  pushMsg(id,'them',genderize(line,id));relChange(id,da,0);toast(`💬 ${n} : « ${genderize(line,id)} »`);saveG();drawView();return}
+ if(act==='invite'){closeSheet();pushMsg(id,'me',pickR(['Tu veux passer à la maison ?','Viens chez moi, on se pose 😄','Ça te dit de venir à la maison ?']));
+  let line;if(r.ami<30||Math.random()>sortieChance(id)+.1){line=r.ami<30?pickR(["Chez toi ? On se connaît pas encore assez 😅","Hmm, pas tout de suite…"]):pickR(["Pas ce soir, désolé·e","J'peux pas, une autre fois !"]);pushMsg(id,'them',genderize(line,id));toast(`💬 ${n} : « ${genderize(line,id)} »`);saveG();return}
+  line=pickR(["J'arrive ! 😄","Ok, je passe dans 20 min","Trop bien, j'arrive !"]);pushMsg(id,'them',line);advance(20);
+  G.guest={id,day:G.day,until:Math.min(G.min+150,22*60)};G.place='maison';relChange(id,3,0);
+  if(G.family.length){const f=pickR(G.family);famChange(f.id,f.trait==='Strict·e'?-2:1);note(`${f.name} accueille ${n} à la maison`)}
+  note(`${n} est venu·e chez toi`);toast(`🏠 ${n} est arrivé·e !`);saveG();drawHUD();drawView();return}}
 function placeBody(ph,place,map){
- let h='';
+ let h='';guestTick();
  if(place==='maison'){
   const fam=G.family;
   h+=`<p class="muted">${ph.type==='soir'?P('Tu es rentré·e à la maison.'):'Tu es à la maison.'}</p>
-  ${fam.length?`<div class="present">${fam.map(f=>`<button class="pers" type="button" data-fam="${f.id}"><span class="av">${avatarOf(f.id)}</span><span>${esc(f.name)}</span><small>${f.role}</small></button>`).join('')}</div>`:''}
+  ${fam.length||guestHere()?`<div class="present">${guestHere()?`<button class="pers" type="button" data-person="${G.guest.id}"><span class="av">${avatarOf(G.guest.id)}</span><span>${WHO[G.guest.id].name}</span><small>invité·e</small></button>`:''}${fam.map(f=>`<button class="pers" type="button" data-fam="${f.id}"><span class="av">${avatarOf(f.id)}</span><span>${esc(f.name)}</span><small>${f.role}</small></button>`).join('')}</div>`:''}
+  ${guestHere()?`<p class="muted">🏠 ${WHO[G.guest.id].name} est chez toi jusqu'à ${fmtT(G.guest.until)}. Touche son portrait pour lui parler en vrai.</p>`:''}
+  <span class="eyebrow">À la maison</span>
+  <div class="acts two">${HOME_ACTS.map(([k,ic,l,sm])=>`<button class="act" type="button" data-home="${k}" ${homeOff(k)?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${homeOff(k)||sm}</small></button>`).join('')}</div>
   <div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser</span><small class="r-ok">−6 énergie</small></button>
   <button class="act" type="button" data-do="rest" ${G.rested?'disabled':''}><span class="ico">🛋️</span><span>Se reposer</span><small class="r-ok">+15 énergie</small></button>
   ${G.min>=1260||ph.type==='nuit'?`<button class="act" type="button" data-do="sleep"><span class="ico">🌙</span><span>Dormir</span><small class="r-ok">jusqu'à 7h</small></button>`:''}</div>`;
@@ -4581,12 +4640,12 @@ const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux q
 const PLACE_TALK={cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
  foyer:["Le foyer est blindé aujourd'hui","Quelqu'un a mis du zouk au foyer, j'adore"],cantine:["C'est quoi ce plat encore ?","Tu manges ça toi ? 😂"],plage:["L'eau est trop bonne aujourd'hui","Regarde le coucher de soleil…"],centre:["Y a trop de monde au centre-ville aujourd'hui","On passe au glacier après ?"],maison:["On est bien à la maison quand même","Tu as mangé ?"]};
 const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?'maison':G.place||'cour'};
-function openTalk(id){
- const pl=isFam(id)?'maison':talkPlace();talk={id,pl,day:G.day};
+function openTalk(id,o){o=o||{};
+ const pl=isFam(id)||guestHere()&&G.guest.id===id?'maison':talkPlace();talk={id,pl,day:G.day,call:!!o.call};
  const th=(G.talks[id]=G.talks[id]||[]);if(th.length&&th[th.length-1].day!==G.day)th.push({sep:1,day:G.day,pl});
  if(isNpc(id)&&!G.done[G.day+'vrai'+id]){G.done[G.day+'vrai'+id]=1;G.st.talks++}
- openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="talkSub">En vrai · ${PLACES[pl]||'Maison'} · ${fmtT(G.min)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Partir">Partir</button></div>
- <div class="talk-scene">${photoSVG({scene:TALK_SCENE[pl]||'cour',people:[id,'me'],author:id})}<span class="talk-tag">🗣️ Vous parlez en vrai</span></div>
+ openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="talkSub">${talk.call?'📞 Au téléphone':'En vrai · '+(PLACES[pl]||'Maison')} · ${fmtT(G.min)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Partir">Partir</button></div>
+ <div class="talk-scene">${photoSVG({scene:talk.call?'chambre':TALK_SCENE[pl]||'cour',people:talk.call?[id]:[id,'me'],author:id})}<span class="talk-tag">${talk.call?'📞 Appel en cours':'🗣️ Vous parlez en vrai'}</span></div>
  <div class="talk" id="talkLines"></div>
  <div class="chips">${TALK_SUGG.map(s=>`<button class="chip" type="button" data-tsay="${esc(s)}">${esc(s)}</button>`).join('')}</div>
  <form class="composer" id="talkForm"><label for="talkIn" class="vh">Ce que tu dis</label><input id="talkIn" maxlength="220" placeholder="Dis quelque chose à ${esc(nameOf(id))}…" autocomplete="off"><button class="gbtn" type="submit">Dire</button></form>`,true);
@@ -4596,7 +4655,7 @@ function drawTalk(){
  const box=$('talkLines');if(!box||!talk)return;const th=(G.talks[talk.id]||[]).slice(-30);
  const line=m=>m.sep?`<div class="talk-sep">${fmtDay(m.day,true)} · ${PLACES[m.pl]||'Maison'}</div>`:m.from==='me'?`<div class="say me"><b>Toi</b><p>« ${fmtText(m.text)} »</p></div>`
   :`<div class="say"><b>${esc(nameOf(talk.id))}</b><p>${fmtText(m.text).replace(/\*([^*]+)\*/g,'<i class="geste">$1</i>')}</p></div>`;
- box.innerHTML=(th.length?th.map(line).join(''):`<p class="muted" style="text-align:center">${esc(nameOf(talk.id))} est devant toi. Dis-lui quelque chose.</p>`)+(busyId===talk.id?`<div class="say"><b>${esc(nameOf(talk.id))}</b><p><i class="geste">réfléchit…</i></p></div>`:'');
+ box.innerHTML=(th.length?th.map(line).join(''):`<p class="muted" style="text-align:center">${esc(nameOf(talk.id))} ${talk.call?'a décroché : « Allô ? »':'est devant toi'}. Dis-lui quelque chose.</p>`)+(busyId===talk.id?`<div class="say"><b>${esc(nameOf(talk.id))}</b><p><i class="geste">réfléchit…</i></p></div>`:'');
  box.scrollTop=box.scrollHeight;
 }
 function buildTalkPrompt(id){
@@ -4609,7 +4668,7 @@ Souvenirs récents liés à ${me} :
 ${mem}
 
 Moment présent : ${fmtDay(G.day,true)}, ${fmtT(G.min)} (${ph.lbl||PLABEL[ph.type]}${ph.sub?' de '+SUBJ[ph.sub]:''}).
-IMPORTANT : vous êtes EN VRAI, face à face, ${pl==='maison'?'à la maison':'au '+(PLACES[pl]||'lycée').toLowerCase()}${autour.length?` (autour de vous : ${autour.join(', ')})`:''}. Ce n'est PAS un message sur le téléphone : c'est une conversation à l'oral. Tu vois ${me}, tu entends sa voix.
+${talk.call?`IMPORTANT : ${me} t'appelle AU TÉLÉPHONE (appel vocal). Tu es chez toi, tu ne vois pas ${me}, tu entends seulement sa voix. C'est de l'oral, pas un message écrit.`:`IMPORTANT : vous êtes EN VRAI, face à face, ${pl==='maison'?(G.guest&&G.guest.id===id?`chez ${me}, tu es invité·e à la maison`:'à la maison'):'au '+(PLACES[pl]||'lycée').toLowerCase()}${autour.length?` (autour de vous : ${autour.join(', ')})`:''}. Ce n'est PAS un message sur le téléphone : c'est une conversation à l'oral. Tu vois ${me}, tu entends sa voix.`}
 
 Conversation (la plus récente en bas) :
 ${th}
@@ -4639,7 +4698,7 @@ async function sendTalk(text){
  G.talks[id].push({from:'them',text:genderize(out.reponse.trim().slice(0,300),id)});G.talks[id]=G.talks[id].slice(-60);
  const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
  if(isNpc(id)){const ch=relChange(id,da,dl);if(ch)toast(ch)}else famChange(id,da);
- if(!G.done[G.day+'vraiNote'+id]){G.done[G.day+'vraiNote'+id]=1;note(`Tu as parlé en vrai avec ${nameOf(id)} ${talk.pl==='maison'?'à la maison':'au '+(PLACES[talk.pl]||'lycée').toLowerCase()}`)}
+ if(!G.done[G.day+'vraiNote'+id]){G.done[G.day+'vraiNote'+id]=1;note(talk.call?`Tu as parlé au téléphone avec ${nameOf(id)}`:`Tu as parlé en vrai avec ${nameOf(id)} ${talk.pl==='maison'?'à la maison':'au '+(PLACES[talk.pl]||'lycée').toLowerCase()}`)}
  checkObjectives();saveG();drawTalk();
 }
 
@@ -4966,6 +5025,9 @@ EVENTS.push(...EVENTS2);
 $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
+ {let b;if(b=t.closest('[data-hpick]')){homePick(b.dataset.hpick,b.dataset.id);return}
+ if(b=t.closest('[data-hpc]')){homePc(b.dataset.hpc);return}
+ if(b=t.closest('[data-hfilm]')){homeFilm(b.dataset.hfilm);return}}
  if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
  {const b=t.closest('[data-hw],[data-ask],[data-askopen],[data-pback]');if(b){if(b.dataset.hw)hwAct(b.dataset.hw,b.dataset.hid);else if(b.dataset.ask)askDo(b.dataset.id,b.dataset.ask);else if(b.dataset.askopen)askSheet(b.dataset.askopen);else openPerson(b.dataset.pback);return}}
  if(igClick(t))return;
@@ -5053,6 +5115,7 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-place]')){G.place=b.dataset.place;drawView();return}
  if(b=t.closest('[data-person]')){openPerson(b.dataset.person);return}
  if(b=t.closest('[data-do]')){doAct(b.dataset.do);return}
+ if(b=t.closest('[data-home]')){homeAct(b.dataset.home);return}
  if(b=t.closest('[data-fam]')){openFamPerson(b.dataset.fam);return}
  if(b=t.closest('[data-mate]')){openFiche(b.dataset.mate);return}
  if(b=t.closest('[data-chat]')){openChat(b.dataset.chat);return}

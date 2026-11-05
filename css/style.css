@@ -518,3 +518,7 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .sdice+.colwheel.sm{margin-left:6px}
 .fam-dice{display:grid;place-items:center}.fam-dice svg{width:20px;height:20px}
 .btn svg.ic{width:18px;height:18px;vertical-align:-4px;margin-right:4px}
+/* maison : choix des personnes pour le film */
+.fl-pick{display:flex;align-items:center;gap:10px;cursor:pointer}
+.fl-pick input{width:20px;height:20px;accent-color:var(--g-acc,#7aa6c2)}
+.choice .av.sm{width:36px;height:36px;flex:0 0 auto}
