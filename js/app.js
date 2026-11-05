@@ -987,15 +987,16 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
 /* garçons : implantation des cheveux aux tempes et sur les côtés du front — une masse continue qui suit le bord du crâne
    jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
-const TEMPLE={top:108,bot:186,inT:24,inB:4};
+const TEMPLE={top:90,bot:186,inT:34,inB:4};
 function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
- const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,-.12),c2=shade(base,-.35);
- const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=4){const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=T.inT*(1-u)+T.inB*u,j=Math.sin(y*1.7+k)*1.6+Math.sin(y*.63)*1.1;
+ const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.38:-.12),c2=shade(base,lum(base)>.35?-.6:-.4),c3=shade(base,lum(base)>.35?-.1:.15);
+ const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=4){const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4),j=Math.sin(y*1.7+k)*2.2+Math.sin(y*.63)*1.6+Math.sin(y*3.1)*1;
    o.push([200+k*(hw+4),y]);I.push([200+k*(hw-inset+j),y])}
   return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
  return `<defs><filter id="${id}f" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".35" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.5"/><feGaussianBlur stdDeviation="1.1"/></filter>
   <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset=".75" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".55"/></linearGradient></defs>
-  <g filter="url(#${id}f)">${[-1,1].map(k=>`<path d="${side(k)}" fill="url(#${id}g)"/>`).join('')}</g>`+
+  <defs><pattern id="${id}p" width="5" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(18)"><path d="M1,0 L1.6,7" stroke="${c2}" stroke-width="1" opacity=".6"/><path d="M3.5,0 L4,7" stroke="${c3}" stroke-width=".7" opacity=".45"/></pattern></defs>
+  <g filter="url(#${id}f)">${[-1,1].map(k=>`<path d="${side(k)}" fill="url(#${id}g)"/><path d="${side(k)}" fill="url(#${id}p)" opacity=".8"/>`).join('')}</g>`+
   ''}
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
