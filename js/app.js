@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='71';
+const APP_VERSION='72';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2629,6 +2629,14 @@ function pushMsg(id,from,text,extra){
  if(chat&&chat.id===id)drawChatMsgs();
  drawNav();if(view==='messages'&&!chat)drawView();
 }
+/* sorties : à partir de 30 d'amitié, un·e camarade peut proposer ou accepter une sortie */
+const sortieChance=id=>{const r=G.rel[id];if(r.ami<30)return 0;return clamp(.6+(r.ami-30)/120+r.amour/300-(hasMark(id,'trahison')?.4:0),.15,.95)};
+const SORTIE_RE=/(on sort|sortir|sortie|on se voit|se voir|on se capte|plage|glacier|cin[ée]ma|ciné|centre[- ]ville|jarry|destreland|mil[ée]nis|on va (à|a|au|en|faire)|t'es chaud|ça te dit|ca te dit|tu viens|viens avec moi)/i;
+function sortieFromChat(id,text){if(!isNpc(id)||!SORTIE_RE.test(text)||G.plans.some(x=>x.by===id&&(x.status==='pending'||x.status==='accepted')))return;
+ const r=G.rel[id];if(r.ami<30){setTimeout(()=>{pushMsg(id,'them',pickR(["On se connaît pas encore assez pour sortir ensemble, non ? 😅","Peut-être plus tard, quand on se connaîtra mieux."]));drawChatMsgs()},700);return}
+ if(Math.random()<sortieChance(id)){const t=text.toLowerCase(),pl=makePlan(id,/demain/.test(t)?'demain':'ce soir');pl.place=/plage/.test(t)?'plage':/glace|glacier/.test(t)?'glacier':/centre|jarry|destreland|mil[ée]nis|shopping/.test(t)?'centre':pl.place;pl.status='accepted';
+  setTimeout(()=>{pushMsg(id,'them',pickR(["Carrément ! ","Ok, ça marche ! ","Grave, on y va ! "])+`Rendez-vous ${PLACE_OUT[pl.place]} ${planWhen(pl)} 😄`);note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);saveG();drawChatMsgs()},900)}
+ else setTimeout(()=>{pushMsg(id,'them',pickR(["Pas cette fois, j'ai un truc de prévu 😕","Une autre fois peut-être !","Je peux pas, désolé·e…"]));drawChatMsgs()},900)}
 function makePlan(by,when){
  let day=G.day,hour=18;
  if(when==='demain'||G.min>=17*60+30){day=G.day+1;hour=wdOf(day)>=5||!schoolDay(day)?15:18}
@@ -2650,7 +2658,8 @@ async function sendChat(text){
  pushMsg(id,'them',out.reponse.trim().slice(0,400));
  if(isNpc(id)){const ch=relChange(id,da,dl);if(ch)toast(ch)}else famChange(id,da);
  const pr=out.proposition;
- if(pr&&typeof pr==='object'&&isNpc(id)&&!G.plans.some(p=>p.by===id&&p.status==='pending')){const pl=makePlan(id,pr.quand==='demain'?'demain':'ce soir');if(PLACE_OUT[pr.lieu])pl.place=pr.lieu;pushMsg(id,'them',proposalText(id,pl),{plan:pl.id})}
+ if(!(pr&&typeof pr==='object'))sortieFromChat(id,text);
+ if(pr&&typeof pr==='object'&&isNpc(id)&&G.rel[id].ami>=30&&!G.plans.some(p=>p.by===id&&p.status==='pending')){const pl=makePlan(id,pr.quand==='demain'?'demain':'ce soir');if(PLACE_OUT[pr.lieu])pl.place=pr.lieu;pushMsg(id,'them',proposalText(id,pl),{plan:pl.id})}
  checkObjectives();saveG();drawChatMsgs();if(chat&&chat.id===id&&$('chatSub'))$('chatSub').innerHTML=chatSub(id);
 }
 function npcPing(){
@@ -2660,7 +2669,7 @@ function npcPing(){
   let p=.03+r.ami/1500+r.amour/900;if(ph.type==='cours')p*=.4;
   /* sans réponse de ta part, il ou elle relance beaucoup moins */const th0=G.threads[n.id]||[];if(th0.length&&th0[th0.length-1].from!=='me')p*=.2;if(Math.random()>p)return;G.lastPing[n.id]=now;
   if(r.amour>=75&&r.ami>=45&&!G.partner&&!G.confessed[n.id]&&!coupleOf(n.id)){G.confessed[n.id]=1;pushMsg(n.id,'them',CONFESS[n.id],{kind:'confess'});note(`${n.name} t'a envoyé un message important 💌`);return}
-  if(r.ami>=45&&Math.random()<.45&&h<20&&!G.plans.some(x=>x.by===n.id&&x.status==='pending')){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
+  if(r.ami>=30&&Math.random()<.4&&h<20&&!G.plans.some(x=>x.by===n.id&&(x.status==='pending'||x.status==='accepted'))){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
   if(r.ami<25){pushMsg(n.id,'them',pickR(["T'as un problème avec moi ?","Je sais ce que t'as dit sur moi.","Évite-moi un peu, merci."]));return}
   /* pas encore fait connaissance : son premier message est une question de nouvelle */
   if(!G.met[n.id]){G.met[n.id]=1;pushMsg(n.id,'them',introLine(n.id));return}
@@ -3619,8 +3628,9 @@ function personAct(id,a){
   if(!npcLikesMe(id)){da=0;dl=0;line=pickR(["T'es adorable, mais je ne te vois pas comme ça 😅","Haha… on reste potes, ok ?","Je t'apprécie beaucoup, mais en ami·e."])}
   else if(r.ami>=40&&!taken){dl=Math.round(4+f.rom*6);da=1;line=pickR(V.happy)}else{dl=-1;da=-3;line=pickR(V.hurt)+(taken?' (et je suis déjà avec quelqu\'un)':'')}
   if(G.partner&&G.partner!==id){const map=presence(ph);if((map[G.place]||[]).includes(G.partner)){relChange(G.partner,-4,-10);pushMsg(G.partner,'them',"J'ai tout vu. Sympa… 😒");note(P(`${WHO[G.partner].name} t'a vu·e flirter avec ${WHO[id].name}`))}}}
- else if(a==='sortie'){const p=(r.ami-30)/60+r.amour/200;
-  if(Math.random()<p&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');pl.status='accepted';line=`Ok, ${PLACE_OUT[pl.place]} ${planWhen(pl)} !`;da=2;note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`)}
+ else if(a==='sortie'){const p=sortieChance(id);
+  if(r.ami<30){line=pickR(["On se connaît pas encore assez pour ça…","Hmm, peut-être quand on se connaîtra mieux 😅","Pas tout de suite, désolé·e."]);da=0}
+  else if(Math.random()<p&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');pl.status='accepted';line=`Ok, ${PLACE_OUT[pl.place]} ${planWhen(pl)} !`;da=2;note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`)}
   else{line=pickR(["Désolé·e, je ne peux pas…","Une autre fois peut-être","Hmm… pas cette fois"]);da=-1}}
  const ch=relChange(id,da,dl);
  $('paOut').innerHTML=`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}</small>`:''}`;
