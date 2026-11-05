@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='69';
+const APP_VERSION='70';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -140,7 +140,7 @@ const legX=(G,v)=>{const k=G.lk||1;if(k===1)return v;if(v<=25)return 25-(25-v)*k
 const BODY_Y=206,BODY_L=672,BODY_K=.9;
 function render(s,vb,p,showBg){
  s=noAcc(s);
- if(typeof HAIR_ALL!=='undefined'&&!HAIR_ALL.includes(s.hair)&&HAIR_SWAP[s.hair])s={...s,hair:HAIR_SWAP[s.hair]};
+ if(typeof HAIR_ALL!=='undefined'&&!HAIR_ALL.includes(s.hair)&&HAIR_SWAP[s.hair])s={...s,hair:hairOk(s.hair)};
  const hk=(s.sexe==='f'&&TAILLE_F[s.taille])||TAILLE[s.taille]||1,wk=(CORP[s.corpulence]||CORP.moyenne).w,vh=+String(vb).split(/[ ,]+/)[3],up=vh>=600?(hk-1)*BODY_L:0;
  if(s.hair==='ananas'||s.hair==='chignonhaut'){let [x,y,w,h]=String(vb).split(/[ ,]+/).map(Number);const top=(s.hair==='ananas'?-46:-14)-up;if(y>top){const h2=h+(y-top),w2=w*h2/h;x-=(w2-w)/2;vb=[x,top,w2,h2].map(v=>+v.toFixed(1)).join(' ')}}
  const a=s.adj, sk=s.skin, skD=mix(sk,'#5a2412',.2), skDD=mix(sk,'#3a140a',.4), skL=mix(sk,'#ffd9b8',.22);
@@ -1396,12 +1396,13 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_G=['chauve','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_G=['chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 /* coiffures retirées du catalogue : remplacées par la plus proche (personnages, parties en cours) */
 const HAIR_SWAP={gcarremoyen:'gcarrecourt',gcarrelong:'gcarrecourt',graiemilieu:'gondule',longs:'raiemilieu',lisselong:'raiemilieu',lisseoreilles:'raiemilieu',longondule:'raiemilieu',longsondules:'raiecotel',ondulescote:'raiecotel',longboucle:'blongs',boucleslongues:'blongs',boucles:'bcarre',miboucle:'bcarre',afro:'bafro',twa:'bcourt',afropuff:'bchignonhaut',ananas:'bchignonhaut',washgo:'bwashgo',bantu:'btwists',bbantu:'btwists',bpuffs:'bafro',macarons:'bafro',boxbraids:'bbox',vanilles:'btwists',locks:'btwists',nattes:'bcollees',btressesarriere:'bcollees',tresse:'deuxtresses',bfoulard:'bafro',bchignonbas:'bchignon',chignon:'chignonhaut2',chignonhaut:'chignonhaut2',demichignon:'bdemiqueue',queue:'queuelisse',queuehaute:'queuehaute2',couettes:'deuxtresses',carre:'carrelisse',carreondule:'carrelisse',carreplongeant:'carrelisse',carreretrousse:'carrelisse',lobraie:'carrelisse',longfrange:'frangedroite',frange:'frangedroite',meches:'mechesdevant',
  degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
-const hairOk=h=>HAIR_ALL.includes(h)?h:(HAIR_SWAP[h]||h);
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gnaturel','gdegbas','gdegmoyen','gdeghaut','gbuzz','gcarrecourt','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+Object.assign(HAIR_SWAP,{gnaturel:'gtaper',gdegbas:'gtaper',gdegmoyen:'gtaper',gdeghaut:'gtaper',gbuzz:'gtaper',gcarrecourt:'gondule'});/* coiffures 2 à 7 des garçons retirées */
+const hairOk=h=>{let n=0;while(!HAIR_ALL.includes(h)&&HAIR_SWAP[h]&&n++<5)h=HAIR_SWAP[h];return h};
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
