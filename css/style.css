@@ -511,3 +511,10 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .prov-tag{font:800 12px 'Nunito',sans-serif;color:#fff;background:#c0544a;border-radius:999px;padding:3px 10px}
 .prov-ret{width:100%;padding:8px 12px}.prov-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8eef5}.prov-row:last-child{border-bottom:0}
 .prov-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}.prov-head>div:last-child{display:flex;flex-direction:column}
+/* dés : tirer au sort une catégorie, un·e membre de la famille (même dé que pour le prénom) */
+.sdice{width:40px;height:40px;flex:0 0 auto;align-self:center;margin-left:auto;border:0;border-radius:10px;background:var(--surface);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 0 0 1px var(--line)}
+.sdice svg{width:22px;height:22px}
+.sdice:active svg{animation:diceRoll .45s ease}
+.sdice+.colwheel.sm{margin-left:6px}
+.fam-dice{display:grid;place-items:center}.fam-dice svg{width:20px;height:20px}
+.btn svg.ic{width:18px;height:18px;vertical-align:-4px;margin-right:4px}

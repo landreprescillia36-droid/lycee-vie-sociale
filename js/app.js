@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='74';
+const APP_VERSION='75';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=false,rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="207" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="209" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${207-ry*.55} C${xx+6*k},${207-ry*.6} ${xx+8*k},${207+ry*.3} ${xx-2*k},${207+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=false,rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -210,7 +210,7 @@ function render(s,vb,p,showBg){
  const bx=55+a.browsX, by=cy-47+((F.bo||0)-eo)+a.browsY, bc=s.browColor||hD;
  o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),HART(s)&&!HART(s).ears?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -974,8 +974,10 @@ function neckZone(s,FY){const F=faceOf(s),k=F.d+FY;if(NZ[k])return NZ[k];const d
    chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
-function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?31:27)-1.5;
- return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},207 a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
+/* garçons : oreilles plus basses (demande de Prescillia) */
+const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=227;
+function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?31:27)-1.5,EY=earY(s);
+ return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
 /* coiffures garçons (décalquées sur la tête du jeu « ovale ») ajustées à la forme de tête choisie : largeur aux tempes et haut du crâne */
 const FHW={};function faceHW(d,y){const k=d+y;if(k in FHW)return FHW[k];const n=d.match(/-?[\d.]+/g).map(Number);let a=null,b=null;for(let i=0;i<n.length;i+=2){const X=n[i],Y=n[i+1],dd=Math.abs(Y-y);if(X<200){if(!a||dd<a[0])a=[dd,X]}else if(!b||dd<b[0])b=[dd,X]}return FHW[k]=a&&b?(b[1]-a[1])/2:94}
@@ -1487,6 +1489,29 @@ WEAR.dress.items.splice(1,0,{s:'dress',v:'longue',c:'#d93b5e',n:'Robe longue fle
 WEAR.jacket.items.splice(1,0,{s:'jacket',v:'kimono',c:'#26314f',n:'Veste kimono fleurie',r:null,g:'f',nw:1});
 WEAR.shoes.items.unshift({s:'shoes',v:'ballerines',c:'#f2c6d3',n:'Ballerines',r:null,g:'f',nw:1});
 WEAR.bottom.items.push({s:'bottom',v:'cordon',c:'#1f2127',n:'Pantalon large noir à cordon',r:null,g:'m'},{s:'bottom',v:'jogging',c:'#1f2127',n:'Jogging noir',r:null,g:'m'});
+/* nouvelles tenues complètes avec les nouveaux vêtements (en tête de la liste) */
+WEAR.set.items.unshift({n:'T-shirt basique, jean mom et petits cercles',r:null,g:'f',nw:1,x:'',set:{top:'tbasic',topColor:'#f4f1ea',bottom:'mom',bottomColor:'#7e9cc4',shoes:'basses',shoesColor:'#f4f1ea',earrings:'pcercles',necklace:'aucun'}},
+ {n:'Chemise courte et jupe plissée',r:null,g:'f',nw:1,x:'',set:{top:'chemcrop',topColor:'#a8bce6',bottom:'jplis',bottomColor:'#1f1f22',shoes:'ballerines',shoesColor:'#1f2127',earrings:'puce',necklace:'pendrond'}},
+ {n:'Débardeur côtelé et jean large',r:null,g:'f',nw:1,x:'',set:{top:'camicote',topColor:'#f4f1ea',bottom:'jlarge',bottomColor:'#8eaed3',shoes:'running',shoesColor:'#f4f1ea',earrings:'gcercles',necklace:'multi'}},
+ {n:'Manches longues noir et jupe moulante',r:null,g:'f',nw:1,x:'',set:{top:'mlnoir',topColor:'#1f2127',bottom:'jmoulante',bottomColor:'#e3d3c0',shoes:'bottes',shoesColor:'#1f2127',earrings:'perles',necklace:'choker'}},
+ {n:'Cardigan court et jupe patineuse',r:null,g:'f',nw:1,x:'',set:{top:'cardicrop',topColor:'#ece2cc',bottom:'jpatineuse',bottomColor:'#23294a',shoes:'ballerines',shoesColor:'#f2c6d3',earrings:'perles',necklace:'aucun'}},
+ {n:'Polo et jupe à carreaux',r:null,g:'f',nw:1,x:'',set:{top:'polo',topColor:'#f4f1ea',bottom:'jcarreaux',bottomColor:'#55555c',shoes:'basses',shoesColor:'#f4f1ea',earrings:'puce',necklace:'penddiam'}},
+ {n:'Sweat vert et jean droit',r:null,g:'f',nw:1,x:'',set:{top:'capuche2',topColor:'#24382a',bottom:'jdroit',bottomColor:'#3f5f94',shoes:'running',shoesColor:'#b8b6b0',earrings:'pcercles',necklace:'aucun'}},
+ {n:'T-shirt crop rose et bermuda en jean',r:null,g:'f',nw:1,x:'',set:{top:'tcrop',topColor:'#f2c6d3',bottom:'bermuda',bottomColor:'#4f6f9f',shoes:'sandales',shoesColor:'#7a5236',earrings:'etoile',necklace:'prenom'}},
+ {n:'Blouse et jean bootcut',r:null,g:'f',nw:1,x:'',set:{top:'blousecrop',topColor:'#9aa8e0',bottom:'bootcut',bottomColor:'#2c3f6b',shoes:'retro',shoesColor:'#e9dfc8',earrings:'gcercles',necklace:'penddiam'}},
+ {n:'Bustier, jean slim et veste en jean',r:null,g:'f',nw:1,x:'',set:{top:'bustier',topColor:'#1f2127',bottom:'slim',bottomColor:'#3e5a88',jacket:'jean',jacketColor:'#5b7fb5',shoes:'montantes',shoesColor:'#1f2127',earrings:'gcercles',necklace:'choker'}},
+ {n:'Débardeur sport et jupe courte fendue',r:null,g:'f',nw:1,x:'',set:{top:'tanksport',topColor:'#f4f1ea',bottom:'jfendue',bottomColor:'#1f1f22',shoes:'running',shoesColor:'#f4f1ea',earrings:'puce',necklace:'pendrond'}},
+ {n:'Robe longue fleurie et sandales',r:null,g:'f',nw:1,x:'',set:{dress:'longue',dressColor:'#d93b5e',shoes:'sandales',shoesColor:'#7a5236',earrings:'gcercles',necklace:'aucun'}},
+ {n:'T-shirt blanc et jean droit',r:null,g:'m',nw:1,x:'',set:{top:'gtee',topColor:'#f4f1ea',bottom:'droit',bottomColor:'#86a6cc',shoes:'basses',shoesColor:'#f4f1ea',earrings:'aucune'}},
+ {n:'Polo marine et pantalon crème',r:null,g:'m',nw:1,x:'',set:{top:'gpolo',topColor:'#26314f',bottom:'cordon',bottomColor:'#ece2cc',shoes:'retro',shoesColor:'#e9dfc8',earrings:'aucune'}},
+ {n:'Sweat gris et jogging',r:null,g:'m',nw:1,x:'',set:{top:'ghood',topColor:'#a9adb3',bottom:'jogging',bottomColor:'#c4c7cb',shoes:'running',shoesColor:'#b8b6b0',earrings:'aucune'}},
+ {n:'Chemise en lin et pantalon blanc',r:null,g:'m',nw:1,x:'',set:{top:'glin',topColor:'#ece2cc',bottom:'cordon',bottomColor:'#f4f1ea',shoes:'sandales',shoesColor:'#7a5236',earrings:'aucune'}},
+ {n:'Superposé noir et baggy gris',r:null,g:'m',nw:1,x:'',set:{top:'glayer',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'montantes',shoesColor:'#1f2127',earrings:'aucune'}},
+ {n:'Pull rayé et jean brut',r:null,g:'m',nw:1,x:'',set:{top:'graye',topColor:'#ece2cc',bottom:'large',bottomColor:'#2f4a78',shoes:'retro',shoesColor:'#6b2a2e',earrings:'aucune'}},
+ {n:'Sweat zippé noir et jogging noir',r:null,g:'m',nw:1,x:'',set:{top:'gzip',topColor:'#1f2127',bottom:'jogging',bottomColor:'#1f2127',shoes:'running',shoesColor:'#1f2127',earrings:'aucune'}},
+ {n:'Polo crème, jean large et bomber',r:null,g:'m',nw:1,x:'',set:{top:'gpolopk',topColor:'#ece2cc',bottom:'large',bottomColor:'#5b7fb5',jacket:'bomber',jacketColor:'#26314f',shoes:'running',shoesColor:'#f4f1ea',earrings:'aucune'}},
+ {n:'Chemise noire et pantalon noir',r:null,g:'m',nw:1,x:'',set:{top:'gchem',topColor:'#1f2127',bottom:'cordon',bottomColor:'#1f2127',shoes:'basses',shoesColor:'#f4f1ea',earrings:'aucune'}},
+ {n:'T-shirt à bandes et short',r:null,g:'m',nw:1,x:'',set:{top:'gbandes',topColor:'#f4f1ea',bottom:'short',bottomColor:'#1f2127',shoes:'running',shoesColor:'#f4f1ea',earrings:'aucune'}});
 WEAR.set.items.push(
  {n:'Tenue d\'Inès : robe portefeuille',r:'K',g:'f',x:"La tenue d'Inès telle que tu l'as créée.",set:{dress:'portefeuille',dressColor:'#d93b5e',bag:'tote',bagColor:'#ece2cc',necklace:'chaine',shoes:'basses',shoesColor:'#f4f1ea'}},
  {n:'Tenue de Maëlle : chemise et jupe plissée',r:'K',g:'f',x:"La tenue de Maëlle telle que tu l'as créée.",set:{bag:'aucun',top:'chemise',topColor:'#f4f1ea',bottom:'jupe',bottomColor:'#1f2127',shoes:'basses',shoesColor:'#f4f1ea',necklace:'perles'}},
@@ -1613,7 +1638,7 @@ function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,cl
 $('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
 function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
-function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
+function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
 const BODYL={petite:['Petite','Petit'],moyenne:['Moyenne','Moyen'],grande:['Grande','Grand'],mince:['Mince','Mince'],ronde:['Ronde','Rond'],forte:['Forte','Fort']};
 const bodyLbl=o=>(BODYL[o]||[o,o])[state.sexe==='m'?1:0];
 let catPick={},curList=[];
@@ -1652,7 +1677,7 @@ function drawGrid(){
 function refresh(){drawPortrait();drawGrid()}
 
 tabsEl.addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=+b.dataset.i;sub=0;pview=['Tenue','Corps'].includes(TABS[tab].label)?'full':'portrait';drawTabs();drawSubs();refresh()});
-subsEl.addEventListener('click',e=>{if(e.target.closest('[data-colwheel]')){const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false;P.scrollIntoView({block:'nearest',behavior:'smooth'})}else P.hidden=true;return}const b=e.target.closest('.sub');if(!b)return;sub=+b.dataset.i;drawSubs();drawGrid()});
+subsEl.addEventListener('click',e=>{if(e.target.closest('[data-dice]')){diceSub();return}if(e.target.closest('[data-colwheel]')){const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false;P.scrollIntoView({block:'nearest',behavior:'smooth'})}else P.hidden=true;return}const b=e.target.closest('.sub');if(!b)return;sub=+b.dataset.i;drawSubs();drawGrid()});
 grid.addEventListener('click',e=>{const ci=e.target.closest('[data-ci]');if(ci){const S=TABS[tab].subs[sub],en=curList[+ci.dataset.ci];if(!en)return;const n=state.name;state=en.set?{...state,jacket:'aucune',dress:'aucune',...en.set}:entryState(en);state.name=n;catPick[S.hairCat?'hair':S.wear]=en;refresh();return}
  const b=e.target.closest('[data-v]');if(!b)return;state[TABS[tab].subs[sub].id]=b.dataset.v;refresh()});
 tools.addEventListener('click',e=>{const b=e.target.closest('.tool');if(!b)return;const k=b.dataset.k,[lo,hi]=LIM[k];
@@ -1690,6 +1715,13 @@ function harmonious(){const s=clone(DEFAULT);s.dress='aucune';s.name=state.name;
  s.taille=pick(['petite','moyenne','moyenne','grande']);s.corpulence=pick(['mince','moyenne','moyenne','moyenne','ronde','forte']);
  s.earrings=Math.random()<(boy?.1:.35)?(boy?'perles':pick(['anneaux','perles'])):'aucune';
  return s}
+/* dé de la catégorie ouverte : tire au sort seulement ce qui est affiché (coiffure, haut, bas, forme des yeux, couleur…) */
+function diceSub(){const S=TABS[tab].subs[sub];if(!S)return;const n=state.name,R=a=>a[Math.floor(Math.random()*a.length)];
+ if(S.hairCat||S.wear){const L0=catList(S),L1=L0.filter(e=>e.set||!['aucune','aucun'].includes(e.v)&&!isAct(e,L0)),en=R(L1.length?L1:L0);if(!en)return;
+  state=en.set?{...state,jacket:'aucune',dress:'aucune',...en.set}:entryState(en);const cs=!en.set&&COLSLOT[en.s];if(cs&&PALS[cs]&&Math.random()<.5)state[cs]=R(PALS[cs]);catPick[S.hairCat?'hair':S.wear]=en}
+ else if(S.cols){const c=S.cols.filter(c=>c!==state[S.id]);state[S.id]=R(c.length?c:S.cols)}
+ else{const o=(S.optsM&&state.sexe==='m'?S.optsM:S.opts).filter(o=>o!==state[S.id]);if(o.length)state[S.id]=R(o)}
+ state.name=n;refresh();toast(`${S.label} : tiré au sort`)}
 $('bRand').onclick=()=>{state=harmonious();refresh();toast('Nouvel avatar tiré au sort')};
 $('bReset').onclick=()=>{const n=state.name,nf=state.nom,sx=state.sexe,o=state.orient;state=clone(DEFAULT);if(BASE_LOOK[sx]){Object.assign(state,clone(BASE_LOOK[sx]));state.adj=clone(BASE_LOOK[sx].adj||DEFAULT.adj)}else state.dress='aucune';state.name=n;state.nom=nf;state.sexe=sx;state.orient=o;drawSubs();refresh();toast('Avatar réinitialisé')};
 $('bSave').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(state));cloudPush();toast(window.CLOUD&&window.CLOUD.user?'Avatar enregistré':'Avatar enregistré sur cet appareil')}catch(e){toast("Enregistrement impossible ici : copie plutôt le code")}};
@@ -5079,11 +5111,12 @@ function drawFam(){
  <div class="fam-fields"><div class="field"><label for="fr${i}">Rôle</label><select id="fr${i}" data-k="role">${ROLES.map(r=>`<option ${r===f.role?'selected':''}>${r}</option>`).join('')}</select></div>
  <div class="field"><label for="fn${i}">Prénom</label><input id="fn${i}" data-k="name" maxlength="20" value="${esc(f.name)}"></div>${me().nom?`<div class="field"><span class="lbl">Nom</span><span class="famname">${esc(me().nom)}</span></div>`:''}
  <div class="field"><label for="ft${i}">Caractère</label><select id="ft${i}" data-k="trait">${TRAITS.map(r=>`<option ${r===f.trait?'selected':''}>${r}</option>`).join('')}</select></div></div>
- <div class="fam-btns"><button class="btn small" type="button" data-look="${i}">Apparence</button><button class="btn small" type="button" data-rm="${i}" aria-label="Retirer ${esc(f.name)}">Retirer</button></div></div>`).join('')||'<p class="hint">Aucun membre pour l\'instant. Ajoute au moins une personne qui vit avec toi.</p>';
+ <div class="fam-btns"><button class="btn small fam-dice" type="button" data-fdice="${i}" aria-label="Tirer au sort l'apparence de ${esc(f.name)}" title="Apparence au hasard"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button><button class="btn small" type="button" data-look="${i}">Apparence</button><button class="btn small" type="button" data-rm="${i}" aria-label="Retirer ${esc(f.name)}">Retirer</button></div></div>`).join('')||'<p class="hint">Aucun membre pour l\'instant. Ajoute au moins une personne qui vit avec toi.</p>';
 }
 $('famList').addEventListener('change',e=>{const c=e.target.closest('.fam-card');if(!c)return;famDraft[+c.dataset.i][e.target.dataset.k]=e.target.value;if(e.target.dataset.k!=='name')drawFam()});
 $('famList').addEventListener('input',e=>{const c=e.target.closest('.fam-card');if(!c||e.target.dataset.k!=='name')return;famDraft[+c.dataset.i].name=e.target.value});
-$('famList').addEventListener('click',e=>{const lk=e.target.closest('[data-look]');if(lk){editFamLook(+lk.dataset.look);return}const b=e.target.closest('[data-rm]');if(!b)return;famDraft.splice(+b.dataset.rm,1);drawFam()});
+$('famList').addEventListener('click',e=>{const fd=e.target.closest('[data-fdice]');if(fd){const f=famDraft[+fd.dataset.fdice];f.av=null;f.seed=Math.floor(Math.random()*1e9);drawFam();return}const lk=e.target.closest('[data-look]');if(lk){editFamLook(+lk.dataset.look);return}const b=e.target.closest('[data-rm]');if(!b)return;famDraft.splice(+b.dataset.rm,1);drawFam()});
+$('famDiceAll').onclick=()=>{famDraft.forEach(f=>{f.av=null;f.seed=Math.floor(Math.random()*1e9)});drawFam();toast('Nouvelle famille tirée au sort')};
 $('famAdd').onclick=()=>{if(famDraft.length>=6){toast('6 membres maximum');return}famDraft.push({role:pickR(['Grande sœur','Grand frère','Grand-mère','Tante']),name:pickR(['Maryse','Josué','Ketty','Rudy','Léonie','Fabrice']),trait:pickR(TRAITS),seed:Math.floor(Math.random()*1e9)});drawFam()};
 $('famBack').onclick=()=>{$('famille').hidden=true;if(famEdit)showGame();else showAtelier()};
 $('famGo').onclick=()=>{
