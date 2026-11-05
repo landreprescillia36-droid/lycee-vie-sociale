@@ -3858,7 +3858,7 @@ function cPart(sub){const c=clsInit();c.part[sub]=(c.part[sub]||0)+1;G.cb+=.5}
    hist [{day,t,txt}], felic (dernier jour de félicitations). L'apparence vient de la capture de Prescillia. */
 const PROV={nom:'Mme Bellance',prenom:'Josette'};
 function provAv(){const s=normalize(Object.assign({},BASE_LOOK.f,{sexe:'f',name:'Josette',skin:'#e2ad85',hair:'deuxtresses',hairColor:'#8b8f98',iris:'#4c6549',eyes:'amande',brows:'epais',browColor:'#3d2a1f',
-  rides:'fines',cheeks:'rose',freckles:'legeres',earrings:'perles',necklace:'choker',top:'chemise',topColor:'#25262c',shoes:'basses',shoesColor:'#f4f1ea',mouth:'naturelle',bgColor:'#fde8d4'}));
+  rides:'fines',cheeks:'rose',freckles:'legeres',earrings:'perles',necklace:'choker',top:'chemcrop',topColor:'#25262c',shoes:'basses',shoesColor:'#f4f1ea',mouth:'naturelle',bgColor:'#fde8d4'}));
  return Object.assign(s,{bottom:'cordon',bottomColor:'#c8b08a',necklace:'choker'})}
 let PROV_AV=null;const provPic=(w)=>{PROV_AV=PROV_AV||provAv();return `<div class="prov-av" style="width:${w||84}px;height:${w||84}px">${render(PROV_AV,PVB,'prv'+(w||84),true)}</div>`};
 function provInit(){const v=vsInit();v.prov=v.prov||{};const p=v.prov;p.rep=p.rep??60;p.conv=p.conv||[];p.ret=p.ret||[];p.hist=p.hist||[];p.n=p.n||0;return p}
