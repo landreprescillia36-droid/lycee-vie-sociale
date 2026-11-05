@@ -214,7 +214,7 @@ function render(s,vb,p,showBg){
  const bx=55+a.browsX, by=cy-47+((F.bo||0)-eo)+a.browsY, bc=s.browColor||hD;
  o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),HART(s)&&!HART(s).ears?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),HART(s)&&!HART(s).ears?15:0)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -984,6 +984,19 @@ function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?
 /* coiffures garçons (décalquées sur la tête du jeu « ovale ») ajustées à la forme de tête choisie : largeur aux tempes et haut du crâne */
 const FHW={};function faceHW(d,y){const k=d+y;if(k in FHW)return FHW[k];const n=d.match(/-?[\d.]+/g).map(Number);let a=null,b=null;for(let i=0;i<n.length;i+=2){const X=n[i],Y=n[i+1],dd=Math.abs(Y-y);if(X<200){if(!a||dd<a[0])a=[dd,X]}else if(!b||dd<b[0])b=[dd,X]}return FHW[k]=a&&b?(b[1]-a[1])/2:94}
 function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i=1;i<n.length;i+=2)m=Math.min(m,n[i]);return m}
+/* garçons : implantation des cheveux aux tempes et sur les côtés du front — une masse continue qui suit le bord du crâne
+   jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
+   légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
+const TEMPLE={top:108,bot:186,inT:24,inB:4};
+function templeFill(s,p){if(s.sexe!=='m'||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
+ const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,-.12),c2=shade(base,-.35);
+ const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=4){const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=T.inT*(1-u)+T.inB*u,j=Math.sin(y*1.7+k)*1.6+Math.sin(y*.63)*1.1;
+   o.push([200+k*(hw+4),y]);I.push([200+k*(hw-inset+j),y])}
+  return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
+ return `<defs><filter id="${id}f" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency=".35" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.5"/><feGaussianBlur stdDeviation="1.1"/></filter>
+  <linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}"/><stop offset=".75" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".55"/></linearGradient></defs>
+  <g filter="url(#${id}f)">${[-1,1].map(k=>`<path d="${side(k)}" fill="url(#${id}g)"/>`).join('')}</g>`+
+  ''}
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
@@ -995,7 +1008,7 @@ function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let 
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
 const HAIR_FADE={gdeghaut:198};
-function sideburns(s,A,col,fit,cid){const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb')+'fd';
+function sideburns(s,A,col,fit,cid){return '';/* remplacé par templeFill (implantation continue aux tempes) */const vb=HAIR_FADE[s.hair]||192,id=(cid||'sb')+'fd';
  const grad=`<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="${fx(fit?205+(Math.min(...A.tempe.map(q=>q[1]))-205)*fit.sy-8:150)}" x2="0" y2="${vb}"><stop offset="0" stop-color="${col}" stop-opacity="1"/><stop offset=".7" stop-color="${col}" stop-opacity=".85"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient><filter id="${id}b" x="-30%" y="-10%" width="160%" height="120%"><feGaussianBlur stdDeviation="1.6"/></filter><pattern id="${id}p" width="3" height="3" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r=".7" fill="${shade(col,-.4)}" opacity=".5"/></pattern></defs>`;
  return grad+A.tempe.map(q0=>{const q=fit?[200+(q0[0]-200)*fit.sx,205+(q0[1]-205)*fit.sy]:q0,k=q[0]<200?-1:1,y0=q[1]-10;
  const P=[[q[0]-k*4,y0]];for(let v=y0;v<=vb;v+=5)P.push([faceEdge(s,v,k)+k*1.2,v]);
