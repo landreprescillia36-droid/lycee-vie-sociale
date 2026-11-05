@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='75';
+const APP_VERSION='76';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1642,7 +1642,7 @@ const BASE_LOOK={f:{face:'ovale',skin:SKIN[3],eyes:'amande',cils:'naturels',iris
  m:{face:'allonge',skin:SKIN[2],eyes:'amande',cils:'naturels',iris:IRIS[1],brows:'epais',nose:'petit',mouth:'remontante',cheeks:'aucune',freckles:'aucune',hair:'degrade',hairColor:HAIR[2],top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:BOTC[0],shoes:'basses',shoesColor:SHOEC[0],dress:'aucune',jacket:'aucune',earrings:'aucune',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine',glasses:'aucune',barbe:'aucune',bgPattern:'uni',bgColor:BGC[0],adj:{eyesY:0,eyesX:0,eyesS:1.1,browsY:0,browsX:0,mouthY:3,mouthS:1,noseY:6,noseS:1}}};
 const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
-$('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
+$('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);boucheSexe(state);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
 function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
 function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
@@ -1721,7 +1721,7 @@ function harmonious(){const s=clone(DEFAULT);s.dress='aucune';s.name=state.name;
  s.glasses=Math.random()<.25?pick(['rondes','carrees','dorees']):'aucune';
  s.taille=pick(['petite','moyenne','moyenne','grande']);s.corpulence=pick(['mince','moyenne','moyenne','moyenne','ronde','forte']);
  s.earrings=Math.random()<(boy?.1:.35)?(boy?'perles':pick(['anneaux','perles'])):'aucune';
- return s}
+ return boucheSexe(s)}
 /* dé de la catégorie ouverte : tire au sort seulement ce qui est affiché (coiffure, haut, bas, forme des yeux, couleur…) */
 function diceSub(){const S=TABS[tab].subs[sub];if(!S)return;const n=state.name,R=a=>a[Math.floor(Math.random()*a.length)];
  if(S.hairCat||S.wear){const L0=catList(S),L1=L0.filter(e=>e.set||!['aucune','aucun'].includes(e.v)&&!isAct(e,L0)),en=R(L1.length?L1:L0);if(!en)return;
@@ -2062,7 +2062,7 @@ function famAvatar(role,seed){
  if(/Père|Beau-père/.test(role)&&!old){s.barbe=p(['brb5j','brbcourte','brbmoyenne','brbcomplete','brbgoatee','brbmentonniere','brbtaillee','brbprecise','brbetendue']);s.barbeGris=1}
  else if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','brb5j','brbcourte','brbmoyenne','brbmoustache','brbgoatee','brbmentonniere','brbtaillee','brbfine']);
  if(adult){if(s.eyes==='grands')s.eyes=fem?'amande':'doux';s.cheeks='aucune';s.adj.eyesS=.92;s.adj.mouthY=2;s.hairColor=mix(s.hairColor,'#a8a39b',.16)}
- return basNeuf(s);
+ return boucheSexe(basNeuf(s));
 }
 
 /* ---------- photos ---------- */
@@ -2307,7 +2307,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{}}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}

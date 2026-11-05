@@ -28,6 +28,14 @@ for hid, (src, x0, y0, x1, y1) in zip(IDS, TILES):
     ex = np.abs(xx - (cx - X0)) / hw; ey = np.where(yy < cy - Y0, (cy - Y0 - yy) / up, (yy - (cy - Y0)) / dn)
     rr = np.sqrt(ex ** 6 + ey ** 2)   # bords arrondis, les commissures restent entières
     a = np.clip((1 - rr) / .35, 0, 1) ** 1.3
+    # la peau autour des lèvres devient transparente (sinon une ombre ou un halo apparaît sur les peaux du jeu) :
+    # on ne garde que ce qui s'écarte de la peau de la planche (lèvres, trait, ombre sous la lèvre)
+    lab = cv2.cvtColor(np.clip(crop, 0, 255).astype(np.uint8), cv2.COLOR_BGR2LAB).astype(np.float32)
+    slab = cv2.cvtColor(np.uint8([[np.clip(skin, 0, 255)]]), cv2.COLOR_BGR2LAB).astype(np.float32)[0, 0]
+    dE = np.sqrt(((lab - slab) ** 2 * np.array([.6, 1.4, 1.4])).sum(2))
+    keep = np.clip((dE - 3) / 6, 0, 1)
+    keep = cv2.GaussianBlur(keep, (0, 0), .8)
+    a = a * keep
     big = cv2.resize(np.dstack([crop, a * 255]), None, fx=S, fy=S, interpolation=cv2.INTER_CUBIC)
     cv2.imwrite(f'assets/bouches/{hid}.png', np.clip(big, 0, 255).astype(np.uint8), [cv2.IMWRITE_PNG_COMPRESSION, 9])
     # dents : gardées à part (pas recolorées avec la peau)
