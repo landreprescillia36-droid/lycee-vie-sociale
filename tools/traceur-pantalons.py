@@ -102,6 +102,12 @@ for n, x0, x1, ya, yb in P:
     yy, xx = np.where(add)
     xm = np.clip(2 * cx - xx, 0, w - 1); ok = m[yy, xm]
     out[yy[ok], xx[ok]] = a[yy[ok], xm[ok]]
+    # fond de la planche resté entre les jambes (près du centre) : repeint avec le tissu autour
+    band = np.abs(np.arange(w)[None, :] - cx) < 12
+    yy_ = np.arange(h)[:, None]; zone = (yy_ > t + (bt - t) * .1) & (yy_ < t + (bt - t) * .45)
+    hole = (full & band & zone & (dbg < (9 if n == 'lin' else 24))).astype(np.uint8)
+    hole = ndimage.binary_dilation(hole, iterations=1).astype(np.uint8) & full.astype(np.uint8)
+    if hole.any(): out = cv2.inpaint(out, hole, 4, cv2.INPAINT_TELEA)
     if n == 'lin':
         # pantalon crème presque de la couleur du fond : silhouette du pantalon à pattes larges (même coupe), posée
         # sur l'emprise du lin (haut de la ceinture, bas de l'ourlet, largeur à l'ourlet)
@@ -139,13 +145,14 @@ def smooth(v, sig=5):
     idx = np.arange(len(v)); v = np.interp(idx, idx[ok], v[ok])
     return ndimage.gaussian_filter1d(v, sig, mode='nearest')
 DEG = {'habpattes': 1, 'habdroit': 1, 'cargo': 1, 'jogglarge': 1, 'joggajust': 2, 'lin': 1}
-def straighten(n, img, sv):
+HEM = {'habpattes': 62, 'habdroit': 56, 'cargo': 58, 'jogglarge': 60, 'lin': 60}   # demi-largeur à l'ourlet (unités de l'avatar)
+def straighten(n, img, sv, sh):
     """jambes droites : les 4 bords des jambes (extérieur et intérieur, gauche et droite) suivent une droite
     (une courbe douce pour les joggings) ; chaque ligne est réétirée entre ces bords : plus de zigzag."""
     if n not in DEG: return img
     al = img[..., 3] > 127; H_, W_ = al.shape
     ys = [y for y in range(H_) if al[y].any()]; t, bt = ys[0], ys[-1]
-    y0 = int((500 - 376) / sv)            # sous les hanches
+    y0 = int(((445 if n in HEM else 500) - 376) / sv)            # sous les hanches
     yb = bt - 3
     E = {k: [] for k in ('l1', 'r1', 'l2', 'r2')}; Y2 = []; Y1 = []; EO = []
     for y in range(y0, yb):
@@ -174,20 +181,46 @@ def straighten(n, img, sv):
         if not rr: continue
         w = min(1, (y - y0) / 25)          # transition douce sous les hanches
         L, R = np.polyval(fo_l, y), np.polyval(fo_r, y)
-        hw_ = (R - L) / 2; L, R = CX - hw_, CX + hw_   # les deux jambes symétriques
+        hw_ = (R - L) / 2
+        if n in HEM:   # jambes droites et collées : le bord extérieur va en ligne droite des hanches jusqu'à l'ourlet, posé sur les pieds
+            h0 = (np.polyval(fo_r, y0) - np.polyval(fo_l, y0)) / 2; u = (y - y0) / max(1, bt - y0)
+            hw_ = h0 + (HEM[n] / sh - h0) * u
+        L, R = CX - hw_, CX + hw_   # les deux jambes symétriques
         L = rr[0][0] + (L - rr[0][0]) * w; R = rr[-1][1] + (R - rr[-1][1]) * w
         row = np.zeros((W_, 4), np.float32)
-        if fi_l is not None and y >= crotch:
+        if n in HEM and len(rr) >= 2 and rr[-1][0] - rr[0][1] > 1 and y >= crotch:
+            # jambes collées : même au-dessus de l'entrejambe, le fond visible entre les jambes de la planche disparaît
+            put(row, rr[0][0], rr[0][1] - 2.5, L, CX, y); put(row, rr[-1][0] + 2.5, rr[-1][1], CX, R, y)
+        elif fi_l is not None and y >= crotch:
             IL, IR = np.polyval(fi_l, y), np.polyval(fi_r, y)
             gw_ = (IR - IL) / 2; IL, IR = CX - gw_, CX + gw_
+            if n in HEM: IL = IR = CX   # jambes collées
             if IL >= IR - 1: IL = IR = (IL + IR) / 2
             wg = min(1, (y - crotch) / 30); mg = (IL + IR) / 2; IL = mg + (IL - mg) * wg; IR = mg + (IR - mg) * wg   # l'entrejambe s'ouvre en douceur
-            if len(rr) >= 2: sl, sr = (rr[0][0], rr[0][1]), (rr[-1][0], rr[-1][1])
+            if len(rr) >= 2 and rr[-1][0] - rr[0][1] > 3 and y > crotch + 15:
+                tr = 2.5 if n in HEM else 0   # on enlève le liseré clair du bord intérieur (fond de la planche)
+                sl, sr = (rr[0][0], rr[0][1] - tr), (rr[-1][0] + tr, rr[-1][1])
             else: mid = (rr[0][0] + rr[-1][1]) / 2; sl, sr = (rr[0][0], mid), (mid, rr[-1][1])
             put(row, sl[0], sl[1], L, IL, y); put(row, sr[0], sr[1], IR, R, y)
         else:
             put(row, rr[0][0], rr[-1][1], L, R, y)
         out[y] = row
+    if n in HEM:
+        # jambes collées : plus aucun jour entre les jambes (repeint avec le tissu autour)
+        al2 = out[..., 3] > 127; band = np.abs(xs[None, :] - CX) < 14
+        lft = np.maximum.accumulate(al2, axis=1); rgt = np.maximum.accumulate(al2[:, ::-1], axis=1)[:, ::-1]
+        hole = (~al2) & band & lft & rgt; hole[:y0] = False
+        # bande centrale sous l'entrejambe : le jour clair de la planche entre les jambes est repeint
+        c0 = max(y0, crotch - 30); cb = np.abs(xs[None, :] - CX) < 5
+        hole[c0:] |= (cb & lft & rgt)[c0:]
+        if hole.any():
+            rgb_ = np.clip(out[..., :3], 0, 255).astype(np.uint8)
+            rgb_ = cv2.inpaint(rgb_, hole.astype(np.uint8), 5, cv2.INPAINT_TELEA)
+            out[..., :3] = np.where(hole[..., None], rgb_, out[..., :3]); out[..., 3] = np.where(hole, 255, out[..., 3])
+        # couture entre les deux jambes (léger trait foncé)
+        ci = int(round(CX)); st0 = max(crotch, y0)
+        for y in range(st0, H_):
+            if out[y, ci, 3] > 127: out[y, ci, :3] *= .9
     return out
 
 def fit_body(n, img):
@@ -219,7 +252,7 @@ def fit_body(n, img):
         w2 = 0 if (yav < 560 or n != 'joggajust') else min(1, (yav - 560) / 100)   # seul le jogging ajusté (chevillères) suit la jambe ; les autres gardent leur forme, les pieds restent sous l'ourlet
         if w2 > 0: src = np.where(xs < cx, src - DL[y] * w2, src - DR[y] * w2)
         for c in range(4): out[y, :, c] = np.interp(src, xs, img[y, :, c], left=0, right=0)
-    out = straighten(n, out, sv)
+    out = straighten(n, out, sv, sh)
     # contour lissé (les marches d'escalier du détourage disparaissent)
     A_ = out[..., 3] / 255.
     B_ = cv2.GaussianBlur(A_.astype(np.float32), (0, 0), 1.6)
