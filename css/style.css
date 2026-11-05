@@ -498,3 +498,10 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .colpop-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;color:#263B55}
 .colrow{padding:6px 0;border-top:1px solid #e8eef5}.colrow>span{display:block;font:700 13px 'Nunito',sans-serif;color:#263B55;margin-bottom:4px}
 .colsw{display:flex;flex-wrap:wrap;gap:6px}.colsw .sw{width:30px;height:30px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #c9d6e3;cursor:pointer}.colsw .sw.on{box-shadow:0 0 0 3px #263B55}
+
+/* la proviseure : portrait, carte de retenue, agenda */
+.prov-pop{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 8px}
+.prov-av{border-radius:50%;overflow:hidden;box-shadow:0 2px 10px rgba(38,59,85,.2);background:#fde8d4;flex:0 0 auto}.prov-av svg{width:100%;height:100%;display:block}
+.prov-tag{font:800 12px 'Nunito',sans-serif;color:#fff;background:#c0544a;border-radius:999px;padding:3px 10px}
+.prov-ret{width:100%;padding:8px 12px}.prov-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8eef5}.prov-row:last-child{border-bottom:0}
+.prov-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}.prov-head>div:last-child{display:flex;flex-direction:column}

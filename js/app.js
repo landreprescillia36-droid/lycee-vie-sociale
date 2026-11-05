@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='70';
+const APP_VERSION='71';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2269,7 +2269,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();G.askd=G.askd||{}}
+if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -3853,8 +3853,86 @@ const CEV=[
 ];
 function cPart(sub){const c=clsInit();c.part[sub]=(c.part[sub]||0)+1;G.cb+=.5}
 /* pop-ups de vie scolaire : réveil le matin, choix avant chaque cours (et ramassage des devoirs) */
+/* ---------- la proviseure : convocations dans son bureau, retenues (heures de colle) jouables, agenda ----------
+   G.vs.prov : rep (réputation auprès d'elle, 0-100), conv [{id,day,motif,lvl,st:'due'|'faite'}], ret [{id,day,start,dur,motif,st:'prevue'|'faite'|'manquee',warn,appr}],
+   hist [{day,t,txt}], felic (dernier jour de félicitations). L'apparence vient de la capture de Prescillia. */
+const PROV={nom:'Mme Bellance',prenom:'Josette'};
+function provAv(){const s=normalize(Object.assign({},BASE_LOOK.f,{sexe:'f',name:'Josette',skin:'#e2ad85',hair:'deuxtresses',hairColor:'#8b8f98',iris:'#4c6549',eyes:'amande',brows:'epais',browColor:'#3d2a1f',
+  rides:'fines',cheeks:'rose',freckles:'legeres',earrings:'perles',necklace:'choker',top:'chemise',topColor:'#25262c',shoes:'basses',shoesColor:'#f4f1ea',mouth:'naturelle',bgColor:'#fde8d4'}));
+ return Object.assign(s,{bottom:'cordon',bottomColor:'#c8b08a',necklace:'choker'})}
+let PROV_AV=null;const provPic=(w)=>{PROV_AV=PROV_AV||provAv();return `<div class="prov-av" style="width:${w||84}px;height:${w||84}px">${render(PROV_AV,PVB,'prv'+(w||84),true)}</div>`};
+function provInit(){const v=vsInit();v.prov=v.prov||{};const p=v.prov;p.rep=p.rep??60;p.conv=p.conv||[];p.ret=p.ret||[];p.hist=p.hist||[];p.n=p.n||0;return p}
+const RET_APPR={bon:'Travail sérieux et attitude correcte pendant la retenue.',moyen:'Élève peu investi dans le travail demandé.',mauvais:'A de nouveau perturbé le bon déroulement de la retenue.'};
+const MOTIF_TXT={bavardage:'bavardages répétés en classe','téléphone en cours':'utilisation du téléphone en cours','sommeil en cours':'sommeil en classe',retards:'retards répétés','retards répétés':'retards répétés',
+ 'absences répétées':'absences injustifiées répétées','cours consécutifs séchés':'cours séchés','plusieurs absences dans la journée':'absences dans la même journée',bagarre:'bagarre dans la cour',insulte:'insultes envers un élève',
+ 'farce à un prof':'farce envers un professeur','zone interdite':'présence dans une zone interdite','dégradation':'dégradation du matériel','dispute entre groupes':'participation à une dispute entre groupes','devoir copié':'devoir copié',
+ 'retenue non effectuée':'retenue non effectuée','refus de travailler en retenue':'refus de travailler pendant la retenue'};
+const motifOf=k=>MOTIF_TXT[k]||k||'comportement perturbateur en classe';
+/* une faute (niveau 3 à 7) → convocation au bureau à la prochaine pause */
+function provConvoc(k,lvl){const p=provInit();if(p.conv.some(c=>c.st==='due'&&c.motif===k))return '';p.conv.push({id:++p.n,day:G.day,motif:k,lvl,st:'due'});p.rep=clamp(p.rep-3,0,100);
+ toast('📩 Convocation chez la proviseure à la prochaine pause');note(`Convocation chez la proviseure (${motifOf(k)})`);return ' : convocation chez la proviseure'}
+/* jour de la retenue : 1 h ou 2 h → prochain jour de cours à 17 h ; 4 h → mercredi suivant, de 17 h à 21 h */
+function retDay(dur){for(let d=G.day+1;d<G.day+30;d++){if(!schoolDay(d)||wdOf(d)>=5)continue;if(dur<4||wdOf(d)===2)return d}return G.day+2}
+function provSchedule(motif,dur){const p=provInit(),d=retDay(dur),r={id:++p.n,day:d,start:1020,dur,motif,st:'prevue'};p.ret.push(r);clsInit();G.cls.colles+=dur;return r}
+const retDate=r=>`${fmtDay(r.day,true)}`,retHeure=r=>`${fmtT(r.start)} – ${fmtT(r.start+r.dur*60)}`;
+function retCard(r){return `<div class="card prov-ret"><div class="prov-row"><span>Durée de la retenue</span><b>${r.dur} heure${r.dur>1?'s':''}</b></div><div class="prov-row"><span>Date</span><b>${retDate(r)}</b></div><div class="prov-row"><span>Horaire</span><b>${retHeure(r)}</b></div></div>`}
+/* pop-up « Vous êtes convoqué·e ! » à la prochaine pause, puis le bureau */
+function provNotice(c){vsPop({eb:'🏛️ Convocation au bureau de la proviseure',t:'Tu es convoqué·e !',html:provPic(96)+`<span class="prov-tag">Important</span>`,
+ b:`${PROV.nom}, la proviseure, souhaite te recevoir dans son bureau à la suite d'un incident signalé par l'équipe éducative. Tu dois te présenter à son bureau maintenant.\nMotif : ${motifOf(c.motif)}.`,
+ ch:[['Se rendre dans son bureau',()=>{provOffice(c);return KEEP}],['Ne pas y aller',()=>{c.st='faite';const p=provInit();p.rep=clamp(p.rep-10,0,100);p.hist.unshift({day:G.day,t:'⚠️',txt:'Convocation ignorée'});
+   return 'Tu ne te présentes pas au bureau… '+applyDisc('convocation ignorée',7)}]]})}
+function provOffice(c){const p=provInit(),n=provInit().hist.filter(h=>G.day-h.day<=30).length;
+ vsPop({eb:`🏛️ Bureau de ${PROV.nom}`,t:'« Asseyez-vous. »',html:provPic(110),
+  b:`« Je vous ai fait venir pour ${motifOf(c.motif)}. ${n?`Ce n'est pas la première fois ce mois-ci, et je commence à m'inquiéter.`:`Je préfère en parler avec vous avant que la situation ne s'aggrave.`} Quelle est votre version des faits ? »`,
+  ch:[['Reconnaître les faits',()=>provDecide(c,-1,'Tu reconnais les faits sans détour.')],['Présenter tes excuses',()=>provDecide(c,-1.5,'Tu présentes tes excuses.')],
+   ['Te justifier',()=>provDecide(c,Math.random()<.5?-.8:.3,'Tu expliques ce qui t\'a poussé·e à agir ainsi.')],['Contester les accusations',()=>Math.random()<.2?provDecide(c,-3,'Tu contestes avec des arguments solides.'):provDecide(c,1.2,'Tu contestes les accusations.')],
+   ['Garder le silence',()=>provDecide(c,.5,'Tu gardes le silence.')]]})}
+function provDecide(c,adj,said){const p=provInit(),v=vsInit(),rec=v.disc.filter(d=>G.day-d.day<=30).length;c.st='faite';
+ const sc=c.lvl+Math.floor(rec/3)+adj-(p.rep-60)/25;p.rep=clamp(p.rep+(adj<0?2:-4),0,100);
+ if(sc<3.2){p.hist.unshift({day:G.day,t:'🗣️',txt:`Avertissement (${motifOf(c.motif)})`});cBeh(1);return `${said} ${PROV.nom} : « Je vous donne un simple avertissement. Ne me décevez pas. »`}
+ if(sc>=8.6){p.hist.unshift({day:G.day,t:'🚫',txt:`Sanction lourde (${motifOf(c.motif)})`});return `${said} ${PROV.nom} : « C'est trop grave pour en rester là. » `+applyDisc(c.motif,8)}
+ const dur=sc<5.2?1:sc<7?2:4,r=provSchedule(c.motif,dur);p.hist.unshift({day:G.day,t:'⏰',txt:`Retenue de ${dur} h (${motifOf(c.motif)})`});
+ if(dur>=2)parentReact('colle');if(dur>=4)G.family.forEach(f=>famChange(f.id,-4));note(`Retenue de ${dur} h le ${retDate(r)} à ${fmtT(r.start)}`);
+ setTimeout(()=>provRetPop(r,said),0);return KEEP}
+function provRetPop(r,said){vsPop({eb:'⏰ Sanction disciplinaire · Retenue',t:'Tu as reçu une retenue !',html:provPic(84)+retCard(r),
+ b:`${said?said+'\n':''}À la suite de ton comportement, la proviseure a décidé de te sanctionner.\nMotif : ${motifOf(r.motif)}.\nTa présence est obligatoire. Toute absence injustifiée pourra entraîner une nouvelle sanction.${r.dur>=2?'\nTes parents sont prévenus.':''}`,
+ ch:[["J'ai compris",()=>({quiet:1})]]})}
+/* la retenue : une heure de colle jouable */
+function provRetStart(r){vsPop({eb:'⏰ Retenue',t:`C'est l'heure de ta retenue (${r.dur} h)`,b:`Salle d'étude, ${retHeure(r)}. Le surveillant fait l'appel.`,
+ ch:[['Y aller',()=>{provRetRoom(r);return KEEP}],['Ne pas y aller',()=>{r.st='manquee';const p=provInit();p.rep=clamp(p.rep-10,0,100);p.hist.unshift({day:G.day,t:'❌',txt:'Retenue non effectuée'});
+   return 'Tu ne te présentes pas à ta retenue… '+(provConvoc('retenue non effectuée',5)||'')}]]})}
+function provRetRoom(r){const late=vsInit().hw.find(h=>['todo','late'].includes(h.st)),mate=pickR(NPCS).id;
+ vsPop({eb:'⏰ Retenue · salle d\'étude',t:'Que fais-tu pendant la retenue ?',b:`Le surveillant distribue une feuille d'exercices. ${CNAME(mate)} est aussi en retenue, deux tables plus loin.`,
+  ch:[['Faire les exercices du surveillant',()=>provRetEnd(r,'bon',()=>{const k=pickR(Object.keys(SUBJ));return `Tu fais la feuille d'exercices ${/^[AEIOUÉH]/.test(SUBJ[k])?"d'":'de '}${SUBJ[k]}.`+` ${SUBJ[k]} +${cKnow(k,2+r.dur)} %`})],
+   ...(late?[[`Faire ton devoir en retard (${SUBJ[late.sub]})`,()=>provRetEnd(r,'bon',()=>{late.st='done';late.q=Math.max(late.q||0,.6);return `Tu termines ton devoir ${/^[AEIOUÉH]/.test(SUBJ[late.sub])?"d'":'de '}${SUBJ[late.sub]}.`})]]:[]),
+   ['Réviser tes cours',()=>provRetEnd(r,'bon',()=>{const k=pickR(Object.keys(SUBJ));G.studied[k]=1;return `Tu révises ${SUBJ[k]}. ${SUBJ[k]} +${cKnow(k,2+r.dur)} %`})],
+   ['Lire un livre',()=>provRetEnd(r,'moyen',()=>{G.energy=clamp(G.energy+5,0,100);return 'Tu lis tranquillement. +5 énergie.'})],
+   [`Discuter discrètement avec ${CNAME(mate)}`,()=>provRetEnd(r,Math.random()<.4?'mauvais':'moyen',()=>`Vous chuchotez en cachette.`+cRel(mate,4))],
+   ['Refuser de travailler',()=>provRetEnd(r,'mauvais',()=>Math.random()<.5?'Tu croises les bras. Le surveillant fait un rapport… '+(provConvoc('refus de travailler en retenue',5)||''):'Tu croises les bras et tu regardes l\'horloge.')]]})}
+function provRetEnd(r,q,fx){const p=provInit();r.st='faite';r.appr=RET_APPR[q];const t=fx();G.energy=clamp(G.energy-4*r.dur,0,100);
+ if(G.day===r.day&&G.min<r.start+r.dur*60){G.min=Math.min(1439,r.start+r.dur*60);G.phaseKey=null}
+ p.rep=clamp(p.rep+(q==='bon'?4:q==='mauvais'?-6:0),0,100);cBeh(q==='bon'?2:q==='mauvais'?-3:0);p.hist.unshift({day:G.day,t:'📝',txt:`Retenue de ${r.dur} h effectuée : « ${RET_APPR[q]} »`});
+ return `${t}\nFin de la retenue. Appréciation du surveillant : « ${RET_APPR[q]} »`}
+/* chaque minute de jeu : convocation à la pause, rappel et début des retenues, félicitations si le comportement s'améliore */
+function provTick(ph){const p=provInit();
+ const due=p.conv.find(c=>c.st==='due'&&(c.day<G.day||['recre','dej','soir'].includes(ph.type)));if(due&&['recre','dej','soir','matin','weekend'].includes(ph.type)&&!(ph.type==='soir'&&G.min>1200)){provNotice(due);return true}
+ for(const r of p.ret){if(r.st!=='prevue')continue;
+  if(r.day<G.day){r.st='manquee';p.rep=clamp(p.rep-10,0,100);p.hist.unshift({day:G.day,t:'❌',txt:'Retenue non effectuée'});provConvoc('retenue non effectuée',5);continue}
+  if(r.day===G.day&&!r.warn&&G.min>=r.start-90){r.warn=1;toast(`⏰ Retenue aujourd'hui à ${fmtT(r.start)}`)}
+  if(r.day===G.day&&G.min>=r.start){provRetStart(r);return true}}
+ const last=vsInit().disc.slice(-1)[0];
+ if(ph.type==='recre'&&p.hist.length&&last&&G.day-last.day>=21&&(!p.felic||G.day-p.felic>=30)){p.felic=G.day;p.rep=clamp(p.rep+10,0,100);cBeh(5);
+  vsPop({eb:`🏛️ ${PROV.nom}`,t:'« Je voulais vous féliciter »',html:provPic(96),b:`La proviseure t'arrête dans le couloir : « Je vois que vous faites des efforts depuis quelques semaines. Continuez comme ça, je suis fière de vous. »`,ch:[['Merci madame',()=>({quiet:1})]]});return true}
+ return false}
+const provRepTxt=r=>r>=75?'Elle a une très bonne opinion de toi':r>=55?'Neutre':r>=35?'Elle te surveille de près':'Elle n\'a plus confiance en toi';
+function provAgendaHTML(){const p=provInit(),up=[...p.conv.filter(c=>c.st==='due').map(c=>({d:c.day,t:`🏛️ Convocation · ${motifOf(c.motif)}`,w:'prochaine pause'})),...p.ret.filter(r=>r.st==='prevue').map(r=>({d:r.day,t:`⏰ Retenue de ${r.dur} h · ${motifOf(r.motif)}`,w:`${fmtDay(r.day,true)}, ${retHeure(r)}`}))];
+ return `<div class="sec-title">Agenda de la proviseure</div><div class="card list"><div class="prov-head">${provPic(56)}<div><b>${PROV.nom}</b><small class="muted">${provRepTxt(p.rep)}</small></div></div>
+  ${up.length?up.map(x=>`<div class="prof"><span>${x.t}</span><small class="muted">${x.w}</small></div>`).join(''):'<p class="muted">Aucun rendez-vous prévu.</p>'}
+  ${p.hist.length?`<span class="eyebrow" style="display:block;margin-top:8px">Historique</span>${p.hist.slice(0,12).map(h=>`<div class="prof"><span>${h.t} ${esc(h.txt)}</span><small class="muted">${fmtDay(h.day)}</small></div>`).join('')}`:''}</div>`}
+
 function vsTick(){if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase(),v=vsInit();if(v.expelled)return;
  if(ph.type==='matin'&&schoolDay(G.day)&&weekday()<5&&v.wake!==G.day){vsMorning();return}
+ if(provTick(ph))return;
  if(ph.type==='cours'&&v.bc!==ph.key){v.bc=ph.key;if(vsHome())return;hwCollect(ph);vsBeforeClass(ph)}}
 function classEventTick(n){
  if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase();if(ph.type!=='cours')return;
@@ -3888,27 +3966,25 @@ const BEH_TXT=v=>v>=80?'Exemplaire':v>=60?'Correct':v>=40?'À améliorer':'Préo
    Tous les pop-ups passent par vsPop (mêmes boutons que les événements de cours, temps en pause). */
 function vsInit(){G.vs=G.vs||{};const v=G.vs;v.abs=v.abs||[];v.late=v.late||[];v.sick=v.sick||{};v.skip=v.skip||{};v.hw=v.hw||[];v.disc=v.disc||[];v.hwn=v.hwn||0;return v}
 function vsPop(o){cevOpen=true;cevS={eb:o.eb||'🏫 Vie scolaire',x:{},ch:o.ch};
- openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${o.eb||'🏫 Vie scolaire'}</span><h2>${P(o.t)}</h2></div></div><p class="cev-txt">${P(o.b)}</p>
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${o.eb||'🏫 Vie scolaire'}</span><h2>${P(o.t)}</h2></div></div>${o.html?`<div class="prov-pop">${o.html}</div>`:''}<p class="cev-txt">${P(o.b).replace(/\n/g,'<br>')}</p>
   <div class="choices">${o.ch.map((ch,j)=>`<button class="choice" type="button" data-cev="${j}">${P(ch[0])}</button>`).join('')}</div>`)}
 const KEEP={keep:1};
 const vsHome=()=>{const v=vsInit();return !!(v.sick[G.day]||(v.excl&&G.day<=v.excl)||v.expelled)};
 const vsAbsent=ph=>{const v=vsInit();return !!(vsHome()||(ph&&v.skip[ph.key]))};
 
 /* ----- sanctions disciplinaires : du plus léger au plus grave ----- */
-const DISC=['Remarque du professeur','Avertissement oral','Confiscation du téléphone','Heure de colle','Plusieurs heures de colle','Convocation chez le CPE','Convocation chez le proviseur','Convocation des parents','Exclusion temporaire','Conseil de discipline','Exclusion définitive'];
+const DISC=['Remarque du professeur','Avertissement oral','Confiscation du téléphone','Heure de colle','Plusieurs heures de colle','Convocation chez le CPE','Convocation chez la proviseure','Convocation des parents','Exclusion temporaire','Conseil de discipline','Exclusion définitive'];
 const DISC_IC=['🗣️','⚠️','📵','⏰','⏰⏰','🚪','🏛️','👪','🚫','⚖️','⛔'];
 /* niveau = gravité de la faute + récidive (fautes des 30 derniers jours) + ajustement selon la réaction */
 function discLevel(g){const v=vsInit(),n=v.disc.filter(d=>G.day-d.day<=30).length;return clamp(Math.round(g+Math.floor(n/3)),0,10)}
 function applyDisc(k,lvl,who){const v=vsInit();lvl=clamp(Math.round(lvl),0,10);if(lvl<0)return '';v.disc.push({day:G.day,k,lvl});v.disc=v.disc.slice(-60);clsInit();G.st.caughtToday=true;
  cBeh(-(2+lvl*1.5));let x='';
  if(lvl===2)v.phoneDay=G.day;
- if(lvl===3||lvl===4){G.cls.colles+=lvl===4?3:1;G.energy=clamp(G.energy-10,0,100);parentReact('colle');x=lvl===4?' (3 heures, mercredi après-midi)':' (mercredi après-midi)'}
- if(lvl>=5&&lvl<=6)parentReact('carnet');
- if(lvl===7){parentReact('colle');G.family.forEach(f=>famChange(f.id,-6))}
+ if(lvl>=3&&lvl<=7){x=provConvoc(k,lvl);if(lvl>=5)parentReact('carnet');if(lvl===7)G.family.forEach(f=>famChange(f.id,-6))}/* la proviseure décide de la retenue dans son bureau */
  if(lvl===8){v.excl=G.day+2;G.family.forEach(f=>famChange(f.id,-10));x=' : 2 jours sans venir au lycée'}
  if(lvl===9){const heavy=v.disc.filter(d=>d.lvl>=8).length>=2;if(heavy){lvl=10}else{v.excl=G.day+5;x=' : exclusion de 5 jours avec sursis'}}
  if(lvl===10){v.expelled=G.day;setTimeout(expelledSheet,600)}
- if(lvl>=5)fPotins(`[Anonyme] : ${myHandle()} convoqué·e ${lvl>=6?'chez le proviseur':'chez le CPE'}… ça sent pas bon 👀`.replace('convoqué·e',P('convoqué·e')));
+ if(lvl>=5)fPotins(`[Anonyme] : ${myHandle()} convoqué·e chez la proviseure… ça sent pas bon 👀`.replace('convoqué·e',P('convoqué·e')));
  const m=`${DISC_IC[lvl]} ${DISC[lvl]}${x}`;note('Sanction : '+m+(k?' ('+k+')':''));return m}
 function expelledSheet(){cevOpen=true;cevS=null;openSheet(sheetHead('Exclusion définitive',"Le conseil de discipline a tranché.")+`<p class="cev-txt">${P("Après trop de problèmes cette année, tu es exclu·e définitivement du lycée. Ta dernière année s'arrête ici.")}</p><div class="row"><button class="gbtn" type="button" id="gRestartOk">Recommencer une partie</button></div>`)}
 /* faute grave surprise : le joueur choisit sa réaction avant la sanction */
@@ -4060,6 +4136,7 @@ function vieScolaireSheet(){const c=clsInit(),v=vsInit(),g=G.grades.slice(-30),a
   ${ind('📚','Devoirs',v.hw.filter(h=>['todo','late'].includes(h.st)).length+' à faire',`${v.hw.filter(h=>h.st==='rendu').length} rendus · ${v.hw.filter(h=>h.st==='nonrendu').length} non rendus`)}</div>
   <div class="row"><button class="gbtn ghost" type="button" data-hw="list">📚 Mes devoirs</button></div>
   <div class="sec-title">Appréciations des professeurs</div><div class="card list">${Object.keys(SUBJ).map(k=>`<div class="bul"><div class="prof"><span>${SUBJ[k]} <small class="muted">${PROFS[k][0]}</small></span></div><small class="muted">${profComment(k)}</small></div>`).join('')}</div>
+  ${provAgendaHTML()}
   <div class="sec-title">Sanctions</div>${dis.length?`<div class="card list">${dis.slice(0,15).map(d=>`<div class="prof"><span>${DISC_IC[d.lvl]} ${DISC[d.lvl]}<small class="muted"> · ${d.k||''}</small></span><small class="muted">${fmtDay(d.day,true)}</small></div>`).join('')}</div>`:'<p class="muted">Aucune sanction. Bravo !</p>'}`)}
 
 /* ---------- base de connaissances : Guadeloupe et fiche personnelle de chaque camarade ----------
