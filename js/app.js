@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='73';
+const APP_VERSION='74';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -195,18 +195,12 @@ function render(s,vb,p,showBg){
   o+=`<path d="${w}" fill="none" stroke="${skDD}" stroke-width="${rk===2?2.4:2.2}" stroke-linecap="round" opacity="${rk===2?.4:.34}"/>`}
  const nf={aucune:0,legeres:18,beaucoup:44}[s.freckles]??0;
  if(nf) o+=`<g fill="${skDD}" opacity=".5">`+FRECK.slice(0,nf).map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${(q[1]+a.eyesY*.4).toFixed(1)}" r="${q[2].toFixed(2)}"/>`).join('')+`</g>`;
- if(s.barbe&&s.barbe!=='aucune'){const my=285+mo+a.mouthY,bc=shade(hc,-.12),B=s.barbe;
-  const LOW=`M88,${my-52} C112,${my-24} 146,${my-24} 170,${my-17} C186,${my-13} 214,${my-13} 230,${my-17} C254,${my-24} 288,${my-24} 312,${my-52} L330,380 L70,380Z`;
-  const MO=`M176,${my-7} C184,${my-18} 195,${my-16} 200,${my-12} C205,${my-16} 216,${my-18} 224,${my-7} C215,${my-5} 207,${my-7} 200,${my-9} C193,${my-7} 185,${my-5} 176,${my-7}Z`;
-  const CH=`M182,${my+11} C190,${my+7} 210,${my+7} 218,${my+11} C220,${my+24} 213,${my+33} 200,${my+35} C187,${my+33} 180,${my+24} 182,${my+11}Z`;
-  o+=`<defs><clipPath id="${p}fcl"><path d="${F.d}"/></clipPath><clipPath id="${p}lowc"><path d="${LOW}"/></clipPath><pattern id="${p}bd" width="7" height="7" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1" fill="${bc}"/><circle cx="5.5" cy="5" r=".8" fill="${bc}"/></pattern></defs><g clip-path="url(#${p}fcl)">`;
-  if(B==='duvet')o+=`<path d="${LOW}" fill="url(#${p}bd)" opacity=".28"/><path d="${MO}" fill="${bc}" opacity=".22"/>`;
-  else if(B==='barbe3j')o+=`<path d="${LOW}" fill="${bc}" opacity=".22"/><path d="${LOW}" fill="url(#${p}bd)" opacity=".55"/><path d="${MO}" fill="${bc}" opacity=".35"/>`;
-  else if(B==='moustache')o+=`<path d="${MO}" fill="${bc}"/>`;
-  else if(B==='bouc')o+=`<path d="${MO}" fill="${bc}"/><path d="${CH}" fill="${bc}"/><path d="M196,${my+9} L200,${my+13} L204,${my+9}" fill="none" stroke="${bc}" stroke-width="3" stroke-linecap="round"/>`;
-  else if(B==='collier')o+=`<path d="${F.d}" fill="none" stroke="${bc}" stroke-width="20" clip-path="url(#${p}lowc)"/><path d="${CH}" fill="${bc}"/>`;
-  else if(B==='courte')o+=`<path d="${LOW}" fill="${bc}"/><path d="${LOW}" fill="url(#${p}bd)" opacity=".5" style="mix-blend-mode:multiply"/><path d="M110,${my-36} C140,${my-18} 170,${my-14} 182,${my-12} M290,${my-36} C260,${my-18} 230,${my-14} 218,${my-12}" fill="none" stroke="${shade(bc,.25)}" stroke-width="2" opacity=".35"/><path d="${MO}" fill="${shade(bc,-.1)}"/>`;
-  o+=`</g>`}
+ /* barbes : décalquées sur la planche de Prescillia (tools/traceur-barbes.py), reteintes à la couleur des cheveux */
+ if(s.barbe&&typeof BEARD_ART!=='undefined'&&BEARD_ART[s.barbe]){const B=BEARD_ART[s.barbe],[x,y,w,h,l0,lm,l1]=B,my=285+mo+a.mouthY,f='barbes/'+s.barbe,bh=shade(hc,-.3),dk=shade(hc,-.8),lt=shade(hc,.25),tab=[[],[],[]];
+  for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,bh,clamp((v-l0)/(lm-l0),0,1)):mix(bh,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
+  const T=hairTint(f,bh,tab),fid=p+'bdf';
+  if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
+  o+=`<image href="${T||`assets/${f}.png`}" data-hk="${f}|${bh}" x="${200+x}" y="${my+y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/>`}
  o+=`<g transform="translate(200,${252+no+a.noseY}) scale(${a.noseS})">${nose(s.nose,sk,skDD)}</g>`;
  o+=`<g transform="translate(200,${285+mo+a.mouthY}) scale(${a.mouthS})">${mouth(s.mouth,lip,sk,p)}</g>`;
  if(EYEART(s))o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'d',p)}</g><g transform="translate(${200-dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'g',p)}</g>`;
@@ -1028,7 +1022,7 @@ function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTIN
    for(let ch=0;ch<3;ch++)a[i*4+ch]=Math.round((T[ch][j]+(T[ch][j+1]-T[ch][j])*u)*255)}
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;
   document.querySelectorAll(`image[data-hk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('filter')})}catch(e){/* fichier ouvert en local (file://) : le filtre SVG reste */}};
- im.src=`assets/coiffures/${f}.png`;return null}
+ im.src=f.includes('/')?`assets/${f}.png`:`assets/coiffures/${f}.png`;return null}
 /* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
    recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
 const HAIR_PEAU=new Set(['bafro','bafro-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
@@ -1280,7 +1274,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En c�
  bouton:'Bouton',rond:'Rond doux',naturel:'Naturel',doux:'Doux',petit:'Petit',pointu:'Fin',aucun:'Aucun',
  gfermee:'Fermée',gfine:'Fine',gmoyenne:'Moyenne',glarge:'Large',gpleine:'Pleine',gsourirel:'Sourire léger',gsourire:'Sourire',ggrand:'Grand sourire',gneutre:'Neutre',gserieux:'Sérieux',gnasale:'Bouche nasale',
  fine:'Fine',moyenne:'Moyenne',pleine:'Pleine',coeur:'En cœur',rectangle:'Rectangulaire',ronde:'Ronde',pulpeuse:'Légèrement pulpeuse',trespulpeuse:'Très pulpeuse',asymetrique:'Asymétrique',superfine:'Avec une lèvre supérieure fine',inferieure:'Avec une lèvre inférieure plus pleine',tombante:'Aux commissures tombantes',remontante:'Aux commissures remontantes',entrouverte:'Bouche légèrement ouverte',fermee:'Bouche fermée',glossy:'Style glossy',mat:'Style mat',ombre:'Style ombré',glosscentre:'Avec gloss au centre',naturelle:'Naturelle',
- fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
+ fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',brb5j:'Barbe légère (5 jours)',brbcourte:'Barbe courte',brbmoyenne:'Barbe moyenne',brbcomplete:'Barbe complète',brbgoatee:'Barbe en boucle (goatee)',brbmoustmenton:'Moustache + menton',brbmoustache:'Moustache seule',brbmentonniere:'Barbe en mentonnière',brbetendue:'Barbe étendue',brbtaillee:'Barbe taillée (contour carré)',brbprecise:'Barbe courte taillée (contour précis)',brbfine:'Barbe fine',brbpatchy:'Barbe légère (patchy)',brbsoul:'Soul patch',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
  grands:'Grands',brillants:'Brillants',amande:'Amandes',ronds:'Ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
  amandelong:'En amande allongés',enfonces:'Enfoncés',sortants:'Sortants',petits:'Petits',tombantes:'Paupières tombantes',monolides:'Paupières monolides',releves:'Aux coins relevés',espaces:'Espacés',recourbes:'Recourbés',
  naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',
@@ -1514,7 +1508,7 @@ const TABS=[
   {id:'nose',label:'Nez',opts:['bouton','rond','petit','pointu','aucun'],vb:hv('150 208 100 80'),adj:'nose'},
   {id:'mouth',label:'Bouche',opts:MOUTHS_F,optsM:MOUTHS_G,vb:hv('145 248 110 76'),adj:'mouth'},
   {id:'freckles',label:'Taches de rousseur',opts:['aucune','legeres','beaucoup'],vb:hv('115 195 170 95')},
-  {id:'barbe',label:'Barbe',noF:1,opts:['aucune','duvet','barbe3j','moustache','bouc','collier','courte'],vb:hv('100 215 200 125')}]},
+  {id:'barbe',label:'Barbe',noF:1,opts:['aucune','brb5j','brbcourte','brbmoyenne','brbcomplete','brbgoatee','brbmoustmenton','brbmoustache','brbmentonniere','brbetendue','brbtaillee','brbprecise','brbfine','brbpatchy','brbsoul'],vb:hv('100 215 200 125')}]},
  {label:'Yeux',subs:[
   {id:'eyes',label:'Forme',opts:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART):Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
   {id:'cils',label:'Cils',opts:typeof EYE_LASHES!=='undefined'?EYE_LASHES:['naturels'],vb:hv('112 155 176 100')},
@@ -1559,7 +1553,8 @@ const MOUTH_GF={fine:'gfine',moyenne:'gmoyenne',pleine:'gpleine',remontante:'gso
 function boucheSexe(s){if(typeof MOUTH_ART==='undefined')return s;const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
-function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];return s}
+const BARBE_OLD={duvet:'brbpatchy',barbe3j:'brb5j',moustache:'brbmoustache',bouc:'brbgoatee',collier:'brbmentonniere',courte:'brbcourte'};
+function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];if(s&&BARBE_OLD[s.barbe])s.barbe=BARBE_OLD[s.barbe];return s}
 let state=(()=>{try{const v=localStorage.getItem(KEY);return v?normalize(JSON.parse(v)):normalize(DEFAULT)}catch(e){return normalize(DEFAULT)}})();
 /* joues, rides et baby hairs ne se choisissent plus dans l'atelier : on les retire de l'avatar du joueur */
 Object.assign(state,{cheeks:'aucune',rides:'aucune',edges:'aucun'});
@@ -2022,7 +2017,7 @@ function famAvatar(role,seed){
  s.top=old?p(['chemise','colroule']):p(['tshirt','chemise','capuche','colroule']);const c=p(COMBOS);s.topColor=c[0];s.bgColor=c[1];s.bgPattern='uni';
  s.sexe=fem?'f':'m';s.bottom=p(fem&&!old?['droit','flare','large','jupe']:['droit','large']);s.bottomColor=p(BOTC.slice(0,7));s.shoes=p(old?['basses','retro']:['basses','running','retro','sandales']);s.shoesColor=p(SHOEC.slice(0,4));
  s.glasses=old&&r()<.6?'dorees':r()<.15?'rondes':'aucune';s.earrings=fem&&r()<.5?p(['perles','anneaux']):'aucune';
- if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','barbe3j','courte','moustache','bouc','collier']);
+ if(!fem&&(adult||old))s.barbe=p(['aucune','aucune','brb5j','brbcourte','brbmoyenne','brbmoustache','brbgoatee','brbmentonniere','brbtaillee','brbfine']);
  if(adult){if(s.eyes==='grands')s.eyes=fem?'amande':'doux';s.cheeks='aucune';s.adj.eyesS=.92;s.adj.mouthY=2;s.hairColor=mix(s.hairColor,'#a8a39b',.16)}
  return basNeuf(s);
 }
