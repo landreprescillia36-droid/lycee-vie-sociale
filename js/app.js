@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='72';
+const APP_VERSION='73';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3188,7 +3188,7 @@ function hudTick(){
  const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if(!G.paused&&!document.hidden&&!cevOpen)advance(mg?1:(G.speed||1))},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if(!G.paused&&!document.hidden&&!cevOpen&&!(mg&&mg.paused))advance(mg?1:(G.speed||1))},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -3589,7 +3589,7 @@ function drawView(){
 function drawGame(){drawHUD();drawStories();drawNav();drawView()}
 
 /* ---------- fiches et interactions ---------- */
-function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
+function openSheet(html,full){$('sheetBody').className='sheet'+(full?' full':'')+(mg&&mg.paused?' mg-paused':'');$('sheetBody').innerHTML=html;$('sheet').hidden=false;$('sheetBody').scrollTop=0}
 function closeSheet(){if(cevS&&cevShown())return;cevS=null;cevOpen=false;$('sheetBody').onclick=null;clearTimeout(svTimer);miniStop();const wasStory=!!sv;sv=null;cm=null;chat=null;talk=null;$('sheet').hidden=true;if(wasStory)drawStories();if(!$('game').hidden){drawNav();if(view==='messages'||view==='mates'||view==='day')drawView()}}
 $('sheet').addEventListener('click',e=>{if(e.target.id==='sheet'&&cevS&&cevShown())return;if(e.target.id==='sheet'||e.target.closest('[data-close]'))closeSheet()});
 
@@ -4116,7 +4116,7 @@ function hwSheet(){const v=vsInit(),L=v.hw.slice().reverse();
   ${['todo','late'].includes(h.st)?`<div class="chips" style="margin-top:6px"><button class="chip" type="button" data-hw="do" data-hid="${h.id}">✍️ Faire maintenant</button><button class="chip" type="button" data-hw="help" data-hid="${h.id}">🤝 Demander de l'aide</button><button class="chip" type="button" data-hw="copy" data-hid="${h.id}">📋 Copier</button><button class="chip" type="button" data-hw="skip" data-hid="${h.id}">🙅 Ne pas le faire</button></div>`:''}</div>`).join('')}</div>`:'<p class="muted">Aucun devoir pour le moment. Les profs en donnent après certains cours.</p>'))}
 function hwAct(a,hid){const v=vsInit(),h=v.hw.find(x=>x.id===+hid);if(a==='list'){hwSheet();return}if(!h)return;
  if(a==='do'){if(G.energy<8){toast("Pas assez d'énergie");return}G.energy=clamp(G.energy-8,0,100);
-  playMini({sub:h.sub,n:3,title:`Devoir de ${SUBJ[h.sub]}`},sc=>{h.q=clamp(sc*.7+G.know[h.sub]/100*.3,0,1);h.st='done';cKnow(h.sub,3);G.studied[h.sub]=1;note(`Devoir de ${SUBJ[h.sub]} terminé (${Math.round(h.q*100)} %)`);
+  playMini({sub:h.sub,n:3,pausable:1,title:`Devoir de ${SUBJ[h.sub]}`},sc=>{h.q=clamp(sc*.7+G.know[h.sub]/100*.3,0,1);h.st='done';cKnow(h.sub,3);G.studied[h.sub]=1;note(`Devoir de ${SUBJ[h.sub]} terminé (${Math.round(h.q*100)} %)`);
    miniResult('Devoir terminé',`${SUBJ[h.sub]} · qualité ${Math.round(h.q*100)} % · à rendre le ${fmtDay(h.due,true)}`);saveG();drawHUD();drawView()});return}
  if(a==='skip'){h.st=G.day>=h.due?'nonrendu':'late';h.skip=1;if(h.st==='nonrendu')cAppr(h.sub,-3);toast('Tu laisses tomber ce devoir…');saveG();hwSheet();return}
  const L=NPCS.slice().sort((x,y)=>G.rel[y.id].ami-G.rel[x.id].ami).slice(0,5).map(n=>n.id);
@@ -4442,12 +4442,14 @@ const MINI_NAME={quiz:'Quiz',memoire:'Memory',reflexes:'Réflexes'};
 let mg=null;
 function miniStop(){if(mg){clearInterval(mg.timer);mg=null}}
 function miniEnd(score){if(!mg)return;const m=mg;clearInterval(m.timer);mg=null;m.done(clamp(score,0,1),m)}
-function miniTick(){if(!mg)return;mg.left-=.1;const b=$('mgBar');if(b)b.style.width=Math.max(0,mg.left/mg.t*100)+'%';const n=$('mgSec');if(n)n.textContent=Math.ceil(Math.max(0,mg.left))+' s';
+function miniTick(){if(!mg||mg.paused)return;mg.left-=.1;const b=$('mgBar');if(b)b.style.width=Math.max(0,mg.left/mg.t*100)+'%';const n=$('mgSec');if(n)n.textContent=Math.ceil(Math.max(0,mg.left))+' s';
  if(mg.left<=0){mg.kind==='quiz'?miniEnd(mg.ok/mg.Q.length):mg.kind==='memoire'?miniEnd(mg.found/mg.P.length*.9):miniEnd(mg.hits/mg.goal)}}
-const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div><b id="mgSec" class="mg-sec"></b></div><div class="bar mg-bar"><i id="mgBar" style="width:100%"></i></div>`;
+const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div>${mg&&mg.pausable?`<button class="mg-pause" type="button" data-mgpause aria-label="${mg.paused?'Reprendre':'Mettre en pause'}">${mg.paused?'▶':'❚❚ Pause'}</button>`:''}<b id="mgSec" class="mg-sec">${mg?Math.ceil(Math.max(0,mg.left))+' s':''}</b></div><div class="bar mg-bar"><i id="mgBar" style="width:${mg?Math.max(0,mg.left/mg.t*100):100}%"></i></div>${mg&&mg.pausable?`<div class="mg-pausebox"><p>❚❚ Devoir en pause</p><p class="muted">Le temps est arrêté. Les questions sont cachées.</p><button class="gbtn" type="button" data-mgpause>▶ Reprendre</button></div>`:''}`;
+/* pause : seulement pour les devoirs (o.pausable) */
+function mgPause(){if(!mg||!mg.pausable)return;mg.paused=!mg.paused;const b=$('sheetBody');b.classList.toggle('mg-paused',mg.paused);const k=b.querySelector('.mg-pause');if(k){k.textContent=mg.paused?'▶':'❚❚ Pause';k.setAttribute('aria-label',mg.paused?'Reprendre':'Mettre en pause')}}
 /* opts : {sub, subs (évaluation : une question par matière), title, n, t} */
 function playMini(o,done){miniStop();const subs=o.subs||[o.sub],kind=o.subs||o.lv?'quiz':MINI_KIND(o.sub);
- mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub,lv:o.lv};mg.left=mg.t;
+ mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub,lv:o.lv,pausable:!!o.pausable};mg.left=mg.t;
  if(kind==='quiz'){mg.Q=o.subs?subs.map(s=>{const q=quizFor(s,1)[0];q.sub=s;return q}):o.lv?mgPick(o.sub,o.lv,o.n||5):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
  else if(kind==='memoire'){const P=shuf(PAIRS[o.sub]).slice(0,6);mg.P=P;mg.cards=shuf(P.flatMap((p,i)=>[{i,t:p[0]},{i,t:p[1]}]));mg.open=[];mg.found=0;mg.tries=0;drawMemo()}
  else{mg.hits=0;mg.goal=10;drawReflex()}
@@ -4929,7 +4931,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
  {const b=t.closest('[data-hw],[data-ask],[data-askopen],[data-pback]');if(b){if(b.dataset.hw)hwAct(b.dataset.hw,b.dataset.hid);else if(b.dataset.ask)askDo(b.dataset.id,b.dataset.ask);else if(b.dataset.askopen)askSheet(b.dataset.askopen);else openPerson(b.dataset.pback);return}}
  if(igClick(t))return;
- {let m;if(m=t.closest('[data-mglv]')){const f=mgLevelGo;mgLevelGo=null;if(f)f(m.dataset.mglv);return}if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
+ {let m;if(m=t.closest('[data-mglv]')){const f=mgLevelGo;mgLevelGo=null;if(f)f(m.dataset.mglv);return}if(t.closest('[data-mgpause]')){mgPause();return}if(m=t.closest('[data-mgq]')){quizPick(m.dataset.mgq,m);return}if(m=t.closest('[data-mgc]')){memoPick(+m.dataset.mgc);return}if(t.closest('[data-mgball]')){reflexHit();return}
   if(m=t.closest('[data-clubbig]')){clubBig(m.dataset.clubbig);return}
   if(m=t.closest('[data-tutortalk]')){tutorTalk(+m.dataset.tutortalk);return}
   if(t.closest('[data-revquick]')){const w=Object.keys(SUBJ).sort((a,b)=>G.know[a]-G.know[b]).slice(0,3);revise(pickR(w));return}}

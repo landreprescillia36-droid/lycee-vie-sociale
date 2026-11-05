@@ -366,6 +366,12 @@ body.playing{background:var(--g-bg)}
 /* mini-jeux */
 .mg-sec{font:800 18px var(--display,var(--body));color:var(--g-ink);min-width:44px;text-align:right}
 .mg-bar{height:8px}
+.mg-pause{min-width:44px;min-height:44px;margin-right:6px;border:0;border-radius:12px;background:var(--g-soft,rgba(255,255,255,.12));color:var(--g-ink);font:800 14px var(--display,var(--body));padding:0 12px;cursor:pointer;white-space:nowrap}
+.mg-pausebox{display:none;text-align:center;padding:28px 12px}
+.mg-pausebox .muted{margin:0 0 16px}
+.mg-pausebox p:first-child{font:800 20px var(--display,var(--body));margin:0 0 6px}
+.sheet.mg-paused>*:not(.who):not(.mg-bar):not(.mg-pausebox){display:none!important}
+.sheet.mg-paused .mg-pausebox{display:block}
 .mg-q{font-size:18px;font-weight:700}
 .choice.mg-good{border-color:#3fcf8e;background:#e3f4ea}
 .choice.mg-bad{border-color:#ff7a6b;background:#f9e6e0}
