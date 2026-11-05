@@ -314,7 +314,7 @@ function nose(t,sk,skDD){
  }}
 /* bouches décalquées sur la planche de Prescillia (MOUTH_ART, js/bouches-art.js) : vrais pixels du dessin ;
    la couleur des lèvres suit la peau (même rapport que lip=mix(peau, rose) entre la peau du joueur et celle du modèle) */
-const MOUTHS=typeof MOUTH_ART!=='undefined'?Object.keys(MOUTH_ART):['naturelle'],MOUTHS_G=MOUTHS.filter(k=>/^g[a-z]/.test(k)&&MOUTH_ART[k].length>4),MOUTHS_F=MOUTHS.filter(k=>!MOUTHS_G.includes(k)),MOUTH_REF_SKIN='#a65e3f',MOUTH_OLD={sourire:'remontante',grand:'entrouverte',neutre:'fermee',surpris:'entrouverte',malicieux:'asymetrique',moue:'ronde'};
+const MOUTHS=typeof MOUTH_ART!=='undefined'?Object.keys(MOUTH_ART):['naturelle'],MOUTHS_G=MOUTHS.filter(k=>/^g[a-z]/.test(k)&&MOUTH_ART[k].length>4&&k!=='ggrand')/* grand sourire retiré (demande de Prescillia) */,MOUTHS_F=MOUTHS.filter(k=>!MOUTHS_G.includes(k)&&k!=='ggrand'),MOUTH_REF_SKIN='#a65e3f',MOUTH_OLD={sourire:'remontante',grand:'entrouverte',neutre:'fermee',surpris:'entrouverte',malicieux:'asymetrique',moue:'ronde'};
 const MOUTH_TEETH=['ggrand'];
 function mouth(t,lip,sk,p){
  if(typeof MOUTH_ART==='undefined')return '';
@@ -1583,8 +1583,8 @@ function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anne
  if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace===co&&s.glasses==='aucune'&&s.earrings===bo)return s;return {...s,hat:'aucun',bag:'aucun',necklace:co,glasses:'aucune',earrings:bo}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(boucheSexe(s))}
 /* bouches : les garçons ont les bouches de leur planche, les filles celles de la leur */
-const MOUTH_GF={fine:'gfine',moyenne:'gmoyenne',pleine:'gpleine',remontante:'gsourirel',fermee:'gfermee',naturelle:'gmoyenne',superfine:'gfine',rectangle:'glarge',entrouverte:'ggrand'};
-function boucheSexe(s){if(typeof MOUTH_ART==='undefined')return s;const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
+const MOUTH_GF={fine:'gfine',moyenne:'gmoyenne',pleine:'gpleine',remontante:'gsourirel',fermee:'gfermee',naturelle:'gmoyenne',superfine:'gfine',rectangle:'glarge',entrouverte:'gsourire'};
+function boucheSexe(s){if(typeof MOUTH_ART==='undefined')return s;if(s.mouth==='ggrand')s.mouth='gsourire';const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
 const BARBE_OLD={duvet:'brbpatchy',barbe3j:'brb5j',moustache:'brbmoustache',bouc:'brbgoatee',collier:'brbmentonniere',courte:'brbcourte'};
