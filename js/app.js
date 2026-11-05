@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='79';
+const APP_VERSION='80';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2800,7 +2800,7 @@ function flushPend(){/* une fête déjà passée ne s'affiche plus */G.pend=(G.p
 const sheetHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2>${sub?`<p class="muted" style="margin:2px 0 0">${sub}</p>`:''}</div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`;
 const gradeRows=o=>Object.keys(SUBJ).filter(k=>o[k]!=null).map(k=>`<div class="prof"><span>${SUBJ[k]}</span><b>${fmtG(o[k])}/20</b></div>`).join('');
 function evalSheet(e){return sheetHead(`Évaluation du jour ${e.sd}`,`Trimestre ${e.tri} · note globale ${fmtG(e.glob)}/20`)+`<div class="card list">${gradeRows(e.grades)}</div><p class="muted">Chaque note vient de tes chances de réussite dans la matière au moment de l'évaluation.</p>`}
-function evalCatch(){const wd=weekday();let d=G.day;if(wd===4&&G.min<1020)d-=7;else if(wd!==4)d-=wd>4?wd-4:wd+3;const sd=d>=1?schoolDay(d):null;if(sd&&sd<=TRI_END[2]&&!G.evals.some(e=>e.sd===sd))runEval(sd)}
+function evalCatch(){if(mg&&mg.until&&G.min>=mg.until)miniTick();/* copie ramassée à 17 h, avant le calcul des notes */const wd=weekday();let d=G.day;if(wd===4&&G.min<1020)d-=7;else if(wd!==4)d-=wd>4?wd-4:wd+3;const sd=d>=1?schoolDay(d):null;if(sd&&sd<=TRI_END[2]&&!G.evals.some(e=>e.sd===sd))runEval(sd)}
 function runEval(sdArg){
  const sd=sdArg||schoolDay(G.day);if(!sd||sd>TRI_END[2]||G.evals.some(e=>e.sd===sd))return;
  const bon=(G.evalBonus||{})[schoolDayToCal(sd)]||{},grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=clamp(Math.round((examGrade(k)+(bon[k]||0)+mgBonus(k))*2)/2,0,20);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
@@ -3230,7 +3230,7 @@ function hudTick(){
  const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
  if(changed)drawHUD();
 }
-setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if(!G.paused&&!document.hidden&&!cevOpen&&!(mg&&mg.paused))advance(mg?1:(G.speed||1))},1000);
+setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if((!G.paused||mg&&mg.until)&&!document.hidden&&!cevOpen&&!(mg&&mg.paused))advance(mg?1:(G.speed||1))},1000);
 
 /* ---------- stories ---------- */
 function drawStories(){
@@ -4550,15 +4550,15 @@ const MINI_NAME={quiz:'Quiz',memoire:'Memory',reflexes:'Réflexes'};
 let mg=null;
 function miniStop(){if(mg){clearInterval(mg.timer);mg=null}}
 function miniEnd(score){if(!mg)return;const m=mg;clearInterval(m.timer);mg=null;m.done(clamp(score,0,1),m)}
-function miniTick(){if(!mg||mg.paused)return;mg.left-=.1;const b=$('mgBar');if(b)b.style.width=Math.max(0,mg.left/mg.t*100)+'%';const n=$('mgSec');if(n)n.textContent=Math.ceil(Math.max(0,mg.left))+' s';
+function miniTick(){if(!mg||mg.paused)return;if(mg.until)mg.left=mg.until-G.min;else mg.left-=.1;const b=$('mgBar');if(b)b.style.width=Math.max(0,mg.left/mg.t*100)+'%';const n=$('mgSec');if(n)n.textContent=mg.until?fmtT(G.min):Math.ceil(Math.max(0,mg.left))+' s';
  if(mg.left<=0){mg.kind==='quiz'?miniEnd(mg.ok/mg.Q.length):mg.kind==='memoire'?miniEnd(mg.found/mg.P.length*.9):miniEnd(mg.hits/mg.goal)}}
-const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div>${mg&&mg.pausable?`<button class="mg-pause" type="button" data-mgpause aria-label="${mg.paused?'Reprendre':'Mettre en pause'}">${mg.paused?'▶':'❚❚ Pause'}</button>`:''}<b id="mgSec" class="mg-sec">${mg?Math.ceil(Math.max(0,mg.left))+' s':''}</b></div><div class="bar mg-bar"><i id="mgBar" style="width:${mg?Math.max(0,mg.left/mg.t*100):100}%"></i></div>${mg&&mg.pausable?`<div class="mg-pausebox"><p>❚❚ Devoir en pause</p><p class="muted">Le temps est arrêté. Les questions sont cachées.</p><button class="gbtn" type="button" data-mgpause>▶ Reprendre</button></div>`:''}`;
+const mgHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2><p class="muted" style="margin:2px 0 0">${sub}</p></div>${mg&&mg.pausable?`<button class="mg-pause" type="button" data-mgpause aria-label="${mg.paused?'Reprendre':'Mettre en pause'}">${mg.paused?'▶':'❚❚ Pause'}</button>`:''}<b id="mgSec" class="mg-sec">${mg?(mg.until?fmtT(G.min):Math.ceil(Math.max(0,mg.left))+' s'):''}</b></div><div class="bar mg-bar"><i id="mgBar" style="width:${mg?Math.max(0,mg.left/mg.t*100):100}%"></i></div>${mg&&mg.pausable?`<div class="mg-pausebox"><p>❚❚ Devoir en pause</p><p class="muted">Le temps est arrêté. Les questions sont cachées.</p><button class="gbtn" type="button" data-mgpause>▶ Reprendre</button></div>`:''}`;
 /* pause : seulement pour les devoirs (o.pausable) */
 function mgPause(){if(!mg||!mg.pausable)return;mg.paused=!mg.paused;const b=$('sheetBody');b.classList.toggle('mg-paused',mg.paused);const k=b.querySelector('.mg-pause');if(k){k.textContent=mg.paused?'▶':'❚❚ Pause';k.setAttribute('aria-label',mg.paused?'Reprendre':'Mettre en pause')}}
 /* opts : {sub, subs (évaluation : une question par matière), title, n, t} */
 function playMini(o,done){miniStop();const subs=o.subs||[o.sub],kind=o.subs||o.lv?'quiz':MINI_KIND(o.sub);
- mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub,lv:o.lv,pausable:!!o.pausable};mg.left=mg.t;
- if(kind==='quiz'){mg.Q=o.subs?subs.map(s=>{const q=quizFor(s,1)[0];q.sub=s;return q}):o.lv?mgPick(o.sub,o.lv,o.n||5):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
+ mg={kind,t:o.t||(kind==='quiz'?30:kind==='memoire'?45:20),done,title:o.title,sub:o.sub,lv:o.lv,pausable:!!o.pausable,until:o.until};if(o.until)mg.t=Math.max(1,o.until-G.min);/* temps en minutes du jeu (1 s = 1 min) */mg.left=mg.t;
+ if(kind==='quiz'){mg.Q=o.subs?shuf(subs.flatMap(s=>quizFor(s,o.per||1).map(q=>{q.sub=s;return q}))):o.lv?mgPick(o.sub,o.lv,o.n||5):quizFor(o.sub,o.n||5);mg.i=0;mg.ok=0;mg.res=[];drawQuiz()}
  else if(kind==='memoire'){const P=shuf(PAIRS[o.sub]).slice(0,6);mg.P=P;mg.cards=shuf(P.flatMap((p,i)=>[{i,t:p[0]},{i,t:p[1]}]));mg.open=[];mg.found=0;mg.tries=0;drawMemo()}
  else{mg.hits=0;mg.goal=10;drawReflex()}
  mg.timer=setInterval(miniTick,100);miniTick()}
@@ -4590,9 +4590,10 @@ function classGame(ph){const go=lv=>{G.acts--;G.energy=clamp(G.energy-ACTS.exo.e
   miniResult(scoreLbl(sc),`Score ${Math.round(sc*100)} % · ${SUBJ[ph.sub]} ${g>=0?'+':''}${g} %`,mgPtsLine(ph.sub,pt)+`<p class="muted">${msg}</p>`);checkObjectives();saveG();drawHUD();drawView()})};
  mgHas(ph.sub)?mgLevelSheet(ph.sub,`Exercice de ${SUBJ[ph.sub]}`,go):go()}
 /* évaluation du vendredi : une question par matière ; bonne réponse +1,5 sur la note, mauvaise −0,5 */
-function evalGame(){if(G.evalBonus[G.day]){toast('Tu as déjà rendu ta copie');return}
- playMini({subs:Object.keys(SUBJ),t:75,title:'Évaluation commune'},(sc,m)=>{const b={};(m.res||[]).forEach(r=>{b[r.sub]=r.good?1.5:-.5});G.evalBonus[G.day]=b;
-  miniResult('Copie rendue ✍️',`${m.ok}/${m.Q.length} bonnes réponses`,`<p class="muted">Chaque bonne réponse ajoute 1,5 point à la note de la matière, chaque erreur en retire 0,5. Résultats à 17h.</p>`);saveG();drawView()})}
+/* évaluation du vendredi : de 14 h à 17 h (heure du jeu), 2 questions par matière ; la copie est ramassée à 17 h */
+function evalGame(){if(G.evalBonus[G.day]){toast('Tu as déjà rendu ta copie');return}if(G.min>=1020){toast("L'évaluation est terminée");return}
+ playMini({subs:Object.keys(SUBJ),per:2,until:1020,title:'Évaluation commune · 14 h – 17 h'},(sc,m)=>{const b={};(m.res||[]).forEach(r=>{b[r.sub]=(b[r.sub]||0)+(r.good?.75:-.25)});G.evalBonus[G.day]=b;
+  miniResult('Copie rendue ✍️',`${m.ok}/${m.Q.length} bonnes réponses`,`<p class="muted">Chaque bonne réponse ajoute 0,75 point à la note de la matière, chaque erreur en retire 0,25 (2 questions par matière). Résultats à 17h.</p>`);saveG();drawView()})}
 /* bac : une épreuve par matière ; le score déplace la note de −2 à +2 */
 function bacGame(k){if(G.bac.bonus[k]!=null){toast('Épreuve déjà passée');return}
  playMini({sub:k,n:6,t:MINI_KIND(k)==='quiz'?45:undefined,title:'Bac · '+SUBJ[k]},sc=>{G.bac.bonus[k]=r2((sc-.5)*4);
