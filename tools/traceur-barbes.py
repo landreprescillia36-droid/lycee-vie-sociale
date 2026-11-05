@@ -15,6 +15,41 @@ LIP, CXF, CHIN, JAW = 244, 148.5, 282, 53.5    # repères relevés sur « Sans b
 # avatar garçon : lèvres à my-7.45, menton à my+37.4, demi-largeur de la mâchoire 64.9 à la hauteur des lèvres
 SX, SY, LIPAV = 64.9 / JAW, 45 / (CHIN - LIP), -7.45
 hh, ww = L0.shape; yy, xx = np.mgrid[0:hh, 0:ww]
+# --- la barbe épouse le contour du visage de l'avatar garçon ---
+# contour de la mâchoire relevé sur « Sans barbe » (demi-largeur depuis le centre 149.5, par hauteur)
+from scipy.interpolate import RBFInterpolator
+BJ = [(215, 59.5), (220, 59), (230, 57), (240, 54), (250, 48), (256, 45), (260, 39), (265, 31.5), (270, 23.5), (275, 15), (279, 7), (281, 0)]
+BC = 149.5
+FACE = json.load(open('tools/garcons-visage.json'))   # contour du visage de l'avatar garçon (moitié droite)
+FY = np.array([q[1] for q in FACE]); FX = np.array([q[0] for q in FACE]); o = np.argsort(FY); FY, FX = FY[o], FX[o]
+MY = 302; ALIP, ACHIN, AEYE, AEAR = MY - 7.45, 339.4, 215, 240
+def Y(yb):   # hauteur planche → avatar (yeux, bas de l'oreille, lèvres, menton)
+    return float(np.interp(yb, [187.5, 215, 244, 281], [AEYE, AEAR, ALIP, ACHIN], left=None, right=None)) if yb <= 281 else ACHIN + (yb - 281) * 1.2
+def AE(ya): return float(np.interp(ya, FY, FX)) - 200
+src, dst = [], []
+for yb, hb in BJ:
+    ya = Y(yb); ha = AE(ya) if yb < 281 else 0
+    for k in (-1, 1):
+        dst.append((BC + k * hb, yb)); src.append((200 + k * ha, ya))
+# normales vers l'extérieur : l'épaisseur de la barbe hors du visage est gardée (×1.2)
+BJa = np.array([(BC + hb, yb) for yb, hb in BJ]); AJa = np.array([(200 + (AE(Y(yb)) if yb < 281 else 0), Y(yb)) for yb, hb in BJ])
+for i in range(len(BJ)):
+    j0, j1 = max(0, i - 1), min(len(BJ) - 1, i + 1)
+    for P, out in ((BJa, dst), (AJa, src)):
+        t = P[j1] - P[j0]; n = np.array([t[1], -t[0]]); n /= np.linalg.norm(n) + 1e-9
+        if n[0] < 0: n = -n
+        sc = 1 if P is BJa else 1.2
+        for d in (10, 22):
+            q = P[i] + n * d * sc
+            for k in (-1, 1): out.append((200 + k * (q[0] - 200) if P is AJa else BC + k * (q[0] - BC), q[1]))
+# intérieur : centre des lèvres, commissures, milieu du menton, sous le nez
+for (xb, yb), (xa, ya) in [((BC, 244), (200, ALIP)), ((127, 244), (175, ALIP)), ((172, 244), (225, ALIP)), ((BC, 265), (200, Y(265))), ((BC, 222), (200, 265)), ((132, 230), (178, 276)), ((167, 230), (222, 276)), ((BC, 300), (200, Y(300)))]:
+    dst.append((xb, yb)); src.append((xa, ya))
+RB = RBFInterpolator(np.array(src), np.array(dst), kernel='thin_plate_spline', smoothing=.5)
+AX0, AX1, AY0, AY1 = 90, 310, round(Y(Y0)), round(Y(Y1))
+gy, gx = np.mgrid[0:(AY1 - AY0) * S, 0:(AX1 - AX0) * S]
+q = RB(np.column_stack([AX0 + (gx.ravel() + .5) / S, AY0 + (gy.ravel() + .5) / S]))
+MAPX = (q[:, 0] - X0).reshape(gx.shape).astype(np.float32) - .5; MAPY = (q[:, 1] - Y0).reshape(gx.shape).astype(np.float32) - .5
 art = {}
 for k, bid in enumerate(IDS):
     if not bid: continue
@@ -44,15 +79,14 @@ for k, bid in enumerate(IDS):
     Lb = np.clip((L - (1 - a) * L0) / np.maximum(a, .05), 0, 255)
     Lb = np.where(a > .05, Lb, 40)
     # ombre douce de la planche sous la barbe (peau, pas des poils) : retirée
-    a = a * np.clip((70 - Lb) / 25, 0, 1)
+    a = a * np.clip((62 - Lb) / 22, 0, 1)
     g = np.clip(Lb, 0, 255)
-    rgba = np.dstack([g, g, g, a * 255])
-    big = cv2.resize(rgba, None, fx=S, fy=S, interpolation=cv2.INTER_CUBIC)
+    rgba = np.dstack([g, g, g, a * 255]).astype(np.float32)
+    big = cv2.remap(rgba, MAPX, MAPY, cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT, borderValue=0)
     cv2.imwrite(f'assets/barbes/{bid}.png', np.clip(big, 0, 255).astype(np.uint8), [cv2.IMWRITE_PNG_COMPRESSION, 9])
     sel = a > .5
     v = np.sort(Lb[sel] / 255) if sel.sum() > 30 else np.array([.1, .15, .3])
     l0, lm, l1 = [float(v[int(q * (len(v) - 1))]) for q in (.02, .5, .98)]
-    art[bid] = [round((X0 - CXF) * SX, 2), round(LIPAV + (Y0 - LIP) * SY, 2), round(ww * SX, 2), round(hh * SY, 2),
-                round(l0, 3), round(lm, 3), round(max(l1, lm + .05), 3)]
+    art[bid] = [AX0 - 200, AY0 - MY, AX1 - AX0, AY1 - AY0, round(l0, 3), round(lm, 3), round(max(l1, lm + .05), 3)]
     print(bid, (dx, dy), art[bid])
 open('js/barbes-art.js', 'w').write('/* barbes décalquées par tools/traceur-barbes.py sur docs/references/barbes/planche-barbes.png — ne pas modifier à la main\n   [x, y (par rapport au centre de la bouche), largeur, hauteur, clarté sombre, moyenne, claire] */\nconst BEARD_ART=' + json.dumps(art, separators=(',', ':')) + ';\n')

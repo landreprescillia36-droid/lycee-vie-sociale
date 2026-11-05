@@ -196,11 +196,13 @@ function render(s,vb,p,showBg){
  const nf={aucune:0,legeres:18,beaucoup:44}[s.freckles]??0;
  if(nf) o+=`<g fill="${skDD}" opacity=".5">`+FRECK.slice(0,nf).map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${(q[1]+a.eyesY*.4).toFixed(1)}" r="${q[2].toFixed(2)}"/>`).join('')+`</g>`;
  /* barbes : décalquées sur la planche de Prescillia (tools/traceur-barbes.py), reteintes à la couleur des cheveux */
- if(s.barbe&&typeof BEARD_ART!=='undefined'&&BEARD_ART[s.barbe]){const B=BEARD_ART[s.barbe],[x,y,w,h,l0,lm,l1]=B,my=285+mo+a.mouthY,f='barbes/'+s.barbe,bh=shade(hc,-.3),dk=shade(hc,-.8),lt=shade(hc,.25),tab=[[],[],[]];
+ if(s.barbe&&typeof BEARD_ART!=='undefined'&&BEARD_ART[s.barbe]){const B=BEARD_ART[s.barbe],[x,y,w,h,l0,lm,l1]=B,my=285+mo+a.mouthY,f='barbes/'+s.barbe,bh=shade(hc,-.3),dk=shade(hc,-.8),lt=shade(hc,-.1),tab=[[],[],[]];
   for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,bh,clamp((v-l0)/(lm-l0),0,1)):mix(bh,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
   const T=hairTint(f,bh,tab),fid=p+'bdf';
   if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
-  o+=`<image href="${T||`assets/${f}.png`}" data-hk="${f}|${bh}" x="${200+x}" y="${my+y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/>`}
+  /* menton plus bas (visage allongé) : la barbe s'étire en hauteur depuis la ligne des lèvres */
+  const lip=my-7.45,chin=Math.max(...F.d.match(/-?[\d.]+/g).filter((v,i)=>i%2).map(Number)),k=clamp((chin-lip)/(339.4-294.55),.8,1.4);
+  o+=`<g transform="translate(0,${lip}) scale(1,${k.toFixed(3)}) translate(0,${-lip})"><image href="${T||`assets/${f}.png`}" data-hk="${f}|${bh}" x="${200+x}" y="${my+y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/></g>`}
  o+=`<g transform="translate(200,${252+no+a.noseY}) scale(${a.noseS})">${nose(s.nose,sk,skDD)}</g>`;
  o+=`<g transform="translate(200,${285+mo+a.mouthY}) scale(${a.mouthS})">${mouth(s.mouth,lip,sk,p)}</g>`;
  if(EYEART(s))o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'d',p)}</g><g transform="translate(${200-dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'g',p)}</g>`;
