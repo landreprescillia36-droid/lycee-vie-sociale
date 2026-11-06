@@ -4,7 +4,9 @@ import glob, os, sys
 import numpy as np
 from PIL import Image
 D = os.path.join(os.path.dirname(__file__), '..', 'assets', 'yeux')
-for f in sorted(glob.glob(os.path.join(D, '*-iris-*.png'))):
+PRE = sys.argv[1] if len(sys.argv) > 1 else ''   # « yg » : seulement les yeux des garçons (fichiers g*)
+for f in sorted(glob.glob(os.path.join(D, PRE + '*-iris-*.png'))):
+    if not PRE and os.path.basename(f).startswith('yg'): continue   # yeux des garçons : à part
     e = np.array(Image.open(f.replace('-iris-', '-')).convert('RGBA')).astype(float)
     im = Image.open(f).convert('RGBA'); i = np.array(im).astype(float)
     H, W = e.shape[:2]; ea, ia = e[:, :, 3], i[:, :, 3].copy()

@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='80';
+const APP_VERSION='81';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -226,7 +226,10 @@ function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" 
    l'iris est une image à part, recolorée (même rapport de couleur que l'iris choisi avec son « marron ») ; les styles de cils
    autres que « naturels » ajoutent des cils dessinés le long de sa paupière */
 const EYE_OLD={grands:'grands',brillants:'grands',amande:'amande',ronds:'ronds',endormis:'tombantes',chat:'releves',doux:'amande',nets:'amandelong',rieurs:'petits'};
-const EYE_REF='#5f3a23';
+const EYE_REF='#5f3a23',EYE_REF_G='#462a1b';
+/* yeux des garçons (planche « Yeux – garçons », js/yeux-garcons-art.js) : clés en yg… */
+const isEyeG=k=>/^yg/.test(k||'');
+const IRIS_G=['#1d1511','#28160d','#311a0f','#442718','#3e2616','#2c2917','#2b241f','#19232b'];
 const eyeKey=k=>typeof EYE_ART==='undefined'?k:EYE_ART[k]?k:(EYE_OLD[k]||'amande');
 const EYEART=s=>typeof EYE_ART!=='undefined'&&EYE_ART[eyeKey(s.eyes)];
 /* eye-liner du haut et cils dessinés par le jeu (nets à toutes les tailles), d'après la planche : trait fin au coin intérieur,
@@ -243,6 +246,7 @@ function lidSVG(P,sty){if(!P||P.length<3)return '';const f=v=>v.toFixed(2),C=lid
  /* pas de queue : le trait s'arrête au coin extérieur de l'œil, en s'affinant */
  const liner=`M${bot.map(q=>f(q[0])+','+f(q[1])).join(' L')} L${top.slice().reverse().map(q=>f(q[0])+','+f(q[1])).join(' L')}Z`;
  if(thin)return `<path d="${liner}" fill="#141012" opacity=".85"/>`;
+ if(sty==='garcon')return `<path d="${liner}" fill="#141012"/>`;/* garçons : trait de la planche, sans cils */
  const L=LASH_STY[sty]||LASH_STY.naturels;let d='';
  for(let i=0;i<L.n;i++){const jit=((i*7919)%13)/13-.5,u=Math.min(.93,L.u0+(.93-L.u0)*(i+jit*.35)/(L.n-1)),k=Math.round(u*(N-1)),[tx,ty,nx,ny]=nrm(k),b=top[k];
   const a=(L.tilt[0]+(L.tilt[1]-L.tilt[0])*u*u)*Math.PI/180,dx=nx*Math.cos(a)+tx*Math.sin(a),dy=ny*Math.cos(a)+ty*Math.sin(a);
@@ -250,12 +254,12 @@ function lidSVG(P,sty){if(!P||P.length<3)return '';const f=v=>v.toFixed(2),C=lid
   const mx=bx+dx*len*.55,my=by+dy*len*.55,ex=mx+(dx*Math.cos(L.bend)+tx*Math.sin(L.bend))*len*.5,ey=my+(dy*Math.cos(L.bend)+ty*Math.sin(L.bend))*len*.5;
   const px=-dy*hw,py=dx*hw;d+=`M${f(bx+px)},${f(by+py)} Q${f(mx+px*.45)},${f(my+py*.45)} ${f(ex)},${f(ey)} Q${f(mx-px*.45)},${f(my-py*.45)} ${f(bx-px)},${f(by-py)}Z`}
  return `<path d="${liner}" fill="#141012"/><path d="${d}" fill="#141012"/>`}
-function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7);
- const g=rgb(s.iris||EYE_REF).map((v,i)=>v/Math.max(1,rgb(EYE_REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
+function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7),REF=isEyeG(k)?EYE_REF_G:EYE_REF;
+ const g=rgb(s.iris||REF).map((v,i)=>v/Math.max(1,rgb(REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
   +`<image href="assets/yeux/${k}-iris-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`
   +`<image href="assets/yeux/${k}-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
-  +lidSVG(P,s.cils)}
+  +lidSVG(P,isEyeG(k)?'garcon':s.cils)}
 function eye(E,m,p,skDD){
  const ink='#1d1411';
  if(E.closed) return `<path d="M-26,6 C-14,-16 14,-16 28,4" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/><path d="M26,2 L37,-7" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
@@ -1282,7 +1286,7 @@ const L={joufflu:'Joufflu',ovale:'Ovale',rond:'Rond',carre:'Carré',coeur:'En c�
  bouton:'Bouton',rond:'Rond doux',naturel:'Naturel',doux:'Doux',petit:'Petit',pointu:'Fin',aucun:'Aucun',
  gfermee:'Fermée',gfine:'Fine',gmoyenne:'Moyenne',glarge:'Large',gpleine:'Pleine',gsourirel:'Sourire léger',gsourire:'Sourire',ggrand:'Grand sourire',gneutre:'Neutre',gserieux:'Sérieux',gnasale:'Bouche nasale',
  fine:'Fine',moyenne:'Moyenne',pleine:'Pleine',coeur:'En cœur',rectangle:'Rectangulaire',ronde:'Ronde',pulpeuse:'Légèrement pulpeuse',trespulpeuse:'Très pulpeuse',asymetrique:'Asymétrique',superfine:'Avec une lèvre supérieure fine',inferieure:'Avec une lèvre inférieure plus pleine',tombante:'Aux commissures tombantes',remontante:'Aux commissures remontantes',entrouverte:'Bouche légèrement ouverte',fermee:'Bouche fermée',glossy:'Style glossy',mat:'Style mat',ombre:'Style ombré',glosscentre:'Avec gloss au centre',naturelle:'Naturelle',
- fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',brb5j:'Barbe légère (5 jours)',brbcourte:'Barbe courte',brbmoyenne:'Barbe moyenne',brbcomplete:'Barbe complète',brbgoatee:'Barbe en boucle (goatee)',brbmoustmenton:'Moustache + menton',brbmoustache:'Moustache seule',brbmentonniere:'Barbe en mentonnière',brbetendue:'Barbe étendue',brbtaillee:'Barbe taillée (contour carré)',brbprecise:'Barbe courte taillée (contour précis)',brbfine:'Barbe fine',brbpatchy:'Barbe légère (patchy)',brbsoul:'Soul patch',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
+ fines:'Fines',marquees:'Marquées',duvet:'Duvet',barbe3j:'Barbe de 3 jours',moustache:'Moustache',bouc:'Bouc',collier:'Collier',courte:'Barbe courte',ygrond:'Rond',ygamande:'Amandé',ygamhaut:'En amande (haut légèrement tombant)',ygambas:'En amande (bas tombant)',ygmoyen:'Moyen',ygallonge:'Allongé',ygpetit:'Petit',yggrand:'Grand',ygenfonce:'Enfoncé',ygsaillant:'Saillant',ygdroite:'Droit',ygtrapu:'Trapu',brb5j:'Barbe légère (5 jours)',brbcourte:'Barbe courte',brbmoyenne:'Barbe moyenne',brbcomplete:'Barbe complète',brbgoatee:'Barbe en boucle (goatee)',brbmoustmenton:'Moustache + menton',brbmoustache:'Moustache seule',brbmentonniere:'Barbe en mentonnière',brbetendue:'Barbe étendue',brbtaillee:'Barbe taillée (contour carré)',brbprecise:'Barbe courte taillée (contour précis)',brbfine:'Barbe fine',brbpatchy:'Barbe légère (patchy)',brbsoul:'Soul patch',aucune:'Aucune',rose:'Rosées',fort:'Très rosées',legeres:'Quelques-unes',beaucoup:'Beaucoup',
  grands:'Grands',brillants:'Brillants',amande:'Amandes',ronds:'Ronds',endormis:'Endormis',chat:'Félins',rieurs:'Rieurs',
  amandelong:'En amande allongés',enfonces:'Enfoncés',sortants:'Sortants',petits:'Petits',tombantes:'Paupières tombantes',monolides:'Paupières monolides',releves:'Aux coins relevés',espaces:'Espacés',recourbes:'Recourbés',
  naturels:'Naturels',legers:'Légèrement arqués',arques:'Plus arqués',droits:'Droits',epais:'Épais',fins:'Fins',moyens:'Moyens',fournis:'Épais et fournis',angle:'Avec un léger angle',clean:'Style clean',
@@ -1548,9 +1552,9 @@ const TABS=[
   {id:'freckles',label:'Taches de rousseur',opts:['aucune','legeres','beaucoup'],vb:hv('115 195 170 95')},
   {id:'barbe',label:'Barbe',noF:1,opts:['aucune','brb5j','brbcourte','brbmoyenne','brbcomplete','brbgoatee','brbmoustmenton','brbmoustache','brbmentonniere','brbetendue','brbtaillee','brbprecise','brbfine','brbpatchy','brbsoul'],vb:hv('100 215 200 125')}]},
  {label:'Yeux',subs:[
-  {id:'eyes',label:'Forme',opts:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART):Object.keys(EYES),vb:hv('112 155 176 100'),adj:'eyes'},
-  {id:'cils',label:'Cils',opts:typeof EYE_LASHES!=='undefined'?EYE_LASHES:['naturels'],vb:hv('112 155 176 100')},
-  {id:'iris',label:'Iris',cols:IRIS},
+  {id:'eyes',label:'Forme',opts:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART).filter(k=>!isEyeG(k)):Object.keys(EYES),optsM:typeof EYE_ART!=='undefined'?Object.keys(EYE_ART).filter(isEyeG):null,vb:hv('112 155 176 100'),adj:'eyes'},
+  {id:'cils',label:'Cils',noM:1,opts:typeof EYE_LASHES!=='undefined'?EYE_LASHES:['naturels'],vb:hv('112 155 176 100')},
+  {id:'iris',label:'Iris',cols:IRIS,colsM:IRIS_G},
   {id:'brows',label:'Sourcils',opts:Object.keys(BROWS),vb:hv('112 128 176 100'),adj:'brows'},
   {id:'browColor',label:'Couleur des sourcils',cols:BROWC}]},
  {label:'Cheveux',subs:CAT_H.filter(([k])=>['lisse','ondule','boucle','crepu'].includes(k)).map(([k,l])=>({label:l,hairCat:k,noF:k==='ondule'?1:undefined}))/* pas encore de coiffure ondulée pour les filles */.concat([{id:'hairColor',label:'Couleur',cols:HAIR}])},
@@ -1588,8 +1592,17 @@ function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anne
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(boucheSexe(s))}
 /* bouches : les garçons ont les bouches de leur planche, les filles celles de la leur */
 const MOUTH_GF={fine:'gfine',moyenne:'gmoyenne',pleine:'gpleine',remontante:'gsourirel',fermee:'gfermee',naturelle:'gmoyenne',superfine:'gfine',rectangle:'glarge',entrouverte:'gsourire'};
-function boucheSexe(s){if(typeof MOUTH_ART==='undefined')return s;if(s.mouth==='ggrand')s.mouth='gsourire';const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
+function boucheSexe(s){yeuxSexe(s);if(typeof MOUTH_ART==='undefined')return s;if(s.mouth==='ggrand')s.mouth='gsourire';const boy=/^g[a-z]/.test(s.mouth)&&MOUTH_ART[s.mouth]&&MOUTH_ART[s.mouth].length>4;if(s.sexe==='m'&&!boy)s.mouth=MOUTH_GF[s.mouth]||'gmoyenne';else if(s.sexe!=='m'&&boy)s.mouth='naturelle';return s}
 /* anciens bas des filles retirés : remplacés par le plus proche de la nouvelle planche (la jupe en jean reste en attente) */
+/* yeux : garçon → forme et couleur de la planche des garçons ; fille → ses formes à elle */
+const EYE_GF={ronds:'ygrond',amande:'ygamande',amandelong:'ygallonge',enfonces:'ygenfonce',sortants:'ygsaillant',petits:'ygpetit',grands:'yggrand',tombantes:'ygambas',monolides:'ygtrapu',releves:'ygamhaut'};
+/* couleur d'iris → la plus proche de la planche des garçons (bleu, vert, gris ou brun selon la clarté) */
+function irisToG(c){if(IRIS_G.includes(c))return c;const [r,g,b]=rgb(c||EYE_REF),mx=Math.max(r,g,b),mn=Math.min(r,g,b),L=(r+g+b)/3;
+ if(b>r+15&&b>=g)return IRIS_G[7];if(g>r+5&&g>b)return IRIS_G[5];if(mx-mn<18)return L<45?IRIS_G[0]:IRIS_G[6];
+ return L<40?IRIS_G[0]:L<62?IRIS_G[1]:L<85?IRIS_G[2]:L<105?IRIS_G[4]:IRIS_G[3]}
+function yeuxSexe(s){if(typeof EYE_ART==='undefined'||!s)return s;const g=isEyeG(s.eyes)&&EYE_ART[s.eyes];
+ if(s.sexe==='m'&&!g){s.eyes=EYE_GF[eyeKey(s.eyes)]||'ygamande';s.iris=irisToG(s.iris)}
+ else if(s.sexe!=='m'&&g){s.eyes='amande';const i=IRIS_G.indexOf(s.iris);s.iris=IRIS[i>=0?i:0]}return s}
 const BAS_OLD={droit:'jdroit',large:'jlarge',flare:'bootcut',yoga:'bootcut',cordon:'jlarge',jogging:'jlarge',short:'bermuda',cycliste:'bermuda',jupe:'jplis'};
 const BARBE_OLD={duvet:'brbpatchy',barbe3j:'brb5j',moustache:'brbmoustache',bouc:'brbgoatee',collier:'brbmentonniere',courte:'brbcourte'};
 function basNeuf(s){if(s&&s.sexe==='f'&&BAS_OLD[s.bottom])s.bottom=BAS_OLD[s.bottom];if(s&&BARBE_OLD[s.barbe])s.barbe=BARBE_OLD[s.barbe];return s}
@@ -1649,7 +1662,7 @@ function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,cl
 $('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);boucheSexe(state);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
 function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
-function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
+function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.noM&&state.sexe==='m')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
 const BODYL={petite:['Petite','Petit'],moyenne:['Moyenne','Moyen'],grande:['Grande','Grand'],mince:['Mince','Mince'],ronde:['Ronde','Rond'],forte:['Forte','Fort']};
 const bodyLbl=o=>(BODYL[o]||[o,o])[state.sexe==='m'?1:0];
 let catPick={},curList=[];
@@ -1676,7 +1689,7 @@ function drawGrid(){
   drawDetail(S);return}
  $('detail').hidden=true;
  if(S.cols){grid.className='grid swatches';
-  grid.innerHTML=S.cols.map(c=>`<button class="sw" type="button" data-v="${c}" aria-label="Couleur ${c}" aria-pressed="${state[S.id]===c}" style="background:${c}"></button>`).join('');}
+  grid.innerHTML=(S.colsM&&state.sexe==='m'?S.colsM:S.cols).map(c=>`<button class="sw" type="button" data-v="${c}" aria-label="Couleur ${c}" aria-pressed="${state[S.id]===c}" style="background:${c}"></button>`).join('');}
  else{grid.className='grid';
   grid.className='grid'+(S.tall?' tall':'');
   grid.innerHTML=(S.optsM&&state.sexe==='m'?S.optsM:S.opts).map((o,i)=>`<button class="opt" type="button" data-v="${o}" aria-pressed="${state[S.id]===o}"><span class="th">${render({...state,[S.id]:o},S.vb,'t'+i,!!S.bg)}</span><span>${S.tall?bodyLbl(o):(L[o]||o)}</span></button>`).join('');}
@@ -1730,7 +1743,7 @@ function harmonious(){const s=clone(DEFAULT);s.dress='aucune';s.name=state.name;
 function diceSub(){const S=TABS[tab].subs[sub];if(!S)return;const n=state.name,R=a=>a[Math.floor(Math.random()*a.length)];
  if(S.hairCat||S.wear){const L0=catList(S),L1=L0.filter(e=>e.set||!['aucune','aucun'].includes(e.v)&&!isAct(e,L0)),en=R(L1.length?L1:L0);if(!en)return;
   state=en.set?{...state,jacket:'aucune',dress:'aucune',...en.set}:entryState(en);const cs=!en.set&&COLSLOT[en.s];if(cs&&PALS[cs]&&Math.random()<.5)state[cs]=R(PALS[cs]);catPick[S.hairCat?'hair':S.wear]=en}
- else if(S.cols){const c=S.cols.filter(c=>c!==state[S.id]);state[S.id]=R(c.length?c:S.cols)}
+ else if(S.cols){const CL=S.colsM&&state.sexe==='m'?S.colsM:S.cols,c=CL.filter(c=>c!==state[S.id]);state[S.id]=R(c.length?c:CL)}
  else{const o=(S.optsM&&state.sexe==='m'?S.optsM:S.opts).filter(o=>o!==state[S.id]);if(o.length)state[S.id]=R(o)}
  state.name=n;refresh();toast(`${S.label} : tiré au sort`)}
 $('bRand').onclick=()=>{state=harmonious();refresh();toast('Nouvel avatar tiré au sort')};

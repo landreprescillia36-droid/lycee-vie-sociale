@@ -1,13 +1,15 @@
 """Rend les yeux uniformes : retire des images assets/yeux/<forme>-<g|d>.png les traits sombres irréguliers
 (bas de l'œil, coins) puis redessine le bas de l'œil avec le même trait fin et régulier pour toutes les formes.
 Le trait du haut (eye-liner) est dessiné par le jeu (lidSVG). À lancer après yeux-iris-coupe.py et yeux-blanc-haut.py."""
-import glob, os
+import glob, os, sys
 import numpy as np
 from PIL import Image
 D = os.path.join(os.path.dirname(__file__), '..', 'assets', 'yeux')
 LINE = np.array([58, 36, 30], float)
-for f in sorted(glob.glob(os.path.join(D, '*-[gd].png'))):
+PRE = sys.argv[1] if len(sys.argv) > 1 else ''   # « yg » : seulement les yeux des garçons
+for f in sorted(glob.glob(os.path.join(D, PRE + '*-[gd].png'))):
     if '-iris-' in f: continue
+    if not PRE and os.path.basename(f).startswith('yg'): continue   # yeux des garçons : à part
     a = np.array(Image.open(f).convert('RGBA')).astype(float)
     ia = np.array(Image.open(f.replace('.png', '').rsplit('-', 1)[0] + '-iris-' + f[-5] + '.png').convert('RGBA'))[..., 3].astype(float)
     H, W = a.shape[:2]; lum = a[..., :3].mean(axis=2); al = a[..., 3]

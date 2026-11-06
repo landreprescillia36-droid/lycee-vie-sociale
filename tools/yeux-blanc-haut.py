@@ -1,13 +1,17 @@
 """Remplit en blanc le haut de l'œil laissé couleur peau entre l'iris et la paupière (coin extérieur surtout).
 Limite haute = courbe de la paupière (9 points de EYE_ART, js/yeux-art.js) ; limite basse = bas du blanc ou de l'iris.
 On ne touche qu'aux pixels transparents dans l'image de l'œil ET dans celle de l'iris."""
-import json, os, re
+import json, os, re, sys
 import numpy as np
 from PIL import Image
 from scipy import ndimage
 R = os.path.join(os.path.dirname(__file__), '..')
-src = open(os.path.join(R, 'js', 'yeux-art.js')).read()
-ART = json.loads(re.search(r'const EYE_ART=(\{.*?\});', src, re.S).group(1))
+PRE = sys.argv[1] if len(sys.argv) > 1 else ''   # « yg » : yeux des garçons (js/yeux-garcons-art.js)
+if PRE:
+    ART = json.loads(re.search(r'Object.assign\(EYE_ART,(\{.*?\})\);', open(os.path.join(R, 'js', 'yeux-garcons-art.js')).read(), re.S).group(1))
+else:
+    src = open(os.path.join(R, 'js', 'yeux-art.js')).read()
+    ART = json.loads(re.search(r'const EYE_ART=(\{.*?\});', src, re.S).group(1))
 for k, sides in ART.items():
     for sd, A in sides.items():
         fe = os.path.join(R, 'assets', 'yeux', f'{k}-{sd}.png'); fi = os.path.join(R, 'assets', 'yeux', f'{k}-iris-{sd}.png')
