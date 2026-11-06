@@ -995,19 +995,19 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
 /* garçons : implantation des cheveux aux tempes et sur les côtés du front — une masse continue qui suit le bord du crâne
    jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
-const TEMPLE={top:90,bot:186,inT:34,inB:4};
+const TEMPLE={top:90,bot:186,inT:30,inB:7,out:1.5};/* côtés serrés : dégradé collé au crâne jusqu'à l'oreille (correction de Prescillia) */
 function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
  const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.42:-.15),line=shade(base,-.7),c2=shade(base,lum(base)>.35?-.6:-.45),c3=shade(base,lum(base)>.35?-.22:.12);
  /* contour des tempes : du bord du crâne vers le front, ligne nette légèrement irrégulière (pas de flou) */
  const inner=(k,y)=>{const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=(T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4))*(u>.75?Math.max(0,1-(u-.75)/.25):1)-(u>.75?6*Math.pow((u-.75)/.25,1.5):0),j=Math.sin(y*1.7+k)*1.4+Math.sin(y*.63)*1.1+Math.sin(y*3.1)*.6;return 200+k*(hw-inset+j)};
- const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=3){o.push([200+k*(faceHW(d,y)+6),y]);I.push([inner(k,y),y])}return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
+ const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=3){o.push([200+k*(faceHW(d,y)+T.out),y]);I.push([inner(k,y),y])}return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
  const edge=k=>{let o='';for(let y=T.top+16;y<=T.bot;y+=3)o+=(o?' L':'M')+fx(inner(k,y))+','+y;return o};
  /* remplissage = la texture de la coiffure elle-même (l'image décalquée), descendue sur la tempe, sur une base de la couleur des cheveux */
  const cp=`${id}c`,fit=hairFit(s),[ix,iy,iw,ih]=A.img,same=base===A.main,href=(same?null:HTINT[s.hair+'|'+hc])||`assets/coiffures/${s.hair}.png`;
  const copy=(dy,n)=>`<g transform="translate(0,${dy})"><g transform="${fit?fit.t:''}"><image href="${href}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/></g></g>`;
  return `<defs><clipPath id="${cp}">${[-1,1].map(k=>`<path d="${side(k)}"/>`).join('')}</clipPath><pattern id="${id}h" width="3.2" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><path d="M.8,0 L.8,2.6" stroke="${c2}" stroke-width=".8" stroke-linecap="round"/><path d="M2.4,1.4 L2.4,4" stroke="${c3}" stroke-width=".55" stroke-linecap="round" opacity=".7"/></pattern><linearGradient id="${id}m" gradientUnits="userSpaceOnUse" x1="0" y1="${T.top}" x2="0" y2="${T.top+18}"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="${id}k" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400"><rect x="0" y="0" width="400" height="400" fill="url(#${id}m)"/></mask></defs>
-  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(78,1)}${copy(58,2)}${copy(38,3)}${copy(20,4)}</g></g>`+
-  [-1,1].map(k=>LN(edge(k),line,1.8,1)).join('')}
+  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(20,4)}<rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="${c}" opacity=".92"/><rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="url(#${id}h)" opacity=".55"/></g></g>`/* dégradé court : cheveux ras et serrés sous les boucles */+
+  [-1,1].map(k=>LN(edge(k),line,1,.35)).join('')}/* bord intérieur discret, pas de trait marqué */
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
     les yeux restent en place (y = 205) */
