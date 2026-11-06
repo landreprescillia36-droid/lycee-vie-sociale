@@ -1058,11 +1058,17 @@ function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO
 const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
 /* coupe bouclée courte des garçons copiée pixel par pixel sur le modèle de Prescillia (js/coupe-modele.js) */
 const coupeM=s=>s.sexe==='m'&&s.hair==='gtaper'&&typeof COUPE_MODELE!=='undefined';
+/* tempes collées au crâne : dégradé serré le long du bord du visage, du bas des boucles jusqu'au haut de l'oreille */
+function coupeTempes(s,d,hc){const c=shade(hc,lum(hc)>.35?-.35:-.12),y0=148,y1=196;
+ const band=(k,a,b)=>{const O=[],I=[];for(let y=y0;y<=y1;y+=2){const u=(y-y0)/(y1-y0),hw=faceHW(d,y),t=u>.8?(u-.8)/.2:0;O.push([200+k*(hw+a),y]);I.push([200+k*(hw-b*(1-t*.7)),y])}return 'M'+O.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
+ return [-1,1].map(k=>`<path d="${band(k,-3,10)}" fill="${c}" opacity=".45"/><path d="${band(k,2.5,4)}" fill="${c}"/>`).join('')}
 function coupeSVG(s,p){const C=COUPE_MODELE,[x,y,w,h]=C.img,[l0,lm,l1]=C.lum,hc=s.hairColor,f='coiffures/gtaper-modele',same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(C.main)[i]))<30;
  const dk=shade(hc,-.75),lt=shade(hc,.45),tab=[[],[],[]];for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
  const T=same?null:hairTint(f,hc,tab),fid=p+'cmf',d=faceOf(s).d,k=(faceHW(d,150)+3)/(faceHW(faceOf({...s,face:'allonge'}).d,150)+3);
  return (same||T?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
-  +`<g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g>`}
+  +coupeTempes(s,d,hc)+`<defs><clipPath id="${p}cmc"><path d="${coupeClip(d)}"/></clipPath></defs><g clip-path="url(#${p}cmc)"><g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g></g>`}
+/* sous les boucles, la coupe reste sur le crâne (pas de mèche qui flotte à côté du visage) */
+function coupeClip(d){const P=[];for(let y=140;y<=230;y+=2){const u=clamp((y-146)/34,0,1);P.push([200+faceHW(d,y)+2.5+30*(1-u*u*(3-2*u)),y])}return `M-400,-400 L800,-400 L800,140 L${P.map(q=>fx(q[0])+','+q[1]).join(' L')} L${P.slice().reverse().map(q=>fx(400-q[0])+','+q[1]).join(' L')} L-400,140Z`}
 function hairArt(s,part,p){if(coupeM(s))return part==='front'?coupeSVG(s,p):'';const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
