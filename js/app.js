@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,big=false,rx=big?21:17,ry=big?31:27,xx=x-(big?3*k:0);o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -983,9 +983,11 @@ function neckZone(s,FY){const F=faceOf(s),k=F.d+FY;if(NZ[k])return NZ[k];const d
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
 /* garçons : oreilles plus basses (demande de Prescillia) */
-const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=207;
-function earHoles(s){const ex=faceOf(s).ex,big=false,rx=(big?21:17)-1.5,ry=(big?31:27)-1.5,EY=earY(s);
- return [ex-(big?3:0),400-ex+(big?3:0)].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
+const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=219;
+/* garçons : oreilles plus grandes (correction de Prescillia) : [rayon x, rayon y, décalage vers l'extérieur] */
+const earSz=s=>s&&s.sexe==='m'?[20,35,2]:[17,27,0];
+function earHoles(s){const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
+ return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
 /* coiffures garçons (décalquées sur la tête du jeu « ovale ») ajustées à la forme de tête choisie : largeur aux tempes et haut du crâne */
 const FHW={};function faceHW(d,y){const k=d+y;if(k in FHW)return FHW[k];const n=d.match(/-?[\d.]+/g).map(Number);let a=null,b=null;for(let i=0;i<n.length;i+=2){const X=n[i],Y=n[i+1],dd=Math.abs(Y-y);if(X<200){if(!a||dd<a[0])a=[dd,X]}else if(!b||dd<b[0])b=[dd,X]}return FHW[k]=a&&b?(b[1]-a[1])/2:94}
@@ -1011,8 +1013,9 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
     les yeux restent en place (y = 205) */
  const sx=(faceHW(d,150)+3)/104,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
  const nw=HAIR_NEW.includes(s.hair),k=nw?HFIT[0]:1,dy=nw?HFIT[1]:0;/* coiffure posée sur le crâne : plus enveloppante, ligne des cheveux plus basse (planche « Vestes hommes ») */
- return {sx:sx*k,sy:sy*k,t:`translate(200,${205+dy}) scale(${fx(sx*k)}) translate(-200,-205)`}}
-let HFIT=[1.1,9];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
+ const ey=nw?HFIT[2]:1;/* un peu plus haute : la ligne des cheveux descend, le haut du crâne reste en place */
+ return {sx:sx*k,sy:sy*k*ey,t:`translate(200,${205+dy}) scale(${fx(sx*k)},${fx(sy*k*ey)}) translate(-200,-205)`}}
+let HFIT=[1.1,9,1];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
 const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
