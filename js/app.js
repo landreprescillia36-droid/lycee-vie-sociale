@@ -1004,7 +1004,7 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
    jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
 const TEMPLE={top:90,bot:192,inT:15,inB:6,out:1.5};/* côtés serrés : bande étroite et droite collée au crâne jusqu'à l'oreille (modèle de Prescillia) *//* côtés serrés : dégradé collé au crâne jusqu'à l'oreille (correction de Prescillia) */
-function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
+function templeFill(s,p){if(coupeM(s))return '';if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
  const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.42:-.15),line=shade(base,-.7),c2=shade(base,lum(base)>.35?-.6:-.45),c3=shade(base,lum(base)>.35?-.22:.12);
  /* contour des tempes : du bord du crâne vers le front, ligne nette légèrement irrégulière (pas de flou) */
  const inner=(k,y)=>{const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=(T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4))*(u>.75?Math.max(0,1-(u-.75)/.25):1)-(u>.75?6*Math.pow((u-.75)/.25,1.5):0),j=0;/* trait net et droit (modèle de Prescillia) */return 200+k*(hw-inset+j)};
@@ -1056,7 +1056,14 @@ function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
  im.src=`assets/coiffures/${f}-peau.png`;return null}
 const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
-function hairArt(s,part,p){const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
+/* coupe bouclée courte des garçons copiée pixel par pixel sur le modèle de Prescillia (js/coupe-modele.js) */
+const coupeM=s=>s.sexe==='m'&&s.hair==='gtaper'&&typeof COUPE_MODELE!=='undefined';
+function coupeSVG(s,p){const C=COUPE_MODELE,[x,y,w,h]=C.img,[l0,lm,l1]=C.lum,hc=s.hairColor,f='coiffures/gtaper-modele',same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(C.main)[i]))<30;
+ const dk=shade(hc,-.75),lt=shade(hc,.45),tab=[[],[],[]];for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
+ const T=same?null:hairTint(f,hc,tab),fid=p+'cmf',d=faceOf(s).d,k=(faceHW(d,150)+3)/(faceHW(faceOf({...s,face:'allonge'}).d,150)+3);
+ return (same||T?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
+  +`<g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g>`}
+function hairArt(s,part,p){if(coupeM(s))return part==='front'?coupeSVG(s,p):'';const A=HART(s),L=A[part];if(!L||!L.length)return '';const hc=s.hairColor,m=A.main,same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(m)[i]))<40;
  const tint=f=>{if(same)return f;const d=lum(f)-lum(m);return d>=0?mix(hc,shade(hc,.55),Math.min(1,d*3.2)):mix(hc,shade(hc,-.6),Math.min(1,-d*3.2))};
  const id=p+'ha'+part,sil=L[0][1];
  /* devant : les vrais pixels du dessin ; dans une autre couleur, un filtre convertit la clarté de chaque pixel vers la nouvelle teinte
