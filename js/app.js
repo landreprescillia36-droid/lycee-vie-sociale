@@ -987,11 +987,11 @@ const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=224;
 /* garçons : oreilles plus grandes (correction de Prescillia) : [rayon x, rayon y, décalage vers l'extérieur] */
 const earSz=s=>s&&s.sexe==='m'?[19,34,0]:[17,27,0];
 /* oreille des garçons d'après le modèle de Prescillia : haut arrondi au niveau du haut de l'œil, plus large en haut,
-   lobe étroit vers le bas, ourlet intérieur ; le côté intérieur passe sous le visage */
+   bord extérieur qui rentre en diagonale vers un petit lobe étroit (au niveau du haut du nez), collé au visage, ourlet intérieur ; le côté intérieur passe sous le visage */
 function earBoy(x,y,k,p,outl,skD){const t=`translate(${x},${y}) scale(${1.25*k},1.3)`;
- return `<g transform="${t}"><path d="M9,-24 C1,-30 -13,-27 -16.5,-15 C-18.5,-6 -17,3 -13.5,10 C-10.5,16 -8.5,22 -3.5,25.5 C0.5,28 6,26.5 9,22Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
-  +`<path d="M-1.5,-15 C-8.5,-13 -10.5,-3 -8.5,5 C-7,10 -3,11.5 0,9.5Z" fill="${skD}" opacity=".55"/>`
-  +`<path d="M-3,-19 C-11,-18 -14,-9 -12.5,0 C-11.5,6 -8.5,11 -5,13.5" fill="none" stroke="${outl}" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>`}
+ return `<g transform="${t}"><path d="M9,-24 C2,-30 -13,-28 -17,-16 C-19,-8 -17.5,0 -14.5,6 C-11.5,12 -7.5,17.5 -3.5,21 C-1,23 2.5,22.5 5,19 L9,11Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
+  +`<path d="M-1,-15 C-8,-13 -10,-4 -8.5,2 C-7,6.5 -3.5,8 0,6Z" fill="${skD}" opacity=".55"/>`
+  +`<path d="M-3,-19 C-11,-18 -14,-9 -12.5,-2 C-11.5,4 -8.5,9 -5,13" fill="none" stroke="${outl}" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>`}
 function earHoles(s){const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
