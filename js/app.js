@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'){o+=earBoy(x,EY,k,p,outl,skD);return}o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'){o+=earBoy(x,EY,k,p,outl,skD,s);return}o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -988,8 +988,10 @@ const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=224;
 const earSz=s=>s&&s.sexe==='m'?[19,34,0]:[17,27,0];
 /* oreille des garçons d'après le modèle de Prescillia : haut arrondi au niveau du haut de l'œil, plus large en haut,
    bord extérieur qui rentre en diagonale vers un petit lobe étroit (au niveau du haut du nez), collé au visage, ourlet intérieur ; le côté intérieur passe sous le visage */
-function earBoy(x,y,k,p,outl,skD){const t=`translate(${x},${y}) scale(${1.25*k},1.3)`;
- return `<g transform="${t}"><path d="M9,-24 C2,-30 -13,-28 -17,-16 C-19,-8 -17.5,0 -14.5,6 C-11.5,12 -7.5,17.5 -3.5,21 C-1,23 2.5,22.5 5,19 L9,11Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
+function earBoy(x,y,k,p,outl,skD,s){const t=`translate(${x},${y}) scale(${1.25*k},1.3)`;
+ /* le bas de l'oreille (lobe) se rattache au bord du visage : il finit pile sur le contour de la joue, le reste passe sous le visage */
+ const yl=y+21.5*1.3,Lx=Math.max(-2,Math.min(14,((400-faceEdge(s,yl,1))-Math.min(x,400-x))/1.25)),f=v=>v.toFixed(1);
+ return `<g transform="${t}"><path d="M9,-24 C2,-30 -13,-28 -17,-16 C-19,-8 -17.5,-1 -14,5 C-10.5,11 -5.5,16.5 -1.5,20 Q${f((Lx-1.5)/2)},23.5 ${f(Lx)},20.5 L${f(Lx+16)},14 L24,-14Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
   +`<path d="M-1,-15 C-8,-13 -10,-4 -8.5,2 C-7,6.5 -3.5,8 0,6Z" fill="${skD}" opacity=".55"/>`
   +`<path d="M-3,-19 C-11,-18 -14,-9 -12.5,-2 C-11.5,4 -8.5,9 -5,13" fill="none" stroke="${outl}" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>`}
 function earHoles(s){const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
