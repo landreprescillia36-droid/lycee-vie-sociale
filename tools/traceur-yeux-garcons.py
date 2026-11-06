@@ -1,7 +1,7 @@
 """Yeux des GARÇONS : même méthode que tools/traceur-yeux.py, sur docs/references/yeux/planche-yeux-garcons.png
    (12 formes, un œil par case = œil droit « d » ; l'œil gauche « g » est son miroir).
    Sortie : assets/yeux/yg<forme>-d.png, -g.png, -iris-d.png, -iris-g.png et js/yeux-garcons-art.js (ajouté à EYE_ART).
-   Ensuite : python3 tools/yeux-iris-coupe.py yg ; yeux-blanc-haut.py yg ; yeux-trait-bas.py yg (seulement les fichiers yg*).
+   Ensuite : python3 tools/yeux-blanc-haut.py yg ; tools/yeux-trait-bas.py yg ; tools/yeux-garcons-iris.py
    --- texte d'origine : Reprend les yeux dessinés par Prescillia (docs/references/yeux/planche-yeux.png) en images détourées.
    python3 tools/traceur-yeux.py  ->  assets/yeux/<forme>-<cils>-<d|g>.png, assets/yeux/<forme>-iris-<d|g>.png et js/yeux-art.js
 
@@ -211,7 +211,13 @@ for sid, (x, y, w, h) in SHAPES:
         skinlike = (np.linalg.norm(lab_ - skLab, axis=2) < 22) & (yy < cy)      # paupière couleur peau posée sur l'iris
         ia = ia * ~cv2.dilate(skinlike.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
         top = top * ~skinlike
-        save(f'{sid}-iris-{side}', ia, cf)
+        # garçons : l'iris reste dans l'ouverture de l'œil (blanc + iris de la planche), 1 px en retrait, sans le liseré clair
+        opn = cv2.erode(inside.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32)
+        from scipy.ndimage import binary_fill_holes as _bfh
+        rim = (cv2.erode(_bfh(ia > .3).astype(np.uint8), np.ones((7, 7), np.uint8)) == 0)   # bord extérieur seulement (pas autour des reflets)
+        ia = ia * cv2.GaussianBlur(opn, (0, 0), .5)
+        cfI = np.where((rim & (cf.mean(2) > 55))[..., None], np.minimum(cf, 30), cf)   # liseré clair du bord de l'iris → contour sombre
+        save(f'{sid}-iris-{side}', ia, cfI)
         irisL.append(cf.mean(2)[iris])
         # ligne de la paupière (pour poser les cils des autres styles), du coin intérieur au coin extérieur
         # haut du trait d'eye-liner : haut de l'œil une fois les cils fins retirés (ouverture morphologique), lissé
