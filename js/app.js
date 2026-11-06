@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'){o+=earBoy(x,EY,k,p,outl,skD);return}o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -983,9 +983,15 @@ function neckZone(s,FY){const F=faceOf(s),k=F.d+FY;if(NZ[k])return NZ[k];const d
 const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
 /* garçons : oreilles plus basses (demande de Prescillia) */
-const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=219;
+const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=224;
 /* garçons : oreilles plus grandes (correction de Prescillia) : [rayon x, rayon y, décalage vers l'extérieur] */
-const earSz=s=>s&&s.sexe==='m'?[20,35,2]:[17,27,0];
+const earSz=s=>s&&s.sexe==='m'?[19,34,0]:[17,27,0];
+/* oreille des garçons d'après le modèle de Prescillia : haut arrondi au niveau du haut de l'œil, plus large en haut,
+   lobe étroit vers le bas, ourlet intérieur ; le côté intérieur passe sous le visage */
+function earBoy(x,y,k,p,outl,skD){const t=`translate(${x},${y}) scale(${1.25*k},1.3)`;
+ return `<g transform="${t}"><path d="M9,-24 C1,-30 -13,-27 -16.5,-15 C-18.5,-6 -17,3 -13.5,10 C-10.5,16 -8.5,22 -3.5,25.5 C0.5,28 6,26.5 9,22Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
+  +`<path d="M-1.5,-15 C-8.5,-13 -10.5,-3 -8.5,5 C-7,10 -3,11.5 0,9.5Z" fill="${skD}" opacity=".55"/>`
+  +`<path d="M-3,-19 C-11,-18 -14,-9 -12.5,0 C-11.5,6 -8.5,11 -5,13.5" fill="none" stroke="${outl}" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>`}
 function earHoles(s){const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
@@ -995,18 +1001,18 @@ function faceTop(d){const n=d.match(/-?[\d.]+/g).map(Number);let m=1e9;for(let i
 /* garçons : implantation des cheveux aux tempes et sur les côtés du front — une masse continue qui suit le bord du crâne
    jusqu'au-dessus de l'oreille, sous l'image de la coiffure (plus de trou ni d'encoche triangulaire), avec un bord intérieur
    légèrement irrégulier et fondu, comme des cheveux courts qui poussent du cuir chevelu */
-const TEMPLE={top:90,bot:186,inT:30,inB:7,out:1.5};/* côtés serrés : dégradé collé au crâne jusqu'à l'oreille (correction de Prescillia) */
+const TEMPLE={top:90,bot:192,inT:15,inB:6,out:1.5};/* côtés serrés : bande étroite et droite collée au crâne jusqu'à l'oreille (modèle de Prescillia) *//* côtés serrés : dégradé collé au crâne jusqu'à l'oreille (correction de Prescillia) */
 function templeFill(s,p){if(s.sexe!=='m'||!HAIR_NEW.includes(s.hair)||!HAIR_G.includes(s.hair)||s.hair==='chauve'||!HART(s))return '';const d=faceOf(s).d,T=TEMPLE,id=p+'tpl';
  const A=HART(s),hc=s.hairColor,base=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(A.main)[i]))<40?A.main:hc,c=shade(base,lum(base)>.35?-.42:-.15),line=shade(base,-.7),c2=shade(base,lum(base)>.35?-.6:-.45),c3=shade(base,lum(base)>.35?-.22:.12);
  /* contour des tempes : du bord du crâne vers le front, ligne nette légèrement irrégulière (pas de flou) */
- const inner=(k,y)=>{const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=(T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4))*(u>.75?Math.max(0,1-(u-.75)/.25):1)-(u>.75?6*Math.pow((u-.75)/.25,1.5):0),j=Math.sin(y*1.7+k)*1.4+Math.sin(y*.63)*1.1+Math.sin(y*3.1)*.6;return 200+k*(hw-inset+j)};
+ const inner=(k,y)=>{const hw=faceHW(d,y),u=(y-T.top)/(T.bot-T.top),inset=(T.inB+(T.inT-T.inB)*Math.pow(1-u,1.4))*(u>.75?Math.max(0,1-(u-.75)/.25):1)-(u>.75?6*Math.pow((u-.75)/.25,1.5):0),j=0;/* trait net et droit (modèle de Prescillia) */return 200+k*(hw-inset+j)};
  const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=3){o.push([200+k*(faceHW(d,y)+T.out),y]);I.push([inner(k,y),y])}return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
  const edge=k=>{let o='';for(let y=T.top+16;y<=T.bot;y+=3)o+=(o?' L':'M')+fx(inner(k,y))+','+y;return o};
  /* remplissage = la texture de la coiffure elle-même (l'image décalquée), descendue sur la tempe, sur une base de la couleur des cheveux */
  const cp=`${id}c`,fit=hairFit(s),[ix,iy,iw,ih]=A.img,same=base===A.main,href=(same?null:HTINT[s.hair+'|'+hc])||`assets/coiffures/${s.hair}.png`;
  const copy=(dy,n)=>`<g transform="translate(0,${dy})"><g transform="${fit?fit.t:''}"><image href="${href}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/></g></g>`;
  return `<defs><clipPath id="${cp}">${[-1,1].map(k=>`<path d="${side(k)}"/>`).join('')}</clipPath><pattern id="${id}h" width="3.2" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><path d="M.8,0 L.8,2.6" stroke="${c2}" stroke-width=".8" stroke-linecap="round"/><path d="M2.4,1.4 L2.4,4" stroke="${c3}" stroke-width=".55" stroke-linecap="round" opacity=".7"/></pattern><linearGradient id="${id}m" gradientUnits="userSpaceOnUse" x1="0" y1="${T.top}" x2="0" y2="${T.top+18}"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="${id}k" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400"><rect x="0" y="0" width="400" height="400" fill="url(#${id}m)"/></mask></defs>
-  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(20,4)}<rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="${c}" opacity=".92"/><rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="url(#${id}h)" opacity=".55"/></g></g>`/* dégradé court : cheveux ras et serrés sous les boucles */+
+  <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(20,4)}<rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="${c}" opacity=".92"/></g></g>`/* dégradé court : cheveux ras et serrés sous les boucles */+
   [-1,1].map(k=>LN(edge(k),line,1,.35)).join('')}/* bord intérieur discret, pas de trait marqué */
 function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const d=faceOf(s).d;
  /* crâne du modèle de la planche (case « buzz cut ») : demi-largeur 113 à y = 150, haut du crâne à y = 20 ; ramené au crâne de la forme choisie,
