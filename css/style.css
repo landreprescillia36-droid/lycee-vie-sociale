@@ -522,3 +522,8 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .fl-pick{display:flex;align-items:center;gap:10px;cursor:pointer}
 .fl-pick input{width:20px;height:20px;accent-color:var(--g-acc,#7aa6c2)}
 .choice .av.sm{width:36px;height:36px;flex:0 0 auto}
+/* Mon compte : bouton Google */
+.google-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;background:#fff;color:#1f1f1f;border:1px solid #dadce0;font-weight:700}
+.google-btn svg{width:20px;height:20px}
+.or-sep{display:flex;align-items:center;gap:10px;margin:14px 0 6px}
+.or-sep::before,.or-sep::after{content:"";flex:1;border-top:1px solid var(--line,#dfe3ea)}

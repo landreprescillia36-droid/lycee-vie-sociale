@@ -51,6 +51,8 @@
    <p class="story-text">Ta partie est sauvegardée en ligne : connecte-toi avec le même compte sur ton téléphone ou ton ordinateur pour la retrouver.</p>${msg}
    <div class="row"><button class="gbtn ghost" type="button" id="cloudLogout">Se déconnecter</button><button class="gbtn" type="button" id="cloudSaveNow">Sauvegarder maintenant</button></div>`);
   else openSheet(`${sheetHead('Mon compte','Retrouve ta partie sur tous tes appareils')}
+   <button class="gbtn google-btn" type="button" id="cloudGoogle"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.9 6.1C12.5 13.6 17.8 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9h12.4c-.5 2.9-2.2 5.3-4.6 7l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z"/><path fill="#FBBC05" d="M10.6 28.6c-.5-1.4-.8-2.9-.8-4.6s.3-3.2.8-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.2 0-11.5-4.2-13.4-9.9l-7.9 6.1C6.6 42.6 14.6 48 24 48z"/></svg><span>Continuer avec Google</span></button>
+   <p class="muted or-sep"><span>ou avec ton e-mail</span></p>
    <form class="stack" id="cloudForm"><label class="muted" for="cloudEmail">Adresse e-mail</label><div class="composer"><input id="cloudEmail" type="email" autocomplete="email" required></div>
    <label class="muted" for="cloudPass">Mot de passe (6 caractères minimum)</label><div class="composer"><input id="cloudPass" type="password" minlength="6" autocomplete="current-password" required></div>
    ${msg}<div class="row"><button class="gbtn ghost" type="button" id="cloudSignup">Créer un compte</button><button class="gbtn" type="submit">Se connecter</button></div></form>`);
@@ -60,6 +62,10 @@
  async function login(){const c=creds();if(!c.email||c.password.length<6){say('Écris ton e-mail et un mot de passe de 6 caractères minimum.');return}
   say('Connexion…');const {error}=await sb.auth.signInWithPassword(c);
   if(error)say(/confirm/i.test(error.message)?'Confirme d\'abord ton adresse avec le lien reçu par e-mail.':'E-mail ou mot de passe incorrect.')}
+ /* connexion Google : on part sur la page de Google, puis on revient sur le jeu déjà connecté·e */
+ async function google(){say('Ouverture de Google…');
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname,queryParams:{prompt:'select_account'}}});
+  if(error)say(/not enabled|provider/i.test(error.message)?'La connexion Google n\'est pas encore activée.':'Connexion Google impossible : '+error.message)}
  async function signup(){const c=creds();if(!c.email||c.password.length<6){say('Écris ton e-mail et un mot de passe de 6 caractères minimum.');return}
   say('Création du compte…');const {data,error}=await sb.auth.signUp({...c,options:{emailRedirectTo:location.origin+location.pathname}});
   if(error){say(/registered|exists/i.test(error.message)?'Ce compte existe déjà : clique sur « Se connecter ».':'Création impossible : '+error.message);return}
@@ -67,7 +73,8 @@
 
  $('sheetBody').addEventListener('submit',e=>{if(e.target.id==='cloudForm'){e.preventDefault();login()}});
  $('sheetBody').addEventListener('click',e=>{const id=e.target.closest('button')?.id;
-  if(id==='cloudSignup')signup();
+  if(id==='cloudGoogle')google();
+  else if(id==='cloudSignup')signup();
   else if(id==='cloudSaveNow'){lastSent=null;say('Envoi…');pushNow().then(()=>say(status))}
   else if(id==='cloudLogout'){pushNow().finally(()=>sb.auth.signOut());closeSheet();toast('Déconnecté·e : ta partie reste sur cet appareil')}
   else if(id==='cloudUseOnline'&&pending)useOnline(pending);
