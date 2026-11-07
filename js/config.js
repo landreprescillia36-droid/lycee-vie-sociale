@@ -5,6 +5,6 @@
    publique : la sécurité vient des règles de supabase/schema.sql. Ne jamais mettre ici
    la clé « service_role » / « secret ». */
 window.LYCEE_CONFIG = {
-  supabaseUrl: '',
-  supabaseAnonKey: ''
+  supabaseUrl: 'https://xykuqrrtisxqzabmwcio.supabase.co',
+  supabaseAnonKey: 'sb_publishable_vi__PBP6kx5y-XHmlufdUg_R6rMXpTj'
 };
