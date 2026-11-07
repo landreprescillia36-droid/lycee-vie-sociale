@@ -1,0 +1,5 @@
+:root{--bg:#f7f3ee;--ink:#1d2433;--mut:#5b6475;--acc:#c0563f}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:720px;margin:0 auto;padding:28px 16px 48px}
+h1{font-size:26px;line-height:1.2;margin:0 0 4px}h2{font-size:18px;margin:26px 0 6px}
+.mut{color:var(--mut);font-size:14px}a{color:var(--acc)}
