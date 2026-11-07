@@ -994,7 +994,7 @@ function earBoy(x,y,k,p,outl,skD,s){const t=`translate(${x},${y}) scale(${1.25*k
  return `<g transform="${t}"><path d="M9,-24 C2,-30 -13,-28 -17,-16 C-19,-8 -17.5,-1 -14,5 C-10.5,11 -5.5,16.5 -1.5,20 Q${f((Lx-1.5)/2)},23.5 ${f(Lx)},20.5 L${f(Lx+16)},14 L24,-14Z" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2" stroke-opacity=".55" stroke-linejoin="round"/>`
   +`<path d="M-1,-15 C-8,-13 -10,-4 -8.5,2 C-7,6.5 -3.5,8 0,6Z" fill="${skD}" opacity=".55"/>`
   +`<path d="M-3,-19 C-11,-18 -14,-9 -12.5,-2 C-11.5,4 -8.5,9 -5,13" fill="none" stroke="${outl}" stroke-width="1.6" stroke-linecap="round" opacity=".5"/></g>`}
-function earHoles(s){const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
+function earHoles(s){if(s&&s.sexe==='m')return '';/* garçons : la nouvelle oreille est sous les cheveux, pas de trou ovale dans la coiffure */const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
 /* garçons : favoris (cheveux des tempes) qui descendent le long du visage jusqu'au haut de l'oreille : la coiffure rejoint le crâne (version corrigée de Prescillia) */
 /* coiffures garçons (décalquées sur la tête du jeu « ovale ») ajustées à la forme de tête choisie : largeur aux tempes et haut du crâne */
@@ -1077,7 +1077,7 @@ function hairArt(s,part,p){if(coupeM(s))return part==='front'?coupeSVG(s,p):'';c
  /* l'image est posée deux fois : derrière le corps (les cheveux de l'arrière passent derrière les épaules)
     et devant, découpée pour ne garder que la tête et les mèches qui tombent sur la poitrine */
  if(A.img){const [x,y,w,h]=A.img,[l0,lm,l1]=A.lum;let flt='',fid=p+'haf'+part,cid=p+'hac';
-  let tab=null;if(!same){const dk=shade(hc,-.75),lt=shade(hc,.45),N=16;tab=[[],[],[]];
+  let tab=null;if(!same){const dk=shade(hc,-.75),lt=HAIR_G.includes(s.hair)?shade(hc,.16):shade(hc,.45)/* garçons : reflets moins clairs (sinon on dirait des trous qui laissent voir la peau) */,N=16;tab=[[],[],[]];
    for(let i=0;i<N;i++){const v=i/(N-1),c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
    flt=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="${HAIR_G.includes(s.hair)?'.15 .35':'.45 1.3'}"/><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`}
   const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
