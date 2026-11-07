@@ -35,6 +35,13 @@ def garment(a):
     for i in order[1:]:
         if sz[i] > 25 and cy[i] > top + 10: keep |= lab == i + 1   # rayures, cordons séparés
     keep = ndimage.binary_fill_holes(keep) & ~(skin & ~ndimage.binary_erosion(ndimage.binary_fill_holes(keep), iterations=2))
+    # morceaux isolés fins (restes de contours des bras) : retirés ; on garde la masse et ce qui est dedans (rayures)
+    lab2, n2 = ndimage.label(keep); sz2 = ndimage.sum(keep, lab2, range(1, n2 + 1))
+    big = int(np.argmax(sz2)) + 1; OB = ndimage.find_objects(lab2); bb = OB[big - 1]
+    for i in range(1, n2 + 1):
+        if i == big: continue
+        sl = OB[i - 1]; w_ = sl[1].stop - sl[1].start
+        if sz2[i - 1] < 60 or w_ < 6 or sl[1].start < bb[1].start + 4 or sl[1].stop > bb[1].stop - 4: keep[lab2 == i] = False
     return keep, bg, skin
 if __name__ == '__main__' and len(sys.argv) > 2 and sys.argv[2] == 'masques':
     tiles = []
@@ -68,6 +75,41 @@ def runs(row, minw=3):
     if not len(q): return []
     cut = np.where(np.diff(q) > 1)[0]
     return [(int(a[0]), int(a[-1])) for a in np.split(q, cut + 1) if a[-1] - a[0] >= minw]
+def cover(out, om, typ):
+    """le haut de la planche couvre tout le haut dessiné par le jeu (pas de bande de l'ancien haut au bord) :
+       chaque colonne est étirée vers le haut (épaules), puis chaque ligne vers l'extérieur, en douceur"""
+    H, W = om.shape; A = out[..., 3] > 127
+    ys, xs = np.where(om); cx = (xs.min() + xs.max()) / 2; hw = (xs.max() - xs.min()) / 2
+    tank = typ in ('gdeb', 'gnageur')
+    # colonnes (hors encolure)
+    tops_o = np.array([np.argmax(om[:, x]) if om[:, x].any() else -1 for x in range(W)], float)
+    tops_h = np.array([np.argmax(A[:, x]) if A[:, x].any() else -1 for x in range(W)], float)
+    d = np.where((tops_o >= 0) & (tops_h >= 0), tops_h - tops_o, 0); d = np.clip(d, 0, 40)
+    d[np.abs(np.arange(W) - cx) < hw * (.42 if tank else .3)] = 0
+    d = ndimage.gaussian_filter1d(ndimage.maximum_filter1d(d, 9), 4)
+    yy = np.arange(H, dtype=np.float32)
+    for x in range(W):
+        if d[x] < .5: continue
+        th = tops_h[x]; to = th - d[x]; span = 30.0
+        src = np.where(yy < th + span, th + (yy - to) * span / (span + d[x]), yy)
+        for c in range(4): out[:, x, c] = np.interp(src, yy, out[:, x, c], left=0, right=0)
+    A = out[..., 3] > 127
+    # lignes : bords gauche et droit
+    L = np.zeros(H); Rr = np.zeros(H)
+    for y in range(H):
+        qo = np.where(om[y])[0]; qh = np.where(A[y])[0]
+        if len(qo) and len(qh): L[y] = max(0, qh.min() - qo.min()); Rr[y] = max(0, qo.max() - qh.max())
+    L = ndimage.gaussian_filter1d(ndimage.maximum_filter1d(np.clip(L, 0, 30), 7), 3); Rr = ndimage.gaussian_filter1d(ndimage.maximum_filter1d(np.clip(Rr, 0, 30), 7), 3)
+    xsf = np.arange(W, dtype=np.float32)
+    for y in range(H):
+        qh = np.where(A[y])[0]
+        if not len(qh) or (L[y] < .5 and Rr[y] < .5): continue
+        l, r = qh.min(), qh.max(); span = 30.0
+        src = xsf.copy()
+        if L[y] >= .5: lo = l - L[y]; m_ = xsf < l + span; src[m_] = l + (xsf[m_] - (l + span)) * span / (span + L[y]) + span
+        if Rr[y] >= .5: ro = r + Rr[y]; m_ = xsf > r - span; src[m_] = r - span + (xsf[m_] - (r - span)) * span / (span + Rr[y])
+        for c in range(4): out[y, :, c] = np.interp(src, xsf, out[y, :, c], left=0, right=0)
+    return out
 def warp(src, sm, om):
     """src/sm : haut de la planche (pixels BGR, masque) ; om : masque de notre haut. Ligne par ligne, les morceaux
        (manche, buste, manche) de la planche sont étirés sur ceux du jeu."""
@@ -122,8 +164,22 @@ if __name__ == '__main__' and (len(sys.argv) < 3 or sys.argv[2] != 'masques'):
         rgba = np.dstack([a, (m * 255).astype(np.uint8)])
         out = cv2.warpAffine(rgba, Ma, (om.shape[1], om.shape[0]), flags=cv2.INTER_CUBIC, borderValue=(0, 0, 0, 0)).astype(np.float32)
         out[..., 3] = cv2.warpAffine((m * 255).astype(np.uint8), Ma, (om.shape[1], om.shape[0]), flags=cv2.INTER_LINEAR)
+        if t not in ('gdeb', 'gnageur'): out = cover(out, om, t)   # débardeurs : le dessin tel quel
+        # alpha net : plus de voile autour, plus de petits restes
+        al = np.clip((out[..., 3] - 70) / 110, 0, 1)
+        lab3, n3 = ndimage.label(al > .5); sz3 = ndimage.sum(al > .5, lab3, range(1, n3 + 1))
+        if n3: al = al * np.isin(lab3, [i + 1 for i in range(n3) if sz3[i] > 2000]) * 1.0
+        b_ = ndimage.binary_opening(al > .5, iterations=2)
+        b_ = cv2.morphologyEx(b_.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17))).astype(np.float32)   # encoches sur les côtés : comblées
+        al = np.clip((cv2.GaussianBlur(b_, (0, 0), 2.5) - .5) * 3 + .5, 0, 1)   # contour lisse
+        # couleur des pixels ajoutés par le comblement : celle du voisin
+        inside = out[..., 3] > 100
+        if (~inside).any():
+            idx = ndimage.distance_transform_edt(~inside, return_distances=False, return_indices=True)
+            for ch in range(3): out[..., ch] = np.where(inside, out[..., ch], out[..., ch][idx[0], idx[1]])
+        out[..., 3] = al * 255
         # bords doux
-        al = cv2.GaussianBlur(out[..., 3], (0, 0), .8); out[..., 3] = np.minimum(out[..., 3], al * 1.3)
+        al = cv2.GaussianBlur(out[..., 3], (0, 0), 1.0); out[..., 3] = np.minimum(out[..., 3], al * 1.2)
         ys, xs = np.where(out[..., 3] > 4); y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
         crop = out[y0:y1, x0:x1]
         small = cv2.resize(crop, ((x1 - x0) // 2, (y1 - y0) // 2), interpolation=cv2.INTER_AREA)

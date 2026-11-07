@@ -853,7 +853,7 @@ function topSVG(G,T,s,p,K){
   tab=[[],[],[]];if(!same){const dk=shade(cc,-.62),lt=shade(cc,lum(cc)>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
   const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab),fid=p+'hgf';
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
-  HG_OFF=1;let vec='';try{vec=topSVG(G,T,s,p,K)}finally{HG_OFF=0}
+  HG_OFF=1;let vec='';try{vec=['gdeb','gnageur'].includes(s.top)?arms():topSVG(G,T,s,p,K)}finally{HG_OFF=0}/* débardeurs : pas de dessous (la peau se voit autour, comme sur la planche) */
   return vec+(same||T_?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
    +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><image href="${T_||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+hands()}}
  if(T.vest){
