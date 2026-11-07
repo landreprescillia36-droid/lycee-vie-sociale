@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='82';
+const APP_VERSION='83';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -834,6 +834,10 @@ function yokeSVG(G,p,sk,yBot,fade){
  /* ombre douce sous le cou et clavicules */
  o+=`<path d="M186,218 Q200,229 214,218 Q200,238 186,218Z" fill="${skD}" opacity=".35"/>`+LN('M162,235 Q180,237 190,236 Q194,237 195,241 M238,235 Q220,237 210,236 Q206,237 205,241',skDD,1.6,.3);
  return o}
+/* haut de la planche corrigée : la même couleur si elle existe, sinon le même modèle reteint */
+function hgArt(s){if(typeof HG_ART==='undefined'||!s.top)return null;let k0=null;for(const k in HG_ART){const A=HG_ART[k];if(A[7]!==s.top)continue;if(A[8]===(s.topColor||A[8]))return {k,A,tint:false};
+ if(!k0||Math.abs(lum(A[8])-lum(s.topColor))<Math.abs(lum(HG_ART[k0][8])-lum(s.topColor)))k0=k}return k0?{k:k0,A:HG_ART[k0],tint:true}:null}
+let HG_G0=null,HG_OFF=0;const hgG0=()=>HG_G0||(HG_G0=(()=>{const G0=GEO.m,C=CORP.moyenne;return {...G0,WH:G0.WH+C.WH,HH:G0.HH+C.HH,au:G0.au+C.au,lk:C.lk,ak:C.ak}})());
 function topSVG(G,T,s,p,K){
  const {TF,LM,c,dk,lt,cont,sk,skDD,h}=K;let o='';
  const J=jacketParts(G,s,p,T.sx||3);
@@ -843,6 +847,15 @@ function topSVG(G,T,s,p,K){
  const arms=()=>[-1,1].map(k=>`<path d="${armD(G,k)}" fill="url(#${p}lm${k<0?'L':'R'})"/>`).join('');
  const hands=()=>[-1,1].map(k=>{const w=armPts(G,k).wx;return `${handSVG(G,k,sk,p)}`}).join('');
  const hemBand=(y,col,ext)=>{const x=sideX(G,y)+ext;return `<path d="M${fx(200-x)},${y-13} L${fx(200+x)},${y-13} L${fx(200+x)},${y} L${fx(200-x)},${y}Z" fill="${col}"/><path d="M${fx(200-x)},${y-13} L${fx(200+x)},${y-13} L${fx(200+x)},${y} L${fx(200-x)},${y}Z" fill="url(#${p}rib)"/>`};
+/* hauts des garçons copiés sur la planche corrigée de Prescillia (js/hauts-garcons-art.js) : image posée sur le corps,
+   les bras et les mains restent ceux du jeu ; autre couleur → l'image est reteinte d'après sa clarté */
+ {const hg=!HG_OFF&&!(s.jacket&&JK[s.jacket])&&hgArt(s);if(hg){const [x,y,w,h,l0,lm,l1]=hg.A,G0=hgG0(),kx=(sideX(G,330)+.001)/(sideX(G0,330)+.001),cc=s.topColor||hg.A[8],same=!hg.tint,
+  tab=[[],[],[]];if(!same){const dk=shade(cc,-.62),lt=shade(cc,lum(cc)>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
+  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab),fid=p+'hgf';
+  /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
+  HG_OFF=1;let vec='';try{vec=topSVG(G,T,s,p,K)}finally{HG_OFF=0}
+  return vec+(same||T_?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
+   +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><image href="${T_||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+hands()}}
  if(T.vest){
   const U=lum(c)>.5?'#1f2127':'#f4f1ea',VG={...G,SH:G.SH-8};
   o+=`<path d="${torsoD(G,446,3)}" fill="${U}"/>`;
