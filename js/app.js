@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='88';
+const APP_VERSION='89';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2384,7 +2384,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
 if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
-if(G){needInit();G.cd=G.cd||{};chapInit();NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
+if(G){needInit();G.cd=G.cd||{};/* G.chap est créé plus tard (chapInit), ses constantes ne sont pas encore définies ici */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
  G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
@@ -5887,17 +5887,22 @@ function restartGame(){$('game').hidden=true;$('gFabs').hidden=true;document.bod
 function askRestart(){openSheet(`<div class="who"><div style="flex:1;min-width:0"><h2>Recommencer la partie ?</h2><p class="muted" style="margin:2px 0 0">Ta progression, tes notes, tes relations et tes messages seront effacés. Ton avatar est conservé.</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="row"><button class="gbtn ghost" type="button" data-close>Annuler</button><button class="gbtn danger" type="button" id="gRestartOk">Oui, recommencer</button></div>`)}
 /* écran de chargement : reste affiché jusqu'à ce que les images visibles et les portraits soient prêts (6 s au plus) */
 let ldT0=Date.now()-(window.performance?performance.now():0);
-function loadShow(t){const l=$('loader');if(!l)return;l.querySelector('.ld-t').textContent=t||'Chargement…';l.hidden=false;l.classList.remove('out');ldT0=Date.now()}
+const ldSet0=v=>{if(typeof window!=='undefined'&&window.ldSet)window.ldSet(v)};
+function loadShow(t){const l=$('loader');if(!l)return;l.querySelector('.ld-t').textContent=t||'Chargement…';l.hidden=false;l.classList.remove('out');ldT0=Date.now();if(typeof window!=='undefined'){window.LDV=0;ldSet0(0)}}
 const LD_IMG={};
 /* images des SVG (coiffures, chaussures, yeux…) : préchargées pour savoir quand elles sont prêtes */
-function svgImgsReady(){let ok=true;document.querySelectorAll('svg image').forEach(el=>{const u=el.getAttribute('href')||el.getAttribute('xlink:href');if(!u||u.startsWith('data:')||el.closest('[hidden]'))return;
- let im=LD_IMG[u];if(!im){im=LD_IMG[u]=new Image();im.src=u}if(!im.complete)ok=false});return ok}
+function svgImgsCount(){const seen={};let n=0,ok=0;document.querySelectorAll('svg image').forEach(el=>{const u=el.getAttribute('href')||el.getAttribute('xlink:href');if(!u||u.startsWith('data:')||seen[u]||el.closest('[hidden]'))return;seen[u]=1;
+ let im=LD_IMG[u];if(!im){im=LD_IMG[u]=new Image();im.src=u}n++;if(im.complete)ok++});return [ok,n]}
+function svgImgsReady(){const c=svgImgsCount();return c[0]===c[1]}
 function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;const end=Date.now()+15000;let okSince=0;
- const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!HT_PEND&&svgImgsReady();/* les pastilles finissent de se « cuire » ensuite, sans bloquer l'ouverture */
- const fin=()=>{if(l.classList.contains('out'))return;l.classList.add('out');setTimeout(()=>{l.hidden=true;l.classList.remove('out')},320)};
+ const base=Math.max(typeof window!=='undefined'&&window.LDV||0,0);
+ /* avancement : images de la page + images des dessins + cheveux recolorés */
+ const prog=()=>{const im=[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')),sv=svgImgsCount(),tot=im.length+sv[1]+1,ok=im.filter(i=>i.complete).length+sv[0]+(HT_PEND?0:1);return ok/tot};
+ const ready=()=>prog()>=1;/* les pastilles finissent de se « cuire » ensuite, sans bloquer l'ouverture */
+ const fin=()=>{if(l.classList.contains('out'))return;ldSet0(100);l.classList.add('out');setTimeout(()=>{l.hidden=true;l.classList.remove('out')},320)};
  /* tout doit être prêt pendant 0,6 s d'affilée (le temps que les coiffures recolorées s'affichent) */
- const chk=()=>{const now=Date.now();if(ready()){okSince=okSince||now}else okSince=0;
-  if(now<end&&(now-ldT0<(min||700)||!okSince||now-okSince<250)){setTimeout(chk,80);return}fin()};
+ const chk=()=>{const now=Date.now(),p=prog();ldSet0(base+(99-base)*Math.min(p,(now-ldT0)/(min||700)>=1?1:.97));if(p>=1){okSince=okSince||now}else okSince=0;
+  if(now<end&&(now-ldT0<(min||700)||!okSince||now-okSince<250)){setTimeout(chk,80);return}ldSet0(100);setTimeout(fin,180)};
  (document.fonts&&document.fonts.ready||Promise.resolve()).then(chk,chk)}
 function withLoader(t,fn){const l=$('loader');if(!l||!l.querySelector||typeof requestAnimationFrame!=='function'){fn();return}loadShow(t);requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{loadHide()}},40))}
 function showAtelier(){withLoader('Création de novas…',showAtelier0)}
@@ -5925,4 +5930,5 @@ $('bAtMus').onclick=e=>{e.stopPropagation();musMode('atelier');const on=!MUS.on;
 drawMusicBtn();
 
 /* ouverture : on récupère d'abord les avatars déjà dessinés (cache), puis on affiche le jeu ou l'atelier */
-bkLoad().then(()=>{if(G)showGame();else{drawTabs();drawSubs();refresh()}loadHide(700)});
+ldSet0(55);const ldPause=()=>new Promise(r=>setTimeout(r,30));/* petites pauses : la barre a le temps de s'afficher */
+bkLoad().then(()=>{ldSet0(62);return ldPause()}).then(()=>{if(G)showGame();else{drawTabs();drawSubs();refresh()}ldSet0(75);return ldPause()}).then(()=>loadHide(700));

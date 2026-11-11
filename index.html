@@ -17,7 +17,11 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="loader" class="loader" role="status" aria-live="polite"><div class="ld-in"><img src="assets/logo.png" alt="" class="ld-logo"><p class="ld-name"><span>dernière année de lycée</span></p><div class="ld-bar"><i></i></div><p class="ld-t">Chargement du jeu…</p></div></div>
+<div id="loader" class="loader" role="status" aria-live="polite"><div class="ld-in"><img src="assets/logo.png" alt="" class="ld-logo"><p class="ld-name"><span>dernière année de lycée</span></p><div class="ld-bar"><i style="width:0%"></i></div><p class="ld-t">Chargement du jeu…</p><p class="ld-p">0 %</p></div></div>
+<script>/* barre de chargement de 0 à 100 % : 0-50 % = fichiers du jeu, 50-70 % = démarrage, 70-100 % = images */
+window.LDV=0;window.ldSet=function(v){v=Math.max(window.LDV,Math.min(100,Math.round(v)));window.LDV=v;var l=document.getElementById('loader');if(!l)return;l.querySelector('.ld-bar i').style.width=v+'%';l.querySelector('.ld-p').textContent=v+' %'};
+/* si une erreur bloque le démarrage, on le dit au lieu de laisser la barre figée */
+window.addEventListener('error',function(e){var l=document.getElementById('loader');if(!l||l.hidden||window.LDERR)return;window.LDERR=1;l.querySelector('.ld-t').textContent='Un problème a empêché le jeu de s\'ouvrir.';l.querySelector('.ld-p').innerHTML='<button type="button" class="gbtn" onclick="location.reload()">Réessayer</button><small style="display:block;font:600 12px Nunito,sans-serif;color:#8a97a8;margin-top:8px">'+String(e.message||'').replace(/</g,'&lt;').slice(0,120)+'</small>'});</script>
 <svg id="avSprite" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs></defs></svg>
 <div class="wrap" id="atelier">
   <header>
@@ -119,17 +123,17 @@
 <div class="sheet-back" id="sheet" hidden><div class="sheet" id="sheetBody" role="dialog" aria-modal="true"></div></div>
 <div class="toast" id="toast" role="status"></div>
 
-<script src="js/chaussures-art.js"></script>
-<script src="js/coiffures-art.js"></script>
-<script src="js/coupe-modele.js"></script>
-<script src="js/jeans-art.js"></script>
-<script src="js/hauts-garcons-art.js"></script>
-<script src="js/pantalons-art.js"></script>
-<script src="js/bouches-art.js"></script>
-<script src="js/barbes-art.js"></script>
-<script src="js/yeux-art.js"></script>
-<script src="js/yeux-garcons-art.js"></script>
-<script src="js/app.js"></script>
+<script src="js/chaussures-art.js" onload="ldSet(9)"></script>
+<script src="js/coiffures-art.js" onload="ldSet(13)"></script>
+<script src="js/coupe-modele.js" onload="ldSet(17)"></script>
+<script src="js/jeans-art.js" onload="ldSet(21)"></script>
+<script src="js/hauts-garcons-art.js" onload="ldSet(25)"></script>
+<script src="js/pantalons-art.js" onload="ldSet(30)"></script>
+<script src="js/bouches-art.js" onload="ldSet(34)"></script>
+<script src="js/barbes-art.js" onload="ldSet(38)"></script>
+<script src="js/yeux-art.js" onload="ldSet(42)"></script>
+<script src="js/yeux-garcons-art.js" onload="ldSet(46)"></script>
+<script src="js/app.js" onload="ldSet(50)"></script>
 <script src="js/config.js"></script>
 <script src="js/vendor/supabase.js"></script>
 <script src="js/cloud.js"></script>
