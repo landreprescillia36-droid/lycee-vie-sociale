@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='85';
+const APP_VERSION='86';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2103,7 +2103,7 @@ function ressenti(id){
  return a+b+(mem?` Se souvient : « ${mem.t} »`:'');
 }
 const ressentiShort=id=>ressenti(id).split(' Se souvient')[0];
-function gaugesHTML(id){const r=G.rel[id],off=!npcLikesMe(id)&&G.partner!==id;return `<div class="gg"><span>Amitié</span><div class="bar"><i style="width:${Math.max(0,r.ami)}%"></i></div><b>${r.ami}</b></div><div class="gg love${off?' off':''}" title="${off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
+function gaugesHTML(id){const r=G.rel[id],off=!npcLikesMe(id)&&G.partner!==id;return `<div class="gg"><span>Amitié</span><div class="bar"><i style="width:${Math.max(0,r.ami)}%"></i></div><b>${r.ami}</b></div><div class="gg resp"><span>Respect</span><div class="bar"><i style="width:${respOf(id)}%"></i></div><b>${respOf(id)}</b></div><div class="gg love${off?' off':''}" title="${off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
 
 /* ---------- famille ---------- */
 const ROLES=['Mère','Père','Belle-mère','Beau-père','Grande sœur','Petite sœur','Grand frère','Petit frère','Grand-mère','Grand-père','Tante','Oncle'];
@@ -2347,7 +2347,7 @@ function initLinks(){const L={};NPCS.forEach(a=>{L[a.id]={};NPCS.forEach(b=>{if(
 const mkPost=o=>Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o);
 function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
-  rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
+  rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
   met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
@@ -2373,7 +2373,8 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
 if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
-if(G){G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
+if(G){needInit();G.cd=G.cd||{};chapInit();NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
+ G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
 function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
@@ -2394,7 +2395,7 @@ Peurs : ${f.peurs}. Passions : ${f.passions}.
 Façon de parler : ${f.parle}.
 Genre : ${f.g==='f'?'fille':'garçon'}. Orientation : ${oriLabel(f.o,f.g)}.
 ${markNote(id)}${G.rival===id?`Tu es en rivalité avec ${nameOf('me')} cette année : tu ne lui fais pas de cadeau.\n`:''}Relations : ${f.relations}. Situation amoureuse : ${c==='me'?'en couple avec '+nameOf('me'):c?'en couple avec '+WHO[c].name:'célibataire'}.
-${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}${seatToday()===id?`Aujourd'hui, en cours, ${nameOf('me')} a choisi de s'asseoir à côté de toi.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, amour ${r.amour}/100. ${ressentiShort(id)}
+${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette année et tu ne ${me().sexe==='f'?'la':me().sexe==='m'?'le':'la ou le'} connais pas encore. Comporte-toi comme avec quelqu'un que tu découvres : pose-lui une question pour faire connaissance (d'où ${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} vient, ce qu'${me().sexe==='f'?'elle':me().sexe==='m'?'il':'iel'} aime, son ancien lycée, sa famille…) et ne fais pas comme si vous aviez des souvenirs ensemble.\n`:''}${seatToday()===id?`Aujourd'hui, en cours, ${nameOf('me')} a choisi de s'asseoir à côté de toi.\n`:''}Ce que tu ressens pour ${nameOf('me')} : amitié ${r.ami}/100, respect ${respOf(id)}/100 (l'estime que tu lui portes), amour ${r.amour}/100${G.bff===id?` ; ${nameOf('me')} est ton ou ta meilleur·e ami·e (vous l'avez dit officiellement)`:''}. ${ressentiShort(id)}
 ${nameOf('me')} : personnalité « ${persoL(me().perso,me().sexe)} »${(G.met[id]||0)>=2&&passOf('me').length?`, passions : ${passTxt('me')}${sharedPass(id,'me').length?` (vous partagez : ${sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')} — parlez-en avec plaisir)`:''}`:''}.
 ${raisonNote(id)}
 Tes passions : ${passTxt(id)}. Elles colorent tes sujets de conversation et tes propositions de sorties.
@@ -2754,7 +2755,7 @@ const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.da
 const proposalText=(id,pl)=>{const sp=sharedPass(id,'me');if(sp.length&&Math.random()<.5){const p=PASS[pickR(sp)];return `On a la même passion ${p.e} ça te dit de venir ${p.act} avec moi ${planWhen(pl)} ? (rendez-vous ${PLACE_OUT[pl.place]})`}return `${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();};
 async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
- pushMsg(id,'me',text);bdayWish(id,text);G.st.msgs++;if(isFam(id))G.st.famTalks++;busyId=id;drawChatMsgs();
+ pushMsg(id,'me',text);bdayWish(id,text);needUp('soc',1);G.st.msgs++;if(isFam(id))G.st.famTalks++;busyId=id;drawChatMsgs();
  let out=null;
  if(SAMPLE){try{out=await SAMPLE.json(buildPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
  else await new Promise(r=>setTimeout(r,900+Math.random()*900));
@@ -2909,7 +2910,7 @@ function raisPop(id){const k=raisK(),ty=RTYPE[id]||'bienv',A=RA[k];
   [`Dire la vérité : « ${A.dit} »`,()=>raisTell(id,'verite')],['Rester vague',()=>raisTell(id,'vague')],[`Inventer : « C'est ${A.faux}. »`,()=>raisTell(id,'mensonge')],['Changer de sujet',()=>raisTell(id,'refus')]]})}
 function raisTell(id,how){const r=raisInit(),k=raisK(),A=RA[k],ty=RTYPE[id]||'bienv';r.told[id]=how;let m,d=0;
  if(how==='verite'){m=CG(id,A.r[ty]);d=ty==='bienv'?(A.s?6:3):ty==='curieux'?2:A.s===2?-4:A.s?0:2;
-  if(ty==='bienv'&&A.s){if(!hasMark(id,'confiance'))mark(id,'confiance');r.ally=r.ally||id}
+  respChange(id,2);if(ty==='bienv'&&A.s){if(!hasMark(id,'confiance'))mark(id,'confiance');r.ally=r.ally||id}
   if(ty==='curieux'&&A.s===2&&!r.pub)r.leak=G.day+2+Math.floor(Math.random()*4)}
  else if(how==='vague'){m=ty==='curieux'?CG(id,"« T'es mystérieux·se toi… 🤨 Je finirai par savoir ! »"):ty==='prejuge'?"« Hmm, ok… »":"« Pas de souci, tu me raconteras quand tu voudras 🙂 »";d=ty==='curieux'?-1:0}
  else if(how==='mensonge'){m=`${CNAME(id)} te croit : « Ah ok, je vois ! »`;d=1;r.lie=r.lie||[];r.lie.push(id)}
@@ -2920,7 +2921,7 @@ function raisRumor(){const r=raisInit(),k=raisK();if(r.pub||RA[k].s<2)return;r.p
  const txt=k==='renvoi'?`[Anonyme] : il paraît que ${myHandle()} s'est fait virer de son ancien lycée 👀 quelqu'un sait pourquoi ?`:`[Anonyme] : il paraît que ${myHandle()} avait des embrouilles avec tout le monde dans son ancien lycée 👀`;
  G.posts.unshift(mkPost({by:'potins',text:txt,c:40,r:520,l:11000,comments:[npcComment(pickR(NPCS).id)]}));newsPush(P('Une rumeur circule sur toi et ton ancien lycée'),'👀');
  NPCS.forEach(n=>{const ty=RTYPE[n.id]||'bienv',lied=(r.lie||[]).includes(n.id);
-  if(lied){relChange(n.id,-6,0);r.told[n.id]='verite';setTimeout(()=>pushMsg(n.id,'them',pickR(["Pourquoi tu m'as menti sur ton ancien lycée ? 😒","J'ai vu le post de Potins… t'aurais pu me dire la vérité."])),1500);return}
+  if(lied){relChange(n.id,-6,0);respChange(n.id,-5);r.told[n.id]='verite';setTimeout(()=>pushMsg(n.id,'them',pickR(["Pourquoi tu m'as menti sur ton ancien lycée ? 😒","J'ai vu le post de Potins… t'aurais pu me dire la vérité."])),1500);return}
   if(ty==='prejuge')relChange(n.id,-3,0);else if(ty==='bienv'&&G.rel[n.id].ami>=35){relChange(n.id,2,0);setTimeout(()=>pushMsg(n.id,'them',pickR(["J'ai vu le post de Potins… t'inquiète, on s'en fiche de ton passé 🫶","Ignore Potins, ceux qui comptent te connaissent vraiment 💛"])),2500)}});
  popSheet(sheetHead('👀 Rumeur sur Potins','Tout le lycée en parle')+`<p class="story-text">${esc(txt)}</p><div class="row"><button class="gbtn" type="button" data-close>Ok…</button></div>`)}
 /* chaque raison a ses moments : au début de l'année, puis des mois plus tard */
@@ -3034,7 +3035,7 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
  s.fights=s.fights.filter(f=>{const age=G.day-f.day;if(age>=2&&Math.random()<.3){link(f.a,f.b).ami=clamp(link(f.a,f.b).ami+12,0,100);link(f.b,f.a).ami=clamp(link(f.b,f.a).ami+12,0,100);newsPush(`${CNAME(f.a)} et ${CNAME(f.b)} se sont réconcilié·e·s`,'🕊️');return false}return age<12});
  /* passion : un moment fort dans la vie d'un·e camarade */
  if(Math.random()<.12){const id=pickR(ids),p=pickR(passOf(id));if(p){const t=S(id,PASS[p].ev);newsPush(`${CNAME(id)} ${t}`,PASS[p].e);G.storyQ=G.storyQ||[];G.storyQ.push({at:Math.max(G.min,600)+Math.floor(Math.random()*500),by:id,pass:p,txt:('J\'ai '+t.replace(/^a /,'')).replace(/ ses /g,' mes ').replace(/ son /g,' mon ').replace(/ sa /g,' ma ')});G.storyQ.sort((a,b)=>a.at-b.at)}}
- advFollow();raisDay();
+ advFollow();raisDay();chapTick();coupleAskTick();
  if(G.day-(s.last.adv||0)>=3&&Math.random()<.45)s.advAt={day:G.day,h:17+Math.floor(Math.random()*4),k:Math.random()<.5?'F':'L'};
  bdayDay()}
 /* chaque heure : demande de conseil prévue, nouvelles du soir (20 h) */
@@ -3104,8 +3105,8 @@ function dayStory(id){const c=storyCtx(id);if(!c)return null;const cp=coupleOf(i
 
 /* ---------- ta passion à la maison ---------- */
 function hobbySheet(){const L=passOf('me').length?passOf('me'):Object.keys(PASS).slice(0,8);
- openSheet(sheetHead('🎨 Pratiquer une passion',passOf('me').length?'Tes passions':'Choisis tes passions dans l\'atelier (Parcours) · en attendant :')+`<div class="choices">${L.map(p=>`<button class="choice" type="button" data-hobby="${p}">${PASS[p].e} ${PASS[p].n}<small>1 h · +8 énergie · un·e camarade qui partage ta passion peut te rejoindre</small></button>`).join('')}</div>`)}
-function doHobby(p){const P_=PASS[p];G.done[phase().key+'hobby']=1;G.energy=clamp(G.energy+8,0,100);let t=`${P_.e} Tu t'adonnes à ta passion : ${P_.n.toLowerCase()}. +8 énergie`;
+ openSheet(sheetHead('🎨 Pratiquer une passion',passOf('me').length?'Tes passions':'Choisis tes passions dans l\'atelier (Parcours) · en attendant :')+`<div class="choices">${L.map(p=>`<button class="choice" type="button" data-hobby="${p}">${PASS[p].e} ${PASS[p].n}<small>1 h · divertissement +15 · un·e camarade qui partage ta passion peut te rejoindre</small></button>`).join('')}</div>`)}
+function doHobby(p){const P_=PASS[p];setCd('hobby');let t=`${P_.e} Tu t'adonnes à ta passion : ${P_.n.toLowerCase()} (${needsFx({fun:15,energy:4})})`;
  const fans=NPCS.map(n=>n.id).filter(id=>passOf(id).includes(p)&&G.rel[id].ami>=15);
  if(fans.length&&Math.random()<.5){const id=pickR(fans),ch=relChange(id,4,0);t+=` · ${CNAME(id)} t'envoie des messages pendant ce temps, vous partagez la même passion${ch?' ('+ch.split(' : ')[1]+')':''}`}
  advance(60);closeSheet();note(t.replace(P_.e+' ',''));
@@ -3113,6 +3114,270 @@ function doHobby(p){const P_=PASS[p];G.done[phase().key+'hobby']=1;G.energy=clam
 function hobbyStory(p){const P_=PASS[p];G.stories.push(mkStory('me',{type:'photo',photo:{scene:'chambre',people:['me'],author:'me'},text:pickR(P_.h),seen:true,cat:'B'}));G.st.stories++;
  const fans=NPCS.map(n=>n.id).filter(id=>passOf(id).includes(p)&&G.rel[id].ami>=0);fans.slice(0,2).forEach(id=>relChange(id,2,0));
  toast(`📸 Story publiée${fans.length?' · '+fans.slice(0,2).map(CNAME).join(' et ')+' adorent':''}`);closeSheet();saveG();drawStories()}
+
+/* ---------- vie quotidienne : besoins, maison, famille, sorties, restos, clubs, chapitres, relations ----------
+   G.need {faim, fun, soc} (l'énergie reste G.energy) ; G.cd[activité] = minute du jeu où l'activité redevient possible ;
+   G.outS = sortie en cours ; G.clubS = séance de club en cours ; G.chap = chapitre en cours ; G.bff = meilleur·e ami·e ; G.rel[id].resp = respect */
+const NEEDS=[['faim','🍔','Faim'],['energy','⚡','Énergie'],['fun','🎉','Divertissement'],['soc','💬','Social']];
+const NEED_LBL={faim:'faim',energy:'énergie',fun:'divertissement',soc:'social'};
+function needInit(){G.need=G.need||{faim:80,fun:70,soc:65};return G.need}
+const needV=k=>k==='energy'?G.energy:needInit()[k];
+function needUp(k,d){d=Math.round(d||0);if(!d)return '';if(k==='energy')G.energy=clamp(G.energy+d,0,100);else{const n=needInit();n[k]=clamp(n[k]+d,0,100)}return `${NEED_LBL[k]} ${d>0?'+':''}${d}`}
+const needsFx=o=>Object.entries(o||{}).filter(([k])=>NEED_LBL[k]).map(([k,d])=>needUp(k,d)).filter(Boolean).join(', ');
+/* tous les quarts d'heure : la faim, l'envie de s'amuser et le besoin de voir du monde baissent */
+function needTick(){const n=needInit(),s=G.asleep;n.faim=clamp(n.faim-(s?.5:1.5),0,100);if(!s){n.fun=clamp(n.fun-.75,0,100);n.soc=clamp(n.soc-.6,0,100)}
+ if(!s&&n.faim<15)G.energy=clamp(G.energy-1,0,100);
+ if(!s&&G.min%60===0&&(n.fun<15||n.soc<15))G.energy=clamp(G.energy-1,0,100);
+ const w=G.needWarn=G.needWarn||{};if(s)return;
+ [['faim','🍽️ Tu as faim : mange quelque chose'],['fun','🥱 Tu t\'ennuies : fais une activité qui te plaît'],['soc','💬 Tu te sens un peu seul·e : vois ou appelle quelqu\'un']].forEach(([k,t])=>{if(n[k]<20&&!w[k]){w[k]=1;if(!$('game').hidden)toast(P(t))}if(n[k]>=30)w[k]=0})}
+/* à la pause, au lycée : on voit du monde */
+function needPause(ph){if(vsHome()||!schoolDay(G.day)||!['recre','dej','matin'].includes(ph.type))return;const map=presence(ph);if(Object.values(map).some(L=>L.length))needUp('soc',4)}
+function drawNeeds(){const el=$('gNeeds');if(!el)return;el.innerHTML=NEEDS.map(([k,ic])=>{const v=needV(k);return `<i class="nd${v<20?' low':''}" title="${NEED_LBL[k]}"><b style="height:${Math.max(6,v)}%"></b><em>${ic}</em></i>`}).join('')}
+function needsSheet(){const tips={faim:'Repas en famille, cantine, grignoter, restos et fast-foods',energy:'Dormir, faire une sieste, se reposer',fun:'Télé, film, jeux, passion, sorties, clubs',soc:'Parler en vrai, sorties, repas en famille, clubs, messages'};
+ openSheet(sheetHead('Tes besoins','Ils baissent avec le temps : garde-les au-dessus de 20')+`<div class="kb">${NEEDS.map(([k,ic,l])=>{const v=needV(k),c=v>=60?'#3fcf8e':v>=30?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${ic} ${l}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}</b></div><p class="muted" style="margin:-4px 0 6px">${tips[k]}</p>`}).join('')}</div>`
+ +(G.bonus?`<div class="row"><button class="gbtn" type="button" data-needbonus>Récupérer un bonus d'énergie (${G.bonus})</button></div>`:''))}
+
+/* ---------- activités à la maison : chacune a ses propres horaires, jamais ceux des cours ---------- */
+const HOME_HOURS={snack:[0,1440],call:[420,1350],invite:[540,1230],tv:[360,1440],pc:[0,1440],film:[600,1440],hobby:[0,1440],go:[420,1320]};
+const HOME_CD={snack:120,tv:60,pc:60,film:150,hobby:60,rest:120,nap:180};
+const cdLeft=k=>Math.max(0,((G.cd||{})[k]||0)-nowT());
+const setCd=(k,m)=>{(G.cd=G.cd||{})[k]=nowT()+(m||HOME_CD[k]||60)};
+/* repas en famille : un le soir en semaine (18 h – 21 h), deux le week-end (12 h – 14 h et 18 h – 21 h) */
+function mealWin(){const we=weekday()>=5||!schoolDay(G.day),m=G.min;if(m>=1080&&m<1260)return 'soir';if(we&&m>=720&&m<840)return 'midi';return null}
+function mealOff(){const w=mealWin(),we=weekday()>=5||!schoolDay(G.day);if(!w)return we?'12 h – 14 h ou 18 h – 21 h':'de 18 h à 21 h';return G.done[G.day+'meal'+w]?'déjà mangé':''}
+function homeTimeOff(k){const H=HOME_HOURS[k];if(H&&(G.min<H[0]||G.min>=H[1]))return `de ${fmtT(H[0])} à ${H[1]>=1440?'minuit':fmtT(H[1])}`;const c=cdLeft(k);return c?`dans ${c>=60?Math.floor(c/60)+' h '+String(c%60).padStart(2,'0'):c+' min'}`:''}
+const goOff=()=>vsInit().sick[G.day]?'tu es censé·e être malade':(vsInit().excl&&G.day<=vsInit().excl||vsInit().expelled)?'':homeTimeOff('go');
+
+/* ---------- pop-ups en famille (télé, film, repas) : chaque réponse change la complicité ---------- */
+/* effets : f = la personne concernée, all = toute la famille présente, faim/fun/soc/energy = tes besoins */
+const FAM_TV_POP=[
+ {t:"{f} veut changer de chaîne en plein milieu de ton programme.",ch:[["Laisser faire",{f:3,fun:-3},"{f} est ravi·e, toi un peu moins."],["Proposer de regarder la fin puis de lui laisser la télécommande",{all:2},"Tout le monde trouve ça juste."],["Garder la télécommande",{f:-4,fun:3},"{f} boude un peu."]]},
+ {t:"{f} commente chaque scène à voix haute.",ch:[["Rire et commenter avec {f}",{f:4,fun:4},"Vous rigolez comme des fous."],["Lui demander gentiment de baisser d'un ton",{f:0},"{f} fait mine de se vexer, puis sourit."],["Soupirer bruyamment",{f:-3},"Ambiance un peu froide…"]]},
+ {t:"Pendant la pub, {f} te demande comment ça va au lycée.",ch:[["Raconter vraiment ta journée",{f:5,soc:4},"{f} t'écoute avec attention."],["Répondre « ça va » sans lever les yeux",{f:-1},"{f} n'insiste pas."],["Demander à {f} comment s'est passée sa journée",{f:4,soc:3},"{f} est touché·e que tu demandes."]]},
+ {t:"{f} s'est endormi·e sur le canapé.",ch:[["Lui mettre une couverture",{f:5},"{f} te remercie le lendemain."],["Prendre une photo pour rigoler",{f:1,fun:4},"La photo fait rire toute la famille."],["Monter le son pour réveiller {f}",{f:-3,fun:2},"{f} se réveille en sursaut, pas content·e."]]}];
+const FAM_FILM_POP=[
+ {t:"Le pop-corn est fini et il reste une heure de film.",ch:[["Aller en refaire toi-même",{all:3},"Tout le monde t'applaudit à ton retour 🍿"],["Demander à {f} d'y aller",{f:-1},"{f} y va en traînant des pieds."],["Tirer au sort",{all:1,fun:2},"Le sort désigne {f}. Fous rires."]]},
+ {t:"Une scène de bisou arrive… gros malaise dans le salon.",ch:[["Faire une blague pour détendre",{all:3,fun:3},"Toute la famille éclate de rire."],["Aller chercher à boire",{},"Tu reviens quand c'est fini 😅"],["Fixer le plafond",{fun:-1},"Le moment passe… lentement."]]},
+ {t:"{f} a deviné la fin du film depuis le début et veut te la dire.",ch:[["« Ne dis rien !! »",{f:1,fun:3},"{f} se retient à grand-peine."],["Laisser {f} parler",{f:3,fun:-4},"Maintenant tu connais la fin…"],["Parier sur la fin avec {f}",{f:4,fun:4},"Le pari met de l'ambiance."]]},
+ {t:"Le film se termine. Vous n'êtes pas d'accord sur la fin.",ch:[["Défendre ton avis",{f:1,fun:3},"Le débat dure un quart d'heure."],["Te ranger à l'avis de {f}",{f:2},"{f} est content·e d'avoir raison."],["Débattre en rigolant",{all:3,soc:3},"Vous refaites le film ensemble."]]},
+ {t:"{f} pleure discrètement devant une scène émouvante.",ch:[["Lui passer un mouchoir sans rien dire",{f:5},"{f} te serre l'épaule."],["Taquiner {f} gentiment",{f:-1,fun:3},"{f} te lance un coussin."],["Faire semblant de ne rien voir",{f:1},"{f} apprécie ta discrétion."]]}];
+const MEAL_POP=[
+ {t:"{f} te demande où tu en es dans tes notes.",ch:[["Répondre honnêtement",{f:4},"{f} apprécie ta franchise."],["Enjoliver un peu",{f:1},"Ça passe… pour cette fois."],["Changer de sujet",{f:-3},"{f} fronce les sourcils."]]},
+ {t:"{f} raconte sa journée en détail.",ch:[["Écouter attentivement",{f:5,soc:4},"{f} est content·e d'être écouté·e."],["Regarder ton téléphone sous la table",{f:-5},"« Pas de téléphone à table ! »"],["Lui donner un conseil",{f:3},"{f} te trouve bien mûr·e."]]},
+ {t:"Il reste une dernière part du plat.",ch:[["La proposer à {f}",{f:4},"{f} te sourit."],["La prendre",{f:-1,faim:8},"Délicieux… mais {f} la voulait."],["La partager avec {f}",{f:3,faim:4},"Parfait compromis."]]},
+ {t:"{f} te demande si tu as quelqu'un dans ta vie.",ch:[["Raconter un peu",{f:4,soc:3},"{f} est ravi·e de ta confiance."],["Rougir et changer de sujet",{f:1,fun:2},"Toute la table rigole."],["Répondre sèchement",{f:-4},"Le silence tombe."]]},
+ {t:"À la fin du repas, {f} te demande de débarrasser.",ch:[["Le faire tout de suite",{f:4},"{f} te remercie."],["« Plus tard… »",{f:-3},"{f} soupire."],["Débarrasser avec {f} en discutant",{f:5,soc:4},"Un vrai moment ensemble."]]},
+ {t:"La famille parle des prochaines vacances.",ch:[["Proposer d'aller aux Saintes",{all:3},"Tout le monde est partant."],["Dire que tu préfères rester avec tes ami·e·s",{all:-2,soc:2},"Un petit froid s'installe."],["Laisser les autres décider",{all:1},"Ça te va très bien."]]}];
+function famPops(list,fams,n,ctx,done){if(!fams.length){done([]);return}
+ const pool=[...list].sort(()=>Math.random()-.5).slice(0,n),acc=[];
+ const step=i=>{if(i>=pool.length){done(acc);return}const Q=pool[i],f=pickR(fams),nm=famById(f).name,R=t=>P(t.replace(/{f}/g,nm));
+  vsPop({eb:ctx.eb,t:ctx.t,html:`<div class="av">${avatarOf(f)}</div>`,b:(acc.length?acc[acc.length-1]+'\n\n':'')+R(Q.t),ch:Q.ch.map(([l,fx,res])=>[R(l),()=>{const parts=[];
+   for(const k in fx){const d=fx[k];if(k==='f'){famChange(f,d);if(d)parts.push(`${nm} ${d>0?'+':''}${d}`)}else if(k==='all'){fams.forEach(x=>famChange(x,d));if(d)parts.push(`famille ${d>0?'+':''}${d}`)}else parts.push(needUp(k,d))}
+   acc.push(R(res)+(parts.filter(Boolean).length?` (${parts.filter(Boolean).join(', ')})`:''));step(i+1);return KEEP}])})};step(0)}
+function famResult(title,sub,acc,extra){closeSheet();cevOpen=false;const t=[...acc,extra].filter(Boolean);note(`${title} : ${t.join(' ')}`.slice(0,300));
+ openSheet(sheetHead(title,sub)+t.map(x=>`<p class="story-text">${esc(x)}</p>`).join('')+`<div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);saveG();drawHUD();drawView()}
+/* télé : seul·e ou avec la famille */
+function tvSheet(){openSheet(sheetHead('📺 Regarder la télé','Seul·e ou avec ta famille ?')+`<div class="choices">${G.family.map(f=>`<label class="choice fl-pick"><input type="checkbox" data-tvpick="${f.id}"> ${esc(f.name)} <small>${f.role}</small></label>`).join('')}</div><div class="row"><button class="gbtn" type="button" data-tvgo>Allumer la télé</button></div>`)}
+function tvGo(){const fams=[...document.querySelectorAll('[data-tvpick]')].filter(x=>x.checked).map(x=>x.dataset.tvpick),gst=guestHere()?G.guest.id:null;setCd('tv');
+ const show=pickR(['un épisode de ta série','le match de foot','un concours de cuisine','les infos de Guadeloupe la 1ère','une émission de téléréalité','un documentaire sur les fonds marins']);
+ advance(60);const fx=needsFx({fun:12,energy:3,soc:fams.length||gst?5:0});let base=`Tu regardes ${show} (${fx}).`;
+ if(gst){const ch=relChange(gst,3,0);base+=` ${WHO[gst].name} est avec toi${ch?' ('+ch.split(' : ')[1]+')':''}.`}
+ fams.forEach(f=>famChange(f,2));
+ if(fams.length&&Math.random()<.75)famPops(FAM_TV_POP,fams,1,{eb:'📺 Télé en famille',t:show.charAt(0).toUpperCase()+show.slice(1)},acc=>famResult('📺 Télé',fams.length?'en famille':'',[base,...acc]));
+ else famResult('📺 Télé',fams.length?'en famille':'seul·e',[base])}
+/* film : avec la famille et/ou l'invité·e, 2 pop-ups pendant le film */
+function homeFilm(g){const who=[...document.querySelectorAll('[data-fpick]')].filter(x=>x.checked).map(x=>x.dataset.fpick);
+ setCd('film');const nm=FILMS.find(x=>x[0]===g)[1].replace(/^\S+\s/,'').toLowerCase(),res=[];
+ who.forEach(id=>{if(isFam(id)){const f=famById(id),T=FILM_TASTE[f&&f.trait]||[];famChange(id,T[0]===g?6:T[1]===g?0:3);res.push(`${f.name} ${T[0]===g?'a adoré':T[1]===g?'s\'est endormi·e':'a passé un bon moment'}`)}
+  else{const ch=relChange(id,4,G.partner===id||iLike(id)&&g==='romance'?3:0);res.push(`${WHO[id].name} a bien aimé${ch?' ('+ch.split(' : ')[1]+')':''}`)}});
+ advance(120);const fx=needsFx({fun:24,energy:6,soc:who.length?8:0});closeSheet();
+ const fin=acc=>famResult('🎬 Soirée film',nm,[...acc,(res.length?res.join(' · ')+'. ':'Tu regardes le film tranquille. ')+`(${fx})`]);
+ const fams=who.filter(isFam);if(fams.length)famPops(FAM_FILM_POP,fams,2,{eb:'🎬 Pendant le film',t:FILMS.find(x=>x[0]===g)[1]},fin);else fin([])}
+/* repas en famille */
+function mealGo(){const w=mealWin();if(!w||G.done[G.day+'meal'+w])return;G.done[G.day+'meal'+w]=1;const fams=G.family.map(f=>f.id),plat=pickR(['un colombo de poulet','des accras et du riz','un court-bouillon de poisson','un gratin de christophine','des pâtes au poulet','un fricassé de chatrou','une salade composée']);
+ advance(45);fams.forEach(f=>famChange(f,2));const fx=needsFx({faim:60,energy:4,soc:fams.length?10:0});
+ const base=fams.length?`Au menu : ${plat}. Toute la famille est à table (${fx}).`:`Tu manges ${plat} (${fx}).`;
+ if(fams.length)famPops(MEAL_POP,fams,2,{eb:w==='midi'?'🍽️ Déjeuner en famille':'🍽️ Dîner en famille',t:'À table !'},acc=>famResult(w==='midi'?'🍽️ Déjeuner':'🍽️ Dîner','en famille',[base,...acc]));
+ else famResult('🍽️ Repas','',[base])}
+function snackGo(){setCd('snack');advance(10);const s=pickR(['un fruit','un yaourt','un paquet de biscuits','un reste de gâteau patate','une tartine','un jus de goyave']);const fx=needsFx({faim:15});toast(`🍪 Tu grignotes ${s} (${fx})`);note(`Tu grignotes ${s}`);saveG();drawHUD();drawView()}
+function restGo(){setCd('rest');advance(60);const fx=needsFx({energy:12,fun:2});toast(`🛋️ Tu te reposes une heure (${fx})`);saveG();drawHUD();drawView()}
+function napGo(){setCd('nap');closeSheet();G.asleep=true;advance(90);G.asleep=false;const fx=needsFx({energy:18});toast(`😴 Petite sieste d'1 h 30 (${fx})`);note('Tu as fait une sieste');saveG();drawGame()}
+
+/* ---------- sorties : seul·e ou à deux, avec des horaires propres à chaque lieu ---------- */
+const VENUES={
+ plage:{n:'Plage',ic:'🏖️',sc:'plage',h:[[480,1080]],fx:{fun:18,energy:-8},act:'Te baigner et profiter du soleil',pass:['sport','voyages','photo','fitness'],pl:'plage'},
+ promenade:{n:'Promenade',ic:'🚶',sc:'marche',h:[[420,1200]],fx:{fun:10,energy:-5},act:'Flâner dans les rues de Pointe-à-Pitre',pass:['voyages','photo'],pl:'promenade'},
+ cafe:{n:'Café',ic:'☕',sc:'cantine',h:[[480,1140]],fx:{fun:8},food:'cafe',act:'Siroter un jus à la terrasse',pass:['lecture','ecriture'],pl:'cafe'},
+ brunch:{n:'Brunch',ic:'🥞',sc:'cantine',h:[[540,780]],we:1,fx:{fun:10},food:'brunch',act:'Profiter du brunch',pass:['cuisine','patisserie'],pl:'brunch'},
+ resto:{n:'Restaurant créole',ic:'🍽️',sc:'cantine',h:[[720,870],[1140,1350]],fx:{fun:12},food:'resto',act:'Profiter de l\'ambiance',pass:['cuisine'],pl:'resto'},
+ fastfood:{n:'Fast-food',ic:'🍔',sc:'cantine',h:[[660,1380]],fx:{fun:6},food:'fastfood',act:'Traîner au fast-food',pass:['jeux','sport'],pl:'fastfood'},
+ shopping:{n:'Shopping à Jarry',ic:'🛍️',sc:'marche',h:[[540,1140]],fx:{fun:15,energy:-8},act:'Faire les boutiques',pass:['mode','maquillage'],pl:'shopping'},
+ cinema:{n:'Cinéma',ic:'🎬',sc:'soiree',h:[[840,1380]],fx:{fun:22},act:'Regarder un film',pass:['cinema','animes'],pl:'cinema'}};
+Object.assign(PLACES,{promenade:'Promenade',cafe:'Café',brunch:'Brunch',resto:'Restaurant',fastfood:'Fast-food',shopping:'Shopping',cinema:'Cinéma',club:'Club'});
+/* plats : [clé, emoji, nom, faim, où, effets en plus] */
+const FOODS=[['tacos','🌮','Tacos',55,'fastfood',{energy:-2}],['burger','🍔','Hamburger',50,'fastfood',{energy:-2}],['kebab','🥙','Kebab',55,'fastfood',{energy:-2}],['pizza','🍕','Pizza',50,'fastfood resto',{}],['bokit','🥪','Bokit',45,'fastfood',{}],
+ ['salade','🥗','Salade',30,'resto cafe brunch',{energy:4}],['colombo','🍛','Colombo de poulet',60,'resto',{}],['poisson','🐟','Poisson grillé et riz',55,'resto',{energy:3}],['accras','🍤','Accras de morue',25,'resto cafe',{}],['sushi','🍣','Sushis',40,'resto',{}],
+ ['pancakes','🥞','Pancakes',40,'brunch',{fun:2}],['oeufs','🍳','Œufs brouillés et pain',45,'brunch',{energy:3}],['crepe','🥞','Crêpe',25,'cafe brunch',{fun:2}],['sorbet','🍧','Sorbet coco',10,'cafe fastfood',{fun:4}],['jus','🥤','Jus de fruits frais',8,'cafe brunch fastfood resto',{energy:2}]];
+function venueOpen(k){const v=VENUES[k],m=G.min,we=weekday()>=5||!schoolDay(G.day);if(v.we&&!we)return false;if(k==='shopping'&&weekday()===6&&m>=750)return false;return v.h.some(([a,b])=>m>=a&&m<b)}
+const venueHours=k=>VENUES[k].h.map(([a,b])=>`${fmtT(a)}–${fmtT(b)}`).join(' et ')+(VENUES[k].we?' (week-end)':'')+(k==='shopping'?' (dimanche : matin)':'');
+function goSheet(msg){openSheet(sheetHead('🌴 Sortir','Choisis un endroit ouvert')+(msg?`<p class="story-text">${esc(msg)}</p>`:'')+`<div class="choices">${Object.entries(VENUES).map(([k,v])=>`<button class="choice" type="button" data-venue="${k}" ${venueOpen(k)?'':'disabled'}>${v.ic} ${v.n}<small>${venueOpen(k)?'ouvert · '+needsFx2(v.fx):'fermé · '+venueHours(k)}</small></button>`).join('')}</div>`)}
+const needsFx2=fx=>Object.entries(fx).map(([k,d])=>`${NEED_LBL[k]} ${d>0?'+':''}${d}`).join(', ')+(fx.food?'':'');
+function venuePick(k){const v=VENUES[k];openSheet(sheetHead(`${v.ic} ${v.n}`,'Seul·e ou accompagné·e ?')+`<div class="choices"><button class="choice" type="button" data-vgo="${k}" data-id="">🙋 Y aller seul·e<small>Tu profites à ton rythme</small></button>${NPCS.map(n=>n.id).filter(id=>G.rel[id].ami>=10||G.partner===id).sort((a,b)=>G.rel[b].ami-G.rel[a].ami).map(id=>`<button class="choice" type="button" data-vgo="${k}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>Avec ${esc(WHO[id].name)}<small>amitié ${G.rel[id].ami}${sharedPass(id,'me').length?' · '+sharedPass(id,'me').map(p=>PASS[p].e).join(''):''}${v.pass.some(p=>passOf(id).includes(p))?' · adore cet endroit':''}</small></span></span></button>`).join('')}</div>`)}
+/* un·e camarade accepte selon l'amitié, ses goûts et ce qu'il ou elle fait déjà */
+function outAccept(id,k){if(G.partner===id)return Math.random()<.9;const r=G.rel[id],v=VENUES[k];if(r.ami<20||hasMark(id,'trahison'))return false;
+ const busy=hash(id+G.day+(G.min>720?'pm':'am'))%10<3;if(busy)return false;return Math.random()<.35+r.ami/150+(v.pass.some(p=>passOf(id).includes(p))?.2:0)+(r.resp||30)/400}
+function venueGo(k,id){if(!venueOpen(k)){toast('C\'est fermé à cette heure-ci');return}if(G.energy<8){toast(P('Trop fatigué·e pour sortir'));return}
+ if(id){const n=WHO[id].name;pushMsg(id,'me',`On va ${VENUES[k].n.toLowerCase()==='plage'?'à la plage':'au '+VENUES[k].n.toLowerCase().replace('shopping à jarry','shopping à Jarry')} maintenant ?`);
+  if(!outAccept(id,k)){const l=genderize(pickR(["Désolé·e, je peux pas là…","Pas maintenant, une autre fois ?","Je suis déjà occupé·e, désolé·e 😕"]),id);pushMsg(id,'them',l);goSheet(`${n} : « ${l} »`);saveG();return}
+  pushMsg(id,'them',genderize(pickR(["J'arrive ! 😄","Trop bien, j'arrive dans 10 min","Chaud ! On se rejoint là-bas"]),id))}
+ outStart(k,id,null)}
+function outStart(k,id,plan){G.outS={v:k,with:id||null,day:G.day,start:G.min,used:[],photo:0,msg:'',plan:plan||null};G.place=VENUES[k].pl;G.st.outings=(G.st.outings||0)+(id?1:0);advance(20);
+ const fx=needsFx(VENUES[k].fx);G.outS.msg=id?`Tu retrouves ${WHO[id].name} : ${VENUES[k].n.toLowerCase()} (${fx}).`:`Tu arrives : ${VENUES[k].n.toLowerCase()} (${fx}).`;note(G.outS.msg);outSheet()}
+const OUT_ACTS_W=[['talk','🗣️','Discuter en face à face','vraie conversation'],['news','💬','Prendre de ses nouvelles','20 min'],['time','😄','Passer du temps ensemble','30 min'],['walk','🚶','Se promener ensemble','30 min'],['eat','🍴','Manger ensemble','choisir un plat'],['photo','📸','Photo souvenir','un post'],['home','🏠','Rentrer','fin de la sortie']];
+const OUT_ACTS_S=[['enjoy','✨','','45 min'],['eat','🍴','Manger quelque chose','choisir un plat'],['meet','👀','Regarder qui est là','rencontre possible'],['photo','📸','Faire une story',''],['home','🏠','Rentrer','']];
+function outSheet(){const o=G.outS;if(!o)return;const v=VENUES[o.v],id=o.with,ppl=id?['me',id]:['me'];
+ const L=(id?OUT_ACTS_W:OUT_ACTS_S).filter(([a])=>!(a==='photo'&&o.photo)&&!(a==='eat'&&o.ate));
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${v.ic} ${v.n} · ${fmtT(G.min)}</span><h2>${id?'Sortie avec '+esc(WHO[id].name):'Sortie en solo'}</h2></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ <div class="photo">${photoSVG({scene:v.sc,people:ppl,author:'me'})}</div>${o.msg?`<p class="story-text">${esc(o.msg)}</p>`:''}
+ <div class="acts two">${L.map(([a,ic,l,sm])=>`<button class="act" type="button" data-oa="${a}"><span class="ico">${ic}</span><span>${a==='enjoy'?v.act:l}</span><small class="r-ok">${a==='enjoy'?needsFx2(v.fx):sm}</small></button>`).join('')}</div>`)}
+const NEWS_LINES=[["Franchement ça va, je suis contente de te voir 😊",3],["Un peu stressé·e par le bac… mais ça fait du bien de sortir",4],["Ma famille me saoule un peu en ce moment 😩 merci de m'écouter",5]];
+function outAct(a){const o=G.outS;if(!o)return;const v=VENUES[o.v],id=o.with,n=id&&WHO[id].name;let m='';
+ if(a==='home'){outEnd();return}
+ if(!venueOpen(o.v)&&a!=='talk'){o.msg=`${v.n} ferme. Il est temps de rentrer.`;outEnd(o.msg);return}
+ if(a==='talk'){closeSheet();openTalk(id,{pl:v.pl});needUp('soc',6);return}
+ if(a==='eat'){foodSheet(v.food||'fastfood');return}
+ if(a==='news'){advance(20);const s=socInit(),f=s.fights.find(x=>x.a===id||x.b===id),rm=Object.keys(s.rom).find(k=>k.split('|').includes(id)&&s.rom[k]>=3),pp=passOf(id)[0];
+  const t=f?`Je me suis disputé·e avec ${CNAME(f.a===id?f.b:f.a)}… ça me travaille 😔`:rm?`Je peux te dire un secret ? Je crois que ${CNAME(rm.split('|').find(x=>x!==id))} me plaît 🙈`:Math.random()<.4&&pp?`Je me suis remis·e à fond ${PASS[pp].n==='Danse'?'à la danse':'dans ma passion : '+PASS[pp].n.toLowerCase()} ${PASS[pp].e}`:pickR(NEWS_LINES)[0];
+  m=`${n} : « ${genderize(t,id)} » · `+joinFx([relChange(id,3,0),needsFx({soc:6})])}
+ else if(a==='time'){advance(30);m=pickR([`Vous rigolez pour un rien avec ${n}.`,`Vous refaites le monde avec ${n}.`,`${n} te montre des vidéos trop drôles.`])+' '+joinFx([relChange(id,4,G.partner===id?2:0),needsFx({fun:6,soc:5})])}
+ else if(a==='walk'){advance(30);m=`Vous marchez en discutant de tout et de rien. `+joinFx([relChange(id,3,0),needsFx({fun:5,soc:4,energy:-3})])}
+ else if(a==='photo'){o.photo=1;advance(5);if(id){G.posts.unshift(mkPost({by:id,text:`${v.ic} ${v.n} avec ${myHandle()} ✨`,photo:{scene:v.sc,people:[id,'me'],author:id},c:5,r:30,l:600,comments:[npcComment(pickR(NPCS.filter(x=>x.id!==id)).id)]}));m=`${n} poste votre photo. `+joinFx([relChange(id,3,0),needsFx({fun:3})])}
+  else{G.stories.push(mkStory('me',{type:'photo',photo:{scene:v.sc,people:['me'],author:'me'},text:`${v.ic} ${v.n}`,seen:true,cat:'A'}));G.st.stories++;m='Ta story est publiée. '+needsFx({fun:3})}}
+ else if(a==='enjoy'){advance(45);m=`${v.act}. `+needsFx({fun:Math.round((v.fx.fun||8)/2),energy:v.fx.energy?-2:2})}
+ else if(a==='meet'){advance(20);const here=NPCS.map(x=>x.id).filter(x=>v.pass.some(p=>passOf(x).includes(p))||hash(x+G.day+o.v)%6===0);if(here.length&&Math.random()<.7){const b=pickR(here);o.msg=`Tu croises ${WHO[b].name} !`;outSheet();vsPop({eb:`${v.ic} ${v.n}`,t:`Tu croises ${WHO[b].name}`,html:`<div class="av">${avatarOf(b)}</div>`,b:`${WHO[b].name} est là aussi.`,ch:[['Aller lui parler',()=>{closeSheet();cevOpen=false;openTalk(b,{pl:v.pl});needUp('soc',5);return KEEP}],[`Lui proposer de rester avec toi`,()=>{if(outAccept(b,o.v)||G.rel[b].ami>=40){o.with=b;o.msg=`${WHO[b].name} reste avec toi ! `+joinFx([relChange(b,4,0),needsFx({soc:6})])}else o.msg=`${WHO[b].name} : « Désolé·e, je dois y aller ! »`;outSheet();return KEEP}],['Juste lui faire un signe',()=>{o.msg='Vous vous faites un signe de la main. '+relChange(b,1,0);outSheet();return KEEP}]]});saveG();return}m='Personne que tu connais… mais l\'ambiance est sympa. '+needsFx({fun:3})}
+ o.msg=m;note(m.slice(0,200));if(Math.random()<.25&&outPop())return;outSheet();saveG();drawHUD()}
+/* petits imprévus pendant la sortie */
+function outPop(){const o=G.outS,id=o.with,v=VENUES[o.v];if(!id)return false;const n=WHO[id].name,others=NPCS.map(x=>x.id).filter(x=>x!==id),b=pickR(others);
+ const L=[
+  {t:`Vous croisez ${WHO[b].name} par hasard.`,ch:[[`Lui proposer de se joindre à vous`,()=>{const ok=link(id,b).ami>=40;return joinFx([relChange(b,3,0),relChange(id,ok?2:-2,0),ok?`${n} est content·e.`:`${n} fait un peu la tête.`])}],['Juste dire bonjour',()=>relChange(b,1,0)||'Vous vous saluez.'],['Faire semblant de ne pas l\'avoir vu·e',()=>relChange(b,-2,0)]]},
+  {t:`${n} a oublié son porte-monnaie.`,ch:[['Lui offrir sa part',()=>joinFx([relChange(id,5,0),respChange(id,3)])],['Lui avancer l\'argent',()=>relChange(id,2,0)],['Ne rien proposer',()=>joinFx([relChange(id,-3,0),respChange(id,-2)])]]},
+  {t:'Une averse tropicale vous tombe dessus !',ch:[['Courir vous abriter en riant',()=>joinFx([relChange(id,3,0),needsFx({fun:5})])],['Rentrer chacun·e chez soi',()=>{setTimeout(()=>outEnd('La pluie met fin à la sortie.'),50);return 'Vous vous dites à bientôt.'}]]},
+  {t:`${n} te confie un petit secret.`,ch:[['Promettre de le garder',()=>{if(Math.random()<.4&&!hasMark(id,'confiance'))mark(id,'confiance');return joinFx([relChange(id,4,0),respChange(id,2)])}],['Changer de sujet',()=>relChange(id,-2,0)]]},
+  {t:`${n} veut une photo pour Insta, mais elle est ratée.`,ch:[['La reprendre jusqu\'à ce qu\'elle soit parfaite',()=>joinFx([relChange(id,3,0),needsFx({energy:-2})])],['La poster quand même',()=>joinFx([relChange(id,-1,0),needsFx({fun:3})])]]}];
+ const Q=pickR(L);vsPop({eb:`${v.ic} ${v.n}`,t:'Imprévu',html:`<div class="av">${avatarOf(id)}</div>`,b:Q.t,ch:Q.ch.map(([l,f])=>[l,()=>{o.msg=f()||'';outSheet();saveG();return KEEP}])});return true}
+function foodSheet(where){const L=FOODS.filter(f=>f[4].split(' ').includes(where)),o=G.outS,id=o&&o.with,fav=id&&FAV[id]&&FAV[id].plat||'';
+ openSheet(sheetHead('🍴 Que veux-tu manger ?',id?`Avec ${WHO[id].name}`:'')+`<div class="choices">${L.map(([k,ic,n,fa,,x])=>`<button class="choice" type="button" data-food="${k}">${ic} ${n}<small>faim +${fa}${Object.entries(x).map(([a,d])=>` · ${NEED_LBL[a]} ${d>0?'+':''}${d}`).join('')}</small></button>`).join('')}</div>`)}
+function foodEat(k){const F=FOODS.find(f=>f[0]===k);if(!F)return;const o=G.outS,id=o&&o.with;advance(30);if(o)o.ate=1;
+ let m=`${F[1]} ${F[2]} : `+needsFx({faim:F[3],...F[5]});if(id){const fav=(FAV[id]&&FAV[id].plat||'').toLowerCase(),same=fav.includes(F[2].toLowerCase().split(' ')[0]);m+=' · '+joinFx([relChange(id,same?5:3,0),needsFx({soc:5})])+(same?` · ${WHO[id].name} : « Mon plat préféré !! »`:'')}
+ note(m);if(o){o.msg=m;outSheet()}else{closeSheet();toast(m)}saveG();drawHUD()}
+function outEnd(msg){const o=G.outS;if(!o)return;G.outS=null;G.place=phase().type==='weekend'?'maison':'maison';advance(20);
+ const t=msg||(o.with?`Tu rentres après ta sortie avec ${WHO[o.with].name}.`:'Tu rentres à la maison.');closeSheet();toast('🏠 '+t);note(t);checkObjectives();saveG();drawGame()}
+function outCard(){const o=G.outS,c=G.clubS;let h='';
+ if(o)h+=`<div class="card felt"><span class="eyebrow">${VENUES[o.v].ic} Sortie en cours</span><div class="prof"><span>${VENUES[o.v].n}${o.with?' avec '+esc(WHO[o.with].name):''}</span><span><button class="gbtn" type="button" data-outopen>Reprendre</button> <button class="gbtn ghost" type="button" data-outhome>Rentrer</button></span></div></div>`;
+ if(c)h+=`<div class="card felt"><span class="eyebrow">${CLUBS[c.k].ic} Séance de club en cours</span><div class="prof"><span>${CLUBS[c.k].n} · ${c.left} action${c.left>1?'s':''}</span><span><button class="gbtn" type="button" data-clubopen>Reprendre</button></span></div></div>`;return h}
+
+/* ---------- clubs : un vrai lieu de rencontre ---------- */
+const CLUB_POP={
+ sport:[{t:"{a} se tord la cheville pendant l'exercice.",ch:[["L'aider à s'asseoir et chercher de la glace",{a:5,resp:2},"{a} te remercie, l'entraîneur aussi."],["Continuer à jouer",{a:-3},"{a} te lance un regard noir."]]},
+  {t:"L'entraîneur te nomme capitaine pour le match d'entraînement.",ch:[["Motiver toute l'équipe",{all:3,resp:3,fun:4},"L'équipe joue soudée."],["Jouer perso pour briller",{all:-2,fun:6},"Tu marques, mais les autres râlent."]]},
+  {t:"{a} rate un tir facile et s'énerve.",ch:[["L'encourager",{a:4},"{a} se reprend."],["Rigoler",{a:-3,fun:3},"{a} n'a pas trouvé ça drôle."]]}],
+ danse:[{t:"{a} n'arrive pas à suivre la nouvelle choré.",ch:[["Lui montrer les pas lentement",{a:5,resp:2},"{a} y arrive enfin !"],["Charrier {a} gentiment",{a:-2,fun:4},"Ça fait rire tout le monde… sauf {a}."]]},
+  {t:"Il faut choisir la musique du spectacle.",ch:[["Proposer un son dancehall",{all:2,fun:4},"Le club valide à l'unanimité 🔥"],["Laisser {a} choisir",{a:4},"{a} est ravi·e."]]}],
+ theatre:[{t:"Trou de mémoire en pleine répétition !",ch:[["Improviser",{all:2,fun:6,resp:2},"Ton impro fait rire toute la troupe."],["Demander à {a} de te souffler",{a:3},"{a} te sauve."]]},
+  {t:"{a} stresse pour son grand rôle.",ch:[["Rassurer {a}",{a:5},"{a} respire mieux."],["Lui dire que tout le monde stresse",{a:2},"Ça l'aide un peu."]]}],
+ journal:[{t:"Il faut un sujet pour le prochain numéro.",ch:[["Un article sur les clubs du lycée",{all:2,resp:2},"Bonne idée, validée."],["Un article de potins",{all:-1,fun:5},"Ça va faire parler…"]]},
+  {t:"{a} a fait une faute énorme dans un titre.",ch:[["Prévenir {a} discrètement",{a:4,resp:2},"{a} corrige à temps, soulagé·e."],["Le dire devant tout le monde",{a:-4,fun:2},"{a} est vexé·e."]]}],
+ arts:[{t:"Tu renverses de la peinture sur le dessin de {a}.",ch:[["T'excuser et l'aider à réparer",{a:3},"Le dessin est sauvé (presque)."],["En faire une œuvre abstraite",{a:2,fun:6},"{a} finit par adorer le résultat."]]},
+  {t:"{a} te demande ton avis sur sa toile.",ch:[["Être honnête avec douceur",{a:3,resp:3},"{a} apprécie ta franchise."],["Dire que c'est parfait",{a:1},"{a} sourit, pas très convaincu·e."]]}],
+ musique:[{t:"{a} te propose un duo pour le prochain concert.",ch:[["Accepter",{a:5,fun:8},"Vos voix s'accordent à merveille."],["Refuser poliment",{a:-1},"{a} est un peu déçu·e."]]},
+  {t:"Une corde de guitare casse en pleine répète.",ch:[["La changer avec {a}",{a:3},"Vous en profitez pour discuter."],["Continuer a cappella",{all:2,fun:6,resp:2},"Moment magique."]]}]};
+const clubPopKey=k=>['foot','hand','basket'].includes(k)?'sport':k;
+const CLUB_TOPICS=[['potins','👀 Les derniers potins'],['passion','✨ La passion du club'],['cours','📚 Les cours et le bac'],['projet','💡 Une idée pour le club']];
+function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.done[G.day+'club'+k]){toast('Séance déjà faite aujourd\'hui');return}
+ if(G.energy<8){toast("Pas assez d'énergie pour la séance");return}
+ G.energy=clamp(G.energy-8,0,100);G.done[G.day+'club'+k]=1;G.clubXP[k]=(G.clubXP[k]||0)+1;G.know[c.sub]=clamp(G.know[c.sub]+3,0,100);G.place='club';
+ const a=pickR(c.m),line=pickR(CLUB_LINES[k]).replace('{a}',WHO[a].name);G.clubS={k,left:3,talked:[]};advance(30);
+ G.clubS.msg=joinFx([line,...c.m.map(i=>relChange(i,2)),needsFx({fun:10,soc:8}),`${SUBJ[c.sub]} +3 %`]);note(`${c.ic} ${c.n} : ${line}`);
+ if(Math.random()<.6){clubSheet();clubPop(k);return}clubSheet()}
+function clubSheet(){const s=G.clubS;if(!s)return;const c=CLUBS[s.k],big=G.clubXP[s.k]%CLUB_BIG===0&&!s.big;
+ openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${c.ic} Séance n° ${G.clubXP[s.k]} · ${fmtT(G.min)}</span><h2>${c.n}</h2></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
+ <div class="present">${c.m.map(id=>`<button class="pers" type="button" data-clubtalk="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${s.talked.includes(id)?'déjà parlé':'parler'}</small></button>`).join('')}</div>
+ ${s.msg?`<p class="story-text">${esc(s.msg)}</p>`:''}<p class="muted">Encore ${s.left} action${s.left>1?'s':''} pendant la séance.</p>
+ <div class="acts two"><button class="act" type="button" data-clact="act" ${s.left?'':'disabled'}><span class="ico">${c.ic}</span><span>Participer à fond</span><small class="r-ok">divertissement, amitié</small></button>
+ <button class="act" type="button" data-clact="group" ${s.left?'':'disabled'}><span class="ico">💬</span><span>Discussion de groupe</span><small class="r-ok">social</small></button>
+ ${big?`<button class="act" type="button" data-clact="big"><span class="ico">🏆</span><span>${esc(c.big)}</span><small class="r-ok">grand rendez-vous</small></button>`:''}
+ <button class="act" type="button" data-clact="end"><span class="ico">👋</span><span>Terminer la séance</span><small class="r-ok">rentrer</small></button></div>`)}
+function clubPop(k){const s=G.clubS,c=CLUBS[k],Q=pickR(CLUB_POP[clubPopKey(k)]||CLUB_POP.sport),a=pickR(c.m),nm=WHO[a].name,R=t=>P(S(a,t.replace(/{a}/g,nm)));
+ vsPop({eb:`${c.ic} ${c.n}`,t:'Pendant la séance',html:`<div class="av">${avatarOf(a)}</div>`,b:R(Q.t),ch:Q.ch.map(([l,fx,res])=>[R(l),()=>{const p=[];
+  for(const x in fx){const d=fx[x];if(x==='a')p.push(relChange(a,d,0));else if(x==='all')c.m.forEach(i=>p.push(relChange(i,d,0)));else if(x==='resp')c.m.forEach(i=>p.push(respChange(i,d)));else p.push(needUp(x,d))}
+  s.msg=R(res)+' '+joinFx(p.filter(Boolean));clubSheet();saveG();return KEEP}])})}
+function clubAct(a){const s=G.clubS;if(!s)return;const c=CLUBS[s.k];
+ if(a==='end'){G.clubS=null;G.place='maison';advance(20);closeSheet();toast(`${c.ic} Fin de la séance`);saveG();drawGame();return}
+ if(a==='big'){s.big=1;closeSheet();clubBig(s.k);return}
+ if(!s.left)return;s.left--;advance(30);
+ if(a==='act'){s.msg=joinFx([pickR(CLUB_LINES[s.k]).replace('{a}',WHO[pickR(c.m)].name),...c.m.map(i=>relChange(i,2)),needsFx({fun:8,energy:-3}),`${SUBJ[c.sub]} +2 %`]);G.know[c.sub]=clamp(G.know[c.sub]+2,0,100);if(Math.random()<.3){clubSheet();clubPop(s.k);return}}
+ else if(a==='group'){openSheet(sheetHead('💬 Discussion de groupe','De quoi tu veux parler ?')+`<div class="choices">${CLUB_TOPICS.map(([t,l])=>`<button class="choice" type="button" data-ctopic="${t}">${l}</button>`).join('')}</div>`);s.left++;return}
+ clubSheet();saveG();drawHUD()}
+function clubTopic(t){const s=G.clubS;if(!s)return;const c=CLUBS[s.k];s.left=Math.max(0,s.left-1);advance(30);
+ const L=c.m.map(id=>{const f=FICHES[id],like=t==='potins'?RTYPE[id]==='curieux'||f.soc>.7:t==='cours'?f.stud>.6:t==='passion'?true:Math.random()<.7,ch=relChange(id,like?3:0,0);
+  const line=genderize(like?pickR(t==='potins'?["Raconte !! 👀","Non, sérieux ?! 😂","J'en étais sûr·e"]:t==='cours'?["Grave, faut qu'on révise ensemble","Moi aussi je stresse pour le bac 😩"]:t==='passion'?["C'est pour ça qu'on est là ! 🔥","J'adore quand on en parle"]:["Bonne idée, on le propose !","Je suis partant·e 🙌"]):pickR(["Bof…","Hmm, si tu veux","*regarde son téléphone*"]),id);
+  return `${WHO[id].name} : « ${line} »${ch?' ('+ch.split(' : ')[1]+')':''}`});
+ s.msg=L.join(' · ')+' · '+needsFx({soc:8,fun:4});clubSheet();saveG();drawHUD()}
+
+/* ---------- chapitres : la réussite repart de 0 % à chaque chapitre ----------
+   PROGRAMME[matière] = titres des chapitres (programme fourni plus tard par Prescillia). Un chapitre = CHAP_DAYS jours de cours. */
+const CHAP_DAYS=15,PROGRAMME={};
+const chapOf=sd=>sd?Math.floor((Math.min(sd,REV_DAY-1)-1)/CHAP_DAYS):0;
+const chapName=(sub,i)=>(PROGRAMME[sub]||[])[i]||`Chapitre ${i+1}`;
+const chapPos=()=>{const sd=schoolDay(G.day)||1;return ((Math.min(sd,REV_DAY-1)-1)%CHAP_DAYS)+1};
+function chapInit(){G.chap=G.chap||{i:chapOf(schoolDay(G.day)||1),hist:{}};return G.chap}
+function chapTick(){const sd=schoolDay(G.day);if(!sd)return;const C=chapInit(),i=chapOf(sd);if(i===C.i)return;
+ Object.keys(SUBJ).forEach(k=>{(C.hist[k]=C.hist[k]||[]).push(G.know[k]);G.know[k]=0});C.i=i;
+ note(`📘 Nouveau chapitre dans toutes les matières (${chapName('maths',i)}) : la réussite repart de 0 %`);G.chapNew=1}
+/* note d'un contrôle : on juge ce qui a déjà été vu du chapitre ; au bac, la moyenne de tous les chapitres */
+function examP(k,bac){const v=G.know[k];if(bac){const H=(chapInit().hist[k]||[]),all=[...H,v];return all.reduce((a,b)=>a+b,0)/all.length}
+ return clamp(v/clamp(chapPos()/CHAP_DAYS,.34,1),0,100)}
+const chapLine=()=>{const C=chapInit(),left=CHAP_DAYS-chapPos();return `📘 ${chapName('maths',C.i)} · ${left?`fin du chapitre dans ${left} jour${left>1?'s':''} de cours`:'dernier jour du chapitre'} · la réussite repart de 0 % à chaque chapitre`};
+
+/* ---------- respect, meilleur·e ami·e, couple ---------- */
+function respChange(id,d){if(!isNpc(id)||!d)return '';const r=G.rel[id];r.resp=clamp((r.resp==null?30:r.resp)+d,0,100);return `${WHO[id].name} : respect ${d>0?'+':''}${d}`}
+const bffWord=(id,cap)=>(cap?(prn(id).e?'Ta':'Ton'):(prn(id).e?'ta':'ton'))+(prn(id).e?' meilleure amie':' meilleur ami');
+const respOf=id=>G.rel[id].resp==null?30:G.rel[id].resp;
+const STUDIOUS=id=>FICHES[id].stud>=.6,REBEL=id=>FICHES[id].stud<=.3;
+/* faute grave : les bons élèves te respectent moins, les rebelles un peu plus */
+function respDisc(lvl){if(lvl<3)return;NPCS.forEach(n=>respChange(n.id,STUDIOUS(n.id)?-3:REBEL(n.id)?1:-1))}
+function respEval(glob){NPCS.forEach(n=>{if(glob>=14)respChange(n.id,STUDIOUS(n.id)?2:1);else if(glob<8&&STUDIOUS(n.id))respChange(n.id,-1)})}
+function bffSheet(id){const n=WHO[id].name,cur=G.bff&&G.bff!==id?G.bff:null;
+ if(G.bff===id){openSheet(sheetHead('⭐ '+bffWord(id,1),`${n} est ${bffWord(id)}`)+`<div class="choices"><button class="choice" type="button" data-bff="${id}" data-a="stop">Ne plus être meilleur·e·s ami·e·s<small class="t-neg">${n} le prendra mal</small></button></div>`);return}
+ const last=(G.bffTry||{})[id];if(last&&G.day-last<7){toast(`Attends un peu avant de redemander à ${n}`);return}
+ openSheet(sheetHead('⭐ '+bffWord(id,1)+' ?',`Demander à ${n} d'être ${bffWord(id)}`)+(cur?`<p class="story-text">${esc(P(`${bffWord(cur,1)} est ${WHO[cur].name}. Si ${n} accepte, ${WHO[cur].name} ne le sera plus et risque d'être blessé·e.`))}</p>`:'')+`<p class="muted">Amitié ${G.rel[id].ami} · respect ${respOf(id)} : ${n} répondra selon votre relation, son caractère et ce que vous avez vécu.</p><div class="row"><button class="gbtn" type="button" data-bff="${id}" data-a="ask">Lui demander</button><button class="gbtn ghost" type="button" data-close>Annuler</button></div>`)}
+function bffAsk(id,a){const n=WHO[id].name,r=G.rel[id];
+ if(a==='stop'){G.bff=null;const ch=joinFx([relChange(id,-10,0),respChange(id,-3)]);mark(id,'abandon');pushMsg(id,'them',genderize("Ok… je pensais qu'on était plus proches que ça 😔",id));note(`${n} n'est plus ${bffWord(id)}`);closeSheet();toast(ch);saveG();drawView();return}
+ (G.bffTry=G.bffTry||{})[id]=G.day;
+ const npcBest=NPCS.map(x=>x.id).filter(x=>x!==id&&link(id,x).ami>=85).length,ty=RTYPE[id]||'bienv';
+ const score=r.ami+respOf(id)*.5+(hasMark(id,'confiance')?15:0)-(hasMark(id,'trahison')?60:0)-(hasMark(id,'abandon')?15:0)-npcBest*12+(ty==='bienv'?8:ty==='prejuge'?-8:0)+sharedPass(id,'me').length*4+rnd(-6,6);
+ let line,ch;
+ if(score>=100){const old=G.bff&&G.bff!==id?G.bff:null;G.bff=id;ch=joinFx([relChange(id,6,0),respChange(id,2),old?relChange(old,-10,0):'']);
+  if(old){mark(old,'abandon');pushMsg(old,'them',genderize(`J'ai appris que ${n} était ton ou ta meilleur·e ami·e maintenant… ok 💔`,old))}
+  line=pickR(["Évidemment !! Tu croyais quoi ? 🥹","Oui ! Je me demandais quand tu allais me le demander 😭💛","BFF pour la vie 🤞"]);note(`⭐ ${n} est ${bffWord(id)}`)}
+ else if(score>=75){line=pickR(["Je t'adore, vraiment… mais c'est un peu tôt pour dire ça, non ? 😅","Laisse-nous encore un peu de temps, ok ? 🙂"]);ch=relChange(id,1,0)}
+ else{line=pickR(["Euh… on se connaît pas encore assez pour ça 😬","C'est gentil, mais je te vois pas comme ça… pas encore."]);ch=joinFx([relChange(id,-2,0)])}
+ openSheet(sheetHead(`⭐ ${n} répond`,'')+`<p class="story-text"><b>${esc(n)} :</b> « ${esc(genderize(line,id))} »</p>${ch?`<p class="muted">${esc(ch)}</p>`:''}<div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);saveG();drawView()}
+/* rompre */
+function breakUpSheet(id){vsPop({eb:'💔 Rompre',t:`Rompre avec ${WHO[id].name} ?`,html:`<div class="av">${avatarOf(id)}</div>`,b:'Tu es sûr·e ? Ça ne se rattrape pas facilement.',ch:[['Rompre avec douceur',()=>breakUp(id,1)],['Rompre par message',()=>breakUp(id,0)],['Non, je reste',()=>({quiet:1})]]})}
+function breakUp(id,soft){const n=WHO[id].name;G.partner=null;const r=G.rel[id];r.amour=soft?30:15;const ch=joinFx([relChange(id,soft?-8:-18,0),respChange(id,soft?0:-6)]);mark(id,'abandon');
+ G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : c'est fini entre ${myHandle()} et ${WHO[id].handle} 💔 qui l'a vu venir ?`,c:40,r:300,l:9000}));newsPush(`Toi et ${n}, c'est fini`,'💔');note(`Tu as rompu avec ${n}`);
+ if(!soft)pushMsg(id,'them',genderize(pickR(["Par message ?? Sérieux ?! 😡","Tu aurais pu me le dire en face…"]),id));
+ return `${n} : « ${genderize(soft?pickR(["Je comprends… même si ça fait mal 😢","Ok… prends soin de toi."]):"…",id)} » · ${ch}`}
+/* un·e camarade qui t'aime peut te demander de sortir ensemble */
+function coupleAskTick(){if(Math.random()>.35)return;const s=socInit();s.last=s.last||{};if(G.day-(s.last.coupleAsk||0)<6)return;
+ const id=NPCS.map(n=>n.id).find(id=>npcLikesMe(id)&&G.rel[id].amour>=70&&G.rel[id].ami>=50&&G.partner!==id&&!takenBy(id)&&respOf(id)>=30&&G.day-((s.last['ca'+id])||0)>=14);if(!id)return;
+ s.last.coupleAsk=G.day;s.last['ca'+id]=G.day;pushMsg(id,'them',pickR(["Je tourne autour depuis un moment… est-ce que tu voudrais sortir avec moi ? 🙈💕","Bon, je me lance : tu me plais vraiment. On sort ensemble ? ❤️"]),{mq:{k:'couple',o:['Oui, je veux bien 💞','Je préfère qu\'on reste ami·e·s','Laisse-moi réfléchir'],d:{}}})}
+MQ_FX.couple=(id,j)=>{const n=WHO[id].name;
+ if(j===0){let ex='';if(G.partner&&G.partner!==id){const old=G.partner;ex=relChange(old,-10,-40);pushMsg(old,'them',"J'ai appris pour toi et "+n+"… c'est fini entre nous. 💔");note(`Tu as quitté ${WHO[old].name}`)}
+  G.partner=id;G.rel[id].amour=Math.max(G.rel[id].amour,85);G.posts.unshift(mkPost({by:'potins',text:`[Officiel] 💞 ${myHandle()} et ${WHO[id].handle}, c'est confirmé !`,c:50,r:800,l:21000}));note(`Tu es en couple avec ${n} 💞`);relChange(id,5,5);return "OUIII 😭💞 je suis trop content·e"}
+ if(j===1){relChange(id,-3,-15);return "Ah… d'accord. Je comprends. On reste ami·e·s alors 🙂"}
+ socInit().last['ca'+id]=G.day-9;return "Prends ton temps, je t'attends 💕"};
 
 const ROM_LBL=['','','',' · ça flirte 👀',' · des sentiments 💓',''];
 /* ce que le ou la camarade sait de la vie sociale du moment (pour l'IA) */
@@ -3129,7 +3394,7 @@ function advance(n){
   G.min++;if(G.min>=1440){G.min=0;G.day++;onNewDay()}
   if(G.postQ&&G.postQ.length&&G.postQ[0].at<=G.min)publishDue();
   if(!G.storyQ)planStories();if(G.storyQ.length&&G.storyQ[0].at<=G.min)publishStories();
-  if(G.min%15===0&&!G.asleep)G.energy=clamp(G.energy-(G.min<420?2:1),0,100);
+  if(G.min%15===0){if(!G.asleep)G.energy=clamp(G.energy-(G.min<420?2:1),0,100);needTick()}
   if(G.min%60===0){socialHour();if(!G.asleep){npcPing();familyPing();followTick();checkObjectives()}}
  }
  const ph=phase();
@@ -3144,13 +3409,13 @@ function onPhaseChange(prev,ph){
  if(ph.type==='eval'&&!G.asleep)toast('📝 Évaluation commune : toutes les matières, jusqu\'à 17h');
  if(ph.type==='bac'&&!G.asleep)toast(`🎓 Bac : épreuves de ${ph.subs.map(k=>SUBJ[k]).join(', ')}`);
  if(ph.type==='cours'){G.acts=3;G.cb=0;G.st.schoolToday=true;if(!G.asleep)toast(`🔔 Cours de ${SUBJ[ph.sub]} avec ${ph.prof[0]}`)}
- if(['recre','dej','matin','weekend','soir'].includes(ph.type)){presence(ph);autoStep(ph);G.place=vsHome()&&ph.type!=='weekend'?'maison':placesFor(ph.type)[0];G.placeKey=ph.key;setTimeout(()=>{if(G&&G.phaseKey===ph.key)raisAskTick(ph)},4000);if(!G.asleep&&ph.type!=='matin')toast(`🔔 ${ph.lbl||PLABEL[ph.type]} : choisis où aller`)}
+ if(['recre','dej','matin','weekend','soir'].includes(ph.type)){presence(ph);autoStep(ph);G.place=vsHome()&&ph.type!=='weekend'?'maison':placesFor(ph.type)[0];G.placeKey=ph.key;needPause(ph);setTimeout(()=>{if(G&&G.phaseKey===ph.key)raisAskTick(ph)},4000);if(!G.asleep&&ph.type!=='matin')toast(`🔔 ${ph.lbl||PLABEL[ph.type]} : choisis où aller`)}
  if(ph.type==='nuit'&&ph.start===1320&&!G.asleep)toast('🌙 22h : il est l\'heure de dormir');
  if(view==='day')drawView();
 }
 function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1;hwAssign(prev)}
 /* note d'une matière tirée de la jauge de chances (0-100 %) */
-function examGrade(k,stress){const p=G.know[k];return clamp(Math.round((p/100*20+rnd(-(stress||2.2),stress||2.2)+(G.energy<25?-1.5:0))*2)/2,0,20)}
+function examGrade(k,stress,bac){const p=examP(k,bac);return clamp(Math.round((p/100*20+rnd(-(stress||2.2),stress||2.2)+(G.energy<25?-1.5:0))*2)/2,0,20)}
 function popSheet(html){if(G.asleep||$('game').hidden)G.pend.push(html);else openSheet(html,true)}
 function flushPend(){/* une fête déjà passée ne s'affiche plus */G.pend=(G.pend||[]).filter(h=>!h.includes('data-fend=')||fetesOpen().some(f=>h.includes(`data-fend="${f.id}"`)));if(G.pend.length&&$('sheet').hidden)openSheet(G.pend.shift(),true)}
 const sheetHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2>${sub?`<p class="muted" style="margin:2px 0 0">${sub}</p>`:''}</div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`;
@@ -3162,7 +3427,7 @@ function runEval(sdArg){
  const bon=(G.evalBonus||{})[schoolDayToCal(sd)]||{},grades={};Object.keys(SUBJ).forEach(k=>{grades[k]=clamp(Math.round((examGrade(k)+(bon[k]||0)+mgBonus(k))*2)/2,0,20);G.grades.push({sub:k,v:grades[k],day:G.day,sd})});
  const e={sd,tri:triOf(sd),grades,glob:r2(mean(Object.values(grades))),pts:{...(G.mgPts||{})}};G.evals.push(e);G.mgPts={};
  note(`Évaluation du vendredi : ${fmtG(e.glob)}/20 de note globale`);if(!G.asleep)toast(`📝 Évaluation : ${fmtG(e.glob)}/20`);
- if(e.glob>=14)parentReact('bonne');else if(e.glob<9)parentReact('mauvaise');
+ respEval(e.glob);if(e.glob>=14)parentReact('bonne');else if(e.glob<9)parentReact('mauvaise');
  popSheet(evalSheet(e));
  if(TRI_END.includes(sd))makeBulletin(e.tri);
  checkObjectives();saveG();
@@ -3181,7 +3446,7 @@ function makeBulletin(t){
  note(`Bulletin du trimestre ${t} : ${fmtG(a)}/20 de moyenne`);if(!G.asleep)toast(`📄 Bulletin du trimestre ${t} : ${fmtG(a)}/20`);
  parentReact(b.ok?'bonne':'mauvaise');popSheet(bulletinSheet(b));
 }
-const bacGrade=k=>clamp(Math.round((examGrade(k,2.8)+((G.bac.bonus||{})[k]||0))*2)/2,0,20);
+const bacGrade=k=>clamp(Math.round((examGrade(k,2.8,1)+((G.bac.bonus||{})[k]||0))*2)/2,0,20);
 function runBacPart(ph){ph.subs.forEach(k=>{if(G.bac.scores[k]==null)G.bac.scores[k]=bacGrade(k)});note(`Bac : épreuves de ${ph.subs.map(k=>SUBJ[k]).join(', ')} terminées`);saveG()}
 function bacSheet(r){return sheetHead('Résultats du bac',P(r.ok?`Admis·e${r.ment?' · mention '+r.ment:''} 🎉`:'Non admis·e 😔'))
  +`<div class="card"><div class="prof"><span>Épreuves finales (60 %)</span><b>${fmtG(r.ep)}/20</b></div><div class="prof"><span>Contrôle continu : moyenne des 3 trimestres (40 %)</span><b>${fmtG(r.cc)}/20</b></div><div class="prof"><span>Note finale</span><b>${fmtG(r.fin)}/20</b></div>${r.ratt?`<p class="muted">${P('Tu es passé·e')} par l'oral de rattrapage : ${r.ok?'réussi, tu obtiens ton bac !':'raté de peu.'}</p>`:''}</div>
@@ -3504,7 +3769,7 @@ function sleepNow(){
  let n=G.min>=420?(1440-G.min)+420:420-G.min;const hours=n/60;
  closeSheet();G.asleep=true;advance(n);G.asleep=false;
  G.energy=clamp(G.energy+Math.round(hours*11),0,100);
- note(`Tu as dormi ${Math.round(hours)} h`);saveG();drawGame();toast(`☀️ ${fmtDay(G.day,true)} · énergie ${G.energy}`);flushPend();
+ note(`Tu as dormi ${Math.round(hours)} h`);if(G.chapNew){G.chapNew=0;setTimeout(()=>toast('📘 Nouveau chapitre : la réussite repart de 0 % dans chaque matière'),1200)}saveG();drawGame();toast(`☀️ ${fmtDay(G.day,true)} · énergie ${G.energy}`);flushPend();
  /* nouvelles de la nuit : potins et nouveaux abonnés */
  const news=[G.incToast&&'👀 Potins : '+G.incToast.slice(0,70)+(G.incToast.length>70?'…':''),G.fanToast&&`📈 +${G.fanToast} abonné${G.fanToast>1?'s':''} sur Insta`].filter(Boolean);G.incToast=G.fanToast=null;news.forEach((t,i)=>setTimeout(()=>toast(t),2400*(i+1)));
 }
@@ -3572,7 +3837,7 @@ function drawClock(){
  /* pause et vitesse sont dans le menu ⚙ : l'en-tête rappelle seulement l'état */
  $('gState').textContent=G.paused?' ⏸':'';
  {const sp=G.speed||1;$('gSpeedN').textContent='×'+sp;$('gSpeed').classList.toggle('on',sp>1);$('gSpeed').setAttribute('aria-label',`Vitesse du temps ×${sp} : touche pour accélérer`)}
- $('gEnergyN').textContent=G.energy;$('gEnergy').classList.toggle('low',G.energy<25);$('gEnergy').setAttribute('aria-label',`Énergie ${G.energy} sur 100`);
+ $('gEnergyN').textContent=G.energy;drawNeeds();$('gEnergy').classList.toggle('low',G.energy<25);$('gEnergy').setAttribute('aria-label',`Énergie ${G.energy} sur 100`);
  const bar=$('phBar');if(bar)bar.style.width=(clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100)+'%';
 }
 function drawHUD(){
@@ -3927,6 +4192,7 @@ function drawDay(){
  }else{
   h+=`<p class="story-text">Il est tard. Dors pour récupérer ton énergie avant ${weekday()>=5?'la journée':'les cours'} de demain.</p>`+placeBody(ph,'maison',{})+'</div>';
  }
+ h=h.replace('</div>',outCard()+'</div>');
  const plans=G.plans.filter(p=>p.status==='accepted');
  if(plans.length)h+=`<div class="card"><span class="eyebrow">Sorties prévues</span>${plans.map(p=>`<div class="relrow"><div class="av">${avatarOf(p.by)}</div><div class="info"><b>${esc(p.fam?'En famille':nameOf(p.by))}</b><span class="muted">${PLACE_OUT[p.place]} ${planWhen(p)}</span></div></div>`).join('')}</div>`;
  h+=`<div class="card"><span class="eyebrow">Emploi du temps · ${DAYS[weekday()]}</span>${ttHTML()}</div>`;
@@ -3937,42 +4203,35 @@ function clubCard(){const L=myClubs();if(!L.length)return `<div class="card"><sp
  return `<div class="card"><span class="eyebrow">Tes clubs <button class="linkbtn" type="button" data-clubs>gérer</button></span>${L.map(k=>{const c=CLUBS[k],today=clubToday().includes(k),done=G.done[G.day+'club'+k];
   return `<div class="prof"><span>${c.ic} <b>${c.n}</b> <small class="muted">${(G.clubXP[k]||0)} séance${(G.clubXP[k]||0)>1?'s':''} · ${DAYS[c.wd].toLowerCase()} soir</small></span>${today&&!done?(evening?`<button class="gbtn" type="button" data-clubgo="${k}">Y aller</button>`:G.min<1020?'<small class="muted">ce soir</small>':'<small class="muted">trop tard</small>'):done?'<small class="muted">fait ✅</small>':''}</div>`}).join('')}</div>`}
 /* ---------- maison : appeler, inviter à sortir ou à la maison, télé, ordinateur, film en famille ---------- */
-const HOME_ACTS=[['call','📞','Appeler quelqu\'un','au téléphone'],['out','🌴','Inviter à sortir','un·e camarade'],['invite','🏠','Inviter à la maison','parler en vrai'],
- ['tv','📺','Regarder la télé','+8 énergie · 1 h'],['pc','💻','Jouer sur l\'ordinateur','+6 énergie · 1 h'],['film','🎬','Film en famille','2 h · famille'],
- ['hobby','🎨','Ma passion','+8 énergie · 1 h'],['hw','📝','Faire mes devoirs','devoirs à rendre']];
+const HOME_ACTS=[['meal','🍽️','Repas en famille','faim, complicité'],['snack','🍪','Grignoter','faim +15'],['go','🌴','Sortir','plage, café, resto…'],
+ ['call','📞','Appeler quelqu\'un','au téléphone'],['out','📅','Prévoir une sortie','un·e camarade'],['invite','🏠','Inviter à la maison','parler en vrai'],
+ ['tv','📺','Regarder la télé','seul·e ou en famille'],['pc','💻','Jouer sur l\'ordinateur','divertissement · 1 h'],['film','🎬','Regarder un film','2 h · famille'],
+ ['hobby','🎨','Ma passion','divertissement · 1 h'],['hw','📝','Faire mes devoirs','devoirs à rendre']];
 const guestHere=()=>!!(G.guest&&G.guest.day===G.day&&G.min<G.guest.until);
-function homeOff(k){const ph=phase();if(k==='hobby')return G.done[ph.key+'hobby']?'déjà fait':'';if(k==='tv')return G.done[ph.key+'tv']?'déjà fait':'';if(k==='pc')return G.done[ph.key+'pc']?'déjà fait':'';
- if(k==='film')return G.done[G.day+'film']?'déjà fait aujourd\'hui':!G.family.length&&!guestHere()?'personne':'';
- if(k==='invite')return guestHere()?'déjà quelqu\'un':G.min>=21*60?'trop tard':'';return ''}
+function homeOff(k){if(k==='meal')return mealOff();if(k==='go')return goOff();
+ if(k==='invite'&&guestHere())return 'déjà quelqu\'un';return homeTimeOff(k)}
 function guestTick(){if(G.guest&&!guestHere()&&!G.guest.gone){G.guest.gone=1;note(`${WHO[G.guest.id].name} est rentré·e chez ${ilElle(G.guest.id)==='il'?'lui':'elle'}`)}}
 function pickMateSheet(title,sub,act,filt){const L=NPCS.map(n=>n.id).filter(filt||(()=>true)).sort((a,b)=>G.rel[b].ami-G.rel[a].ami);
  openSheet(sheetHead(title,sub)+`<div class="choices">${L.map(id=>`<button class="choice" type="button" data-hpick="${act}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>${esc(fullNameOf(id))}<small>amitié ${G.rel[id].ami}${coupleOf(id)==='me'?' · en couple 💞':''}</small></span></span></button>`).join('')}</div>`)}
 function homeAct(k){const ph=phase(),gst=guestHere()?G.guest.id:null;
- if(k==='hobby'){if(homeOff('hobby'))return;hobbySheet();return}
+ if(homeOff(k)){toast(homeOff(k));return}
+ if(k==='meal'){mealGo();return}
+ if(k==='snack'){snackGo();return}
+ if(k==='go'){goSheet();return}
+ if(k==='hobby'){hobbySheet();return}
  if(k==='hw'){hwSheet();return}
  if(k==='call'){pickMateSheet('Appeler quelqu\'un','Qui veux-tu appeler ?','call');return}
  if(k==='out'){pickMateSheet('Inviter à sortir','Tu lui écris pour proposer une sortie','out');return}
  if(k==='invite'){if(homeOff('invite')){toast(homeOff('invite'));return}pickMateSheet('Inviter à la maison','Qui veux-tu inviter chez toi ?','invite');return}
- if(k==='tv'){if(homeOff('tv'))return;G.done[ph.key+'tv']=1;const show=pickR(['un épisode de ta série','le match de foot','un concours de cuisine','les infos de Guadeloupe la 1ère','une émission de téléréalité','un documentaire sur les fonds marins']);
-  let t=`📺 Tu regardes ${show}. +8 énergie`;G.energy=clamp(G.energy+8,0,100);
-  if(gst){const ch=relChange(gst,3,0);t+=` · avec ${WHO[gst].name}${ch?' ('+ch.split(' : ')[1]+')':''}`}
-  else if(G.family.length&&Math.random()<.5){const f=pickR(G.family);famChange(f.id,2);t+=` · ${f.name} s'installe à côté de toi`}
-  advance(60);note(t.replace('📺 ',''));toast(t);saveG();drawHUD();drawView();return}
- if(k==='pc'){if(homeOff('pc'))return;openSheet(sheetHead('💻 Sur l\'ordinateur','Qu\'est-ce que tu fais ?')+`<div class="choices">${[['jeu','🎮 Jouer à un jeu vidéo','+6 énergie · un·e camarade peut te rejoindre en ligne'],['videos','▶️ Regarder des vidéos','+6 énergie'],['musique','🎧 Écouter de la musique','+5 énergie']].map(([v,l,sm])=>`<button class="choice" type="button" data-hpc="${v}">${l}<small>${sm}</small></button>`).join('')}</div>`);return}
- if(k==='film'){if(homeOff('film'))return;
-  openSheet(sheetHead('🎬 Regarder un film','Avec qui ? Choisis aussi le genre.')+`<div class="choices">${G.family.map(f=>`<label class="choice fl-pick"><input type="checkbox" data-fpick="${f.id}" checked> ${esc(f.name)} <small>${f.role}</small></label>`).join('')}${gst?`<label class="choice fl-pick"><input type="checkbox" data-fpick="${gst}" checked> ${WHO[gst].name} <small>invité·e</small></label>`:''}</div>
+ if(k==='tv'){tvSheet();return}
+ if(k==='pc'){openSheet(sheetHead('💻 Sur l\'ordinateur','Qu\'est-ce que tu fais ?')+`<div class="choices">${[['jeu','🎮 Jouer à un jeu vidéo','+6 énergie · un·e camarade peut te rejoindre en ligne'],['videos','▶️ Regarder des vidéos','+6 énergie'],['musique','🎧 Écouter de la musique','+5 énergie']].map(([v,l,sm])=>`<button class="choice" type="button" data-hpc="${v}">${l}<small>${sm}</small></button>`).join('')}</div>`);return}
+ if(k==='film'){
+  openSheet(sheetHead('🎬 Regarder un film','Seul·e ou avec qui ? Choisis aussi le genre.')+`<div class="choices">${G.family.map(f=>`<label class="choice fl-pick"><input type="checkbox" data-fpick="${f.id}" checked> ${esc(f.name)} <small>${f.role}</small></label>`).join('')}${gst?`<label class="choice fl-pick"><input type="checkbox" data-fpick="${gst}" checked> ${WHO[gst].name} <small>invité·e</small></label>`:''}</div>
   <div class="choices">${FILMS.map(([g,l])=>`<button class="choice" type="button" data-hfilm="${g}">${l}</button>`).join('')}</div>`);return}}
 const FILMS=[['comedie','😂 Une comédie'],['action','💥 Un film d\'action'],['horreur','👻 Un film d\'horreur'],['anime','🧸 Un dessin animé'],['romance','💞 Une comédie romantique'],['antilles','🌴 Un film antillais']];
 /* goûts de chaque caractère de la famille : genre aimé / détesté */
 const FILM_TASTE={'Protecteur·rice':['anime','horreur'],'Strict·e':['antilles','horreur'],'Cool':['action','romance'],'Drôle':['comedie','antilles'],'Souvent absent·e':['action','anime'],'Curieux·se':['antilles','comedie']};
-function homeFilm(g){const who=[...document.querySelectorAll('[data-fpick]')].filter(x=>x.checked).map(x=>x.dataset.fpick);
- if(!who.length){toast('Choisis au moins une personne');return}
- G.done[G.day+'film']=1;const nm=FILMS.find(x=>x[0]===g)[1].replace(/^\S+\s/,'').toLowerCase();let res=[];
- who.forEach(id=>{if(isFam(id)){const f=G.family.find(x=>x.id===id),T=FILM_TASTE[f&&f.trait]||[];const d=T[0]===g?7:T[1]===g?1:4;famChange(id,d);res.push(`${f.name} ${T[0]===g?'a adoré':T[1]===g?'s\'est endormi·e':'a passé un bon moment'}`)}
-  else{const ch=relChange(id,4,G.partner===id||iLike(id)&&g==='romance'?3:0);res.push(`${WHO[id].name} a bien aimé${ch?' ('+ch.split(' : ')[1]+')':''}`)}});
- G.energy=clamp(G.energy+10,0,100);advance(120);const t=`🎬 Soirée film (${nm}) : ${res.join(', ')}. +10 énergie`;note(t.replace('🎬 ',''));closeSheet();toast('🎬 Bonne soirée film !');
- openSheet(sheetHead('🎬 Soirée film',nm)+`<p class="story-text">${esc(res.join(' · '))}.</p><p class="muted">+10 énergie · 2 heures passées</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);saveG();drawHUD();drawView()}
-function homePc(v){const ph=phase();G.done[ph.key+'pc']=1;let t;
+function homePc(v){setCd('pc');needUp('fun',12);let t;
  if(v==='jeu'){G.energy=clamp(G.energy+6,0,100);const gam=NPCS.map(n=>n.id).filter(id=>(LIKE[id]||[]).some(w=>/jeu|console|fifa/.test(w))&&G.rel[id].ami>=20);
   if(gam.length&&Math.random()<.6){const id=pickR(gam),ch=relChange(id,4,0);t=`🎮 ${WHO[id].name} te rejoint en ligne, vous enchaînez les parties${ch?' ('+ch.split(' : ')[1]+')':''}. +6 énergie`}
   else t='🎮 Tu joues à ton jeu préféré. +6 énergie'}
@@ -4005,12 +4264,12 @@ function placeBody(ph,place,map){
   <span class="eyebrow">À la maison</span>
   <div class="acts two">${HOME_ACTS.map(([k,ic,l,sm])=>`<button class="act" type="button" data-home="${k}" ${homeOff(k)?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${homeOff(k)||sm}</small></button>`).join('')}</div>
   <div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser</span><small class="r-ok">−6 énergie</small></button>
-  <button class="act" type="button" data-do="rest" ${G.rested?'disabled':''}><span class="ico">🛋️</span><span>Se reposer</span><small class="r-ok">+15 énergie</small></button>
-  ${G.min>=1260||ph.type==='nuit'?`<button class="act" type="button" data-do="sleep"><span class="ico">🌙</span><span>Dormir</span><small class="r-ok">jusqu'à 7h</small></button>`:''}</div>`;
+  <button class="act" type="button" data-do="rest" ${cdLeft('rest')?'disabled':''}><span class="ico">🛋️</span><span>Se reposer</span><small class="r-ok">${homeTimeOff('rest')||'1 h · énergie +12'}</small></button>
+  ${G.min>=1260||G.min<360?`<button class="act" type="button" data-do="sleep"><span class="ico">🌙</span><span>Dormir</span><small class="r-ok">jusqu'à 7h</small></button>`:`<button class="act" type="button" data-do="nap" ${cdLeft('nap')?'disabled':''}><span class="ico">😴</span><span>Faire une sieste</span><small class="r-ok">${homeTimeOff('nap')||'1 h 30 · énergie +18'}</small></button>`}</div>`;
   return h;
  }
  const ids=map[place]||[];
- if(place==='cantine')h+=`<div class="acts two"><button class="act" type="button" data-do="eat" ${G.ate?'disabled':''}><span class="ico">🍛</span><span>Manger</span><small class="r-ok">+15 énergie</small></button></div>`;
+ if(place==='cantine')h+=`<div class="acts two"><button class="act" type="button" data-do="eat" ${G.ate?'disabled':''}><span class="ico">🍛</span><span>Manger</span><small class="r-ok">faim +45 · énergie +10</small></button></div>`;
  if(place==='cdi')h+=`<div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser au calme</span><small class="r-ok">−4 énergie</small></button></div>`;
  h+=ids.length?`<p class="muted">Présents ici :</p><div class="present">${ids.map(id=>{const c=coupleOf(id);return `<button class="pers" type="button" data-person="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${c&&c!=='me'&&ids.includes(c)?'avec '+WHO[c].name:G.rel[id].ami>=65?S(id,'ami·e'):''}</small></button>`}).join('')}</div>`:`<p class="muted">Personne ici pour l'instant.</p>`;
  return h;
@@ -4035,7 +4294,7 @@ function drawProfile(){
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
   <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button><button class="gbtn ghost" type="button" id="gMaj">🔄 Mettre à jour l'appli</button></div><p class="muted" style="margin:0">Version ${APP_VERSION}</p></div></div>
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
- <div class="sec-title">Chances de réussite à l'examen</div><div class="card">${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
+ <div class="sec-title">Chances de réussite à l'examen</div><div class="card"><p class="muted" style="margin-top:0">${chapLine()}</p>${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
  <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
  <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
  <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
@@ -4072,7 +4331,7 @@ function openPerson(id){
  openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>${WHO[id].name}</h2><p class="muted" style="margin:2px 0 0">${PLACES[G.place]||'Au lycée'} · ${statusOf(id)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <p class="muted" style="margin:0">${esc(ressentiShort(id))}</p>${gaugesHTML(id)}
  <div class="acts">${acts.map(([a,l])=>`<button class="act" type="button" data-pa="${a}" data-id="${id}" ${G.done[k+a]?'disabled':''}><span>${l}</span></button>`).join('')}</div>
- <div class="acts"><button class="act" type="button" data-askopen="${id}"><span>❓ Poser une question</span></button></div>
+ <div class="acts"><button class="act" type="button" data-askopen="${id}"><span>❓ Poser une question</span></button><button class="act" type="button" data-bffopen="${id}"><span>${G.bff===id?'⭐ '+bffWord(id,1):'⭐ Lui demander d\'être '+bffWord(id)}</span></button></div>
  ${romHTML(id)}
  <p class="story-text" id="paOut"></p>
  <div class="row"><button class="gbtn ghost" type="button" data-fiche="${id}">Voir sa fiche</button></div>`);
@@ -4105,20 +4364,22 @@ function personAct(id,a){
 const takenBy=id=>{const c=coupleOf(id);return c&&c!=='me'?c:null};
 function seenFlirt(id){if(!G.partner||G.partner===id)return '';const map=presence(phase());if(!(map[G.place]||[]).includes(G.partner))return '';
  relChange(G.partner,-4,-10);pushMsg(G.partner,'them',pickR(["J'ai tout vu. Sympa… 😒","Sérieux ?? Devant moi ?","On en parle plus tard."]));const m=P(`${WHO[G.partner].name} t'a vu·e faire les yeux doux à ${WHO[id].name}`);note(m);return ' · '+m}
-function romActs(id){return G.partner===id?[['calin','Faire un câlin 🤗'],['main','Lui prendre la main 🤝'],['bisou','Faire un bisou 😘'],['cadeau','Offrir un cadeau 🎁'],['rdv','Proposer un rendez-vous 💘']]
- :[['regard','Lancer un regard complice 👀'],['mot','Glisser un mot doux 💌'],['main','Lui frôler la main 🤭'],['cadeau','Offrir un cadeau romantique 🎁'],['rdv','Proposer un rendez-vous amoureux 💘'],['declarer','Déclarer tes sentiments ❤️']]}
+function romActs(id){return G.partner===id?[['calin','Faire un câlin 🤗'],['main','Lui prendre la main 🤝'],['bisou','Faire un bisou 😘'],['cadeau','Offrir un cadeau 🎁'],['rdv','Proposer un rendez-vous 💘'],['rompre','Rompre 💔']]
+ :[['regard','Lancer un regard complice 👀'],['mot','Glisser un mot doux 💌'],['main','Lui frôler la main 🤭'],['cadeau','Offrir un cadeau romantique 🎁'],['rdv','Proposer un rendez-vous amoureux 💘'],['declarer','Demander de sortir ensemble ❤️']]}
 function romHTML(id){if(!(iLike(id)||G.partner===id))return '';const k=phase().key+id;
  return `<span class="eyebrow">💘 Romance</span><div class="acts">${romActs(id).map(([a,l])=>{const off=a==='cadeau'?G.done[G.day+'gift'+id]:a==='rdv'?G.done[G.day+'rdv'+id]:a==='declarer'?G.done[G.day+'decl'+id]:G.done[k+'ro'+a];return `<button class="act" type="button" data-ro="${a}" data-id="${id}" ${off?'disabled':''}><span>${l}</span></button>`}).join('')}</div>`}
 function romOut(id,line,ch,extra){const o=$('paOut');if(o)o.innerHTML=`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch||extra?`<br><small class="muted">${esc([ch,extra].filter(Boolean).join(' · '))}</small>`:''}`}
 function declareTo(id){const r=G.rel[id],t=takenBy(id);G.done[G.day+'decl'+id]=1;G.confessed=G.confessed||{};G.confessed[id]=1;
  if(t)return {line:`Je suis touché·e… mais je suis avec ${WHO[t].name}. Je suis désolé·e.`,ch:relChange(id,-1,-3)};
- if(npcLikesMe(id)&&r.amour>=50&&r.ami>=35){let ex='';if(G.partner&&G.partner!==id){const old=G.partner;ex=relChange(old,-10,-40);pushMsg(old,'them',"J'ai appris pour toi et "+WHO[id].name+"… c'est fini entre nous. 💔");note(`Tu as quitté ${WHO[old].name}`)}
+ const need=({prejuge:60,curieux:52,bienv:46})[RTYPE[id]||'bienv'];
+ if(npcLikesMe(id)&&r.amour>=need&&r.ami>=35&&respOf(id)>=25){let ex='';if(G.partner&&G.partner!==id){const old=G.partner;ex=relChange(old,-10,-40);pushMsg(old,'them',"J'ai appris pour toi et "+WHO[id].name+"… c'est fini entre nous. 💔");note(`Tu as quitté ${WHO[old].name}`)}
   G.partner=id;r.amour=Math.max(r.amour,85);G.posts.unshift(mkPost({by:'potins',text:`[Officiel] 💞 ${myHandle()} et ${WHO[id].handle}, c'est confirmé !`,c:50,r:800,l:21000}));note(`Tu es en couple avec ${WHO[id].name} 💞`);
   return {line:pickR(["Moi aussi… depuis longtemps 🥹❤️","Tu peux pas savoir comme j'attendais ça 💕","Oui. Mille fois oui ❤️"]),ch:joinFx([relChange(id,5,10),ex]),ok:1}}
  return {line:pickR(npcLikesMe(id)?["Je… j'ai besoin de te connaître un peu plus avant 😳","C'est trop tôt pour moi, laisse-moi un peu de temps 🙈"]:["Je t'apprécie beaucoup, mais seulement en ami·e…","Oh… je suis désolé·e, je ne ressens pas la même chose."]),ch:relChange(id,-2,npcLikesMe(id)?-3:-8)}}
 function romAct(id,a){const ph=phase(),k=ph.key+id,r=G.rel[id],f=FICHES[id],V=VOICE[id],t=takenBy(id),likes=npcLikesMe(id),mine=G.partner===id;
  if(a==='cadeau'){openSheet(giftSheet(id));return}
  if(a==='rdv'){openSheet(rdvSheet(id));return}
+ if(a==='rompre'){breakUpSheet(id);return}
  if(G.energy<2){toast(P('Trop fatigué·e : va manger ou te reposer'));return}
  G.energy=clamp(G.energy-2,0,100);let da=0,dl=0,line;
  if(a==='declarer'){const d=declareTo(id);romOut(id,d.line,d.ch);if(d.ok)setTimeout(()=>openPerson(id),1600);checkObjectives();saveG();drawHUD();return}
@@ -4458,7 +4719,7 @@ const DISC_IC=['🗣️','⚠️','📵','⏰','⏰⏰','🚪','🏛️','👪',
 /* niveau = gravité de la faute + récidive (fautes des 30 derniers jours) + ajustement selon la réaction */
 function discLevel(g){const v=vsInit(),n=v.disc.filter(d=>G.day-d.day<=30).length;return clamp(Math.round(g+Math.floor(n/3)),0,10)}
 function applyDisc(k,lvl,who){const v=vsInit();lvl=clamp(Math.round(lvl),0,10);if(lvl<0)return '';v.disc.push({day:G.day,k,lvl});v.disc=v.disc.slice(-60);clsInit();G.st.caughtToday=true;
- cBeh(-(2+lvl*1.5));let x='';
+ cBeh(-(2+lvl*1.5));respDisc(lvl);let x='';
  if(lvl===2)v.phoneDay=G.day;
  if(lvl>=3&&lvl<=7){x=provConvoc(k,lvl);if(lvl>=5)parentReact('carnet');if(lvl===7)G.family.forEach(f=>famChange(f.id,-6))}/* la proviseure décide de la retenue dans son bureau */
  if(lvl===8){v.excl=G.day+2;G.family.forEach(f=>famChange(f.id,-10));x=' : 2 jours sans venir au lycée'}
@@ -4737,8 +4998,9 @@ function sendNote(tone){
 function doAct(k){
  const ph=phase();
  if(k==='sleep'){sleepNow();return}
- if(k==='eat'){if(G.ate)return;G.ate=true;G.energy=clamp(G.energy+15,0,100);toast('🍛 Bon appétit · +15 énergie')}
- if(k==='rest'){if(G.rested)return;G.rested=true;G.energy=clamp(G.energy+15,0,100);toast('🛋️ +15 énergie')}
+ if(k==='eat'){if(G.ate)return;G.ate=true;toast('🍛 Bon appétit · '+needsFx({faim:45,energy:10,soc:3}))}
+ if(k==='rest'){if(cdLeft('rest'))return;restGo();return}
+ if(k==='nap'){if(cdLeft('nap'))return;napGo();return}
  if(k==='revise'){openSheet(`<div class="who"><div style="flex:1"><h2>Réviser</h2><p class="muted" style="margin:2px 0 0">Quelle matière ?</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div><div class="choices">${Object.entries(SUBJ).map(([s,l])=>`<button class="choice" type="button" data-rev="${s}">${l}<small>Niveau ${G.know[s]}/100 · ${MINI_NAME[MINI_KIND(s)]} : de +3 à +12 %</small></button>`).join('')}</div><p class="muted">Pas le temps de jouer ? <button class="linkbtn" type="button" data-revquick>Réviser vite</button> (+4 %, matière choisie au hasard parmi les plus faibles)</p>`);return}
  saveG();drawHUD();drawView();
 }
@@ -4964,8 +5226,10 @@ function bacGame(k){if(G.bac.bonus[k]!=null){toast('Épreuve déjà passée');re
   miniResult(scoreLbl(sc),`Épreuve de ${SUBJ[k]} terminée · score ${Math.round(sc*100)} %`,`<p class="muted">Ton résultat compte dans la note de l'épreuve (de −2 à +2 points).</p>`);saveG();drawView()})}
 function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
  G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+gainK(s,4),0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
+const PLAN_VENUE={plage:'plage',sainteanne:'plage',centre:'promenade',glacier:'cafe',carbet:'promenade',marche:'promenade',resto:'resto',cinema:'cinema'};
 function startOuting(p){if(p.fam){startFamOuting(p);return}
  if(p.date){openSheet(dateSheet(p));return}
+ if(isNpc(p.by)){G.st.outings++;outStart(PLAN_VENUE[p.place]||'promenade',p.by,p.id);return}
  openSheet(`<div class="who"><div class="av">${avatarOf(p.by)}</div><div><h2>Sortie ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[p.by].name} · ${fmtT(G.min)}</p></div></div>
  <p class="story-text">${WHO[p.by].name} t'attend ${PLACE_OUT[p.place]}. Qu'est-ce que vous faites ?</p>
  <div class="choices"><button class="choice" type="button" data-out="fun" data-pl="${p.id}">On rigole et on se balade<small class="t-pos">Amitié</small></button>
@@ -5011,14 +5275,14 @@ const voiceOf=id=>isFam(id)?FAMREP[famKind(id)]:VOICE[id];
    Différent des messages : dialogue à l'oral, au lieu où l'on se trouve, avec gestes ; historique séparé (G.talks).
    Le ou la camarade sait que c'est en vrai (consigne dans le prompt, gestes et remarques sur le lieu en secours). */
 let talk=null;
-const TALK_SCENE={cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour'};
+const TALK_SCENE={cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'cantine',brunch:'cantine',resto:'cantine',fastfood:'cantine',shopping:'marche',cinema:'soiree',club:'couloir'};
 const TALK_SUGG=["Salut !","Ça va ?","Tu fais quoi ici ?","On s'assoit ensemble ?","T'as vu le dernier post des Potins ?","Tu fais quoi ce week-end ?"];
 const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux qui brillent*'],neg:['*fronce les sourcils*','*croise les bras*','*soupire*','*détourne le regard*'],neu:['*hausse les épaules*','*hoche la tête*','*réfléchit une seconde*','*te regarde*']};
 const PLACE_TALK={cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
  foyer:["Le foyer est blindé aujourd'hui","Quelqu'un a mis du zouk au foyer, j'adore"],cantine:["C'est quoi ce plat encore ?","Tu manges ça toi ? 😂"],plage:["L'eau est trop bonne aujourd'hui","Regarde le coucher de soleil…"],centre:["Y a trop de monde au centre-ville aujourd'hui","On passe au glacier après ?"],maison:["On est bien à la maison quand même","Tu as mangé ?"]};
 const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?'maison':G.place||'cour'};
 function openTalk(id,o){o=o||{};
- const pl=isFam(id)||guestHere()&&G.guest.id===id?'maison':talkPlace();talk={id,pl,day:G.day,call:!!o.call};
+ const pl=o.pl||(isFam(id)||guestHere()&&G.guest.id===id?'maison':talkPlace());talk={id,pl,day:G.day,call:!!o.call};
  const th=(G.talks[id]=G.talks[id]||[]);if(th.length&&th[th.length-1].day!==G.day)th.push({sep:1,day:G.day,pl});
  if(isNpc(id)&&!G.done[G.day+'vrai'+id]){G.done[G.day+'vrai'+id]=1;G.st.talks++}
  openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="talkSub">${talk.call?'📞 Au téléphone':'En vrai · '+(PLACES[pl]||'Maison')} · ${fmtT(G.min)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Partir">Partir</button></div>
@@ -5066,7 +5330,7 @@ function talkFallback(id,text){
 }
 async function sendTalk(text){
  text=(text||'').trim();if(!text||!talk||busyId)return;const id=talk.id;
- (G.talks[id]=G.talks[id]||[]).push({from:'me',text:genderize(text,'me')});busyId=id;drawTalk();
+ (G.talks[id]=G.talks[id]||[]).push({from:'me',text:genderize(text,'me')});busyId=id;needUp('soc',talk.call?2:3);drawTalk();
  let out=null;
  if(SAMPLE){try{out=await SAMPLE.json(buildTalkPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
  else await new Promise(r=>setTimeout(r,700+Math.random()*700));
@@ -5299,13 +5563,6 @@ const CLUB_LINES={foot:["Entraînement sous la pluie, tout le monde finit couver
  hand:["Entraînement de tirs avec {a}","Séance de cardio : {a} ne s'arrête jamais 🔥","Tactique au tableau, puis match"],basket:["Lancers francs avec {a}","Match à trois contre trois, {a} fait un dunk 😱","Séance de dribbles"],
  danse:["Nouvelle choré dancehall avec {a} 💃","Répétition devant le miroir, {a} corrige tes pas","Vous inventez un passage ensemble"],theatre:["Lecture de la pièce avec {a}","Improvisations : {a} te fait pleurer de rire","Répétition de ta scène avec {a}"],
  journal:["Conférence de rédaction : {a} veut un article sur la cantine","Tu écris un article avec {a}","Interview d'un prof avec {a}"],arts:["Croquis de modèle vivant avec {a} 🎨","{a} t'apprend l'aquarelle","Vous peignez une toile à quatre mains"],musique:["Répétition avec {a} 🎸","{a} t'apprend trois accords","Vous enregistrez une maquette au foyer"]};
-function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.done[G.day+'club'+k]){toast('Séance déjà faite aujourd\'hui');return}
- if(G.energy<8){toast("Pas assez d'énergie pour la séance");return}
- G.energy=clamp(G.energy-8,0,100);G.done[G.day+'club'+k]=1;G.clubXP[k]=(G.clubXP[k]||0)+1;
- const a=pickR(c.m),line=pickR(CLUB_LINES[k]).replace('{a}',WHO[a].name);G.know[c.sub]=clamp(G.know[c.sub]+3,0,100);
- const msg=joinFx([line,...c.m.map(i=>relChange(i,3)),`${SUBJ[c.sub]} +3 %`]);note(`${c.ic} ${c.n} : ${line}`);saveG();drawHUD();drawView();
- if(G.clubXP[k]%CLUB_BIG===0)openSheet(sheetHead(`${c.ic} ${c.big}`,'Le grand rendez-vous du club')+`<p class="story-text">${esc(msg)}</p><p class="story-text">C'est le moment de montrer ce que vous valez. Tout le lycée regarde !</p><div class="row"><button class="gbtn" type="button" data-clubbig="${k}">C'est parti</button></div>`);
- else openSheet(sheetHead(`${c.ic} ${c.n}`,`Séance n° ${G.clubXP[k]} · prochain grand rendez-vous dans ${CLUB_BIG-G.clubXP[k]%CLUB_BIG} séance${CLUB_BIG-G.clubXP[k]%CLUB_BIG>1?'s':''}`)+`<p class="story-text">${esc(msg)}</p><div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`)}
 function clubBig(k){const c=CLUBS[k];playMini({sub:c.game,n:5,title:c.big},sc=>{const win=sc>=.6;
  G.posts.unshift(mkPost({by:'potins',text:`[Officiel] ${win?c.won:c.lost} · bravo à ${[...c.m.map(i=>WHO[i].name),nameOf('me')].join(', ')} !`,c:20+Math.floor(Math.random()*30),r:300,l:6000+Math.floor(Math.random()*6000)}));
  if(win){G.ig.fans+=15+Math.floor(sc*20);G.gems+=5}
@@ -5406,6 +5663,16 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=t.closest('[data-hpc]')){homePc(b.dataset.hpc);return}
  if(b=t.closest('[data-hfilm]')){homeFilm(b.dataset.hfilm);return}
  if(b=t.closest('[data-mq]')){answerMq(+b.dataset.mq,+b.dataset.o);return}
+ if(t.closest('[data-tvgo]')){tvGo();return}
+ if(b=t.closest('[data-venue]')){venuePick(b.dataset.venue);return}
+ if(b=t.closest('[data-vgo]')){venueGo(b.dataset.vgo,b.dataset.id);return}
+ if(b=t.closest('[data-oa]')){outAct(b.dataset.oa);return}
+ if(b=t.closest('[data-food]')){foodEat(b.dataset.food);return}
+ if(b=t.closest('[data-clact]')){clubAct(b.dataset.clact);return}
+ if(b=t.closest('[data-ctopic]')){clubTopic(b.dataset.ctopic);return}
+ if(b=t.closest('[data-clubtalk]')){const id=b.dataset.clubtalk,s=G.clubS;if(s&&!s.talked.includes(id)){s.talked.push(id);needUp('soc',5);relChange(id,2,0)}closeSheet();openTalk(id,{pl:'club'});return}
+ if(b=t.closest('[data-bff]')){bffAsk(b.dataset.bff,b.dataset.a);return}
+ if(t.closest('[data-needbonus]')){closeSheet();menuClick({target:{closest:()=>({dataset:{m:'bonus'}})}});return}
  if(b=t.closest('[data-hobby]')){doHobby(b.dataset.hobby);return}
  if(b=t.closest('[data-hstory]')){hobbyStory(b.dataset.hstory);return}}
  if(t.closest('[data-cev]')){chooseClassEvent(t.closest('[data-cev]').dataset.cev);return}
@@ -5437,6 +5704,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-sv]')){b.dataset.sv==='next'?nextStory():prevStory();return}
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
+ if(b=q('[data-bffopen]')){bffSheet(b.dataset.bffopen);return}
  if(b=q('[data-ro]')){romAct(b.dataset.id,b.dataset.ro);return}
  if(b=q('[data-gift]')){giveGift(b.dataset.id,b.dataset.gift);return}
  if(b=q('[data-rdv]')){proposeDate(b.dataset.id,b.dataset.rdv);return}
@@ -5488,6 +5756,9 @@ $('gView').addEventListener('click',e=>{
  if(t.closest('[data-evalgame]')){evalGame();return}
  if(t.closest('[data-clubs]')){openSheet(clubsSheet());return}
  if(b=t.closest('[data-clubgo]')){clubGo(b.dataset.clubgo);return}
+ if(t.closest('[data-outopen]')){outSheet();return}
+ if(t.closest('[data-outhome]')){outEnd();return}
+ if(t.closest('[data-clubopen]')){clubSheet();return}
  if(t.closest('[data-tutorjoin]')){tutorJoin(1);return}
  if(t.closest('[data-tutorquit]')){tutorJoin(0);return}
  if(t.closest('[data-tutorgo]')){tutorGo();return}
@@ -5545,7 +5816,7 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
 $('gSpeed').onclick=()=>{G.speed=SPEEDS[(SPEEDS.indexOf(G.speed||1)+1)%SPEEDS.length];if(G.paused)G.paused=false;saveG();drawClock();toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)};
 $('gMenu').onclick=openMenu;
 $('gDayBtn').onclick=openMenu;
-$('gEnergy').onclick=()=>{if(G.bonus){menuClick({target:{closest:()=>({dataset:{m:'bonus'}})}});return}toast(`Énergie ${G.energy}/100 : elle baisse avec le temps et les actions, remonte en dormant et en mangeant`)};
+$('gEnergy').onclick=()=>needsSheet();
 $('gEnergyPlus').onclick=()=>{if(G.gems<10){toast('Il faut 10 gemmes pour 25 énergie');return}G.gems-=10;G.energy=clamp(G.energy+25,0,100);saveG();drawHUD();toast('+25 énergie contre 10 gemmes')};
 $('gGemsBtn').onclick=()=>toast(`${G.gems} gemmes : tu en gagnes en réussissant tes objectifs`);
 $('gGemPlus').onclick=()=>toast('La boutique de gemmes arrive bientôt');
