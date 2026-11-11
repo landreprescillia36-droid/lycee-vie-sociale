@@ -212,7 +212,7 @@ body.playing{background:var(--g-bg)}
 .chip.scn{display:inline-flex;align-items:center;gap:8px;padding:4px 14px 4px 4px}
 .scth{width:56px;height:38px;border-radius:9px;overflow:hidden;flex:none;display:block}
 .scth svg{display:block;width:100%;height:100%}
-.txtprev{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;padding:16px;color:#fff;font:800 20px var(--display);text-align:center;text-wrap:balance}
+.txtprev{aspect-ratio:16/9;max-width:100%;display:grid;place-items:center;padding:16px;color:#4a3b32;font:800 20px var(--display);text-align:center;text-wrap:balance}
 .sheet.full{max-height:100%;height:100%;border-radius:0;background:#E8EEF5}
 .sv-bars{display:flex;gap:4px}
 .sv-bars span{flex:1;height:3px;background:rgba(255,255,255,.25);border-radius:2px;overflow:hidden}
@@ -224,7 +224,7 @@ body.playing{background:var(--g-bg)}
 .sv-stage{position:relative;flex:1;min-height:0;display:flex}
 .sv-frame{position:relative;flex:1;min-height:220px;border-radius:18px;overflow:hidden;display:grid;place-items:center}
 .sv-frame svg{width:100%;height:auto;display:block}
-.sv-text{font:800 clamp(24px,7vw,34px) var(--display);text-align:center;padding:28px;color:#fff;text-wrap:balance;line-height:1.2}
+.sv-text{font:800 clamp(24px,7vw,34px) var(--display);text-align:center;padding:28px;color:#4a3b32;text-wrap:balance;line-height:1.2}
 .sv-cap{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(transparent,rgba(0,0,0,.65));color:#fff;font-weight:700}
 .sv-zone{position:absolute;top:0;bottom:0;width:35%;background:none;border:0;cursor:pointer}
 .sv-zone.l{left:0}.sv-zone.r{right:0}
@@ -285,6 +285,8 @@ body.playing{background:var(--g-bg)}
 .bub.typing{color:var(--g-muted);font-style:italic}
 .bub-act{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 .bub-act .gbtn{padding:8px 12px;font-size:14px}
+.bub-act.col{flex-direction:column;align-items:stretch}
+.bub-act.col .gbtn{text-align:left;white-space:normal;min-height:44px}
 .bub-st{display:block;margin-top:6px;color:#6ee7a8;font-weight:700}
 .composer{display:flex;gap:8px}
 .composer input{flex:1;min-width:0;background:#f2f6fa;color:var(--g-ink);border:1px solid #c9d6e3;border-radius:14px;padding:12px;font:15px var(--body)}
@@ -507,6 +509,7 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 
 /* la proviseure : portrait, carte de retenue, agenda */
 .prov-pop{display:flex;flex-direction:column;align-items:center;gap:8px;margin:4px 0 8px}
+.prov-pop .av{width:88px;height:88px}
 .prov-av{border-radius:50%;overflow:hidden;box-shadow:0 2px 10px rgba(38,59,85,.2);background:#fde8d4;flex:0 0 auto}.prov-av svg{width:100%;height:100%;display:block}
 .prov-tag{font:800 12px 'Nunito',sans-serif;color:#fff;background:#c0544a;border-radius:999px;padding:3px 10px}
 .prov-ret{width:100%;padding:8px 12px}.prov-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #e8eef5}.prov-row:last-child{border-bottom:0}
@@ -527,3 +530,4 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .google-btn svg{width:20px;height:20px}
 .or-sep{display:flex;align-items:center;gap:10px;margin:14px 0 6px}
 .or-sep::before,.or-sep::after{content:"";flex:1;border-top:1px solid var(--line,#dfe3ea)}
+.sv-text .mention{color:inherit;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
