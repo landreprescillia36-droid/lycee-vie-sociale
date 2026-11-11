@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='87';
+const APP_VERSION='88';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -4315,7 +4315,7 @@ function drawProfile(){
 }
 function drawView(){
  $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home';
- if(view==='home'){const n=G.feedN||30;$('gView').innerHTML=G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
+ if(view==='home'){const n=G.feedN||10;$('gView').innerHTML=G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
  else if(view==='insta')drawInsta();
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
@@ -5751,7 +5751,7 @@ $('gView').addEventListener('click',e=>{
  if(t.id==='gEdit'){showAtelier();return}
  if(igClick(t))return;
  if(t.closest('[data-seatopen]')){openSeat();return}
- if(t.closest('[data-feedmore]')){G.feedN=(G.feedN||30)+30;drawView();return}
+ if(t.closest('[data-feedmore]')){G.feedN=(G.feedN||10)+15;drawView();return}
  if(b=t.closest('[data-fetesheet]')){const f=FETES.find(x=>x.id===b.dataset.fetesheet);if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
  if(t.id==='gRestart'){askRestart();return}
@@ -5865,6 +5865,7 @@ $('famGo').onclick=()=>{
 };
 function showGame(){musMode('jeu');
  if(!G){showFamille(false);return}
+ G.feedN=10;
  {const l=$('loader');if(l&&l.hidden&&l.querySelector){loadShow('Chargement du lycée…');setTimeout(()=>loadHide(),0)}}
  $('atelier').hidden=true;$('famille').hidden=true;$('game').hidden=false;document.body.classList.add('playing');
  if(!G.phaseKey){G.phaseKey=phase().key;G.lastPhase=phase()}

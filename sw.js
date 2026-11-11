@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v87';
+const VERSION = 'v88';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -153,25 +153,31 @@ self.addEventListener('activate', e => {
     .then(() => self.clients.claim()));
 });
 
-const vu = new Set();   // images revérifiées en arrière-plan une fois par session
+/* Images : toujours depuis le cache ; une seule revérification par session, une à la fois et 20 s après l'ouverture
+   (pour ne pas ralentir le démarrage). Code : depuis le cache de la version (il ne change qu'avec VERSION, et une nouvelle
+   version recharge la page) ; le réseau seulement s'il manque. */
+const vu = new Set(), file = [];let tourne = false;
+function revoir(c, req, rel) {
+  if (vu.has(rel)) return; vu.add(rel); file.push([c, req]);
+  if (tourne) return; tourne = true;
+  setTimeout(async function suite() {
+    const j = file.shift(); if (!j) { tourne = false; return }
+    try { const r = await fetch(j[1], { cache: 'no-cache' }); if (r.ok) await j[0].put(j[1], r) } catch (_) {}
+    setTimeout(suite, 300);
+  }, 20000);
+}
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
   const rel = url.pathname.replace(/^.*?\/(assets|fonts|icons)\//, '$1/');
   e.respondWith(caches.open(CACHE).then(async c => {
-    if (LOURD(rel)) {                                      // images : tout de suite depuis le cache, mise à jour discrète ensuite
-      const hit = await c.match(req, { ignoreSearch: true });
-      const maj = () => fetch(req, { cache: 'no-cache' }).then(r => { if (r.ok) c.put(req, r.clone()); return r });
-      if (hit) { if (!vu.has(rel)) { vu.add(rel); e.waitUntil(maj().catch(() => {})) } return hit }
-      try { return await maj() } catch (_) { return Response.error() }
+    const hit = await c.match(req, { ignoreSearch: true }) || (req.mode === 'navigate' ? await c.match('index.html') : null);
+    if (LOURD(rel)) {
+      if (hit) { revoir(c, req, rel); return hit }
+      try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok) c.put(req, r.clone()); return r } catch (_) { return Response.error() }
     }
-    try {                                                  // code : réseau d'abord, mais pas plus de 4 s d'attente
-      const r = await Promise.race([fetch(req, { cache: 'no-cache' }), new Promise((_, no) => setTimeout(() => no(new Error('lent')), 4000))]);
-      if (r.ok) c.put(req, r.clone());
-      return r;
-    } catch (_) {                                          // hors ligne ou trop lent : la copie en cache
-      const hit = (await c.match(req, { ignoreSearch: true })) || (req.mode === 'navigate' ? await c.match('index.html') : null);
-      return hit || fetch(req);
-    }
+    if (hit) return hit;
+    try { const r = await fetch(req, { cache: 'no-cache' }); if (r.ok && !url.search) c.put(req, r.clone()); return r }
+    catch (_) { return Response.error() }
   }));
 });

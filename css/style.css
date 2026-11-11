@@ -541,3 +541,6 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .needs .nd em{display:none}
 .gg.resp .bar i{background:#9b8bd9}
 #gEnergy .hdot{left:auto;right:1px;top:1px}
+
+/* fil : les posts hors de l'écran ne sont dessinés qu'en y arrivant (ouverture plus rapide sur téléphone) */
+.post{content-visibility:auto;contain-intrinsic-size:auto 460px}
