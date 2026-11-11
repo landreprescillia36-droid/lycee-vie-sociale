@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='86';
+const APP_VERSION='87';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1059,7 +1059,7 @@ function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTIN
   for(let i=0;i<W*H;i++)L[i]=(a[i*4]*.299+a[i*4+1]*.587+a[i*4+2]*.114)/255;
   const n=T[0].length-1;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){const i=yy*W+xx,up=yy>0?L[i-W]:L[i],dn=yy<H-1?L[i+W]:L[i],v=clamp((up+2*L[i]+dn)/4,0,1),q=v*n,j=Math.min(n-1,Math.floor(q)),u=q-j;
    for(let ch=0;ch<3;ch++)a[i*4+ch]=Math.round((T[ch][j]+(T[ch][j+1]-T[ch][j])*u)*255)}
-  x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;
+  x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;bkPut('t|'+k,url);
   document.querySelectorAll(`image[data-hk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('filter')})}catch(e){/* fichier ouvert en local (file://) : le filtre SVG reste */}};
  im.src=f.includes('/')?`assets/${f}.png`:`assets/coiffures/${f}.png`;return null}
 /* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
@@ -1069,7 +1069,7 @@ function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO
  const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){if(a[i+3]<200)continue;R+=a[i];G+=a[i+1];B+=a[i+2];W++}/* teinte de référence : pixels de peau bien opaques */
   if(W){const t=rgb(sk),lr=(R+G+B)/W/3;for(let i=0;i<a.length;i+=4){const l=Math.min(1,(a[i]+a[i+1]+a[i+2])/3/lr)*.9;for(let j=0;j<3;j++)a[i+j]=Math.round(t[j]*l)}}/* couleur de la peau, jamais plus claire, un peu dans l'ombre des cheveux */
-  x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
+  x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;bkPut('s|'+k,url);document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
  im.src=`assets/coiffures/${f}-peau.png`;return null}
 const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
 /* coupe bouclée courte des garçons copiée pixel par pixel sur le modèle de Prescillia (js/coupe-modele.js) */
@@ -2044,11 +2044,22 @@ const AVS={},AVS_N={n:0};
 function avUse(av,vb,bg){const sp=typeof document!=='undefined'&&document.getElementById&&document.getElementById('avSprite');if(!sp||!sp.querySelector)return render(av,vb,uid(),bg);
  const k=vb+'|'+(bg?1:0)+'|'+JSON.stringify(av);let id=AVS[k];
  if(id&&AVB_IMG[id])return avImgSvg(vb,AVB_IMG[id],id);
+ if(!id&&BK.a[k]){id=AVS[k]='avs'+(++AVS_N.n);AVB_IMG[id]=BK.a[k];return avImgSvg(vb,AVB_IMG[id],id)}
  if(!id){id=AVS[k]='avs'+(++AVS_N.n);const s=render(av,vb,id,bg),inner=s.slice(s.indexOf('>')+1,s.lastIndexOf('</svg>'));
   const tmp=document.createElementNS('http://www.w3.org/2000/svg','svg');tmp.innerHTML=`<g id="${id}">${inner}</g>`;sp.querySelector('defs').appendChild(tmp.firstChild);bakeQ.push([id,av,vb,bg,0]);bakeRun()}
  return `<svg viewBox="${vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" data-avk="${id}"><use href="#${id}"/></svg>`}
 /* chaque avatar est ensuite « cuit » en une seule image (canvas) : le téléphone n'a plus qu'une image à afficher par pastille */
 const AVB_IMG={},ADU={},bakeQ=[];let bakeBusy=false;
+/* cache durable (IndexedDB) des avatars cuits (a|…) et des cheveux / peaux reteints (t|…, s|…) : à la réouverture du jeu,
+   plus rien à recalculer. Vidé à chaque nouvelle version (les dessins ont pu changer). */
+const BK={a:{},db:null};
+function bkLoad(){return new Promise(res=>{let done=false;const end=()=>{if(!done){done=true;res()}};setTimeout(end,1200);
+ try{if(typeof indexedDB==='undefined')return end();const r=indexedDB.open('novalya-cache',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onerror=end;
+  r.onsuccess=()=>{const db=BK.db=r.result;try{const tx=db.transaction('kv','readonly'),st=tx.objectStore('kv'),K=st.getAllKeys(),V=st.getAll();
+   tx.oncomplete=()=>{const keys=K.result,vals=V.result,vi=keys.indexOf('v');
+    if(vi<0||vals[vi]!==APP_VERSION){try{const t=db.transaction('kv','readwrite');t.objectStore('kv').clear();t.objectStore('kv').put(APP_VERSION,'v')}catch(e){}end();return}
+    keys.forEach((k,i)=>{const c=k.slice(0,2),x=k.slice(2);if(c==='a|')BK.a[x]=vals[i];else if(c==='t|')HTINT[x]=vals[i];else if(c==='s|')STINT[x]=vals[i]});end()};tx.onerror=end}catch(e){end()}}}catch(e){end()}})}
+function bkPut(k,v){try{if(BK.db)BK.db.transaction('kv','readwrite').objectStore('kv').put(v,k)}catch(e){}}
 /* une seule cuisson à la fois, quand le téléphone est libre : l'affichage ne se bloque jamais */
 function bakeRun(){if(bakeBusy||!bakeQ.length)return;bakeBusy=true;const go=()=>{const j=bakeQ.shift();Promise.resolve(avBake(...j)).finally(()=>{bakeBusy=false;setTimeout(bakeRun,40)})};(window.requestIdleCallback||setTimeout)(go,{timeout:400})}
 /* zone cuite : carré autour du viewBox (une vignette plus large que haute montre aussi ce qui dépasse, ex. les cheveux) */
@@ -2058,11 +2069,11 @@ function assetData(u){if(ADU[u])return ADU[u];return ADU[u]=fetch(u).then(r=>r.b
 async function avBake(id,av,vb,bg,tries){try{if(typeof fetch==='undefined'||!window.Image)return;
  let s=render(av,vb,'k'+id,bg);if(/data-hk="[^"]+"[^>]*filter=|data-sk="[^"]+"[^>]*opacity="0"/.test(s)&&tries<12){setTimeout(()=>{bakeQ.push([id,av,vb,bg,tries+1]);bakeRun()},350);return}   /* cheveux pas encore reteints */
  const hs=[...new Set([...s.matchAll(/href="(assets\/[^"]+)"/g)].map(m=>m[1]))],du=await Promise.all(hs.map(assetData));hs.forEach((h,i)=>{s=s.split(`href="${h}"`).join(`href="${du[i]}"`)});
- const B=avBox(vb),w=B[2],h=B[3],sc=Math.min(2.4,460/w),W=Math.round(w*sc),H=Math.round(h*sc);
+ const B=avBox(vb),w=B[2],h=B[3],sc=Math.min(2.4,300/w),W=Math.round(w*sc),H=Math.round(h*sc);
  s=s.replace(/viewBox="[^"]*"/,`viewBox="${B.join(' ')}"`).replace('<svg ',`<svg width="${W}" height="${H}" `);
  const im=new Image();im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);await im.decode();
  const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').drawImage(im,0,0,W,H);
- let url=c.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=c.toDataURL('image/png');AVB_IMG[id]=url;
+ let url=c.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=c.toDataURL('image/png');AVB_IMG[id]=url;bkPut('a|'+vb+'|'+(bg?1:0)+'|'+JSON.stringify(av),url);
  document.querySelectorAll(`svg[data-avk="${id}"]`).forEach(el=>{const [x,y,ww,hh]=avBox(vb);el.innerHTML=`<image href="${url}" x="${x}" y="${y}" width="${ww}" height="${hh}"/>`});
  const g=document.getElementById(id);if(g)g.remove()   /* dessin détaillé libéré de la mémoire */}catch(e){/* garde la version <use> */}}
 function avatarOf(id){return avUse(avOf(id),AVB,true)}
@@ -5881,21 +5892,21 @@ const LD_IMG={};
 function svgImgsReady(){let ok=true;document.querySelectorAll('svg image').forEach(el=>{const u=el.getAttribute('href')||el.getAttribute('xlink:href');if(!u||u.startsWith('data:')||el.closest('[hidden]'))return;
  let im=LD_IMG[u];if(!im){im=LD_IMG[u]=new Image();im.src=u}if(!im.complete)ok=false});return ok}
 function loadHide(min){const l=$('loader');if(!l||!l.classList||l.hidden)return;const end=Date.now()+15000;let okSince=0;
- const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!bakeQ.length&&!bakeBusy&&!HT_PEND&&svgImgsReady();
+ const ready=()=>[...document.images].filter(i=>i.offsetParent&&!i.closest('#loader')).every(i=>i.complete)&&!HT_PEND&&svgImgsReady();/* les pastilles finissent de se « cuire » ensuite, sans bloquer l'ouverture */
  const fin=()=>{if(l.classList.contains('out'))return;l.classList.add('out');setTimeout(()=>{l.hidden=true;l.classList.remove('out')},320)};
  /* tout doit être prêt pendant 0,6 s d'affilée (le temps que les coiffures recolorées s'affichent) */
  const chk=()=>{const now=Date.now();if(ready()){okSince=okSince||now}else okSince=0;
-  if(now<end&&(now-ldT0<(min||1500)||!okSince||now-okSince<600)){setTimeout(chk,120);return}fin()};
+  if(now<end&&(now-ldT0<(min||700)||!okSince||now-okSince<250)){setTimeout(chk,80);return}fin()};
  (document.fonts&&document.fonts.ready||Promise.resolve()).then(chk,chk)}
 function withLoader(t,fn){const l=$('loader');if(!l||!l.querySelector||typeof requestAnimationFrame!=='function'){fn();return}loadShow(t);requestAnimationFrame(()=>setTimeout(()=>{try{fn()}finally{loadHide()}},40))}
 function showAtelier(){withLoader('Création de novas…',showAtelier0)}
 function showAtelier0(){
  closeSheet();musMode('atelier');$('game').hidden=true;$('gFabs').hidden=true;$('famille').hidden=true;document.body.classList.remove('playing');$('atelier').hidden=false;
- $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;refresh();window.scrollTo(0,0);
+ $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;drawTabs();drawSubs();refresh();window.scrollTo(0,0);
 }
 $('bPlay').onclick=()=>{try{localStorage.setItem(KEY,JSON.stringify(me()))}catch(e){}if(G)showGame();else showFamille(false)};
 
-nom.value=me().name;$('nomFam').value=me().nom||'';drawTabs();drawSubs();refresh();
+nom.value=me().name;$('nomFam').value=me().nom||'';
 $('bPlay').textContent=G?'Reprendre la partie':'Suivant : ma famille';$('bRestart').hidden=!G;
 $('bRestart').onclick=askRestart;
 /* cercle des couleurs au-dessus du nova : toutes les couleurs du personnage au même endroit */
@@ -5912,5 +5923,5 @@ $('colPop').addEventListener('click',e=>{const b=e.target.closest('[data-colk]')
 $('bAtMus').onclick=e=>{e.stopPropagation();musMode('atelier');const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(x){}on?musStart():musStop();drawMusicBtn()};
 drawMusicBtn();
 
-if(G)showGame();
-loadHide(2500);
+/* ouverture : on récupère d'abord les avatars déjà dessinés (cache), puis on affiche le jeu ou l'atelier */
+bkLoad().then(()=>{if(G)showGame();else{drawTabs();drawSubs();refresh()}loadHide(700)});
