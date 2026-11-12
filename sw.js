@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v95';
+const VERSION = 'v96';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -72,7 +72,7 @@ const FICHIERS = [
   'assets/coiffures/graiecote.png',
   'assets/coiffures/gquiff.png',
   'assets/coiffures/gpompadour.png',
-  'assets/coiffures/gtaper.png',
+  'assets/coiffures/gtaper.png', 'js/coupes-garcons.js', 'assets/coiffures/gvagues-modele.png', 'assets/coiffures/gbouclette-modele.png', 'assets/coiffures/gcourt-modele.png',
   'assets/coiffures/gondule.png',
   'assets/coiffures/queuehaute2.png',
   'assets/coiffures/mechesdevant.png',

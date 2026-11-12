@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='95';
+const APP_VERSION='96';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1004,7 +1004,7 @@ function neckZone(s,FY){const F=faceOf(s),k=F.d+FY;if(NZ[k])return NZ[k];const d
  return NZ[k]=`M${[...L.map(f),`${X0},${FY}`,`${X1},${FY}`,...R.map(f)].join(' L')}Z`}
 /* coiffures décalquées sur les dessins de Prescillia (js/coiffures-art.js) : dans une autre couleur,
    chaque nuance garde son écart de clarté avec la teinte principale ; les nuances sont adoucies (flou) dans la silhouette */
-const HART=s=>typeof HAIR_ART!=='undefined'&&HAIR_ART[s.hair];
+const HART=s=>typeof HAIR_ART!=='undefined'&&(HAIR_ART[s.hair]||(typeof COUPES_G!=='undefined'&&COUPES_G[s.hair]&&HAIR_ART.gtaper));/* coupes copiées sur un modèle : mêmes réglages que le Taper */
 /* oreilles du jeu (même ellipse que leur dessin) : trous dans les cheveux de devant quand la coiffure les dégage */
 /* garçons : oreilles plus basses (demande de Prescillia) */
 const earY=s=>s&&s.sexe==='m'?EAR_M:207;let EAR_M=224;
@@ -1048,7 +1048,7 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
  const ey=nw?HFIT[2]:1;/* un peu plus haute : la ligne des cheveux descend, le haut du crâne reste en place */
  return {sx:sx*k,sy:sy*k*ey,t:`translate(200,${205+dy}) scale(${fx(sx*k)},${fx(sy*k*ey)}) translate(-200,-205)`}}
 let HFIT=[1.1,9,1];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
-const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
@@ -1081,13 +1081,15 @@ function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO
  im.src=`assets/coiffures/${f}-peau.png`;return null}
 const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
 /* coupe bouclée courte des garçons copiée pixel par pixel sur le modèle de Prescillia (js/coupe-modele.js) */
-const coupeM=s=>s.sexe==='m'&&s.hair==='gtaper'&&typeof COUPE_MODELE!=='undefined';
+/* + coupes courtes (vagues, bouclettes, court) copiées sur son écran « Forme du visage » (js/coupes-garcons.js) */
+const coupeOf=s=>s.hair==='gtaper'?(typeof COUPE_MODELE!=='undefined'&&COUPE_MODELE):(typeof COUPES_G!=='undefined'&&COUPES_G[s.hair]);
+const coupeM=s=>s.sexe==='m'&&!!coupeOf(s);
 /* tempes collées au crâne : dégradé serré le long du bord du visage, du bas des boucles jusqu'au haut de l'oreille */
-function coupeTempes(s,d,hc){const c=shade(hc,lum(hc)>.35?-.35:-.12),y0=148,y1=196;
+function coupeTempes(s,d,hc){const c=shade(hc,lum(hc)>.35?-.35:-.12),y0=148,y1=196,soft=s.hair!=='gtaper';/* coupes courtes : dégradé doux seulement (comme sur son modèle) */
  const band=(k,a,b)=>{const O=[],I=[];for(let y=y0;y<=y1;y+=2){const u=(y-y0)/(y1-y0),hw=faceHW(d,y),t=u>.8?(u-.8)/.2:0;O.push([200+k*(hw+a),y]);I.push([200+k*(hw-b*(1-t*.7)),y])}return 'M'+O.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
- return [-1,1].map(k=>`<path d="${band(k,-3,10)}" fill="${c}" opacity=".45"/><path d="${band(k,2.5,4)}" fill="${c}"/>`).join('')}
-function coupeSVG(s,p){const C=COUPE_MODELE,[x,y,w,h]=C.img,[l0,lm,l1]=C.lum,hc=s.hairColor,f='coiffures/gtaper-modele',same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(C.main)[i]))<30;
- const dk=shade(hc,-.75),lt=lum(hc)<.15?mix(hc,'#5e3d27',.7):shade(hc,.45)/* cheveux très foncés : reflets bruns chauds, pas gris */,tab=[[],[],[]];for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
+ return [-1,1].map(k=>soft?`<path d="${band(k,-3,8)}" fill="${c}" opacity=".22"/>`:`<path d="${band(k,-3,10)}" fill="${c}" opacity=".45"/><path d="${band(k,2.5,4)}" fill="${c}"/>`).join('')}
+function coupeSVG(s,p){const C=coupeOf(s),[x,y,w,h]=C.img,[l0,lm,l1]=C.lum,hc=s.hairColor,f='coiffures/'+s.hair+'-modele',same=Math.hypot(...rgb(hc).map((v,i)=>v-rgb(C.main)[i]))<30;
+ const dk=shade(hc,-.75),lt=s.hair!=='gtaper'?shade(hc,.18):lum(hc)<.15?mix(hc,'#5e3d27',.7):shade(hc,.45)/* cheveux très foncés : reflets bruns chauds, pas gris */,tab=[[],[],[]];for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
  const T=same?null:hairTint(f,hc,tab),fid=p+'cmf',d=faceOf(s).d,k=(faceHW(d,150)+3)/(faceHW(faceOf({...s,face:'allonge'}).d,150)+3);
  return (same||T?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
   +coupeTempes(s,d,hc)+`<defs><clipPath id="${p}cmc"><path d="${coupeClip(d)}"/></clipPath></defs><g clip-path="url(#${p}cmc)"><g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g></g>`}
@@ -1371,6 +1373,9 @@ const HAIRDB={
  gquiff:{n:'Quiff',c:'court lisse',r:'GL',g:'m'},
  gpompadour:{n:'Pompadour',c:'court lisse',r:'GL',g:'m'},
  gtaper:{n:'Taper',c:'court boucle crepu',r:'GL',g:'m'},
+ gvagues:{n:'Waves',c:'court ondule crepu',r:'GL',g:'m'},
+ gbouclette:{n:'Bouclettes',c:'court boucle crepu',r:'GL',g:'m'},
+ gcourt:{n:'Court dégradé',c:'court lisse',r:'GL',g:'m'},
  gondule:{n:'Ondulations légères',c:'court ondule',r:'GL',g:'m'},
  couettes:{n:'Couettes basses',c:'mi lisse queue attache',r:'F',x:"Raie au milieu, couettes au niveau des oreilles et pointes recourbées respectées ; mèches fines simplifiées."},
  meches:{n:'Mèches lâchées ondulées',c:'court ondule',r:'W2',x:"Volume ébouriffé, grande mèche ondulée qui tombe sur le front, pointes recourbées sur les tempes et au-dessus des oreilles, d'après ta planche (vue de face)."},
@@ -1453,13 +1458,13 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_G=['chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_G=['chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
 /* coiffures retirées du catalogue : remplacées par la plus proche (personnages, parties en cours) */
 const HAIR_SWAP={gcarremoyen:'gcarrecourt',gcarrelong:'gcarrecourt',graiemilieu:'gondule',longs:'raiemilieu',lisselong:'raiemilieu',lisseoreilles:'raiemilieu',longondule:'raiemilieu',longsondules:'raiecotel',ondulescote:'raiecotel',longboucle:'blongs',boucleslongues:'blongs',boucles:'bcarre',miboucle:'bcarre',afro:'bafro',twa:'bcourt',afropuff:'bchignonhaut',ananas:'bchignonhaut',washgo:'bwashgo',bantu:'btwists',bbantu:'btwists',bpuffs:'bafro',macarons:'bafro',boxbraids:'bbox',vanilles:'btwists',locks:'btwists',nattes:'bcollees',btressesarriere:'bcollees',tresse:'deuxtresses',bfoulard:'bafro',bchignonbas:'bchignon',chignon:'chignonhaut2',chignonhaut:'chignonhaut2',demichignon:'bdemiqueue',queue:'queuelisse',queuehaute:'queuehaute2',couettes:'deuxtresses',carre:'carrelisse',carreondule:'carrelisse',carreplongeant:'carrelisse',carreretrousse:'carrelisse',lobraie:'carrelisse',longfrange:'frangedroite',frange:'frangedroite',meches:'mechesdevant',
  degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
 Object.assign(HAIR_SWAP,{gnaturel:'gtaper',gdegbas:'gtaper',gdegmoyen:'gtaper',gdeghaut:'gtaper',gbuzz:'gtaper',gcarrecourt:'gondule'});/* coiffures 2 à 7 des garçons retirées */
 const hairOk=h=>{let n=0;while(!HAIR_ALL.includes(h)&&HAIR_SWAP[h]&&n++<5)h=HAIR_SWAP[h];return h};
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gondule'];
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";

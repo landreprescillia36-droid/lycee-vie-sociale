@@ -1,0 +1,2 @@
+/* coupes courtes des garçons copiées sur le modèle de Prescillia par tools/traceur-coupes-garcons.py — ne pas modifier à la main */
+const COUPES_G={"gvagues": {"img": [86.06, 43.88, 226.06, 148.48], "lum": [0.048, 0.123, 0.265], "main": "#291d18"}, "gbouclette": {"img": [87.27, 45.09, 221.21, 147.88], "lum": [0.027, 0.089, 0.204], "main": "#1f1510"}, "gcourt": {"img": [89.7, 46.91, 218.18, 140.61], "lum": [0.069, 0.124, 0.247], "main": "#291e18"}};
