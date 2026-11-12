@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='89';
+const APP_VERSION='90';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2410,7 +2410,7 @@ ${(G.met[id]||0)<3?`IMPORTANT : ${nameOf('me')} est ${nouv()} au lycée cette an
 ${nameOf('me')} : personnalité « ${persoL(me().perso,me().sexe)} »${(G.met[id]||0)>=2&&passOf('me').length?`, passions : ${passTxt('me')}${sharedPass(id,'me').length?` (vous partagez : ${sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')} — parlez-en avec plaisir)`:''}`:''}.
 ${raisonNote(id)}
 Tes passions : ${passTxt(id)}. Elles colorent tes sujets de conversation et tes propositions de sorties.
-${socNote(id)}
+${socNote(id)}${G.partner===id?`\nTu es en couple avec ${nameOf('me')} : appelle cette personne par son prénom ou par ton petit surnom pour elle (« ${petName(id)} »), jamais « frère », « sœur », « gros », « frr » ni « bro ».`:''}
 ${nameOf('me')} est ${SEXL[me().sexe]}${me().sexe==='f'?' : parle-lui au féminin (accords, « la nouvelle », « contente »…)':me().sexe==='m'?' : parle-lui au masculin (accords, « le nouveau », « content »…)':' : utilise des formulations neutres pour parler de cette personne'}. ${npcLikesMe(id)?'':S(id,`Tu n'es pas attiré·e par son genre : si ${nameOf('me')} te drague, reste gentil·le mais fais comprendre que c'est amical, et garde "amour" à 0.`)}`;
 }
 function buildPrompt(id){
@@ -2741,8 +2741,14 @@ function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(te
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
+/* en couple : plus de « frère », « sœur », « gros », « frr »… mais ton prénom ou un petit surnom mignon (toujours le même pour un·e partenaire) */
+const PETS={f:['mon cœur','bébé','ma chérie','ma belle','mon amour'],m:['mon cœur','bébé','mon chéri','mon beau','mon amour'],nb:['mon cœur','bébé','mon amour']};
+function petName(id){G.pet=G.pet||{};const sx=me().sexe==='m'?'m':me().sexe==='f'?'f':'nb';if(!G.pet[id]||!PETS[sx].includes(G.pet[id]))G.pet[id]=PETS[sx][hash(id+(me().name||''))%PETS[sx].length];return G.pet[id]}
+const BRO_RE=/(^|[^\p{L}'’-])(?<!(?:mon|ton|son|ma|ta|sa|le|la|un|une|du|au|petit|grand|demi-) )(frère|frérot|frero|frr|fréro|sœur|soeur|gros|bro|poto|mon gars|ma gars|mec|meuf|frangin|frangine|reuf|ma reuf|mon reuf|mon pote|ma pote|chef|boss)(?![\p{L}-])/giu;
+function couplePolish(id,t){if(!t||!isNpc(id)||(G.partner!==id&&coupleOf(id)!=='me'))return t;const nm=(me().name||'').trim()||petName(id);
+ return t.replace(BRO_RE,(m,pre)=>pre+(Math.random()<.6?petName(id):nm)).replace(/\b(mon|ma) (mon|ma) /g,'$2 ')}
 function pushMsg(id,from,text,extra){
- text=genderize(text,from==='me'?'me':id);
+ text=genderize(text,from==='me'?'me':id);if(from!=='me')text=couplePolish(id,text);
  (G.threads[id]=G.threads[id]||[]).push(Object.assign({from,text,at:G.day*1440+G.min,tm:fmtT(G.min)},extra||{}));
  if(from!=='me'){if(!(chat&&chat.id===id)){G.unreadMsg[id]=(G.unreadMsg[id]||0)+1;if(!$('game').hidden)toast(`💬 ${nameOf(id)} : ${text.slice(0,48)}${text.length>48?'…':''}`)}}
  if(chat&&chat.id===id)drawChatMsgs();
@@ -5347,7 +5353,7 @@ async function sendTalk(text){
  else await new Promise(r=>setTimeout(r,700+Math.random()*700));
  if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=talkFallback(id,text);
  busyId=null;if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
- G.talks[id].push({from:'them',text:genderize(out.reponse.trim().slice(0,300),id)});G.talks[id]=G.talks[id].slice(-60);
+ G.talks[id].push({from:'them',text:couplePolish(id,genderize(out.reponse.trim().slice(0,300),id))});G.talks[id]=G.talks[id].slice(-60);
  const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
  if(isNpc(id)){const ch=relChange(id,da,dl);if(ch)toast(ch)}else famChange(id,da);
  if(!G.done[G.day+'vraiNote'+id]){G.done[G.day+'vraiNote'+id]=1;note(talk.call?`Tu as parlé au téléphone avec ${nameOf(id)}`:`Tu as parlé en vrai avec ${nameOf(id)} ${talk.pl==='maison'?'à la maison':'au '+(PLACES[talk.pl]||'lycée').toLowerCase()}`)}
