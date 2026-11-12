@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='90';
+const APP_VERSION='91';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2216,7 +2216,7 @@ function sceneSVG(id,p){
   [.6,1.8,3.2,4.5].forEach(z=>{const z1=z+.35;o+=`<path d="${quad([X(-46,z),Y(-TOP,z)],[X(46,z),Y(-TOP,z)],[X(46,z1),Y(-TOP,z1)],[X(-46,z1),Y(-TOP,z1)])}" fill="#fffbe8" stroke="#f2c230" stroke-width="${fx(5*S(z))}"/>`});
   o+=`<rect x="${X(-HW,ZM)}" y="${Y(-TOP,ZM)}" width="${fx(2*HW*S(ZM))}" height="${fx((TOP+BOT)*S(ZM))}" fill="none" stroke="#1d4f86" stroke-width="2" opacity=".5"/>`;
   return o;}
- case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
+ case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':case 'ch_kenza':case 'ch_meisha':case 'ch_eva':case 'ch_noemie':case 'ch_jessica':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
  case 'cour':{/* cour du lycée : bâtiment antillais aux jalousies bleues, palmiers, pelouses et cour pavée */
   const cloud=(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})" fill="#fff"><circle cx="0" cy="0" r="30"/><circle cx="32" cy="-14" r="36"/><circle cx="70" cy="-2" r="30"/><circle cx="98" cy="10" r="22"/><rect x="-20" y="0" width="130" height="30" rx="15"/></g>`;
   const win=(x,y,w,h)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2f7fb8"/>`+[0,1,2,3,4].map(i=>`<rect x="${x+2}" y="${y+3+i*(h-4)/5}" width="${w-4}" height="${(h-4)/5-2}" fill="#5aa7d8"/>`).join('')+`<rect x="${x-3}" y="${y+h}" width="${w+6}" height="4" fill="#e8d2a2"/>`;
@@ -2252,7 +2252,7 @@ function sceneSVG(id,p){
  default:return `<rect width="600" height="400" fill="#f3d9e2"/><rect x="380" y="50" width="160" height="130" rx="6" fill="#bfe3ff" stroke="#fff" stroke-width="10"/><path d="M460,50 V180 M380,115 H540" stroke="#fff" stroke-width="6"/><rect x="60" y="60" width="90" height="120" rx="4" fill="#9b6bff" transform="rotate(-4 105 120)"/><rect y="320" width="600" height="80" fill="#8fb3e0"/><rect y="312" width="600" height="14" rx="7" fill="#f4f1ea"/>`;
  }}
 /* chaque camarade a sa chambre (images créées par Prescillia, dans assets/chambres/) */
-const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',anais:'ch_anais',jade:'ch_jade',maelle:'ch_maelle'};
+const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',anais:'ch_anais',jade:'ch_jade',maelle:'ch_maelle',kenza:'ch_kenza',meisha:'ch_meisha',eva:'ch_eva',noemie:'ch_noemie',jessica:'ch_jessica'};
 function photoSVG(ph){
  const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length);
  const w=n===1?330:n===2?290:Math.min(250,640/n);
