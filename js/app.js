@@ -1048,7 +1048,7 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
  const ey=nw?HFIT[2]:1;/* un peu plus haute : la ligne des cheveux descend, le haut du crâne reste en place */
  return {sx:sx*k,sy:sy*k*ey,t:`translate(200,${205+dy}) scale(${fx(sx*k)},${fx(sy*k*ey)}) translate(-200,-205)`}}
 let HFIT=[1.1,9,1];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
-const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
+const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gbouclette','gondule'];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
 /* dégradé sur les côtés (1re ligne de la planche garçons) : cheveux très courts du coin de la ligne des cheveux jusqu'à l'oreille,
    qui s'éclaircissent vers la peau ; v = hauteur où le dégradé atteint la peau */
@@ -1373,9 +1373,7 @@ const HAIRDB={
  gquiff:{n:'Quiff',c:'court lisse',r:'GL',g:'m'},
  gpompadour:{n:'Pompadour',c:'court lisse',r:'GL',g:'m'},
  gtaper:{n:'Taper',c:'court boucle crepu',r:'GL',g:'m'},
- gvagues:{n:'Waves',c:'court ondule crepu',r:'GL',g:'m'},
  gbouclette:{n:'Bouclettes',c:'court boucle crepu',r:'GL',g:'m'},
- gcourt:{n:'Court dégradé',c:'court lisse',r:'GL',g:'m'},
  gondule:{n:'Ondulations légères',c:'court ondule',r:'GL',g:'m'},
  couettes:{n:'Couettes basses',c:'mi lisse queue attache',r:'F',x:"Raie au milieu, couettes au niveau des oreilles et pointes recourbées respectées ; mèches fines simplifiées."},
  meches:{n:'Mèches lâchées ondulées',c:'court ondule',r:'W2',x:"Volume ébouriffé, grande mèche ondulée qui tombe sur le front, pointes recourbées sur les tempes et au-dessus des oreilles, d'après ta planche (vue de face)."},
@@ -1458,13 +1456,13 @@ const HAIRDB={
  nattes:{n:'Nattes collées',c:'court tresse attache crepu',r:null},
  court:{n:'Courts classiques',c:'court lisse',r:null},
  rase:{n:'Rasés',c:'court',r:null}};
-const HAIR_G=['chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
+const HAIR_G=['chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gbouclette','gondule'];
 /* coiffures retirées du catalogue : remplacées par la plus proche (personnages, parties en cours) */
 const HAIR_SWAP={gcarremoyen:'gcarrecourt',gcarrelong:'gcarrecourt',graiemilieu:'gondule',longs:'raiemilieu',lisselong:'raiemilieu',lisseoreilles:'raiemilieu',longondule:'raiemilieu',longsondules:'raiecotel',ondulescote:'raiecotel',longboucle:'blongs',boucleslongues:'blongs',boucles:'bcarre',miboucle:'bcarre',afro:'bafro',twa:'bcourt',afropuff:'bchignonhaut',ananas:'bchignonhaut',washgo:'bwashgo',bantu:'btwists',bbantu:'btwists',bpuffs:'bafro',macarons:'bafro',boxbraids:'bbox',vanilles:'btwists',locks:'btwists',nattes:'bcollees',btressesarriere:'bcollees',tresse:'deuxtresses',bfoulard:'bafro',bchignonbas:'bchignon',chignon:'chignonhaut2',chignonhaut:'chignonhaut2',demichignon:'bdemiqueue',queue:'queuelisse',queuehaute:'queuehaute2',couettes:'deuxtresses',carre:'carrelisse',carreondule:'carrelisse',carreplongeant:'carrelisse',carreretrousse:'carrelisse',lobraie:'carrelisse',longfrange:'frangedroite',frange:'frangedroite',meches:'mechesdevant',
  degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
 Object.assign(HAIR_SWAP,{gnaturel:'gtaper',gdegbas:'gtaper',gdegmoyen:'gtaper',gdeghaut:'gtaper',gbuzz:'gtaper',gcarrecourt:'gondule'});/* coiffures 2 à 7 des garçons retirées */
 const hairOk=h=>{let n=0;while(!HAIR_ALL.includes(h)&&HAIR_SWAP[h]&&n++<5)h=HAIR_SWAP[h];return h};
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gcourt','gondule'];
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gbouclette','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
