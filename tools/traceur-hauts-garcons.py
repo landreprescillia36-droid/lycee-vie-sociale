@@ -190,5 +190,6 @@ if __name__ == '__main__' and (len(sys.argv) < 3 or sys.argv[2] != 'masques'):
         print(k, art[k][:4])
     open(os.path.join(R, 'js/hauts-garcons-art.js'), 'w').write('/* hauts des garçons copiés sur la planche corrigée de Prescillia par tools/traceur-hauts-garcons.py — ne pas modifier à la main\n   [x, y, largeur, hauteur] dans le repère du corps */\nconst HG_ART=' + json.dumps(art, separators=(',', ':')) + ';\n')
 
-    # bords du tissu : couleur du tissu voisin (sinon points blancs ou noirs une fois reteint)
-    import subprocess, sys; subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hauts-bords.py')], check=True)
+    # contour net (bord lissé, couleur du tissu au bord) puis t-shirts à bandes redessinés sur les t-shirts
+    import subprocess, sys
+    for t_ in ('hauts-contours.py', 'bandes-garcons.py'): subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), t_)], check=True)

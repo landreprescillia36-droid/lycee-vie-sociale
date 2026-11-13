@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='100';
+const APP_VERSION='101';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -858,17 +858,18 @@ function topSVG(G,T,s,p,K){
 /* hauts des garçons copiés sur la planche corrigée de Prescillia (js/hauts-garcons-art.js) : image posée sur le corps,
    les bras et les mains restent ceux du jeu ; autre couleur → l'image est reteinte d'après sa clarté */
  {const hg=!HG_OFF&&hgArt(s);if(hg){const [x,y,w,h,l0,lm,l1]=hg.A,G0=hgG0(),kx=(sideX(G,330)+.001)/(sideX(G0,330)+.001),cc=s.topColor||hg.A[8],same=!hg.tint,
-  tab=[[],[],[]];if(!same){const lc=lum(cc),dk=shade(cc,lc>.6?-.32:lc>.3?-.5:-.62),lt=shade(cc,lc>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
-  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab,2),fid=p+'hgf';
+  tab=[[],[],[]],ray=/^(bandes|raye)-/.test(hg.k);if(!same){const lc=lum(cc),src=lum(hg.A[8]),dk=ray&&src>.5?'#232120':shade(cc,lc>.6?-.32:lc>.3?-.5:-.62),lt=ray&&src<.5?'#efede8':shade(cc,lc>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
+  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab,ray?0:2),fid=p+'hgf';
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
   let vec=arms();/* plus d'ancien haut dessous : le nouveau haut le remplace complètement */
   /* seuls les petits jours aux épaules (entre le col et l'épaule) sont bouchés, d'une teinte unie identique au haut : aucun ancien détail visible */
   if(!['gdeb','gnageur'].includes(s.top)){HG_OFF=1;let sil='';try{sil=topSVG(G,T,{...s,jacket:'aucune'},p+'u',K)}finally{HG_OFF=0}
-   const uid=p+'hgu',mc=same?hg.A[8]:cc;vec+=`<defs><filter id="${uid}f" color-interpolation-filters="sRGB"><feFlood flood-color="${mc}"/><feComposite in2="SourceAlpha" operator="in"/></filter><clipPath id="${uid}c"><rect x="0" y="0" width="400" height="${fx(y+h*.22)}"/><rect x="${fx(200-sideX(G,330)-1)}" y="0" width="${fx(2*sideX(G,330)+2)}" height="${fx(y+h*.95)}"/></clipPath></defs><g clip-path="url(#${uid}c)"><g filter="url(#${uid}f)">${sil}</g></g>`}
+   const uid=p+'hgu',mc=same?hg.A[8]:cc;vec+=`<defs><filter id="${uid}f" color-interpolation-filters="sRGB"><feFlood flood-color="${mc}"/><feComposite in2="SourceAlpha" operator="in"/></filter><clipPath id="${uid}c"><rect x="0" y="0" width="400" height="${fx(y+h*.22)}"/></clipPath></defs><g clip-path="url(#${uid}c)"><g filter="url(#${uid}f)">${sil}</g></g>`}
   return vec+(same||T_?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
    /* sous l'image, sa silhouette un peu élargie, de la couleur du haut : le bord dentelé des manches ne laisse plus voir le bras (points clairs ou foncés) */
    +`<defs><filter id="${fid}d" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="1.3"/><feGaussianBlur stdDeviation=".35"/><feComponentTransfer><feFuncA type="linear" slope="3"/></feComponentTransfer><feComposite in="SourceGraphic" operator="out" result="e"/><feFlood flood-color="${same?hg.A[8]:shade(cc,-.18)}"/><feComposite in2="e" operator="in"/></filter></defs>`
-   +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><image href="assets/${f}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}d)"/><image href="${T_||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+J.torso+J.sleeves+hands()}}
+   +`<defs><filter id="${fid}h" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="5 0" result="d"/><feFlood flood-color="${same?hg.A[8]:shade(cc,-.12)}"/><feComposite in2="d" operator="in"/></filter><clipPath id="${fid}hc"><rect x="${fx(200-(sideX(G0,400)+7)/kx)}" y="${fx(y+h*.5)}" width="${fx(2*(sideX(G0,400)+7)/kx)}" height="${fx(h)}"/></clipPath></defs>`
+   +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><g clip-path="url(#${fid}hc)"><image href="assets/${f}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}h)"/></g><image href="assets/${f}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}d)"/><image href="${T_||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+J.torso+J.sleeves+hands()}}
  if(T.vest){
   const U=lum(c)>.5?'#1f2127':'#f4f1ea',VG={...G,SH:G.SH-8};
   o+=`<path d="${torsoD(G,446,3)}" fill="${U}"/>`;
