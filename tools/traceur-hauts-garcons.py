@@ -189,3 +189,6 @@ if __name__ == '__main__' and (len(sys.argv) < 3 or sys.argv[2] != 'masques'):
         art[k] = [round((x0 - E) / A, 2), round((y0 - F) / D, 2), round((x1 - x0) / A, 2), round((y1 - y0) / D, 2)] + [round(float(np.percentile(Lm, q)), 3) for q in (3, 50, 97)] + [t, c]
         print(k, art[k][:4])
     open(os.path.join(R, 'js/hauts-garcons-art.js'), 'w').write('/* hauts des garçons copiés sur la planche corrigée de Prescillia par tools/traceur-hauts-garcons.py — ne pas modifier à la main\n   [x, y, largeur, hauteur] dans le repère du corps */\nconst HG_ART=' + json.dumps(art, separators=(',', ':')) + ';\n')
+
+    # bords du tissu : couleur du tissu voisin (sinon points blancs ou noirs une fois reteint)
+    import subprocess, sys; subprocess.run([sys.executable, os.path.join(os.path.dirname(os.path.abspath(__file__)), 'hauts-bords.py')], check=True)
