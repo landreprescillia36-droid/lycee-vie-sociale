@@ -72,7 +72,7 @@ const FICHIERS = [
   'assets/coiffures/graiecote.png',
   'assets/coiffures/gquiff.png',
   'assets/coiffures/gpompadour.png',
-  'assets/coiffures/gtaper.png', 'js/coupes-garcons.js', 'assets/coiffures/gbouclette-modele.png',
+  'assets/coiffures/gtaper.png', 'js/coupes-garcons.js', 'assets/coiffures/gvagues-modele.png', 'assets/coiffures/gbouclette-modele.png',
   'assets/coiffures/gondule.png',
   'assets/coiffures/queuehaute2.png',
   'assets/coiffures/mechesdevant.png',
