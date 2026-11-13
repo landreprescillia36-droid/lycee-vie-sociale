@@ -1501,8 +1501,7 @@ const WEAR={
  dress:{l:'Robes',vb:'86 150 228 660',items:[
   {s:'dress',v:'aucune',n:'Sans robe (haut + bas)'},
   {s:'dress',v:'nuisette',c:'#7a5236',n:'Robe nuisette satinée',r:null},{s:'dress',v:'tshirtdress',c:'#a9adb3',n:'Robe t-shirt',r:null},
-  {s:'dress',v:'portefeuille',c:'#d93b5e',n:'Robe portefeuille',r:null},{s:'dress',v:'bretelles',c:'#3d6fd8',n:"Robe d'été fleurie à bretelles",r:null},
-  {s:'dress',v:'madras',c:'#f2c230',n:'Robe longue en madras',r:null},{s:'dress',v:'pull',c:'#ece2cc',n:'Robe pull col roulé',r:null}]},
+  {s:'dress',v:'portefeuille',c:'#d93b5e',n:'Robe portefeuille',r:null},{s:'dress',v:'bretelles',c:'#3d6fd8',n:"Robe d'été fleurie à bretelles",r:null}]},
  set:{l:'Ensembles',vb:FVB,items:[
   {n:'Crop noir et baggy gris',r:'T',x:"Pièces de ta capture ; baskets au plus proche, sans bandes ni logo de marque.",set:{top:'crop',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'retro',shoesColor:'#f4f1ea'}},
   {n:'Haut marron et baggy gris',r:'T',x:"Pièces de ta capture ; sabots marron au plus proche.",set:{top:'ajuste',topColor:'#7a5236',bottom:'large',bottomColor:'#9aa0a6',shoes:'sabots',shoesColor:'#7a5236'}},
