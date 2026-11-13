@@ -863,7 +863,7 @@ function topSVG(G,T,s,p,K){
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
   let vec=arms();/* plus d'ancien haut dessous : le nouveau haut le remplace complètement */
   /* seuls les petits jours aux épaules (entre le col et l'épaule) sont bouchés, d'une teinte unie identique au haut : aucun ancien détail visible */
-  if(!['gdeb','gnageur'].includes(s.top)){HG_OFF=1;let sil='';try{sil=topSVG(G,T,{...s,jacket:'aucune'},p+'u',K)}finally{HG_OFF=0}
+  if(false&&!['gdeb','gnageur'].includes(s.top)){HG_OFF=1;/* plus de dessous vectoriel (il dépassait au col et aux épaules) */let sil='';try{sil=topSVG(G,T,{...s,jacket:'aucune'},p+'u',K)}finally{HG_OFF=0}
    const uid=p+'hgu',mc=same?hg.A[8]:cc;vec+=`<defs><filter id="${uid}f" color-interpolation-filters="sRGB"><feFlood flood-color="${mc}"/><feComposite in2="SourceAlpha" operator="in"/></filter><clipPath id="${uid}c"><rect x="0" y="0" width="400" height="${fx(y+h*.22)}"/></clipPath></defs><g clip-path="url(#${uid}c)"><g filter="url(#${uid}f)">${sil}</g></g>`}
   return vec+(same||T_?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
    /* sous l'image, sa silhouette un peu élargie, de la couleur du haut : le bord dentelé des manches ne laisse plus voir le bras (points clairs ou foncés) */
