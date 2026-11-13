@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='106';
+const APP_VERSION='107';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2342,14 +2342,40 @@ function sceneSVG(id,p){
  }}
 /* chaque camarade a sa chambre (images créées par Prescillia, dans assets/chambres/) */
 const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',anais:'ch_anais',jade:'ch_jade',maelle:'ch_maelle',kenza:'ch_kenza',meisha:'ch_meisha',eva:'ch_eva',noemie:'ch_noemie',jessica:'ch_jessica'};
+/* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
+   Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
+const PFB='54 -40 292 930';
+const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[245,396],chambre:[255,392],ch:[265,394],cascade:[235,397],marche:[250,396]};
+const POSES={
+ naturel:{n:'Naturel·le',f:()=>({})},
+ complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
+ penche:{n:'Penché·e·s',f:(i,n,c)=>({gap:.86,rot:6*c})},
+ fun:{n:'Fou rire',f:(i,n,c)=>({gap:.9,rot:i%2?-7:6,dy:i%2?-6:4})},
+ decale:{n:'En profondeur',f:(i,n)=>({gap:.8,sc:i%2?.88:1,dy:i%2?-14:0,back:i%2})},
+ selfie:{n:'Selfie',f:(i,n,c)=>({gap:.7,rot:4*c,sc:1.12,dy:22}),buste:1},
+ tendre:{n:'Tendre',love:1,f:(i,n,c)=>({gap:.62,rot:7*c})},
+ epaule:{n:'Tête sur l’épaule',love:1,f:(i,n,c)=>i?({gap:.56,rot:13*c,dy:8}):({gap:.56,rot:2*c})},
+ coeur:{n:'Petits cœurs',love:1,f:(i,n,c)=>({gap:.6,rot:5*c})}};
+const POSE_AMI=['naturel','complices','penche','fun','decale','selfie'],POSE_LOVE=['tendre','epaule','coeur'];
+const heartP=(x,y,s,c,o)=>`<path d="M${x},${y+s*.3} C${x},${y-s*.2} ${x-s},${y-s*.2} ${x-s},${y+s*.3} C${x-s},${y+s*.8} ${x},${y+s*1.1} ${x},${y+s*1.4} C${x},${y+s*1.1} ${x+s},${y+s*.8} ${x+s},${y+s*.3} C${x+s},${y-s*.2} ${x},${y-s*.2} ${x},${y+s*.3}Z" fill="${c}" opacity="${o}"/>`;
 function photoSVG(ph){
- const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length);
- const w=n===1?330:n===2?290:Math.min(250,640/n);
+ const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length),pied=ph.frame==='pied';
+ const P=POSES[ph.pose]&&!(pied&&POSES[ph.pose].buste)?POSES[ph.pose]:POSES.naturel;
+ /* en pied : taille des personnes à l'échelle du décor (hauteur de la silhouette, ligne du sol) */
+ const PS=PIED_SC[ph.scene==='chambre'&&ROOMS[ph.author]?'ch':ph.scene]||PIED_SC.def,ph0=PS[0]*(n>3?.92:1);
+ const w=pied?ph0*292/930:(n===1?330:n===2?290:Math.min(250,640/n));
+ const h=pied?ph0:w,base=pied?PS[1]:400,g0=pied?.95:.66;
  /* chambres vides de Prescillia : utilisées pour toutes les photos prises dans la chambre du camarade */
  const sc=ph.scene==='chambre'&&ROOMS[ph.author]?ROOMS[ph.author]:ph.scene;
  let o=`<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`+sceneSVG(sc,p);
- ppl.forEach((id,i)=>{const cx=300+(i-(n-1)/2)*w*.66;
-  o+=avUse(avOf(id),PHB,false).replace('<svg ',`<svg x="${(cx-w/2).toFixed(1)}" y="${(400-w).toFixed(1)}" width="${w.toFixed(1)}" height="${w.toFixed(1)}" `)});
+ const L=ppl.map((id,i)=>{const c=n<2?0:(i<(n-1)/2?1:i>(n-1)/2?-1:0),q=Object.assign({gap:1,rot:0,dy:0,sc:1},P.f(i,n,c));
+  if(pied){q.rot*=.32;q.gap=.72+q.gap*.28;q.dy*=.6}/* en pied : le corps est haut, une petite inclinaison suffit (sinon les têtes se chevauchent) */return {id,i,q}});
+ const gap=n<2?1:Math.min(...L.map(x=>x.q.gap));
+ L.sort((a,b)=>(b.q.back||0)-(a.q.back||0)).forEach(({id,i,q})=>{const cx=300+(i-(n-1)/2)*w*g0*gap,ww=w*q.sc,hh=h*q.sc,y=base-hh+q.dy;
+  const el=avUse(avOf(id),pied?PFB:PHB,false).replace('<svg ',`<svg x="${fx(cx-ww/2)}" y="${fx(y)}" width="${fx(ww)}" height="${fx(hh)}" `);
+  o+=q.rot?`<g transform="rotate(${q.rot} ${fx(cx)} ${fx(base+q.dy)})">${el}</g>`:el});
+ if(ph.love&&(ph.pose==='coeur'||!ph.pose)){const hc=['#ff5f8f','#ff86a8','#e8436f'];[[230,70,11],[372,58,9],[300,40,13],[410,110,7],[190,120,7]].forEach(([x,y,s],k)=>o+=heartP(x,y,s,hc[k%3],.85))}
+ else if(ph.love)o+=heartP(300,pied?70:60,8,'#ff5f8f',.8);
  return o+'</svg>';
 }
 const tagLine=ph=>{const t=ph.people.filter(x=>x!==ph.author);return t.length?`<div class="tags">avec ${t.map(x=>`<span class="mention">${handleOf(x)}</span>`).join(', ')}</div>`:''};
@@ -2364,16 +2390,16 @@ const START_POSTS=[
  {by:'jade',text:"est-ce que le vent raconte nos secrets aux palmiers pendant qu'on dort",c:17,r:310,l:7200,comments:[C('sacha',"ça ferait une belle chanson")]},
  {by:'sacha',text:"nouvelle compo ce soir 🎧 venez en privé si vous voulez l'écouter en premier",photo:{scene:'chambre',people:['sacha']},c:31,r:210,l:5400,comments:[C('jade',"j'ai hâte")]},
  {by:'anais',text:"Footing de 6 h sur la plage ✅ qui me suit demain ? 💪🌅",photo:{scene:'plage',people:['anais']},c:22,r:180,l:4100,comments:[C('kylian',"6 h ?? t'es pas humaine 😭"),C('noah',"je viens si tu ralentis ptdr")]},
- {by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva']},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]},
+ {by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva'],love:1,pose:'tendre',frame:'pied'},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]},
  {by:'noemie',text:"Triplé contre Baimbridge ⚽⚽⚽ merci l'équipe 💪",photo:{scene:'cour',people:['noemie','kylian']},c:38,r:260,l:7400,comments:[C('kylian',"elle m'a volé la vedette frr 😭"),C('anais',"MA MEILLEURE 🔥🔥")]},
  {by:'jessica',text:"Cours particuliers lundi et mercredi, 17 h – 19 h 📚 toutes les matières, inscriptions ouvertes 😊",photo:{scene:'couloir',people:['jessica']},c:19,r:120,l:2600,comments:[C('noemie',"elle m'a sauvée en maths 🙏"),C('maelle',"🙄")]},
- {by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza']},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]},
+ {by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza'],frame:'pied'},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]},
  {by:'kenza',text:"Nouvelle photo, nouveaux messages en attente 😂 désolée les garçons 💅",photo:{scene:'couloir',people:['kenza']},c:48,r:640,l:15800,comments:[C('kylian',"t'es trop belle sérieux 😍"),C('maelle',"🙄"),C('ines',"ma reine 👑")]}
 ];
-const MEISHA_POST={by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza']},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]};
+const MEISHA_POST={by:'meisha',text:"Moi et ma jumelle, même tenue, zéro concertation 👯‍♀️💅",photo:{scene:'couloir',people:['meisha','kenza'],frame:'pied'},c:44,r:520,l:13600,comments:[C('kenza',"ma jumelle pour la vie 😘"),C('noah',"vous êtes trop 😳"),C('ines',"les reines 👑")]};
 const JESSICA_POST={by:'jessica',text:"Cours particuliers lundi et mercredi, 17 h – 19 h 📚 toutes les matières, inscriptions ouvertes 😊",photo:{scene:'couloir',people:['jessica']},c:19,r:120,l:2600,comments:[C('noemie',"elle m'a sauvée en maths 🙏"),C('maelle',"🙄")]};
 const NOEMIE_POST={by:'noemie',text:"Triplé contre Baimbridge ⚽⚽⚽ merci l'équipe 💪",photo:{scene:'cour',people:['noemie','kylian']},c:38,r:260,l:7400,comments:[C('kylian',"elle m'a volé la vedette frr 😭"),C('anais',"MA MEILLEURE 🔥🔥")]};
-const EVA_POST={by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva']},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]};
+const EVA_POST={by:'kylian',text:"Ma copine est une artiste et moi je suis son modèle préféré 😎❤️",photo:{scene:'plage',people:['kylian','eva'],love:1,pose:'tendre',frame:'pied'},c:52,r:410,l:9800,comments:[C('eva',"t'es bête 🥹💕"),C('noah',"frérot est trop love ptdr"),C('kenza',"mignon 😘")]};
 const KENZA_POST={by:'kenza',text:"Nouvelle photo, nouveaux messages en attente 😂 désolée les garçons 💅",photo:{scene:'couloir',people:['kenza']},c:48,r:640,l:15800,comments:[C('kylian',"t'es trop belle sérieux 😍"),C('maelle',"🙄"),C('ines',"ma reine 👑")]};
 const ETHAN_POST={by:'ethan',text:"Portrait terminé. Il m'a pris trois soirs, mais c'est assez joli, en vrai",photo:{scene:'chambre',people:['ethan']},c:14,r:120,l:2900,comments:[C('eva',"il est magnifique 🎨"),C('sacha',"la vibe de ce dessin gros")]};
 const KELLIAN_POST={by:'kellian',text:"Victoire au basket ce soir 🏀🔥 on lâche rien",photo:{scene:'basket',people:['kellian','noah']},c:42,r:310,l:8800,comments:[C('noah',"c'est carré frérot 🔥"),C('kylian',"chance du débutant 😂")]};
@@ -2393,7 +2419,7 @@ const START_STORIES=[
  {by:'anais',type:'text',text:"Victoire au hand ce soir !! 🤾‍♀️🔥",bg:3},
  {by:'meisha',type:'text',text:"Shopping à Jarry après les cours, qui vient ? 🛍️",bg:4},
  {by:'noemie',type:'text',text:"Match samedi 15 h, venez nombreux ⚽🔥",bg:2},
- {by:'eva',type:'photo',photo:{scene:'plage',people:['eva','kylian']},text:"💕"},
+ {by:'eva',type:'photo',photo:{scene:'plage',people:['eva','kylian'],love:1,pose:'tendre'},text:"💕"},
  {by:'kenza',type:'text',text:"Qui m'a laissé un mot dans mon casier ? 👀💌",bg:0}
 ];
 const STORY_POOL=["Contrôle de philo demain, priez pour moi 🙏","Meilleure journée de la semaine ☀️","Quelqu'un a vu mes écouteurs ??","Le prof de SVT est en forme aujourd'hui 😂","Petit gwo ka ce soir 🥁","Qui a le cours d'anglais ? Je l'ai raté"];
@@ -2411,6 +2437,25 @@ const TONES={
  moqueur:{label:'Moqueur',d:-4,l:-1,cls:'neg',lines:["Personne n'a demandé 🙄","Encore toi ?","On s'en passerait bien"],reply:["sérieux ?","ok, je retiens 😒","t'es jaloux ou quoi"]},
  mechant:{label:'Méchant',d:-8,l:-4,cls:'neg',lines:["C'est vraiment nul","Franchement, tu abuses","Arrête de poster, s'il te plaît"],reply:["wow… ok.","je ne te pensais pas comme ça"]}
 };
+/* commentaires d'une photo amoureuse : les camarades comprennent que c'est une photo de couple */
+const LOVE_C={
+ partner:["mon cœur ❤️","toi et moi 🥹💕","je t'aime fort 💞","la plus belle photo de mon tel 😍"],
+ shy:["🙈🙈","t'es bête 😳","supprime ça 😭 (non garde-la)","je suis trop gêné·e là 😳💕"],
+ awkward:["euh… on est potes hein 😅","pourquoi les cœurs 😭","mdr t'es sérieux·se ?"],
+ crush:["ah… d'accord 🙂","félicitations je suppose","bon. 🙃"],
+ friend:["vous êtes trop mignons 🥹","le couple de l'année 😍","c'est officiel ou bien ?? 👀💕","je veux le même amour 😭","trop beaux ensemble ❤️","prenez soin l'un·e de l'autre 🥰"],
+ neutral:["oh 👀","ah ok je vois 😏","les amoureux 💕","on a compris 😂"],
+ mean:["prenez une chambre 🙄","personne n'a demandé ça 😒","ça va durer 2 semaines"],
+ jealous:["…","hmm 🙄","vu."]};
+function loveComment(id,lover,by){/* id commente une photo amoureuse de by avec lover */
+ const r=by==='me'?G.rel[id].ami:link(id,by).ami;let k;
+ if(id===lover)k=by!=='me'||G.partner===id||(npcLikesMe(id)&&G.rel[id].amour>=50)?'partner':npcLikesMe(id)&&G.rel[id].amour>=20?'shy':'awkward';
+ else if(by==='me'&&G.partner&&G.partner===id)k='jealous';
+ else if(by==='me'&&npcLikesMe(id)&&G.rel[id].amour>=40)k='crush';
+ else k=r>=45?'friend':r>=0?pickR(['neutral','friend']):pickR(['mean','neutral']);
+ const tone=k==='friend'||k==='partner'||k==='shy'?'gentil':k==='awkward'?'neutre':k==='mean'?'moqueur':'neutre';
+ let tx=genderize(pickR(LOVE_C[k]),id);if(k==='partner'&&by==='me')tx=couplePolish(id,tx);
+ return mkC(id,tx,{tone})}
 function npcComment(id){const r=G.rel[id].ami;const tone=r>=65?pickR(['gentil','drole']):r>=30?pickR(['drole','neutre','gentil']):r>=0?pickR(['neutre','neutre','gentil']):pickR(['moqueur','neutre']);return mkC(id,genderize(pickR(TONES[tone].lines).replace('{n}',me().name||''),id),{tone})}
 
 /* ---------- objectifs ---------- */
@@ -4229,7 +4274,8 @@ function debateThread(p){
 /* un camarade poste : texte de sa personnalité, photo éventuelle, commentaires et débat */
 function npcPost(by,t){
  const ppl=t.with&&coupleOf(by)===t.with?[by,t.with]:t.scene?[by,...(Math.random()<.5?[pickR(NPCS.filter(x=>x.id!==by)).id]:[])]:null;
- const p=mkPost({by,text:t.text,poem:!!t.poem,daily:!!t.daily,photo:ppl?{scene:t.scene,people:ppl,author:by}:null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
+ const p=mkPost({by,text:t.text,poem:!!t.poem,daily:!!t.daily,photo:ppl?Object.assign({scene:t.scene,people:ppl,author:by,frame:Math.random()<.4?'pied':'buste'},ppl.length>1&&t.with&&coupleOf(by)===t.with?{love:1,pose:'tendre'}:{}):null,c:Math.floor(Math.random()*20)+2,r:Math.floor(Math.random()*200)+5,l:Math.floor(Math.random()*4000)+100});
+ if(p.photo&&p.photo.love){const lv=p.photo.people.find(x=>x!==by);p.comments.push(loveComment(lv,lv,by));NPCS.filter(x=>x.id!==by&&x.id!==lv).sort(()=>Math.random()-.5).slice(0,2).forEach(x=>p.comments.push(loveComment(x.id,lv,by)));return p}
  p.comments.push(...debateThread(p));
  NPCS.filter(x=>x.id!==by&&!p.comments.some(c=>c.by===x.id)).sort(()=>Math.random()-.5).slice(0,Math.random()<.5?1:2).forEach(x=>{
   const a=link(x.id,by).ami,tone=a>=60?pickR(['gentil','drole']):a>=35?pickR(['drole','neutre','gentil']):pickR(['neutre','moqueur']);
@@ -5603,7 +5649,7 @@ function answerConfess(yes){
 /* ---------- création : post ou story ---------- */
 let cp=null;
 function openCompose(kind){
- cp={kind,mode:'text',scene:'cour',tags:new Set(),bg:0};
+ cp={kind,mode:'text',scene:'cour',tags:new Set(),bg:0,frame:'buste',love:0};
  openSheet(`<div class="who"><div class="av sm">${avatarOf('me')}</div><div style="flex:1"><h2>${kind==='story'?'Nouvelle story':'Nouveau post'}</h2></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="seg" role="group" aria-label="Type"><button type="button" data-mode="text" aria-pressed="true">Texte</button><button type="button" data-mode="photo" aria-pressed="false">Photo</button></div>
  <div class="prevwrap"><div class="prevlbl" id="cpPrevLbl" hidden><span class="muted">Aperçu de la photo</span><b id="cpPrevPlace"></b></div>
@@ -5611,6 +5657,8 @@ function openCompose(kind){
  <div id="cpText" ${kind==='story'?'':'hidden'}><span class="muted">Couleur du fond</span><div class="chips" style="margin-top:6px">${STORY_BG.map((b,i)=>`<button class="sw2" type="button" data-bg="${i}" aria-label="Fond ${i+1}" aria-pressed="${i===0}" style="background:${b}"></button>`).join('')}</div></div>
  <div id="cpPhoto" hidden class="stack">
   <div><span class="muted">Lieu de la photo</span><div class="chips" style="margin-top:6px">${Object.entries(SCENES).map(([k,l])=>`<button class="chip scn" type="button" data-scene="${k}" aria-pressed="${k==='cour'}"><span class="scth"><svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${sceneSVG(k,uid())}</svg></span>${l}</button>`).join('')}</div></div>
+  <div><span class="muted">Cadrage</span><div class="seg" role="group" aria-label="Cadrage" style="margin-top:6px"><button type="button" data-frame="buste" aria-pressed="true">Buste</button><button type="button" data-frame="pied" aria-pressed="false">En pied</button></div></div>
+  <div><span class="muted">Ambiance</span><div class="seg" role="group" aria-label="Ambiance" style="margin-top:6px"><button type="button" data-love="0" aria-pressed="true">Amicale</button><button type="button" data-love="1" aria-pressed="false">Amoureuse 💕</button></div><p class="muted" id="cpLoveHint" style="margin:6px 0 0;font-size:.85em" hidden>Photo amoureuse : identifie une seule personne.</p></div>
   <div><span class="muted">Identifier des amis</span><div class="chips" style="margin-top:6px">${NPCS.map(n=>`<button class="chip" type="button" data-tag="${n.id}" aria-pressed="false">${n.name}</button>`).join('')}</div></div></div>
  <label class="muted" for="cpTxt">${kind==='story'?'Texte de la story':'Ton message'}</label>
  <textarea id="cpTxt" maxlength="200" placeholder="${kind==='story'?'Écris quelque chose…':'Quoi de neuf au lycée ?'}" style="min-height:80px"></textarea>
@@ -5620,19 +5668,28 @@ function openCompose(kind){
 function updatePreview(){
  const pv=$('cpPrev'),txt=($('cpTxt')||{}).value||'';
  const lb=$('cpPrevLbl');if(lb){lb.hidden=cp.mode!=='photo';$('cpPrevPlace').textContent=SCENES[cp.scene]||''}
- if(cp.mode==='photo')pv.innerHTML=photoSVG({scene:cp.scene,people:['me',...cp.tags],author:'me'});
+ const lh=$('cpLoveHint');if(lh)lh.hidden=!(cp.love&&cp.tags.size!==1);
+ if(cp.mode==='photo')pv.innerHTML=photoSVG(cpPhoto());
  else if(cp.kind==='story')pv.innerHTML=`<div class="txtprev" style="background:${STORY_BG[cp.bg]};color:${STORY_FG[cp.bg]}">${esc(txt||'Ta story')}</div>`;
  else pv.innerHTML='';
 }
+/* publier une photo amoureuse avec quelqu'un : son effet dépend de qui c'est */
+function loveFx(id){if(!id||!isNpc(id))return '';
+ if(G.partner===id)return relChange(id,2,4);
+ let fx='';if(G.partner&&isNpc(G.partner)){relChange(G.partner,-6,-8);fx=`${WHO[G.partner].name} a vu la photo… 😠`}
+ const tk=coupleOf(id);if(tk&&tk!=='me')relChange(tk,-6,0);
+ const r=npcLikesMe(id)?relChange(id,1,3):relChange(id,-3,0);return [r,fx].filter(Boolean).join(' · ')}
+const cpPhoto=()=>Object.assign({scene:cp.scene,people:['me',...cp.tags],author:'me',frame:cp.frame},cp.love&&cp.tags.size===1?{love:1,pose:'tendre'}:{});
 function publishCompose(){
+ if(cp.mode==='photo'&&cp.love&&cp.tags.size!==1){toast('Photo amoureuse : identifie une seule personne');return}
  const text=$('cpTxt').value.trim();if(cp.mode==='text'&&!text){toast('Écris quelque chose avant de publier');return}
- const tags=[...cp.tags],photo=cp.mode==='photo'?{scene:cp.scene,people:['me',...tags],author:'me'}:null;
- const changes=tags.map(t=>relChange(t,G.rel[t].ami>=10?3:-1)).filter(Boolean);
+ const tags=[...cp.tags],photo=cp.mode==='photo'?cpPhoto():null,love=!!(photo&&photo.love),lv=love?tags[0]:null;
+ const changes=love?[loveFx(lv)].filter(Boolean):tags.map(t=>relChange(t,G.rel[t].ami>=10?3:-1)).filter(Boolean);
  if(tags.length)note(`Tu as identifié ${tags.map(t=>WHO[t].name).join(', ')} : ${changes.map(c=>c.split(' : ')[1]).join(', ')}`);
  if(cp.kind==='story'){G.stories.push({id:'st'+Date.now(),by:'me',t:nowT(),type:cp.mode,text,bg:cp.bg,photo,seen:true,reacted:false});G.st.stories++}
  else{const p=mkPost({by:'me',text:text||'📸',photo,l:Math.floor(Math.random()*40)+5,mine:true});
-  const com=[...new Set([...tags,...[...NPCS].sort(()=>Math.random()-.5).slice(0,2).map(n=>n.id)])].slice(0,3);
-  com.forEach(id=>p.comments.push(npcComment(id)));G.posts.unshift(p);G.st.posts++;G.ig.fans+=2+Math.floor(Math.random()*6);
+  const com=[...new Set([...tags,...[...NPCS].sort(()=>Math.random()-.5).slice(0,love?3:2).map(n=>n.id)])].slice(0,love?4:3);
+  com.forEach(id=>p.comments.push(love?loveComment(id,lv,'me'):npcComment(id)));G.posts.unshift(p);G.st.posts++;G.ig.fans+=2+Math.floor(Math.random()*6);
   /* un·e ami·e prend ta défense si quelqu'un se moque de ton post */
   const mean=p.comments.find(c=>c.tone==='moqueur'),def=mean&&NPCS.find(n=>n.id!==mean.by&&G.rel[n.id].ami>=55);if(def)p.comments.push(mkC(def.id,genderize(pickR(DEF_ME),def.id),{re:mean.id,to:mean.by,vs:mean.by}));
   if(com.length)note(`${com.map(id=>WHO[id].name).join(', ')} ${com.length>1?'ont':'a'} commenté ton post`)}
@@ -5933,6 +5990,8 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-nto]')){G._nto=b.dataset.nto;document.querySelectorAll('[data-nto]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
  if(cp){
   if(b=q('[data-mode]')){cp.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));$('cpPhoto').hidden=cp.mode!=='photo';$('cpText').hidden=!(cp.kind==='story'&&cp.mode==='text');updatePreview();return}
+  if(b=q('[data-frame]')){cp.frame=b.dataset.frame;document.querySelectorAll('[data-frame]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
+  if(b=q('[data-love]')){cp.love=+b.dataset.love;document.querySelectorAll('[data-love]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(b=q('[data-scene]')){cp.scene=b.dataset.scene;document.querySelectorAll('[data-scene]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(b=q('[data-tag]')){const id=b.dataset.tag;cp.tags.has(id)?cp.tags.delete(id):cp.tags.size<3?cp.tags.add(id):toast('3 amis maximum par photo');b.setAttribute('aria-pressed',cp.tags.has(id));updatePreview();return}
   if(b=q('[data-bg]')){cp.bg=+b.dataset.bg;document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
