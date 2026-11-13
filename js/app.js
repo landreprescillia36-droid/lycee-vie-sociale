@@ -858,8 +858,8 @@ function topSVG(G,T,s,p,K){
 /* hauts des garçons copiés sur la planche corrigée de Prescillia (js/hauts-garcons-art.js) : image posée sur le corps,
    les bras et les mains restent ceux du jeu ; autre couleur → l'image est reteinte d'après sa clarté */
  {const hg=!HG_OFF&&hgArt(s);if(hg){const [x,y,w,h,l0,lm,l1]=hg.A,G0=hgG0(),kx=(sideX(G,330)+.001)/(sideX(G0,330)+.001),cc=s.topColor||hg.A[8],same=!hg.tint,
-  tab=[[],[],[]];if(!same){const dk=shade(cc,-.62),lt=shade(cc,lum(cc)>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
-  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab),fid=p+'hgf';
+  tab=[[],[],[]];if(!same){const lc=lum(cc),dk=shade(cc,lc>.6?-.32:lc>.3?-.5:-.62),lt=shade(cc,lc>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
+  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab,2),fid=p+'hgf';
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
   let vec=arms();/* plus d'ancien haut dessous : le nouveau haut le remplace complètement */
   /* seuls les petits jours aux épaules (entre le col et l'épaule) sont bouchés, d'une teinte unie identique au haut : aucun ancien détail visible */
@@ -1063,10 +1063,12 @@ function sideburns(s,A,col,fit,cid){if(HAIR_NEW.includes(s.hair))return '';/* re
  const d='M'+P.map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
  return `<g filter="url(#${id}b)"><path d="${d}" fill="url(#${id})"/><path d="${d}" fill="url(#${id}p)" opacity=".6" mask=""/></g>`}).join('')}
 const HTINT={},HTINT_GO={};let HT_PEND=0;
-function hairTint(f,hc,tab){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;HT_PEND++;
+function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;HT_PEND++;
  const T=tab.map(a=>a.map(Number)),im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data,W=c.width,H=c.height,L=new Float32Array(W*H);
   for(let i=0;i<W*H;i++)L[i]=(a[i*4]*.299+a[i*4+1]*.587+a[i*4+2]*.114)/255;
+  if(sm){/* vêtements reteints : clarté lissée (le grain du tissu de la planche, très marqué une fois éclairci, disparaît) */
+   const M=new Float32Array(W*H),r=sm;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){let s=0,n=0;for(let dy=-r;dy<=r;dy++){const y2=yy+dy;if(y2<0||y2>=H)continue;for(let dx=-r;dx<=r;dx++){const x2=xx+dx;if(x2<0||x2>=W)continue;const j=y2*W+x2;if(a[j*4+3]<128)continue;s+=L[j];n++}}M[yy*W+xx]=n?s/n:L[yy*W+xx]}L.set(M)}
   const n=T[0].length-1;for(let yy=0;yy<H;yy++)for(let xx=0;xx<W;xx++){const i=yy*W+xx,up=yy>0?L[i-W]:L[i],dn=yy<H-1?L[i+W]:L[i],v=clamp((up+2*L[i]+dn)/4,0,1),q=v*n,j=Math.min(n-1,Math.floor(q)),u=q-j;
    for(let ch=0;ch<3;ch++)a[i*4+ch]=Math.round((T[ch][j]+(T[ch][j+1]-T[ch][j])*u)*255)}
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;bkPut('t|'+k,url);
