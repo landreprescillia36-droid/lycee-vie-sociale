@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='107';
+const APP_VERSION='108';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2329,7 +2329,8 @@ function sceneSVG(id,p){
   <g transform="translate(468,300)"><rect x="0" y="0" width="70" height="8" rx="2" fill="#8a5a35"/><rect x="0" y="-16" width="70" height="7" rx="2" fill="#8a5a35"/><rect x="6" y="8" width="5" height="16" fill="#555"/><rect x="59" y="8" width="5" height="16" fill="#555"/></g>
   ${palm(560,402,250,-28)}${palm(520,404,200,22)}`;}
  case 'cascade':return `<rect width="600" height="400" fill="#2f6b3f"/><path d="M0,0 H600 V140 C520,120 460,170 380,150 C320,136 280,170 200,150 C120,130 60,160 0,140Z" fill="#3f8a4f"/><path d="M240,0 C250,120 236,240 250,330 L350,330 C364,240 350,120 360,0Z" fill="#dff4ff"/><path d="M262,0 C270,120 258,240 270,330 M300,0 C306,120 296,240 304,330 M338,0 C344,120 334,240 340,330" stroke="#a9dcf2" stroke-width="5" fill="none" opacity=".8"/><ellipse cx="300" cy="336" rx="190" ry="34" fill="#5fb8d9"/><rect y="350" width="600" height="50" fill="#4a8f9f"/><g fill="#57a85e"><circle cx="60" cy="120" r="50"/><circle cx="140" cy="90" r="44"/><circle cx="520" cy="110" r="52"/><circle cx="450" cy="80" r="40"/></g>`;
- case 'marche':{let st='';const cols=[['#e8613c','#fff3c4'],['#2fa36b','#f4f1ea'],['#f2c230','#d93b5e']];for(let i=0;i<3;i++){const x=20+i*195,[a,b]=cols[i];for(let k=0;k<6;k++)st+='';st+=`<rect x="${x}" y="60" width="180" height="50" fill="${a}"/>`+[0,1,2,3,4,5].map(k=>`<rect x="${x+k*30}" y="60" width="15" height="50" fill="${b}"/>`).join('')+`<rect x="${x+10}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x+162}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x}" y="220" width="180" height="40" rx="4" fill="#a8743f"/>`+['#ffb627','#e8613c','#7cc35f','#ffd23f','#d93b5e','#ff8a3d','#9bd16a'].map((f,k)=>`<circle cx="${x+18+k*24}" cy="212" r="11" fill="${f}"/>`).join('')}return `<rect width="600" height="400" fill="#bfe3ff"/>${st}<rect y="260" width="600" height="140" fill="#d8cdbb"/>`;}
+ case 'marche':return `<rect width="600" height="400" fill="#e6cdb4"/><image href="assets/decors/marche.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'marche_old':{let st='';const cols=[['#e8613c','#fff3c4'],['#2fa36b','#f4f1ea'],['#f2c230','#d93b5e']];for(let i=0;i<3;i++){const x=20+i*195,[a,b]=cols[i];for(let k=0;k<6;k++)st+='';st+=`<rect x="${x}" y="60" width="180" height="50" fill="${a}"/>`+[0,1,2,3,4,5].map(k=>`<rect x="${x+k*30}" y="60" width="15" height="50" fill="${b}"/>`).join('')+`<rect x="${x+10}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x+162}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x}" y="220" width="180" height="40" rx="4" fill="#a8743f"/>`+['#ffb627','#e8613c','#7cc35f','#ffd23f','#d93b5e','#ff8a3d','#9bd16a'].map((f,k)=>`<circle cx="${x+18+k*24}" cy="212" r="11" fill="${f}"/>`).join('')}return `<rect width="600" height="400" fill="#bfe3ff"/>${st}<rect y="260" width="600" height="140" fill="#d8cdbb"/>`;}
  case 'cantine':{let f='';for(let i=0;i<12;i++)f+=`<rect x="${i*50}" y="300" width="25" height="100" fill="#e4dccd"/>`;
   return `<rect width="600" height="400" fill="#f6efe2"/><rect x="40" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="410" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="230" y="50" width="140" height="90" rx="8" fill="#2f4a3e"/><text x="300" y="82" text-anchor="middle" font-family="Baloo 2, Trebuchet MS, sans-serif" font-weight="700" font-size="17" fill="#f4f1ea">MENU</text><rect y="300" width="600" height="100" fill="#efe8da"/>${f}`;}
  case 'soiree':{let l='';const cols=['#ff5f8f','#ffd23f','#5fd3ff','#9b6bff','#3fcf8e'];for(let i=0;i<13;i++){const x=20+i*47,y=50+Math.sin(i/12*Math.PI)*45;l+=`<circle cx="${x}" cy="${y}" r="9" fill="${cols[i%5]}"/><circle cx="${x}" cy="${y}" r="20" fill="${cols[i%5]}" opacity=".18"/>`}
@@ -2341,7 +2342,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[250,392],chambre:[255,392],ch:[265,394],cascade:[200,390],marche:[225,392]};
+const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[250,392],chambre:[255,392],ch:[265,394],cascade:[200,390],marche:[250,396]};
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
