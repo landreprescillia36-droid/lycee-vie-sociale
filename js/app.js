@@ -2341,6 +2341,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
+const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[250,392],chambre:[255,392],ch:[265,394],cascade:[200,390],marche:[225,392]};
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
@@ -2356,8 +2357,10 @@ const heartP=(x,y,s,c,o)=>`<path d="M${x},${y+s*.3} C${x},${y-s*.2} ${x-s},${y-s
 function photoSVG(ph){
  const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length),pied=ph.frame==='pied';
  const P=POSES[ph.pose]&&!(pied&&POSES[ph.pose].buste)?POSES[ph.pose]:POSES.naturel;
- const w=pied?(n===1?128:n===2?120:Math.min(112,560/n)):(n===1?330:n===2?290:Math.min(250,640/n));
- const h=pied?w*930/292:w,base=pied?396:400,g0=pied?.95:.66;
+ /* en pied : taille des personnes à l'échelle du décor (hauteur de la silhouette, ligne du sol) */
+ const PS=PIED_SC[ph.scene==='chambre'&&ROOMS[ph.author]?'ch':ph.scene]||PIED_SC.def,ph0=PS[0]*(n>3?.92:1);
+ const w=pied?ph0*292/930:(n===1?330:n===2?290:Math.min(250,640/n));
+ const h=pied?ph0:w,base=pied?PS[1]:400,g0=pied?.95:.66;
  /* chambres vides de Prescillia : utilisées pour toutes les photos prises dans la chambre du camarade */
  const sc=ph.scene==='chambre'&&ROOMS[ph.author]?ROOMS[ph.author]:ph.scene;
  let o=`<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`+sceneSVG(sc,p);
