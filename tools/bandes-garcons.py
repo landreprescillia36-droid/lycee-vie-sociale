@@ -1,4 +1,4 @@
-"""T-shirt à bandes des garçons : le t-shirt de la planche (tee-noir / tee-blanc) + 3 fines bandes qui partent du col,
+"""T-shirt à bandes des garçons : le t-shirt de la planche (tee-noir / tee-blanc) + 2 bandes qui partent du col,
    suivent le dessus de l'épaule et descendent sur le côté de la manche jusqu'à l'ourlet (comme sur la planche).
    Les bandes sont tracées à distance fixe du bord du t-shirt : nettes, sans bavure.
    python3 tools/bandes-garcons.py  ->  assets/hauts/bandes-noir.png, bandes-blanc.png (même cadre que tee-*.png)"""
@@ -21,7 +21,7 @@ def bandes(src, dst, col):
     # les bandes ne passent pas sous l'aisselle : seulement le bord du dessus et l'extérieur
     S = W / 202.0   # pixels par unité du jeu
     stripes = np.zeros((H, W), np.float32)
-    for c in (3.2, 5.5, 7.8):
+    for c in (3.6, 6.4):
         w = .8
         stripes = np.maximum(stripes, np.clip(1 - np.abs(dist / S - c) / w, 0, 1) * 1.6)
     stripes = np.clip(stripes, 0, 1) * ok
