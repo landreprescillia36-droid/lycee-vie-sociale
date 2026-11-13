@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='103';
+const APP_VERSION='104';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1505,12 +1505,10 @@ const WEAR={
   {s:'dress',v:'madras',c:'#f2c230',n:'Robe longue en madras',r:null},{s:'dress',v:'pull',c:'#ece2cc',n:'Robe pull col roulé',r:null}]},
  set:{l:'Ensembles',vb:FVB,items:[
   {n:'Crop noir et baggy gris',r:'T',x:"Pièces de ta capture ; baskets au plus proche, sans bandes ni logo de marque.",set:{top:'crop',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'retro',shoesColor:'#f4f1ea'}},
-  {n:'Pull sans manches et jean large',r:'T',x:"Pièces de ta capture ; baskets au plus proche, sans bandes ni logo de marque.",set:{top:'gilet',topColor:'#ece2cc',bottom:'large',bottomColor:'#5b7fb5',shoes:'retro',shoesColor:'#1f2127'}},
   {n:'Haut marron et baggy gris',r:'T',x:"Pièces de ta capture ; sabots marron au plus proche.",set:{top:'ajuste',topColor:'#7a5236',bottom:'large',bottomColor:'#9aa0a6',shoes:'sabots',shoesColor:'#7a5236'}},
   {n:'Ensemble rose épaules dénudées',r:'T',x:"Haut, pantalon évasé et chaussons fourrés de ta capture.",set:{top:'epaules',topColor:'#f2c6d3',bottom:'yoga',bottomColor:'#f2c6d3',shoes:'fourrees',shoesColor:'#c49a6c'}},
   {n:'Blouse marine et jean gris',r:'T',x:"Pièces de ta capture ; les bottines marron sont rendues en sabots.",set:{top:'blouse',topColor:'#26314f',bottom:'large',bottomColor:'#9aa0a6',shoes:'sabots',shoesColor:'#7a5236'}},
   {n:'Blouson kaki, short et bottes',r:'T',x:"Blouson matelassé, short noir et bottes hautes de ta capture ; haut noir ajouté dessous.",set:{top:'crop',topColor:'#1f2127',jacket:'matelassee',jacketColor:'#5b5a3c',bottom:'short',bottomColor:'#1f2127',shoes:'bottes',shoesColor:'#1f2127'}},
-  {n:'Henley marron et jean clair',r:'T',x:"Chaussures non visibles sur ta capture : choisies au plus proche.",set:{top:'henley',topColor:'#7a5236',bottom:'droit',bottomColor:'#86a6cc',shoes:'basses',shoesColor:'#f4f1ea'}},
   {n:'Crop asymétrique et jean',r:'T',x:"Chaussures non visibles sur ta capture : choisies au plus proche.",set:{top:'asym',topColor:'#1f2127',bottom:'droit',bottomColor:'#86a6cc',shoes:'basses',shoesColor:'#f4f1ea'}},
   {n:'Gilet long crème',r:'T',x:"Gilet et pantalon crème de ta capture ; t-shirt blanc dessous et chaussures choisis au plus proche.",set:{top:'tshirt',topColor:'#f4f1ea',jacket:'cardigan',jacketColor:'#ece2cc',bottom:'cordon',bottomColor:'#ece2cc',shoes:'basses',shoesColor:'#f4f1ea'}}]},
  jacket:{l:'Vestes',vb:'86 150 228 360',items:[
@@ -1545,7 +1543,7 @@ WEAR.top.items.push({s:'top',v:'capuche',c:'#3d6fd8',n:'Sweat à capuche bleu',r
    du catalogue (ils restent dessinés pour les personnages qui les portent) */
 {const HG_NOM={gtee:'T-shirt',gpolo:'Polo',ghood:'Sweat à capuche',gzip:'Sweat zippé à capuche',gchem:'Chemise',gsweat:'Sweat col rond',gpolopk:'Polo à poche',gpull:'Pull en maille',gcote:'Pull côtelé',gsport:'T-shirt de sport',gbandes:'T-shirt à bandes',gdeb:'Débardeur',gnageur:'Débardeur dos nageur',glayer:'T-shirt sur manches longues',gteepk:'T-shirt à poche',gover:'T-shirt ample',glin:'Chemise en lin',graye:'Pull rayé'};
  const HG_PREM={gtee:'#1f2127',gpolo:'#f4f1ea',ghood:'#1f2127',gzip:'#1f2127',gchem:'#f4f1ea',gsweat:'#1f2127'};/* couleur montrée : celle de la planche */
- const vu=new Set(),dbl=new Set(['tshirt','chemise','capuche']);
+ const vu=new Set(),dbl=new Set(['tshirt','chemise','capuche','gilet','henley']);
  WEAR.top.items=WEAR.top.items.filter(it=>{if(it.g!=='m')return true;if(dbl.has(it.v))return false;if(vu.has(it.v))return false;vu.add(it.v);if(HG_NOM[it.v]){it.n=HG_NOM[it.v];if(HG_PREM[it.v])it.c=HG_PREM[it.v]}return true})}
 WEAR.top.items.unshift({s:'top',v:'debardeur',c:'#f4f1ea',n:'Débardeur à fines bretelles',r:null,g:'f',nw:1});
 /* hauts de la planche déjà publiés ; les autres sont dessinés (TOP2) mais pas encore dans le catalogue, en attente de son accord */
@@ -1590,7 +1588,6 @@ WEAR.set.items.push(
  {n:'Tenue d\'Inès : robe portefeuille',r:'K',g:'f',x:"La tenue d'Inès telle que tu l'as créée.",set:{dress:'portefeuille',dressColor:'#d93b5e',bag:'tote',bagColor:'#ece2cc',necklace:'chaine',shoes:'basses',shoesColor:'#f4f1ea'}},
  {n:'Tenue de Maëlle : chemise et jupe plissée',r:'K',g:'f',x:"La tenue de Maëlle telle que tu l'as créée.",set:{bag:'aucun',top:'chemise',topColor:'#f4f1ea',bottom:'jupe',bottomColor:'#1f2127',shoes:'basses',shoesColor:'#f4f1ea',necklace:'perles'}},
  {n:'Tenue de Jade : chemise camel et pantalon noir',r:'K',g:'f',x:"La tenue de Jade telle que tu l'as créée.",set:{bag:'aucun',top:'chemise',topColor:'#c49a6c',bottom:'cordon',bottomColor:'#1f2127',shoes:'retro',shoesColor:'#f4f1ea',necklace:'rasdecou'}},
- {n:'Tenue d\'Enzo : pull sans manches et jean droit',r:'K',g:'m',x:"La tenue d'Enzo telle que tu l'as créée.",set:{top:'gilet',topColor:'#ece2cc',bottom:'droit',bottomColor:'#86a6cc',shoes:'basses',shoesColor:'#f4f1ea',bag:'bandouliere',bagColor:'#1f2127',necklace:'chaine'}},
  {n:'Tenue de Kylian : sweat bleu et jogging',r:'K',g:'m',x:"La tenue de Kylian telle que tu l'as créée.",set:{bag:'aucun',top:'ghood',topColor:'#3d6fd8',bottom:'jogging',bottomColor:'#c4c7cb',shoes:'running',shoesColor:'#f4f1ea',necklace:'chaine'}},
  {n:'Tenue de Noah : t-shirt crème et pantalon à cordon',r:'K',g:'m',x:"La tenue de Noah telle que tu l'as créée.",set:{bag:'aucun',top:'gtee',topColor:'#ece2cc',bottom:'cordon',bottomColor:'#1f2127',shoes:'sabots',shoesColor:'#c49a6c',necklace:'chaine'}},
  {n:'Tenue de Sacha : pull côtelé et baggy gris',r:'K',g:'m',x:"La tenue de Sacha telle que tu l'as créée.",set:{bag:'aucun',top:'gcote',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:'#f4f1ea',necklace:'chaine'}});
