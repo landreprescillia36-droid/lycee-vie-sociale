@@ -130,7 +130,7 @@ const FICHIERS = [
   'fonts/baloo-2-latin-600-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
   'fonts/nunito-latin-400-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2', 'fonts/nunito-latin-800-normal.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
-  'assets/decors/marche.jpg', 'assets/decors/cascade.jpg',
+  'assets/decors/marche.jpg', 'assets/decors/cascade.jpg', 'assets/decors/soiree.jpg',
   ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha', 'kenza', 'meisha', 'eva', 'noemie', 'jessica'].map(n => `assets/chambres/${n}.jpg`),
 ];
 
