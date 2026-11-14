@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='108';
+const APP_VERSION='109';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2343,7 +2343,9 @@ function sceneSVG(id,p){
 /* chaque camarade a sa chambre (images créées par Prescillia, dans assets/chambres/) */
 /* chambre du joueur (et de sa famille) : une des 4 chambres par défaut de Prescillia, au choix (G.chambre) */
 const CHAMBRES={blanc:'Blanc & bois',beige:'Beige élégant',sauge:'Vert sauge',bleu:'Bleu doux'};
-const roomOf=a=>ROOMS[a]||((a==='me'||isFam(a))?'chd_'+((typeof G!=='undefined'&&G&&CHAMBRES[G.chambre])?G.chambre:'blanc'):null);
+/* camarade sans chambre à lui (nouveaux camarades) : une des 4 chambres par défaut, toujours la même pour lui */
+const roomDef=id=>{const K=Object.keys(CHAMBRES);let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;return 'chd_'+K[h%K.length]};
+const roomOf=a=>ROOMS[a]||((a==='me'||isFam(a))?'chd_'+((typeof G!=='undefined'&&G&&CHAMBRES[G.chambre])?G.chambre:'blanc'):WHO[a]?roomDef(a):null);
 const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',anais:'ch_anais',jade:'ch_jade',maelle:'ch_maelle',kenza:'ch_kenza',meisha:'ch_meisha',eva:'ch_eva',noemie:'ch_noemie',jessica:'ch_jessica'};
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
