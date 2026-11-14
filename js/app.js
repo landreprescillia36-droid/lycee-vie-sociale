@@ -2348,7 +2348,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[245,396],chambre:[255,392],ch:[335,398],cascade:[235,397],marche:[250,396]};
+const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[240,392],soiree:[245,396],chambre:[255,392],ch:[335,421],cascade:[235,397],marche:[250,396]};
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
