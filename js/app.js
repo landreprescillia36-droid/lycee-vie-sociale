@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='107';
+const APP_VERSION='108';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2301,6 +2301,7 @@ function sceneSVG(id,p){
   [.6,1.8,3.2,4.5].forEach(z=>{const z1=z+.35;o+=`<path d="${quad([X(-46,z),Y(-TOP,z)],[X(46,z),Y(-TOP,z)],[X(46,z1),Y(-TOP,z1)],[X(-46,z1),Y(-TOP,z1)])}" fill="#fffbe8" stroke="#f2c230" stroke-width="${fx(5*S(z))}"/>`});
   o+=`<rect x="${X(-HW,ZM)}" y="${Y(-TOP,ZM)}" width="${fx(2*HW*S(ZM))}" height="${fx((TOP+BOT)*S(ZM))}" fill="none" stroke="#1d4f86" stroke-width="2" opacity=".5"/>`;
   return o;}
+ case 'chd_blanc':case 'chd_beige':case 'chd_sauge':case 'chd_bleu':return `<rect width="600" height="400" fill="#efe3d4"/><image href="assets/chambres/defaut-${id.slice(4)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
  case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':case 'ch_kenza':case 'ch_meisha':case 'ch_eva':case 'ch_noemie':case 'ch_jessica':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
  case 'cour':{/* cour du lycée : bâtiment antillais aux jalousies bleues, palmiers, pelouses et cour pavée */
   const cloud=(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})" fill="#fff"><circle cx="0" cy="0" r="30"/><circle cx="32" cy="-14" r="36"/><circle cx="70" cy="-2" r="30"/><circle cx="98" cy="10" r="22"/><rect x="-20" y="0" width="130" height="30" rx="15"/></g>`;
@@ -2340,6 +2341,9 @@ function sceneSVG(id,p){
  default:return `<rect width="600" height="400" fill="#f3d9e2"/><rect x="380" y="50" width="160" height="130" rx="6" fill="#bfe3ff" stroke="#fff" stroke-width="10"/><path d="M460,50 V180 M380,115 H540" stroke="#fff" stroke-width="6"/><rect x="60" y="60" width="90" height="120" rx="4" fill="#9b6bff" transform="rotate(-4 105 120)"/><rect y="320" width="600" height="80" fill="#8fb3e0"/><rect y="312" width="600" height="14" rx="7" fill="#f4f1ea"/>`;
  }}
 /* chaque camarade a sa chambre (images créées par Prescillia, dans assets/chambres/) */
+/* chambre du joueur (et de sa famille) : une des 4 chambres par défaut de Prescillia, au choix (G.chambre) */
+const CHAMBRES={blanc:'Blanc & bois',beige:'Beige élégant',sauge:'Vert sauge',bleu:'Bleu doux'};
+const roomOf=a=>ROOMS[a]||((a==='me'||isFam(a))?'chd_'+((typeof G!=='undefined'&&G&&CHAMBRES[G.chambre])?G.chambre:'blanc'):null);
 const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',anais:'ch_anais',jade:'ch_jade',maelle:'ch_maelle',kenza:'ch_kenza',meisha:'ch_meisha',eva:'ch_eva',noemie:'ch_noemie',jessica:'ch_jessica'};
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
@@ -2361,11 +2365,11 @@ function photoSVG(ph){
  const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length),pied=ph.frame==='pied';
  const P=POSES[ph.pose]&&!(pied&&POSES[ph.pose].buste)?POSES[ph.pose]:POSES.naturel;
  /* en pied : taille des personnes à l'échelle du décor (hauteur de la silhouette, ligne du sol) */
- const PS=PIED_SC[ph.scene==='chambre'&&ROOMS[ph.author]?'ch':ph.scene]||PIED_SC.def,ph0=PS[0]*(n>3?.92:1);
+ const PS=PIED_SC[ph.scene==='chambre'&&roomOf(ph.author)?'ch':ph.scene]||PIED_SC.def,ph0=PS[0]*(n>3?.92:1);
  const w=pied?ph0*292/930:(n===1?330:n===2?290:Math.min(250,640/n));
  const h=pied?ph0:w,base=pied?PS[1]:400,g0=pied?.95:.66;
  /* chambres vides de Prescillia : utilisées pour toutes les photos prises dans la chambre du camarade */
- const sc=ph.scene==='chambre'&&ROOMS[ph.author]?ROOMS[ph.author]:ph.scene;
+ const sc=ph.scene==='chambre'&&roomOf(ph.author)?roomOf(ph.author):ph.scene;
  let o=`<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">`+sceneSVG(sc,p);
  const L=ppl.map((id,i)=>{const c=n<2?0:(i<(n-1)/2?1:i>(n-1)/2?-1:0),q=Object.assign({gap:1,rot:0,dy:0,sc:1},P.f(i,n,c));
   if(pied){q.rot*=.32;q.gap=.72+q.gap*.28;q.dy*=.6}/* en pied : le corps est haut, une petite inclinaison suffit (sinon les têtes se chevauchent) */return {id,i,q}});
@@ -5655,7 +5659,8 @@ function openCompose(kind){
  <div id="cpPrev" class="preview"></div></div>
  <div id="cpText" ${kind==='story'?'':'hidden'}><span class="muted">Couleur du fond</span><div class="chips" style="margin-top:6px">${STORY_BG.map((b,i)=>`<button class="sw2" type="button" data-bg="${i}" aria-label="Fond ${i+1}" aria-pressed="${i===0}" style="background:${b}"></button>`).join('')}</div></div>
  <div id="cpPhoto" hidden class="stack">
-  <div><span class="muted">Lieu de la photo</span><div class="chips" style="margin-top:6px">${Object.entries(SCENES).map(([k,l])=>`<button class="chip scn" type="button" data-scene="${k}" aria-pressed="${k==='cour'}"><span class="scth"><svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${sceneSVG(k,uid())}</svg></span>${l}</button>`).join('')}</div></div>
+  <div><span class="muted">Lieu de la photo</span><div class="chips" style="margin-top:6px">${Object.entries(SCENES).map(([k,l])=>`<button class="chip scn" type="button" data-scene="${k}" aria-pressed="${k==='cour'}"><span class="scth"><svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${sceneSVG(k==='chambre'?roomOf('me'):k,uid())}</svg></span>${l}</button>`).join('')}</div></div>
+  <div id="cpRoom" hidden><span class="muted">Ta chambre</span><div class="chips" style="margin-top:6px">${Object.entries(CHAMBRES).map(([k,l])=>`<button class="chip" type="button" data-room="${k}" aria-pressed="${roomOf('me')==='chd_'+k}">${l}</button>`).join('')}</div></div>
   <div><span class="muted">Cadrage</span><div class="seg" role="group" aria-label="Cadrage" style="margin-top:6px"><button type="button" data-frame="buste" aria-pressed="true">Buste</button><button type="button" data-frame="pied" aria-pressed="false">En pied</button></div></div>
   <div><span class="muted">Ambiance</span><div class="seg" role="group" aria-label="Ambiance" style="margin-top:6px"><button type="button" data-love="0" aria-pressed="true">Amicale</button><button type="button" data-love="1" aria-pressed="false">Amoureuse 💕</button></div><p class="muted" id="cpLoveHint" style="margin:6px 0 0;font-size:.85em" hidden>Photo amoureuse : identifie une seule personne.</p></div>
   <div><span class="muted">Identifier des amis</span><div class="chips" style="margin-top:6px">${NPCS.map(n=>`<button class="chip" type="button" data-tag="${n.id}" aria-pressed="false">${n.name}</button>`).join('')}</div></div></div>
@@ -5667,6 +5672,7 @@ function openCompose(kind){
 function updatePreview(){
  const pv=$('cpPrev'),txt=($('cpTxt')||{}).value||'';
  const lb=$('cpPrevLbl');if(lb){lb.hidden=cp.mode!=='photo';$('cpPrevPlace').textContent=SCENES[cp.scene]||''}
+ const rm=$('cpRoom');if(rm)rm.hidden=!(cp.mode==='photo'&&cp.scene==='chambre');
  const lh=$('cpLoveHint');if(lh)lh.hidden=!(cp.love&&cp.tags.size!==1);
  if(cp.mode==='photo')pv.innerHTML=photoSVG(cpPhoto());
  else if(cp.kind==='story')pv.innerHTML=`<div class="txtprev" style="background:${STORY_BG[cp.bg]};color:${STORY_FG[cp.bg]}">${esc(txt||'Ta story')}</div>`;
@@ -5989,6 +5995,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-nto]')){G._nto=b.dataset.nto;document.querySelectorAll('[data-nto]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
  if(cp){
   if(b=q('[data-mode]')){cp.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));$('cpPhoto').hidden=cp.mode!=='photo';$('cpText').hidden=!(cp.kind==='story'&&cp.mode==='text');updatePreview();return}
+  if(b=q('[data-room]')){G.chambre=b.dataset.room;document.querySelectorAll('[data-room]').forEach(x=>x.setAttribute('aria-pressed',x===b));const th=document.querySelector('[data-scene="chambre"] .scth svg');if(th)th.innerHTML=sceneSVG(roomOf('me'),uid());saveG();updatePreview();return}
   if(b=q('[data-frame]')){cp.frame=b.dataset.frame;document.querySelectorAll('[data-frame]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(b=q('[data-love]')){cp.love=+b.dataset.love;document.querySelectorAll('[data-love]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(b=q('[data-scene]')){cp.scene=b.dataset.scene;document.querySelectorAll('[data-scene]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}

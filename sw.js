@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v107';
+const VERSION = 'v108';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -131,7 +131,7 @@ const FICHIERS = [
   'fonts/nunito-latin-400-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2', 'fonts/nunito-latin-800-normal.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
   'assets/decors/marche.jpg', 'assets/decors/cascade.jpg', 'assets/decors/soiree.jpg',
-  ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha', 'kenza', 'meisha', 'eva', 'noemie', 'jessica'].map(n => `assets/chambres/${n}.jpg`),
+  ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha', 'kenza', 'meisha', 'eva', 'noemie', 'jessica', 'defaut-blanc', 'defaut-beige', 'defaut-sauge', 'defaut-bleu'].map(n => `assets/chambres/${n}.jpg`),
 ];
 
 /* Connexion lente : les images, polices et icônes déjà téléchargées sont reprises de l'ancien cache (pas de re-téléchargement
