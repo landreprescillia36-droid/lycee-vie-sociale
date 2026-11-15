@@ -2351,7 +2351,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[285,400],soiree:[245,396],chambre:[255,392],ch:[335,421],cascade:[235,397],marche:[250,396]};
+const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[245,396,[[95,245],[370,495]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[250,396,[[205,455]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
@@ -2377,7 +2377,11 @@ function photoSVG(ph){
  const L=ppl.map((id,i)=>{const c=n<2?0:(i<(n-1)/2?1:i>(n-1)/2?-1:0),q=Object.assign({gap:1,rot:0,dy:0,sc:1},P.f(i,n,c));
   if(pied){q.rot*=.32;q.gap=.72+q.gap*.28;q.dy*=.6}/* en pied : le corps est haut, une petite inclinaison suffit (sinon les têtes se chevauchent) */return {id,i,q}});
  const gap=n<2?1:Math.min(...L.map(x=>x.q.gap));
- L.sort((a,b)=>(b.q.back||0)-(a.q.back||0)).forEach(({id,i,q})=>{const cx=300+(i-(n-1)/2)*w*g0*gap,ww=w*q.sc,hh=h*q.sc,y=base-hh+q.dy;
+ /* en pied : les personnes se placent seulement sur le sol libre du décor (zones PS[2]), jamais dans les meubles */
+ let slots=null;if(pied&&PS[2]){const Z=PS[2],tot=Z.reduce((s,z)=>s+z[1]-z[0],0);let k=0;slots=[];
+  Z.forEach((z,j)=>{const m=j===Z.length-1?n-k:Math.round(n*(z[1]-z[0])/tot);for(let u=0;u<m;u++)slots.push(z[0]+(z[1]-z[0])*(u+.5)/m);k+=m});
+  if(n===1&&Z.length>1){const zz=Z.reduce((a,b)=>b[1]-b[0]>a[1]-a[0]?b:a);slots=[(zz[0]+zz[1])/2]}}
+ L.sort((a,b)=>(b.q.back||0)-(a.q.back||0)).forEach(({id,i,q})=>{const cx=slots?slots[i]:300+(i-(n-1)/2)*w*g0*gap,ww=w*q.sc,hh=h*q.sc,y=base-hh+q.dy;
   const el=avUse(avOf(id),pied?PFB:PHB,false).replace('<svg ',`<svg x="${fx(cx-ww/2)}" y="${fx(y)}" width="${fx(ww)}" height="${fx(hh)}" `);
   o+=q.rot?`<g transform="rotate(${q.rot} ${fx(cx)} ${fx(base+q.dy)})">${el}</g>`:el});
  if(ph.love&&(ph.pose==='coeur'||!ph.pose)){const hc=['#ff5f8f','#ff86a8','#e8436f'];[[230,70,11],[372,58,9],[300,40,13],[410,110,7],[190,120,7]].forEach(([x,y,s],k)=>o+=heartP(x,y,s,hc[k%3],.85))}
