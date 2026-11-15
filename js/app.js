@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='110';
+const APP_VERSION='111';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2224,7 +2224,7 @@ function famAvatar(role,seed){
 }
 
 /* ---------- photos ---------- */
-const SCENES={plage:'Plage',cour:'Cour du lycée',couloir:'Couloir du lycée',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
+const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
 function sceneSVG(id,p){
  switch(id){
  case 'plage':{/* plage : style vectoriel plat, ciel clair, nuages à l'horizon, mer turquoise et sable doré */
@@ -2303,7 +2303,8 @@ function sceneSVG(id,p){
   return o;}
  case 'chd_blanc':case 'chd_beige':case 'chd_sauge':case 'chd_bleu':return `<rect width="600" height="400" fill="#efe3d4"/><image href="assets/chambres/defaut-${id.slice(4)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
  case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':case 'ch_kenza':case 'ch_meisha':case 'ch_eva':case 'ch_noemie':case 'ch_jessica':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
- case 'cour':{/* cour du lycée : bâtiment antillais aux jalousies bleues, palmiers, pelouses et cour pavée */
+ case 'cour':return `<rect width="600" height="400" fill="#efd9c4"/><image href="assets/decors/lycee.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'cour_old':{/* cour du lycée : bâtiment antillais aux jalousies bleues, palmiers, pelouses et cour pavée */
   const cloud=(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})" fill="#fff"><circle cx="0" cy="0" r="30"/><circle cx="32" cy="-14" r="36"/><circle cx="70" cy="-2" r="30"/><circle cx="98" cy="10" r="22"/><rect x="-20" y="0" width="130" height="30" rx="15"/></g>`;
   const win=(x,y,w,h)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2f7fb8"/>`+[0,1,2,3,4].map(i=>`<rect x="${x+2}" y="${y+3+i*(h-4)/5}" width="${w-4}" height="${(h-4)/5-2}" fill="#5aa7d8"/>`).join('')+`<rect x="${x-3}" y="${y+h}" width="${w+6}" height="4" fill="#e8d2a2"/>`;
   let wings='';[[72,220],[380,528]].forEach(([a,b])=>{for(let x=a;x<b;x+=38){wings+=win(x+8,150,22,32)+win(x+8,204,22,32)}});
@@ -2351,7 +2352,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[205,392],couloir:[225,392],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[235,384],cour:[270,400,[[240,530]]],couloir:[225,392],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
