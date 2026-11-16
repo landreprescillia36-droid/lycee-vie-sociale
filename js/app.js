@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='112';
+const APP_VERSION='113';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2248,7 +2248,8 @@ function sceneSVG(id,p){
   <path d="M0,318 C90,308 180,326 300,316 C410,307 500,322 600,312 L600,330 C500,338 410,324 300,334 C180,344 90,326 0,336Z" fill="#f8deaa" opacity=".8"/>
   <path d="M0,366 C120,356 230,374 360,364 C460,356 540,368 600,362 L600,400 L0,400Z" fill="#ecc174" opacity=".55"/>
   <g fill="#e2b46a" opacity=".6"><circle cx="80" cy="300" r="1.6"/><circle cx="240" cy="352" r="1.4"/><circle cx="420" cy="306" r="1.6"/><circle cx="530" cy="348" r="1.4"/><circle cx="330" cy="384" r="1.6"/></g>`;}
- case 'basket':{/* gymnase : terrain de basket, panier au fond, fenêtre sur le ciel à droite */
+ case 'basket':return `<rect width="600" height="400" fill="#5f86c4"/><image href="assets/decors/basket.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'basket_old':{/* gymnase : terrain de basket, panier au fond, fenêtre sur le ciel à droite */
   const NET='M274,93 C276,106 280,118 284,134 C290,137 310,137 316,134 C320,118 324,106 326,93Z';
   return `<defs><linearGradient id="${p}bw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3fa6cb"/><stop offset=".55" stop-color="#6cc2dc"/><stop offset="1" stop-color="#8fd2e6"/></linearGradient>
   <linearGradient id="${p}bwin" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9fdcf0"/><stop offset=".6" stop-color="#bfe3c8"/><stop offset="1" stop-color="#d6df9a"/></linearGradient>
@@ -2354,7 +2355,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[285,400,[[170,450]]],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
