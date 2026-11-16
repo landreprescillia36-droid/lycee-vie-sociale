@@ -2227,7 +2227,8 @@ function famAvatar(role,seed){
 const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',couloir2:'Couloir (côté fenêtres)',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
 function sceneSVG(id,p){
  switch(id){
- case 'plage':{/* plage : style vectoriel plat, ciel clair, nuages à l'horizon, mer turquoise et sable doré */
+ case 'plage':return `<rect width="600" height="400" fill="#f0d9b0"/><image href="assets/decors/plage.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'plage_old':{/* plage : style vectoriel plat, ciel clair, nuages à l'horizon, mer turquoise et sable doré */
   const cl=(c,sh)=>c.map(([x,y,r])=>`<circle cx="${x}" cy="${y+sh}" r="${r}"/>`).join('');
   const L1=[[-6,168,44],[48,158,40],[104,146,48],[168,160,40],[222,174,30],[258,184,20]],R1=[[352,182,22],[392,172,32],[446,156,44],[508,146,50],[566,154,44],[612,166,38]];
   return `<defs><linearGradient id="${p}sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a9e7fb"/><stop offset="1" stop-color="#c9f1fd"/></linearGradient>
@@ -2353,7 +2354,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
