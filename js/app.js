@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='111';
+const APP_VERSION='112';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2224,7 +2224,7 @@ function famAvatar(role,seed){
 }
 
 /* ---------- photos ---------- */
-const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
+const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',couloir2:'Couloir (côté fenêtres)',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
 function sceneSVG(id,p){
  switch(id){
  case 'plage':{/* plage : style vectoriel plat, ciel clair, nuages à l'horizon, mer turquoise et sable doré */
@@ -2271,7 +2271,8 @@ function sceneSVG(id,p){
   <rect x="258" y="33" width="84" height="57" fill="none" stroke="#e9eef1" stroke-width="4"/>
   <path d="${NET}" fill="url(#${p}bnet)"/><path d="M274,93 C276,106 280,118 284,134 M326,93 C324,106 320,118 316,134 M284,134 C290,137 310,137 316,134" stroke="#e8cf96" stroke-width="2.4" fill="none" stroke-linecap="round"/>
   <ellipse cx="300" cy="93" rx="26" ry="5" fill="none" stroke="#d6362c" stroke-width="4"/>`;}
- case 'couloir':{/* couloir du lycée en perspective : casiers orange, carrelage en damier, plafond à dalles */
+ case 'couloir':case 'couloir2':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/${id}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décors de Prescillia */
+ case 'couloir_old':{/* couloir du lycée en perspective : casiers orange, carrelage en damier, plafond à dalles */
   const VX=300,VY=168,HW=340,TOP=178,BOT=262,LK=60,ZM=5.2,S=z=>1/(1+z),X=(u,z)=>fx(VX+u*S(z)),Y=(v,z)=>fx(VY+v*S(z));
   const quad=(a,b,c,d)=>`M${a[0]},${a[1]} L${b[0]},${b[1]} L${c[0]},${c[1]} L${d[0]},${d[1]}Z`;
   let o=`<rect width="600" height="400" fill="#9ccbed"/>`;
@@ -2352,7 +2353,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[235,384],cour:[270,400,[[240,530]]],couloir:[225,392],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[235,384],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[215,388],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
