@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='127';
+const APP_VERSION='128';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3544,12 +3544,12 @@ function evInvite(id,accepted){const k=evOf(id);if(!k)return null;const e=EVT[k]
 const evText=pl=>{const e=EVT[pl.ev];return `J'ai ${e.what} ${planWhen(pl).replace(' vers ',' à ')}, tu viens ${e.verb} ? ${e.ic}`};
 /* heures possibles pour une sortie (horaires du lieu, jamais pendant les cours) */
 function planHours(place,day){const k=PLAN_VENUE[place]||place,v=VENUES[k];const we=wdOf(day)>=5||!schoolDay(day),L=[];
- if(!v){for(let h=we?10:17;h<=20;h++)if(!(day===G.day&&h*60<G.min+30))L.push(h);return L}
+ if(!v){for(let h=we?8:17;h<=20;h++)if(!(day===G.day&&h*60<G.min+30))L.push(h);return L}
  if(v.we&&!we)return L;
- for(let h=we?9:17;h<=21;h++){const m=h*60;if(day===G.day&&m<G.min+30)continue;if(k==='shopping'&&wdOf(day)===6&&m>=690)continue;if(v.h.some(([a,b])=>m>=a&&m+60<=b))L.push(h)}return L}
+ for(let h=we?8:17;h<=21;h++){const m=h*60;if(day===G.day&&m<G.min+30)continue;if(k==='shopping'&&wdOf(day)===6&&m>=690)continue;if(v.h.some(([a,b])=>m>=a&&m+60<=b))L.push(h)}return L}
 function planFix(pl){if(pl.ev)return pl;for(let i=0;i<4;i++){const L=planHours(pl.place,pl.day);if(L.length){if(!L.includes(pl.hour))pl.hour=L.reduce((a,b)=>Math.abs(b-pl.hour)<Math.abs(a-pl.hour)?b:a);return pl}pl.day++}return pl}
 /* sortie que tu proposes : tu choisis l'heure (message à choix) */
-function planAskHour(id,pl){pl.status='hour';planFix(pl);let L=planHours(pl.place,pl.day);if(L.length>6)L=L.filter((h,i)=>i%Math.ceil(L.length/6)===0||h===18);
+function planAskHour(id,pl){pl.status='hour';planFix(pl);let L=planHours(pl.place,pl.day);if(L.length>8)L=L.filter((h,i)=>i%2===0||h===18);
  const j=pl.day===G.day?(G.min<720?"aujourd'hui":'ce soir'):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase();
  const m=genderize(pickR(["Carrément ! ","Ok, chaud ! ","Grave ! "]),id)+`${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${j}. On se retrouve à quelle heure ?`;setTimeout(()=>{pushMsg(id,'them',m,{mq:{k:'hour',o:L.map(h=>h+' h'),d:{pl:pl.id,h:L}}});note(`💬 ${WHO[id].name} te demande l'heure de la sortie`);saveG();if(chat&&chat.id===id)drawChatMsgs()},700);return pl}
 MQ_FX.hour=(id,j,d)=>{const pl=G.plans.find(x=>x.id===d.pl);if(!pl)return '';pl.hour=d.h[j];pl.status='accepted';note(`📅 Sortie avec ${WHO[id].name} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);return pickR([`Parfait, à ${pl.hour} h alors 😄`,`Ça marche, ${pl.hour} h !`,`Top, je serai là à ${pl.hour} h`])};
