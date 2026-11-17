@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='115';
+const APP_VERSION='116';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2109,7 +2109,7 @@ const triOf=sd=>sd<=TRI_END[0]?1:sd<=TRI_END[1]?2:3;
 const curTri=()=>triOf(Math.min(sdDone(G.day),TRI_END[2]));
 const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 const r2=v=>Math.round(v*100)/100;
-const PLACES={cour:'Cour',cdi:'CDI',foyer:'Foyer',cantine:'Cantine',maison:'Maison',plage:'Plage',centre:'Centre-ville'};
+const PLACES={cafet:'Cafétéria',cour:'Cour',cdi:'CDI',foyer:'Foyer',cantine:'Cantine',maison:'Maison',plage:'Plage',centre:'Centre-ville'};
 const PLACE_OUT={plage:'à la plage',centre:'au centre-ville',glacier:'au glacier du Gosier',sainteanne:'à la plage de Sainte-Anne',carbet:'aux chutes du Carbet',marche:'au marché de Pointe-à-Pitre',resto:'au restaurant créole',cinema:'au cinéma'};
 const SEV=['','Cool','Exigeant·e','Sévère'];
 const weekday=()=>wdOf(G.day);
@@ -2123,7 +2123,7 @@ function phase(){
  for(const s of SLOTS)if(m>=s[0]&&m<s[1]){const p={type:s[2],start:s[0],end:s[1],key:G.day+'-'+s[0]};if(s[2]==='cours'){p.slot=s[3];p.sub=TT[wd][s[3]];p.prof=PROFS[p.sub]}return p}
  return{type:'nuit',start:1320,end:1440,key:G.day+'n1'};
 }
-function placesFor(t){return t==='recre'||t==='matin'?['cour','cdi','foyer']:t==='dej'?['cantine','cour','cdi','foyer']:t==='weekend'?['maison','plage','centre']:t==='soir'?['maison']:[]}
+function placesFor(t){return t==='matin'?['cafet','cour','cdi','foyer']:t==='recre'?['cour','cafet','cdi','foyer']:t==='dej'?['cantine','cour','cdi','foyer']:t==='weekend'?['maison','plage','centre']:t==='soir'?['maison']:[]}
 
 /* ---------- personnes ---------- */
 const avOf=id=>id==='me'?me():isFam(id)?famById(id).av:WHO[id].av;
@@ -3034,7 +3034,7 @@ function presence(ph){
  const places=placesFor(ph.type).filter(p=>p!=='maison'),map=Object.fromEntries(places.map(p=>[p,[]]));
  if(places.length){const r=seeded(hash(ph.key));
   NPCS.forEach(n=>{const f=FICHES[n.id];if(ph.type==='weekend'&&r()<.45)return;
-   const w=places.map(p=>p==='cdi'?f.stud+.1:p==='cour'?f.soc+(f.spo||0)*.5:p==='foyer'?(f.soc+f.rom)/2:p==='cantine'?1.6:p==='plage'?f.soc+.3+(f.spo||0)*.4:p==='centre'?f.rom+.3:.5);
+   const w=places.map(p=>p==='cdi'?f.stud+.1:p==='cour'?f.soc+(f.spo||0)*.5:p==='foyer'?(f.soc+f.rom)/2:p==='cantine'?1.6:p==='cafet'?.45+(f.stud||0)*.2:p==='plage'?f.soc+.3+(f.spo||0)*.4:p==='centre'?f.rom+.3:.5);
    let x=r()*w.reduce((a,b)=>a+b),k=0;while(k<w.length-1&&x>w[k]){x-=w[k];k++}map[places[k]].push(n.id)});
   G.couples.forEach(([a,b])=>{const pa=places.find(p=>map[p].includes(a)),pb=places.find(p=>map[p].includes(b));if(pa&&pb&&pa!==pb){map[pb]=map[pb].filter(x=>x!==b);map[pa].push(b)}});
  }
@@ -3576,7 +3576,7 @@ function bffAsk(id,a){const n=WHO[id].name,r=G.rel[id];
  openSheet(sheetHead(`⭐ ${n} répond`,'')+`<p class="story-text"><b>${esc(n)} :</b> « ${esc(genderize(line,id))} »</p>${ch?`<p class="muted">${esc(ch)}</p>`:''}<div class="row"><button class="gbtn" type="button" data-close>Continuer</button></div>`);saveG();drawView()}
 /* rompre */
 function breakUpSheet(id){vsPop({eb:'💔 Rompre',t:`Rompre avec ${WHO[id].name} ?`,html:`<div class="av">${avatarOf(id)}</div>`,b:'Tu es sûr·e ? Ça ne se rattrape pas facilement.',ch:[['Rompre avec douceur',()=>breakUp(id,1)],['Rompre par message',()=>breakUp(id,0)],['Non, je reste',()=>({quiet:1})]]})}
-function breakUp(id,soft){const n=WHO[id].name;G.partner=null;const r=G.rel[id];r.amour=soft?30:15;const ch=joinFx([relChange(id,soft?-8:-18,0),respChange(id,soft?0:-6)]);mark(id,'abandon');
+function breakUp(id,soft){const n=WHO[id].name;G.partner=null;const r=G.rel[id];r.amour=0;/* rupture : amour à 0, amitié au plus 10 (Prescillia) */const a0=r.ami,cap=soft?10:5;r.ami=Math.min(r.ami-(soft?8:18),cap);const da=r.ami-a0;const ch=joinFx([`Amour 0`,da?`Amitié ${da}`:'',respChange(id,soft?0:-6)]);mark(id,'abandon');
  G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : c'est fini entre ${myHandle()} et ${WHO[id].handle} 💔 qui l'a vu venir ?`,c:40,r:300,l:9000}));newsPush(`Toi et ${n}, c'est fini`,'💔');note(`Tu as rompu avec ${n}`);
  if(!soft)pushMsg(id,'them',genderize(pickR(["Par message ?? Sérieux ?! 😡","Tu aurais pu me le dire en face…"]),id));
  return `${n} : « ${genderize(soft?pickR(["Je comprends… même si ça fait mal 😢","Ok… prends soin de toi."]):"…",id)} » · ${ch}`}
@@ -4528,6 +4528,7 @@ function placeBody(ph,place,map){
  }
  const ids=map[place]||[];
  if(place==='cantine')h+=`<div class="acts two"><button class="act" type="button" data-do="eat" ${G.ate?'disabled':''}><span class="ico">🍛</span><span>Manger</span><small class="r-ok">faim +45 · énergie +10</small></button></div>`;
+ if(place==='cafet'){const n=G.done[ph.key+'cafet']||0;h+=`<p class="muted">${n>=2?P('Tu as déjà pris deux choses à la cafétéria pendant cette pause.'):'Un petit quelque chose avant les cours ? (2 achats par pause)'}</p><div class="acts two">${CAFET.map(([k,ic,l,fx])=>`<button class="act" type="button" data-cafet="${k}" ${n>=2?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${Object.entries(fx).map(([q,v])=>`${NEED_LBL[q].toLowerCase()} +${v}`).join(' · ')}</small></button>`).join('')}</div>`}
  if(place==='cdi')h+=`<div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser au calme</span><small class="r-ok">−4 énergie</small></button></div>`;
  h+=ids.length?`<p class="muted">Présents ici :</p><div class="present">${ids.map(id=>{const c=coupleOf(id);return `<button class="pers" type="button" data-person="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${c&&c!=='me'&&ids.includes(c)?'avec '+WHO[c].name:G.rel[id].ami>=65?S(id,'ami·e'):''}</small></button>`}).join('')}</div>`:`<p class="muted">Personne ici pour l'instant.</p>`;
  return h;
@@ -5046,6 +5047,13 @@ function pickSkipBuddy(ph){const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.re
   ['Finalement, entrer en cours',()=>'Tu entres en classe.']]})}
 
 /* ----- dans la cour : activités et actions à risque ----- */
+/* cafétéria du lycée : le matin avant les cours et aux récrés */
+const CAFET=[['fruit','🍎','Des fruits',{faim:12,energy:3}],['sandwich','🥪','Un sandwich',{faim:28,energy:4}],['cafe','☕','Un café',{energy:8}],['energ','⚡','Une boisson énergisante',{energy:14}]];
+const CAFET_MSG={fruit:['Une pomme et une banane, parfait pour tenir jusqu\'à midi 🍎','Petite salade de fruits frais 🍍'],sandwich:['Sandwich jambon-fromage avalé en deux minutes 🥪','Un pain au thon, comme d\'hab 🥪'],cafe:['Un café bien chaud ☕ ça réveille !','Café serré, les yeux s\'ouvrent enfin ☕'],energ:['Boisson énergisante : tu te sens d\'attaque ⚡','Une canette d\'énergie… à ne pas prendre tous les jours 😅']};
+function cafetBuy(k){const ph=phase(),dk=ph.key+'cafet';if((G.done[dk]||0)>=2)return;const it=CAFET.find(c=>c[0]===k);if(!it)return;G.done[dk]=(G.done[dk]||0)+1;
+ if(k==='energ'){G.energN=(G.energLast===G.day?(G.energN||0):0)+1;G.energLast=G.day}
+ const fx=Object.assign({},it[3]);if(k==='energ'&&G.energN>1)fx.energy=6;/* la deuxième canette de la journée fait moins d'effet */
+ toast(pickR(CAFET_MSG[k])+' · '+needsFx(fx));saveG();drawView()}
 const COUR_ACT=[['ballon','⚽','Jouer au ballon'],['cartes','🃏','Faire une partie de cartes'],['musique','🎧','Écouter de la musique'],['photos','📸','Prendre des photos avec tes amis'],['blague','😜','Faire une blague à un·e camarade'],
  ['connaitre','👋','Faire connaissance avec un nouvel élève'],['groupe','👥',"Rejoindre un groupe d'élèves"],['dejeuner','🍽️','Déjeuner avec tes amis']];
 const COUR_RISK=[['bagarre','👊','Se bagarrer avec un élève',4],['insulte','🤬',"Insulter quelqu'un",2],['secher','🏃','Sécher le cours suivant',0],['farce','🪤','Faire une farce à un prof',4],['zone','🚧','Aller dans une zone interdite',2],['degrader','🖊️','Dégrader du matériel',5],['dispute','🔥','Participer à une dispute entre groupes',3]];
@@ -5545,10 +5553,10 @@ const voiceOf=id=>isFam(id)?FAMREP[famKind(id)]:VOICE[id];
    Différent des messages : dialogue à l'oral, au lieu où l'on se trouve, avec gestes ; historique séparé (G.talks).
    Le ou la camarade sait que c'est en vrai (consigne dans le prompt, gestes et remarques sur le lieu en secours). */
 let talk=null;
-const TALK_SCENE={cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'cantine',brunch:'cantine',resto:'cantine',fastfood:'cantine',shopping:'marche',cinema:'soiree',club:'couloir'};
+const TALK_SCENE={cafet:'cantine',cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'cantine',brunch:'cantine',resto:'cantine',fastfood:'cantine',shopping:'marche',cinema:'soiree',club:'couloir'};
 const TALK_SUGG=["Salut !","Ça va ?","Tu fais quoi ici ?","On s'assoit ensemble ?","T'as vu le dernier post des Potins ?","Tu fais quoi ce week-end ?"];
 const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux qui brillent*'],neg:['*fronce les sourcils*','*croise les bras*','*soupire*','*détourne le regard*'],neu:['*hausse les épaules*','*hoche la tête*','*réfléchit une seconde*','*te regarde*']};
-const PLACE_TALK={cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
+const PLACE_TALK={cafet:["Tu prends quoi ? Moi un café, je dors debout ☕","Les croissants sont déjà partis, c'est un scandale 😭"],cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
  foyer:["Le foyer est blindé aujourd'hui","Quelqu'un a mis du zouk au foyer, j'adore"],cantine:["C'est quoi ce plat encore ?","Tu manges ça toi ? 😂"],plage:["L'eau est trop bonne aujourd'hui","Regarde le coucher de soleil…"],centre:["Y a trop de monde au centre-ville aujourd'hui","On passe au glacier après ?"],maison:["On est bien à la maison quand même","Tu as mangé ?"]};
 const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?'maison':G.place||'cour'};
 function openTalk(id,o){o=o||{};
@@ -6063,6 +6071,7 @@ $('gView').addEventListener('click',e=>{
  if(b=t.closest('[data-bacres]')){openSheet(bacSheet(G.bac.result),true);return}
  if(b=t.closest('[data-ca]')){classAct(b.dataset.ca);return}
  if(b=t.closest('[data-cour]')){courDo(b.dataset.cour);return}
+ if(b=t.closest('[data-cafet]')){cafetBuy(b.dataset.cafet);return}
  if(b=t.closest('[data-hw]')){hwAct(b.dataset.hw,b.dataset.hid);return}
  if(t.closest('[data-vsopen]')){vieScolaireSheet();return}
  if(t.closest('[data-evalgame]')){evalGame();return}
@@ -6234,4 +6243,14 @@ drawMusicBtn();
 
 /* ouverture : on récupère d'abord les avatars déjà dessinés (cache), puis on affiche le jeu ou l'atelier */
 ldSet0(55);const ldPause=()=>new Promise(r=>setTimeout(r,30));/* petites pauses : la barre a le temps de s'afficher */
-bkLoad().then(()=>{ldSet0(62);return ldPause()}).then(()=>{if(G)showGame();else{drawTabs();drawSubs();refresh()}ldSet0(75);return ldPause()}).then(()=>loadHide(700));
+/* préchargement : toutes les images des personnages (camarades, joueur, famille) et des décors sont téléchargées et décodées
+   pendant l'écran de chargement, pour qu'ils ne s'affichent plus « à moitié » ensuite (max 12 s, le reste continue en fond) */
+function imgUrls(){const U=new Set(),add=s=>{for(const m of s.matchAll(/href="(assets\/[^"]+)"/g))U.add(m[1])};
+ try{const L=[...NPCS.map(n=>n.av),me()].concat(G&&G.family?G.family.map(f=>f.av).filter(Boolean):[]);L.forEach(av=>{add(render(av,FVB,'pl',false));add(render(av,PVB,'pl',true))})}catch(e){}
+ try{Object.keys(SCENES).forEach(k=>add(sceneSVG(k,'pl')));Object.values(ROOMS).concat(Object.keys(CHAMBRES).map(k=>'chd_'+k)).forEach(k=>add(sceneSVG(k,'pl')))}catch(e){}
+ return [...U]}
+const IMG_OK=new Set();
+function preloadImgs(urls,onp,maxMs){return new Promise(res=>{if(typeof Image==='undefined'||!urls.length){res();return}let i=0,done=0,fin=false;const end=()=>{if(!fin){fin=true;res()}};setTimeout(end,maxMs||12000);
+ const next=()=>{if(i>=urls.length)return;const u=urls[i++];const im=new Image();const ok=()=>{IMG_OK.add(u);done++;onp&&onp(done/urls.length);if(done>=urls.length)end();else next()};im.onload=()=>{(im.decode?im.decode():Promise.resolve()).then(ok,ok)};im.onerror=ok;im.src=u};
+ for(let k=0;k<6;k++)next()})}
+bkLoad().then(()=>{ldSet0(58);return ldPause()}).then(()=>preloadImgs(imgUrls(),p=>ldSet0(58+Math.round(p*17)),12000)).then(()=>{if(G)showGame();else{drawTabs();drawSubs();refresh()}ldSet0(80);return ldPause()}).then(()=>loadHide(700));
