@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='121';
+const APP_VERSION='122';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2723,6 +2723,20 @@ function smartLine(id,text,chan){
   if(tut&&id===TUTOR.who){if(G.tutor){G.tutor=false;if(!up)relChange(id,-1)}else if(up)relChange(id,1);
    return sty(id,fresh(up?["Oh bravo pour ta moyenne 🎉 ! Je suis trop fière de toi. Si un jour tu bloques, tu sais où me trouver 😊","Ça me fait trop plaisir que ta moyenne ait monté ! Pas de souci, et reviens quand tu veux 📚","Félicitations 🥳 ! C'est toi qui as bossé. Ma porte reste ouverte si besoin"]:["D'accord, pas de souci 😊 Si tu changes d'avis, tu sais quand c'est","Ah dommage… mais je comprends. Reviens quand tu veux 📚","Ok ! Si tu as besoin d'aide un jour, écris-moi"]),up?1:0)}
   return sty(id,fresh(up?["Bravo pour ta moyenne 🎉 ! Pas de souci alors","Trop bien que ça aille mieux ! Ok, pas de problème 😊"]:["Ah dommage 😕 une autre fois !","Ok pas de souci, une prochaine fois 😊","Mince… bon, tant pis, on se rattrape !"]),0)}
+ /* « arrête de m'appeler frère » : la personne arrête (G.noNick) */
+ {const m=t.match(/(arr[eê]te[rsz]?|stop|évite|evite) (de |d')?(m'|m |me |m)?app?ell?er? (?:comme (?:ça|ca)\s*)?(?:["«“ ]*)([a-zà-ÿœ]+(?: (?:belle|beau|sœur|soeur|frère|frere))?)/);
+  if(m||/(m'appelle pas|m'appelles pas|appelle moi pas) (frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/.test(t)){const w=m?m[4]:t.match(/(frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/)[1];
+   if(!/^(comme|ça|ca|tout|le|la|les|tous)$/.test(w)){G.noNick=G.noNick||{};const L=G.noNick[id]=G.noNick[id]||[];if(!L.includes(w))L.push(w);
+    return fresh(["Ah pardon, j'avais pas capté que ça te dérangeait 😅 c'est noté","Ok désolé·e, j'arrête !","Oups, pardon 😬 je le dirai plus","Ah ok, pas de souci, je ferai attention"])}}}
+ /* « ok je viendrai », « j'y serai » : la personne est contente (et Jessica t'inscrit aux cours particuliers) */
+ if(/^(ok|oui|d'accord|dac|vas-y|grave|bien sûr|bien sur|carrément|carrement|avec plaisir|go)?[ ,!]*(je (viendrai|viendrais|viens|serai là|serais là|serai la)|j'y serai|j'y serais|j'arrive|je suis chaud|je suis chaude|compte sur moi|ça marche|ca marche|ok pour moi)/.test(t)&&!/(pas|plus|jamais)\b/.test(t)){
+  const pv2=(lastQ||(pv&&pv.from==='them'?pv.text:'')).toLowerCase(),tut=id===TUTOR.who&&/cours particulier|soutien/.test(pv2+' '+t);
+  if(tut&&!G.tutor){G.tutor=true;relChange(id,2);return sty(id,fresh(["Trop bien 😊 à lundi ou mercredi alors, 17 h ! Je t'ai inscrit·e","Super ! Je t'inscris, on se voit à 17 h 📚","Génial 🥰 on va bien bosser ensemble !"]),'happy')}
+  if(tut)return sty(id,fresh(["Super, à tout à l'heure alors 📚","Parfait, je t'attends à 17 h 😊","Trop bien, ramène tes questions !"]),'happy');
+  return sty(id,fresh(["Trop bien ! J'ai hâte 😄","Génial, à tout à l'heure alors !","Super, ça marche !","Cool, on va bien rigoler 😄"]),'happy')}
+ /* « je reviens demain », « à demain » */
+ if(/(je reviens (demain|lundi|bientôt|bientot|vite)|je serai (là|la) demain|à demain|a demain|a2main|on se voit demain|je rentre (demain|bientôt|bientot))/.test(t)&&!/\?/.test(t)){
+  return sty(id,fresh(/reviens|rentre|serai/.test(t)?["Ah trop bien, j'avais hâte que tu reviennes 😊","Enfin ! À demain alors","Ouf, ça va être moins long. À demain !"]:["À demain ! 👋","Bonne soirée, à demain !","Ça marche, à demain 😊"]),'happy')}
  /* tu annonces une nouvelle du lycée (exclusion, colle, mauvaise ou bonne note…) : la personne réagit vraiment */
  {const bad=/(exclu|exclue|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|conseil de discipline|avertissement|sanction|mauvaise note|j'ai eu (0|1|2|3|4|5|6|7)\b|zéro|zero|redoubl)/.test(t),good=/(bonne note|j'ai eu (1[4-9]|20)|félicit|felicit|tableau d'honneur|j'ai réussi|j'ai eu mon bac|admis)/.test(t);
   if(bad||good){const fam=isFam(id),par=fam&&famKind(id)==='parent';
@@ -2875,7 +2889,7 @@ function understand(id,raw,lastQ){
   [/(content|contente|heureux|heureuse|trop bien|super bien|la joie|trop cool|je suis aux anges|trop happy)/,['Ça fait plaisir ! Il s\'est passé quoi ?','Trop bien ! Raconte','Ahh j\'aime te voir comme ça'],'happy']];
  for(const [re,c,mood] of fe)if(re.test(t)){if(/^(tu|t'|t es|est-ce que tu)/.test(t)&&isQ)return R(mood==='happy'?['Oui, ça va bien !']:['Non, ça va, t\'inquiète','Un peu… mais ça va']);return R(c,mood)}
  /* réponse à la question qu'il ou elle vient de poser */
- if(lastQ&&!isQ){const q=lastQ.toLowerCase(),y=YES.test(t),n=NO.test(t);let place=raw.match(/\s([A-ZÉÈ][\wà-ÿ'-]+(?:[ -](?:de |du |la |le )?[A-ZÉÈ][\wà-ÿ'-]+)*)/)||(raw.trim().split(/\s+/).length<=3&&/^[A-ZÉÈ]/.test(raw.trim())&&!/^(Je|J'|Moi|Oui|Non|Ouais|Nan|Parce|Bof|Euh|Ben|Bah|Pas|Si|Ok)\b/.test(raw.trim())?[0,clean(raw.trim())]:null);
+ if(lastQ&&!isQ&&!/^\s*(merci|mercii+|thanks|ok|okay|d'accord|ça va|ca va|cv|lol|mdr|ptdr|ahah|haha|ah|oh|cool|super|trop bien|tkt|salut|coucou|wsh|hey)[\s!.😊🙂😄]*$/.test(t)){const q=lastQ.toLowerCase(),y=YES.test(t),n=NO.test(t);let place=raw.match(/\s([A-ZÉÈ][\wà-ÿ'-]+(?:[ -](?:de |du |la |le )?[A-ZÉÈ][\wà-ÿ'-]+)*)/)||(raw.trim().split(/\s+/).length<=3&&/^[A-ZÉÈ]/.test(raw.trim())&&!/^(Je|J'|Moi|Oui|Non|Ouais|Nan|Parce|Bof|Euh|Ben|Bah|Pas|Si|Ok)\b/.test(raw.trim())?[0,clean(raw.trim())]:null);
   if(/(t'appelles|ton nom|prénom)/.test(q)){const nm=raw.trim().split(/\s+/).length<=3?clean(raw.replace(/^(moi c'est|je m'appelle|c'est)\s+/i,'')).replace(/^./,c=>c.toUpperCase()):me;return R([`Enchanté·e ${nm} ! Moi c'est ${nameOf(id)}`,`${nm}, c'est joli comme prénom`])}
   if(/(d'où|d'ou|commune|habites|t'es d'|tu viens)/.test(q)&&!y&&!n){const pp=raw.match(/(?:^|\s)(de|du|d'|à|au|aux|des|en|vers)\s?((?:la |le |les |l')?[A-ZÉÈa-zà-ÿ][\wà-ÿ'-]+(?:[ -](?:de |du |la |le )?[A-ZÉÈ][\wà-ÿ'-]+)*)/);if(pp&&!/^(mon|ma|la nouvelle|ici)$/.test(pp[2]))place=[0,(pp[1]==='du'?'Le ':pp[1]==='des'||pp[1]==='aux'?'les ':'')+pp[2]];const lw=t.match(/(?:^|\s)(?:de |du |d'|à |a |au |aux |des |en |vers )(?:la |le |l')?([a-zà-ÿ' -]{3,30})$/),pl=place?place[1]:lw?lw[1]:t.split(' ').length<=3?clean(t):null;
    if(pl){const P=pl.replace(/(^|[\s-])([a-zà-ÿ])/g,(m,a,b)=>a+b.toUpperCase());return R([`Ah, ${P} ! C'est joli là-bas`,`${P} ? Je connais un peu, c'est sympa`,`Ah ok, ${P}. Ça te change pas trop ici ?`])}}
@@ -2960,7 +2974,8 @@ const FAMREP={
   weekend:["Samedi je sors avec mes potes","On peut aller au centre-ville ensemble si tu veux"],manger:["Il reste des pâtes","On commande une pizza ?"],amour:["Ohh, raconte 👀","Fais attention à toi quand même"],fatigue:["Va dormir alors","Moi aussi, j'en peux plus"],
   famille:["Les parents sont sur mon dos en ce moment","Le petit est insupportable aujourd'hui 😂"],merci:["De rien","Tu me revaudras ça"],q:["Bonne question","Jsp, et toi ?"],def:["Ah ouais ?","Ok","Raconte","Pas mal"],maison:["Baisse le son, je travaille","Tu veux regarder un film ?"]}};
 
-function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
+function fallbackReply(id,text){const o=fallbackReply0(id,text);if(o&&typeof o.reponse==='string')o.reponse=nickStrip(id,o.reponse);return o}
+function fallbackReply0(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(text);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
  /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
  const met=isNpc(id)?(G.met[id]||0):3;
@@ -2979,8 +2994,13 @@ function petName(id){G.pet=G.pet||{};const sx=me().sexe==='m'?'m':me().sexe==='f
 const BRO_RE=/(^|[^\p{L}'’-])(?<!(?:mon|ton|son|ma|ta|sa|le|la|un|une|du|au|petit|grand|demi-) )(frère|frérot|frero|frr|fréro|sœur|soeur|gros|bro|poto|mon gars|ma gars|mec|meuf|frangin|frangine|reuf|ma reuf|mon reuf|mon pote|ma pote|chef|boss)(?![\p{L}-])/giu;
 function couplePolish(id,t){if(!t||!isNpc(id)||(G.partner!==id&&coupleOf(id)!=='me'))return t;const nm=(me().name||'').trim()||petName(id);
  return t.replace(BRO_RE,(m,pre)=>pre+(Math.random()<.6?petName(id):nm)).replace(/\b(mon|ma) (mon|ma) /g,'$2 ')}
+/* surnoms que tu as demandé d'arrêter (« arrête de m'appeler frère ») */
+const NICK_ALT={'frère':['frère','frere','frr','frérot'],'frere':['frère','frere','frr','frérot'],'frr':['frère','frere','frr'],'sœur':['sœur','soeur'],'soeur':['sœur','soeur'],'gros':['gros','grosse'],'chérie':['chérie','chéri','cherie'],'chéri':['chérie','chéri','cheri']};
+function nickStrip(id,s){const L=G.noNick&&G.noNick[id];if(!L||!L.length)return s;const s0=s;
+ for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(\\s*,\\s*|\\s+)(mon |ma )?${x}(?![a-zà-ÿ])`,'gi'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
+ return s===s0||/^[a-zà-ÿ]/.test(s0)?s:s.replace(/^\s*([a-zà-ÿ])/,(m,c)=>c.toUpperCase())}
 function pushMsg(id,from,text,extra){
- text=genderize(text,from==='me'?'me':id);if(from!=='me')text=couplePolish(id,text);
+ text=genderize(text,from==='me'?'me':id);if(from!=='me')text=nickStrip(id,couplePolish(id,text));
  (G.threads[id]=G.threads[id]||[]).push(Object.assign({from,text,at:G.day*1440+G.min,tm:fmtT(G.min)},extra||{}));
  if(from!=='me'){if(!(chat&&chat.id===id)){G.unreadMsg[id]=(G.unreadMsg[id]||0)+1;if(!$('game').hidden)toast(`💬 ${nameOf(id)} : ${text.slice(0,48)}${text.length>48?'…':''}`)}}
  if(chat&&chat.id===id)drawChatMsgs();
