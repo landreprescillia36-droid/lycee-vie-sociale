@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='118';
+const APP_VERSION='119';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2618,11 +2618,11 @@ const TOPICS=[
  ['origine',/(commune|d'où|d ou|tu viens|t'habites|tu habites|habite où|quel lycée|ancien lycée)/],
  ['activite',/(tu fais quoi|tu fais koi|tfq|t'es où|t es ou|tu es où|qu'est-ce que tu fais)/],
  ['lecture',/(lis\b|lire|livre|roman|manga|poème|poeme|poésie|écris|ecris|écrire)/],
- ['spe',/(spé(?![a-zà-ÿ])|spés\b|spécialité|specialite)/],
+ ['spe',/(spé(?![a-zà-ÿ])|spés\b|spécialité|specialite|\bhlp\b|\bhggsp\b|\bllcer\b|\bnsi\b|\bses\b|humanités|humanites)/],
+ ['famille',/(famille|parents|mère|mere|père|pere|maman|papa|frère|frere|sœur|soeur|grand-mère|mamie)/],
  ['ecole',/(lycée|cours|devoir|maths|philo|physique|français|anglais|espagnol|svt|histoire|contrôle|controle|interro|bac|prof|note|réviser|reviser|exam)/],
  ['sport',/(foot|basket|hand|sport|match|entraînement|entrainement|courir|footing|gym)/],
  ['musique',/(musique|son|chanson|zouk|gwo ka|gwoka|rap|dancehall|guitare|écoute|ecoute|playlist|danse)/],
- ['famille',/(famille|parents|mère|mere|père|pere|maman|papa|frère|frere|sœur|soeur|grand-mère|mamie)/],
  ['amour',/(crush|amoureux|amoureuse|copain|copine|tu me plais|je t'aime|t'aime|sortir avec|célibataire|celibataire|en couple|bisou)/],
  ['potins',/(potins|rumeur|drama|insta|post|story|tu as vu|t'as vu)/],
  ['fatigue',/(fatigué|fatigue|crevé|creve|dormir|sommeil|ennui|m'ennuie|ennuyer|nul aujourd)/],
@@ -2715,14 +2715,26 @@ function smartLine(id,text,chan){
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
+ /* ce que la personne pense de toi */
+ if(/(tu me trouves|tu penses quoi de moi|t'en penses quoi de moi|je te plais|tu m'aimes bien|on est (ami|pote)s?|t'es mon (ami|pote))/.test(t)&&isNpc(id)){const a=G.rel[id].ami;
+  return sty(id,fresh(a>=60?["T'es vraiment cool, je suis content·e qu'on soit proches 🥹","Franchement ? T'es devenu·e quelqu'un d'important pour moi","T'es une des personnes que je préfère ici, sérieux"]:a>=30?["T'es sympa, j'aime bien parler avec toi 😊","T'es cool, on s'entend bien je trouve","J'aime bien ta compagnie, vraiment"]:a>=0?["On se connaît pas encore trop… mais t'as l'air sympa","Je sais pas encore, on vient à peine de se parler 😅","Laisse-moi te connaître un peu avant de répondre 😄"]:["Franchement… pas ouf pour l'instant","On n'est pas partis du bon pied, toi et moi","Je préfère pas répondre 😒"]))}
+ /* « pourquoi ? » après une de ses phrases */
+ if(/^\s*(et )?(pourquoi|pk|pq|ah bon pourquoi|comment ça|comment ca)\s*\??\s*$/.test(t)&&used.length){const last=used[used.length-1].toLowerCase(),lk=(LIKE[id]||[]).some(w=>last.includes(w));
+  return sty(id,fresh(lk?["Parce que j'adore ça, c'est vraiment mon truc ✨","Parce que ça me rend heureux·se, tout simplement","C'est ma passion, je peux pas l'expliquer autrement"]:["Je sais pas trop, c'est comme ça 😅","Parce que ! 😂","Bonne question… je sais pas trop t'expliquer","C'est compliqué à dire, je te raconterai en vrai"]))}
+ /* « (ma réponse), et toi ? » : la personne répond sur le sujet que tu viens d'aborder */
+ if(/\bet (toi|vous)\b/.test(t)){const own=t.replace(/\bet (toi|vous)\b.*$/,''),ht=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(own)&&R[k]);if(ht){G.ctopic=G.ctopic||{};G.ctopic[id]=ht[0];return fresh(R[ht[0]])}}
  const u=understand(id,text,lastQ);if(u)return sty(id,fresh(u.c),u.mood);
  if(s<0)return fresh(V.hurt);
+ /* « moi aussi », « pareil » : vous avez un point commun */
+ if(/^\s*(moi aussi|moi pareil|pareil|moi de même|moi de meme|nous aussi|même chose|meme chose)\b/.test(t)&&t.length<40)return sty(id,fresh(["On a ça en commun alors 😄","Trop bien, on se ressemble !","Ah génial, toi aussi ?!","Je savais qu'on allait bien s'entendre 😁"]));
  /* « et toi ? » : répondre sur le sujet de sa dernière question */
  if(/(et toi|et vous|toi aussi|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
   if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
-  const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]])}
+  const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]]);
+  /* sinon : le sujet dont vous parliez */
+  const ct=G.ctopic&&G.ctopic[id];if(ct&&R[ct])return fresh(R[ct])}
  const hit=TOPICS.find(([k,re])=>re.test(t)&&R[k]);
- if(hit)return fresh(R[hit[0]]);
+ if(hit){if(!['salut','merci'].includes(hit[0])){G.ctopic=G.ctopic||{};G.ctopic[id]=hit[0]}return fresh(R[hit[0]])}
  if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(V.happy);
  return fresh(t.includes('?')?R.q:R.def);
 }
@@ -2937,9 +2949,12 @@ function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(te
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
  /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
  const met=isNpc(id)?(G.met[id]||0):3;
- const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!lastLines(id).some(u=>u.includes(genderize(q,id)))&&!askedSame(id,q)):[];
- const sl=met===0?'':(isNpc(id)&&passionLine(id,text))||smartLine(id,text);
- return{reponse:met===0?introLine(id):sl+(met<3&&fq.length&&!sl.includes('?')?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+pickR(fq):''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ const words=([text,...(G.threads[id]||[]).filter(m=>m.from==='me').slice(-8).map(m=>m.text)].join(' ').toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!lastLines(id).some(u=>u.includes(genderize(q,id)))&&!askedSame(id,q)&&!((G.askedQ||{})[id]||[]).includes(q)):[];
+ let sl=met===0?'':(isNpc(id)&&passionLine(id,text))||smartLine(id,text);
+ /* tu as déjà donné ta réponse (« …, et toi ? ») : la personne ne te repose pas la question */
+ if(sl&&/\bet (toi|vous)\b/i.test(text))sl=sl.replace(/[,.]?\s*et toi( frr| frère| ma belle)?\s*\?\s*/i,' ').trim();
+ const fqq=met<3&&fq.length&&!sl.includes('?')?pickR(fq):null;if(fqq){G.askedQ=G.askedQ||{};(G.askedQ[id]=G.askedQ[id]||[]).push(fqq)}
+ return{reponse:met===0?introLine(id):sl+(fqq?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+fqq:''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
@@ -5619,7 +5634,7 @@ function talkFallback(id,text){
  const s=sentiment(text),met=isNpc(id)?(G.met[id]||0):3,v=voiceOf(id),g=pickR(GESTES[s>0?'pos':s<0?'neg':'neu']);
  const strip=t=>t.replace(/\s*(mdr|ptdr|mdrr)\b/gi,'').trim();
  /* pas de question qui reprend ce que tu viens de dire */
- const words=(text.toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!askedSame(id,q)):[];
+ const words=([text,...(G.threads[id]||[]).filter(m=>m.from==='me').slice(-8).map(m=>m.text)].join(' ').toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!askedSame(id,q)):[];
  let r=met===0?'*te regarde avec curiosité* '+introLine(id):g+' '+(sl=>sl+(met<3&&fq.length&&!sl.includes('?')?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+pickR(fq):''))(strip(smartLine(id,text,'talk')));
  const pt=(isFam(id)?FAMREP[famKind(id)].maison:(PLACE_TALK[talk.pl]||PLACE_TALK.cour)).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
