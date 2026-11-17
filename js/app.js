@@ -5048,7 +5048,7 @@ function pickSkipBuddy(ph){const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.re
 
 /* ----- dans la cour : activités et actions à risque ----- */
 /* cafétéria du lycée : le matin avant les cours et aux récrés */
-const CAFET=[['fruit','🍎','Des fruits',{faim:12,energy:3}],['sandwich','🥪','Un sandwich',{faim:28,energy:4}],['cafe','☕','Un café',{energy:8}],['energ','⚡','Une boisson énergisante',{energy:14}]];
+const CAFET=[['fruit','🍎','Des fruits',{faim:12}],['sandwich','🥪','Un sandwich',{faim:28}],['cafe','☕','Un café',{energy:8}],['energ','⚡','Une boisson énergisante',{energy:14}]];
 const CAFET_MSG={fruit:['Une pomme et une banane, parfait pour tenir jusqu\'à midi 🍎','Petite salade de fruits frais 🍍'],sandwich:['Sandwich jambon-fromage avalé en deux minutes 🥪','Un pain au thon, comme d\'hab 🥪'],cafe:['Un café bien chaud ☕ ça réveille !','Café serré, les yeux s\'ouvrent enfin ☕'],energ:['Boisson énergisante : tu te sens d\'attaque ⚡','Une canette d\'énergie… à ne pas prendre tous les jours 😅']};
 function cafetBuy(k){const ph=phase(),dk=ph.key+'cafet';if((G.done[dk]||0)>=2)return;const it=CAFET.find(c=>c[0]===k);if(!it)return;G.done[dk]=(G.done[dk]||0)+1;
  if(k==='energ'){G.energN=(G.energLast===G.day?(G.energN||0):0)+1;G.energLast=G.day}
