@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='116';
+const APP_VERSION='117';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1603,6 +1603,10 @@ WEAR.set.items.forEach(it=>{const b=it.set&&it.set.bottom;if(it.g!=='f'||!b||it.
 WEAR.bottom.items.unshift({s:'bottom',v:'jplis',c:'#1f1f22',n:'Jupe plissée',r:'BF',g:'f',nw:1},{s:'bottom',v:'jcarreaux',c:'#55555c',n:'Jupe à carreaux',r:'BF',g:'f',nw:1},{s:'bottom',v:'jfendue',c:'#1f1f22',n:'Jupe courte fendue',r:'BF',g:'f',nw:1},{s:'bottom',v:'jmoulante',c:'#e3d3c0',n:'Jupe moulante',r:'BF',g:'f',nw:1},{s:'bottom',v:'jpatineuse',c:'#23294a',n:'Jupe patineuse',r:'BF',g:'f',nw:1},{s:'bottom',v:'jupejean',c:'#46669a',n:'Jupe en jean',r:'BF',g:'f',nw:1},{s:'bottom',v:'habpattes',c:'#1f1f22',n:'Pantalon habillé (pattes larges)',r:'BF',g:'f',nw:1},{s:'bottom',v:'habdroit',c:'#cdb48f',n:'Pantalon habillé (droit)',r:'BF',g:'f',nw:1},{s:'bottom',v:'cargo',c:'#5b5e3f',n:'Pantalon cargo',r:'BF',g:'f',nw:1},{s:'bottom',v:'jogglarge',c:'#b9babc',n:'Pantalon jogging (large)',r:'BF',g:'f',nw:1},{s:'bottom',v:'joggajust',c:'#1f1f22',n:'Pantalon jogging (ajusté)',r:'BF',g:'f',nw:1},{s:'bottom',v:'lin',c:'#ece6da',n:'Pantalon en lin',r:'BF',g:'f',nw:1},{s:'bottom',v:'slim',c:'#3e5a88',n:'Jean slim',r:'BF',g:'f',nw:1},{s:'bottom',v:'mom',c:'#7e9cc4',n:'Jean mom',r:'BF',g:'f',nw:1},{s:'bottom',v:'jdroit',c:'#3f5f94',n:'Jean droit',r:'BF',g:'f',nw:1},{s:'bottom',v:'jlarge',c:'#8eaed3',n:'Jean large',r:'BF',g:'f',nw:1},{s:'bottom',v:'bootcut',c:'#2c3f6b',n:'Jean bootcut',r:'BF',g:'f',nw:1},{s:'bottom',v:'bermuda',c:'#4f6f9f',n:'Bermuda en jean',r:'BF',g:'f',nw:1});
 WEAR.bottom.items.forEach(it=>{if(it.r==='BF')return;if(!it.g)it.g='m';else if(it.g==='f')it.g='old'});
 const wearVis=it=>it.g!=='wip'&&it.g!=='old'&&(!it.g||state.sexe==='nb'||it.g===state.sexe);/* g:'wip' = pas encore validé par Prescillia */
+/* articles retirés du catalogue à la demande de Prescillia (ceux qui les portent déjà les gardent) */
+{const OUT={dress:['longue','portefeuille']};Object.entries(OUT).forEach(([k,L])=>{WEAR[k].items=WEAR[k].items.filter(it=>!L.includes(it.v))});
+ WEAR.set.items=WEAR.set.items.filter(it=>!(it.set&&OUT.dress.includes(it.set.dress)));
+ const hi=HAIR_ALL.indexOf('bcourt');if(hi>=0)HAIR_ALL.splice(hi,1)}
 const wearHas=k=>WEAR[k].items.some(it=>wearVis(it)&&it.v!=='aucune'&&it.v!=='aucun');
 const CATLBL={f:'Catalogue filles',m:'Catalogue garçons',nb:'Catalogue complet'};
 const TABS=[
