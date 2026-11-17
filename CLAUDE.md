@@ -18,7 +18,7 @@ Jeu de simulation de vie sociale en terminale, dans un lycée de Guadeloupe. Cr�
 ```
 index.html          structure HTML (atelier, écran famille, jeu, feuille modale, toast)
 css/style.css       tous les styles (atelier clair, jeu sombre)
-js/app.js           tout le code (~4 050 lignes, script classique, variables globales)
+js/app.js           tout le code (~6 300 lignes, script classique, variables globales)
 claude-page.html    version publiée sur claude.ai (même corps que index.html, sans en-tête ; à refaire si index.html change) : https://claude.ai/artifact/4XTD2xkAiVHspaZsdKfwvc
 manifest.webmanifest, sw.js   application installable (PWA) : manifeste et service worker (cache hors ligne)
 js/cloud.js         comptes et sauvegarde en ligne Supabase (inactif si js/config.js est vide) ; js/vendor/supabase.js = supabase-js 2.117.2 (UMD)
@@ -55,6 +55,8 @@ tools/              simulate.js (test Node), captures.js (test Playwright), icon
 
 ## Règles du code
 
+- **Images en WebP** : `tools/webp.py` crée une copie `.webp` de chaque image d'`assets/` ; `sw.js` la sert à la place du `.png`/`.jpg` (l'original reste pour le chargement sans service worker). **Relancer `python3 tools/webp.py` après toute nouvelle image.** Décors et chambres ne sont pas téléchargés à l'installation, seulement quand ils servent.
+- **Interface du jeu** : écran d'ouverture « Aujourd'hui » (`view='day'`), barre du bas `NAV` (Aujourd'hui, Fil = posts + Mon Insta via `data-filv`, Messages, Camarades, Profil) ; tutoriel du premier jour `tutoStart`/`tutoStep` (`G.tuto`, fenêtres en attente pendant `G.tutoOn`) ; « Mettre à jour l'appli » seulement dans le menu ⚙ ; « Recommencer » dans Réglages du profil ; bonus d'énergie rechargé chaque matin ; sauvegarde allégée par `trimG` (200 messages par conversation).
 - **Hors ligne (service worker)** : tout nouveau fichier chargé par le jeu (image, script, police) doit être ajouté à `FICHIERS` dans `sw.js`, et `VERSION` augmentée à chaque mise en ligne qui change la liste. Le service worker ne marche qu'en https ou sur `localhost`, pas en ouvrant `index.html` directement.
 - **Accords de genre** : écrire les textes en inclusif (`content·e`, `amoureux·se`, `lycéen·ne`) ; `gtxt`, `P(t)` (joueur·se), `S(id,t)` (personne qui parle) et `genderize()` accordent automatiquement. `{p:…}` force l'accord avec le joueur.
 - **Année scolaire** : vrai calendrier du mardi 1er septembre 2026 au mercredi 30 juin 2027 (`CAL`, `VACS` vacances de Guadeloupe, `FERIES`). `G.day` = jour du calendrier, `schoolDay(d)` = numéro du jour de cours (182 jours). Trimestres : 18 déc., 26 mars, dernier vendredi avant le bac ; révisions, bac et résultats sur les 5 derniers jours de cours. Évaluation chaque vendredi de cours 14-17 h. Oubli de 1 %/jour des matières non révisées.

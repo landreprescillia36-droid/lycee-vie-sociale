@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='114';
+const APP_VERSION='115';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1700,12 +1700,12 @@ const NIVEAUX={excellent:{l:'Excellent·e',start:0,k:1.3},bon:{l:'Bon niveau',st
 const FORTS_MAX=2;
 /* gains de réussite selon le niveau et les facilités : on avance plus ou moins vite */
 function gainK(sub,g){const s=me(),n=NIVEAUX[s.niveau]||NIVEAUX.moyen,f=(s.forts||[]).includes(sub),pk=s.perso==='ambitieux'?1.1:s.perso==='sportif'&&sub==='eps'?1.3:s.perso==='creatif'&&(sub==='francais'||sub==='philo')?1.2:1;if(g>0)return Math.max(1,Math.round(g*n.k*pk*(f?1.5:1)));return f?Math.round(g*.6):g}
-function drawParcours(){let el=$('parcours');if(!el){el=document.createElement('div');el.id='parcours';el.className='ident';$('idBlock').after(el);
+function drawParcours(){let el=$('parcours');if(!el){el=document.createElement('div');el.id='parcours';el.className='ident parcours';$('grid').after(el);
   el.addEventListener('click',e=>{const b=e.target.closest('[data-niv],[data-fort],[data-pass]');if(!b)return;
    if(b.dataset.pass){const k=b.dataset.pass,F=state.passions||[];state.passions=F.includes(k)?F.filter(x=>x!==k):F.length>=PASS_MAX?[...F.slice(1),k]:[...F,k]}else if(b.dataset.niv)state.niveau=b.dataset.niv;else{const k=b.dataset.fort,F=state.forts||[];state.forts=F.includes(k)?F.filter(x=>x!==k):F.length>=FORTS_MAX?[...F.slice(1),k]:[...F,k]}drawParcours();codeEl.value=JSON.stringify(state)});
   el.addEventListener('change',e=>{const t=e.target;if(t.id==='pPerso')state.perso=t.value;if(t.id==='pRaison')state.raison=t.value;drawParcours();codeEl.value=JSON.stringify(state)});
   el.addEventListener('input',e=>{if(e.target.id==='pAncien'){state.ancien=e.target.value.slice(0,60);codeEl.value=JSON.stringify(state)}})}
- el.hidden=!!editFam;if(editFam)return;const sx=state.sexe,T=t=>gtxt(t,sx);
+ el.hidden=!!editFam||!isPar();if(el.hidden)return;const sx=state.sexe,T=t=>gtxt(t,sx);
  el.innerHTML=`<div class="field"><label for="pPerso">Personnalité</label><select id="pPerso">${Object.entries(PERSOS).map(([k,v])=>`<option value="${k}" ${state.perso===k?'selected':''}>${esc(persoL(k,sx))}</option>`).join('')}</select></div>
  <p class="hint">${esc(T((PERSOS[state.perso]||PERSOS.sociable).x))}</p>
  <div class="field"><label for="pRaison">Pourquoi un nouveau lycée ?</label><select id="pRaison">${Object.entries(RAISONS).map(([k,v])=>`<option value="${k}" ${state.raison===k?'selected':''}>${esc(T(v))}</option>`).join('')}</select></div>
@@ -1735,8 +1735,10 @@ const BASE_NAME={f:'Léa',m:'Enzo'};
 function applyBase(sx){const b=BASE_LOOK[sx];if(!b)return;Object.assign(state,clone(b));state.adj=clone(b.adj||DEFAULT.adj);if([...Object.values(BASE_NAME),'Léa Dupont','Enzo Dupont',''].includes((state.name||'').trim())){state.name=BASE_NAME[sx];if(!(state.nom||'').trim())state.nom=DEFAULT.nom}const n=document.getElementById('nom');if(n)n.value=state.name;const nf=document.getElementById('nomFam');if(nf)nf.value=state.nom||''}
 $('idBlock').addEventListener('click',e=>{const b=e.target.closest('[data-sx],[data-or]');if(!b)return;if(b.dataset.sx){const prev=state.sexe;state.sexe=b.dataset.sx;boucheSexe(state);if(prev!==state.sexe){applyBase(state.sexe);boucheSexe(state);if(state.sexe==='m'){state.dress='aucune';['earrings','necklace','glasses','hat','jacket','shoes'].forEach(k=>{const it=Object.values(WEAR).flatMap(W=>W.items).find(x=>x.s===k&&x.v===state[k]);if(it&&it.g==='f')state[k]=k==='shoes'?'basses':k==='necklace'||k==='hat'?'aucun':'aucune'})}if(state.sexe==='f')state.barbe='aucune';drawSubs();if(typeof refresh==='function')refresh()}}else state.orient=b.dataset.or;drawIdent()});
 $('viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;pview=b.dataset.pv;drawPortrait()});
-function drawTabs(){tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')}
-function drawSubs(){const hid=s=>(s.noF&&state.sexe==='f')||(s.noM&&state.sexe==='m')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
+/* onglet « Parcours » (personnalité, raison, passions, niveau…) après les onglets d'apparence ; pas pour la famille */
+const isPar=()=>tab===TABS.length;
+function drawTabs(){if(editFam&&isPar())tab=0;tabsEl.innerHTML=TABS.map((t,i)=>`<button class="tab" role="tab" type="button" data-i="${i}" aria-selected="${i===tab}">${t.label}</button>`).join('')+(editFam?'':`<button class="tab" role="tab" type="button" data-i="${TABS.length}" aria-selected="${isPar()}">Parcours</button>`)}
+function drawSubs(){if(isPar()){subsEl.innerHTML='';return}const hid=s=>(s.noF&&state.sexe==='f')||(s.noM&&state.sexe==='m')||(s.wear&&!wearHas(s.wear));if(TABS[tab].subs[sub]&&hid(TABS[tab].subs[sub]))sub=0;const wearTab=TABS[tab].subs.some(s=>s.wear);subsEl.innerHTML=(wearTab?`<span class="catlbl">${CATLBL[state.sexe]||CATLBL.nb}</span>`:'')+TABS[tab].subs.map((s,i)=>`<button class="sub" type="button" data-i="${i}" aria-pressed="${i===sub}" ${hid(s)?'hidden':''}>${s.label}</button>`).join('')+`<button class="sdice" type="button" data-dice aria-label="Tirer au sort : ${esc((TABS[tab].subs[sub]||{}).label||'')}" title="Tirer au sort"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8" cy="8" r="1.6" fill="currentColor"/><circle cx="16" cy="8" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="8" cy="16" r="1.6" fill="currentColor"/><circle cx="16" cy="16" r="1.6" fill="currentColor"/></svg></button>`+(colRows().length?`<button class="colwheel sm" type="button" data-colwheel aria-label="Couleurs"></button>`:'');if(!$('colPop').hidden)colPopDraw()}
 const BODYL={petite:['Petite','Petit'],moyenne:['Moyenne','Moyen'],grande:['Grande','Grand'],mince:['Mince','Mince'],ronde:['Ronde','Rond'],forte:['Forte','Fort']};
 const bodyLbl=o=>(BODYL[o]||[o,o])[state.sexe==='m'?1:0];
 let catPick={},curList=[];
@@ -1757,6 +1759,8 @@ function drawDetail(S){$('detail').hidden=true;return;const key=S.hairCat?'hair'
 }
 $('detail').addEventListener('click',e=>{const b=e.target.closest('[data-col]');if(!b)return;state[$('detail').dataset.slot]=b.dataset.col;refresh()});
 function drawGrid(){
+ const pe=$('parcours');if(pe)pe.hidden=!isPar()||!!editFam;
+ if(isPar()){grid.className='grid';grid.innerHTML='';adjust.hidden=true;$('detail').hidden=true;$('colPop').hidden=true;drawParcours();return}
  const S=TABS[tab].subs[sub];
  if(S.hairCat||S.wear){curList=catList(S);grid.className='grid cat';adjust.hidden=true;
   grid.innerHTML=curList.map((e,i)=>`<button class="opt" type="button" data-ci="${i}" aria-pressed="${e.set?!!(catPick.set&&catPick.set.n===e.n&&Object.entries(e.set).every(([k,v])=>state[k]===v)):isAct(e,curList)}"><span class="th">${render({...entryState(e),taille:'moyenne'},e.vb,'t'+i,false)}</span><span class="nm">${esc(e.n)}</span>${e.nw?'<span class="refb nw">Nouveau</span>':e.r?'<span class="refb">Réf.</span>':''}</button>`).join('');
@@ -1774,7 +1778,7 @@ function drawGrid(){
 }
 function refresh(){drawPortrait();drawGrid()}
 
-tabsEl.addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=+b.dataset.i;sub=0;pview=['Tenue','Corps'].includes(TABS[tab].label)?'full':'portrait';drawTabs();drawSubs();refresh()});
+tabsEl.addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;tab=+b.dataset.i;sub=0;pview=!isPar()&&['Tenue','Corps'].includes(TABS[tab].label)?'full':'portrait';drawTabs();drawSubs();refresh()});
 subsEl.addEventListener('click',e=>{if(e.target.closest('[data-dice]')){diceSub();return}if(e.target.closest('[data-colwheel]')){const P=$('colPop');if(P.hidden){colPopDraw();P.hidden=false;P.scrollIntoView({block:'nearest',behavior:'smooth'})}else P.hidden=true;return}const b=e.target.closest('.sub');if(!b)return;sub=+b.dataset.i;drawSubs();drawGrid()});
 grid.addEventListener('click',e=>{const ci=e.target.closest('[data-ci]');if(ci){const S=TABS[tab].subs[sub],en=curList[+ci.dataset.ci];if(!en)return;const n=state.name;state=en.set?{...state,jacket:'aucune',dress:'aucune',...en.set}:entryState(en);state.name=n;catPick[S.hairCat?'hair':S.wear]=en;refresh();return}
  const b=e.target.closest('[data-v]');if(!b)return;state[TABS[tab].subs[sub].id]=b.dataset.v;refresh()});
@@ -2199,7 +2203,7 @@ function ressenti(id){
  return a+b+(mem?` Se souvient : « ${mem.t} »`:'');
 }
 const ressentiShort=id=>ressenti(id).split(' Se souvient')[0];
-function gaugesHTML(id){const r=G.rel[id],off=!npcLikesMe(id)&&G.partner!==id;return `<div class="gg"><span>Amitié</span><div class="bar"><i style="width:${Math.max(0,r.ami)}%"></i></div><b>${r.ami}</b></div><div class="gg resp"><span>Respect</span><div class="bar"><i style="width:${respOf(id)}%"></i></div><b>${respOf(id)}</b></div><div class="gg love${off?' off':''}" title="${off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
+function gaugesHTML(id){const r=G.rel[id],met=!!(G.met&&G.met[id]),off=!npcLikesMe(id)&&G.partner!==id;return `<div class="gg"><span>Amitié</span><div class="bar"><i style="width:${Math.max(0,r.ami)}%"></i></div><b>${r.ami}</b></div><div class="gg resp${met?'':' off'}" title="${met?'':'Pas encore rencontré·e'}"><span>Respect</span><div class="bar"><i style="width:${met?respOf(id):0}%"></i></div><b>${met?respOf(id):'–'}</b></div><div class="gg love${off?' off':''}" title="${off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
 
 /* ---------- famille ---------- */
 const ROLES=['Mère','Père','Belle-mère','Beau-père','Grande sœur','Petite sœur','Grand frère','Petit frère','Grand-mère','Grand-père','Tante','Oncle'];
@@ -2540,15 +2544,20 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
+if(G){if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
 if(G){needInit();G.cd=G.cd||{};/* G.chap est créé plus tard (chapInit), ses constantes ne sont pas encore définies ici */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
  G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
 /* sauvegarde en ligne (js/cloud.js) : ne fait rien sans compte */
 const cloudPush=()=>{if(window.CLOUD)window.CLOUD.push()};
-function saveG(){try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
+/* sauvegarde plus légère : 200 derniers messages par conversation et 200 de mes posts au plus ;
+   les plus anciens sont résumés en une ligne (nombre de messages oubliés) */
+const KEEP_N=200;
+function trimG(){if(!G)return;[G.threads,G.talks].forEach(T=>{if(!T)return;Object.keys(T).forEach(id=>{const L=T[id];if(L&&L.length>KEEP_N){const old=L.length-KEEP_N+1,o=L[0]&&L[0].sum?(L[0].n||0):0;T[id]=[{from:'sys',sum:1,n:o+old,text:`… ${o+old} anciens messages`,at:(L[old]||{}).at,tm:''},...L.slice(-KEEP_N+1)]}})});
+ if(G.posts&&G.posts.length>120+KEEP_N){const mine=G.posts.filter(p=>p.by==='me');if(mine.length>KEEP_N){const drop=new Set(mine.slice(KEEP_N).map(p=>p.id));G.posts=G.posts.filter(p=>!drop.has(p.id))}}}
+function saveG(){trimG();try{localStorage.setItem(GKEY,JSON.stringify(G))}catch(e){}cloudPush()}
 function note(t){G.log.push({t,day:G.day,at:fmtT(G.min)});G.log=G.log.slice(-120);G.unread++}
-let view='home';
+let view='day';
 
 /* ---------- IA ---------- */
 let SAMPLE=null;
@@ -3320,7 +3329,7 @@ function hobbyStory(p){const P_=PASS[p];G.stories.push(mkStory('me',{type:'photo
 /* ---------- vie quotidienne : besoins, maison, famille, sorties, restos, clubs, chapitres, relations ----------
    G.need {faim, fun, soc} (l'énergie reste G.energy) ; G.cd[activité] = minute du jeu où l'activité redevient possible ;
    G.outS = sortie en cours ; G.clubS = séance de club en cours ; G.chap = chapitre en cours ; G.bff = meilleur·e ami·e ; G.rel[id].resp = respect */
-const NEEDS=[['faim','🍔','Faim'],['energy','⚡','Énergie'],['fun','🎉','Divertissement'],['soc','💬','Social']];
+const NEEDS=[['faim','🍽️','Faim'],['energy','⚡','Énergie'],['fun','🎮','Divertissement'],['soc','💬','Social']];
 const NEED_LBL={faim:'faim',energy:'énergie',fun:'divertissement',soc:'social'};
 function needInit(){G.need=G.need||{faim:80,fun:70,soc:65};return G.need}
 const needV=k=>k==='energy'?G.energy:needInit()[k];
@@ -3334,9 +3343,9 @@ function needTick(){const n=needInit(),s=G.asleep;n.faim=clamp(n.faim-(s?.5:1.5)
  [['faim','🍽️ Tu as faim : mange quelque chose'],['fun','🥱 Tu t\'ennuies : fais une activité qui te plaît'],['soc','💬 Tu te sens un peu seul·e : vois ou appelle quelqu\'un']].forEach(([k,t])=>{if(n[k]<20&&!w[k]){w[k]=1;if(!$('game').hidden)toast(P(t))}if(n[k]>=30)w[k]=0})}
 /* à la pause, au lycée : on voit du monde */
 function needPause(ph){if(vsHome()||!schoolDay(G.day)||!['recre','dej','matin'].includes(ph.type))return;const map=presence(ph);if(Object.values(map).some(L=>L.length))needUp('soc',4)}
-function drawNeeds(){const el=$('gNeeds');if(!el)return;el.innerHTML=NEEDS.map(([k,ic])=>{const v=needV(k);return `<i class="nd${v<20?' low':''}" title="${NEED_LBL[k]}"><b style="height:${Math.max(6,v)}%"></b><em>${ic}</em></i>`}).join('')}
+function drawNeeds(){const el=$('gNeeds');if(!el)return;el.innerHTML=NEEDS.map(([k,ic])=>{const v=needV(k);return `<span class="ndw"><i class="nd${v<15?' low':''}" title="${NEED_LBL[k]}"><b style="height:${Math.max(6,v)}%"></b></i><em>${ic}</em></span>`}).join('')}
 function needsSheet(){const tips={faim:'Repas en famille, cantine, grignoter, restos et fast-foods',energy:'Dormir, faire une sieste, se reposer',fun:'Télé, film, jeux, passion, sorties, clubs',soc:'Parler en vrai, sorties, repas en famille, clubs, messages'};
- openSheet(sheetHead('Tes besoins','Ils baissent avec le temps : garde-les au-dessus de 20')+`<div class="kb">${NEEDS.map(([k,ic,l])=>{const v=needV(k),c=v>=60?'#3fcf8e':v>=30?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${ic} ${l}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}</b></div><p class="muted" style="margin:-4px 0 6px">${tips[k]}</p>`}).join('')}</div>`
+ openSheet(sheetHead('Tes besoins','Ils baissent avec le temps : garde-les au-dessus de 15')+`<div class="kb">${NEEDS.map(([k,ic,l])=>{const v=needV(k),c=v>=60?'#3fcf8e':v>=30?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${ic} ${l}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}</b></div><p class="muted" style="margin:-4px 0 6px">${tips[k]}</p>`}).join('')}</div>`
  +(G.bonus?`<div class="row"><button class="gbtn" type="button" data-needbonus>Récupérer un bonus d'énergie (${G.bonus})</button></div>`:''))}
 
 /* ---------- activités à la maison : chacune a ses propres horaires, jamais ceux des cours ---------- */
@@ -3618,7 +3627,22 @@ function onPhaseChange(prev,ph){
 function endCourse(prev){if(G.cb>0)G.studied[prev.sub]=1;hwAssign(prev)}
 /* note d'une matière tirée de la jauge de chances (0-100 %) */
 function examGrade(k,stress,bac){const p=examP(k,bac);return clamp(Math.round((p/100*20+rnd(-(stress||2.2),stress||2.2)+(G.energy<25?-1.5:0))*2)/2,0,20)}
-function popSheet(html){if(G.asleep||$('game').hidden)G.pend.push(html);else openSheet(html,true)}
+/* ---------- tutoriel du premier jour : 4 bulles, temps en pause, fenêtres mises en attente ---------- */
+const TUTO=[['gDayBtn,gSpeed','🕐 L\'heure et la vitesse','Le temps passe tout seul : 1 heure de jeu = 1 minute. Touche l\'heure pour ouvrir le menu (pause, notes…) et « Vitesse » pour accélérer quand tu attends.'],
+ ['gEnergy','🍽️ Tes besoins','Faim, énergie, divertissement et social baissent avec le temps. Une barre rouge : il faut t\'en occuper. Touche-les pour voir le détail.'],
+ ['gNav','📱 La barre du bas','« Aujourd\'hui » : ta journée et tes cours. « Fil » : les posts et ton Insta. Puis tes messages, tes camarades et ton profil.'],
+ ['gAct','➕ Agir','Publie un post ou une story, ou lance un événement. C\'est parti pour ta rentrée !']];
+function tutoStart(){if(G.tuto)return;if(typeof document==='undefined'||typeof document.createElement!=='function'||!document.body||!document.body.appendChild){G.tuto=1;return}G.tutoOn=1;G.tutoWas=!!G.paused;G.paused=true;tutoStep(0)}
+function tutoStep(i){let el=document.getElementById('tuto');if(el&&el.remove)el.remove();if(i>=TUTO.length){G.tuto=1;G.tutoOn=0;G.paused=G.tutoWas;saveG();drawHUD();flushPend();return}
+ const [ids,ti,tx]=TUTO[i],R_=ids.split(',').map(id=>$(id)).filter(e=>e&&e.getBoundingClientRect).map(e=>e.getBoundingClientRect()).filter(r=>r.width);
+ if(!R_.length){tutoStep(i+1);return}
+ const r={left:Math.min(...R_.map(q=>q.left)),top:Math.min(...R_.map(q=>q.top)),right:Math.max(...R_.map(q=>q.right)),bottom:Math.max(...R_.map(q=>q.bottom))},H=window.innerHeight,below=r.bottom<H/2;
+ el=document.createElement('div');el.id='tuto';el.className='tuto';el.setAttribute('role','dialog');el.setAttribute('aria-label',ti);
+ el.innerHTML=`<div class="tuto-hole" style="left:${r.left-6}px;top:${r.top-6}px;width:${r.right-r.left+12}px;height:${r.bottom-r.top+12}px"></div>
+ <div class="tuto-bub" style="${below?`top:${r.bottom+16}px`:`bottom:${H-r.top+16}px`}"><b>${ti}</b><p>${esc(gtxt(tx,me().sexe))}</p><div class="row"><button class="gbtn ghost" type="button" data-tuto="skip">Passer</button><span class="muted">${i+1}/${TUTO.length}</span><button class="gbtn" type="button" data-tuto="next">${i===TUTO.length-1?'C\'est parti !':'Suivant'}</button></div></div>`;
+ el.addEventListener('click',e=>{const b=e.target.closest('[data-tuto]');if(!b)return;tutoStep(b.dataset.tuto==='skip'?TUTO.length:i+1)});
+ document.body.appendChild(el);el.querySelector('[data-tuto="next"]').focus()}
+function popSheet(html){if(G.asleep||$('game').hidden||G.tutoOn)G.pend.push(html);else openSheet(html,true)}
 function flushPend(){/* une fête déjà passée ne s'affiche plus */G.pend=(G.pend||[]).filter(h=>!h.includes('data-fend=')||fetesOpen().some(f=>h.includes(`data-fend="${f.id}"`)));if(G.pend.length&&$('sheet').hidden)openSheet(G.pend.shift(),true)}
 const sheetHead=(t,sub)=>`<div class="who"><div style="flex:1;min-width:0"><h2>${t}</h2>${sub?`<p class="muted" style="margin:2px 0 0">${sub}</p>`:''}</div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`;
 const gradeRows=o=>Object.keys(SUBJ).filter(k=>o[k]!=null).map(k=>`<div class="prof"><span>${SUBJ[k]}</span><b>${fmtG(o[k])}/20</b></div>`).join('');
@@ -3675,7 +3699,7 @@ function onNewDay(){
  G.plans=G.plans.filter(p=>p.day>=G.day-1);
 }
 function dailyContent(){
- planStories();socialDay();
+ G.bonus=BONUS_MAX;planStories();socialDay();
  if(0)[...NPCS].forEach(n=>{
   if(Math.random()<.5)G.stories.push({id:'st'+Date.now()+n.id,by:n.id,type:'text',text:pickR(STORY_POOL),bg:Math.floor(Math.random()*STORY_BG.length),seen:false,reacted:false});
   else{const c=coupleOf(n.id),withMe=G.rel[n.id].ami>=65&&Math.random()<.5,friend=c&&c!=='me'?c:pickR(NPCS.filter(x=>x.id!==n.id)).id;
@@ -3746,7 +3770,7 @@ const FETES=[
    return joinFx([`Exposé avec ${WHO[to].name} : ${fmtG(v)}/20`,v>=12?relChange(to,6):relChange(to,2)])}},
   {l:'Faire tout le travail à la place du groupe',sm:'Bonne note, mais fatigue',e:12,fx:()=>{const v=clamp(Math.round((G.know.histoire/100*16+5)*2)/2,0,20);G.grades.push({sub:'histoire',v,day:G.day,sd:schoolDay(G.day)});return `Tu portes tout l'exposé : ${fmtG(v)}/20, mais tu es épuisé·e`.replace('épuisé·e',P('épuisé·e'))}},
   {l:'Laisser les autres présenter',sm:'Risqué',pick:'any',e:0,fx:to=>joinFx([`${WHO[to].name} présente à ta place… et te le reproche après`,relChange(to,-8),G.rel[to].ami<20?(mark(to,'abandon'),''):''])}]},
- {id:'rentree',date:'2026-09-01',n:'Rentrée des terminales',ic:'🎒',scene:'cour',post:"[Officiel] Bienvenue aux terminales 🎒 Nouvelle année, nouveaux drames. On vous surveille 👀",info:"C'est ta première journée dans ce lycée : discours de la proviseure, visite, inscriptions aux clubs.",acts:[
+ {id:'rentree',date:'2026-09-01',n:'Rentrée des terminales',fin:'Terminer la journée',ic:'🎒',scene:'cour',post:"[Officiel] Bienvenue aux terminales 🎒 Nouvelle année, nouveaux drames. On vous surveille 👀",info:"C'est ta première journée dans ce lycée : discours de la proviseure, visite, inscriptions aux clubs.",acts:[
   {l:"Te présenter à quelqu'un",sm:"Faire connaissance",pick:'any',e:0,fx:to=>{G.met[to]=Math.max(G.met[to]||0,1);return joinFx([`Tu te présentes à ${WHO[to].name}. ${WHO[to].name} : « ${introLine(to)} »`,relChange(to,3)])}},
   {l:"Visiter le lycée avec quelqu'un",sm:"Amitié",pick:'any',e:3,fx:to=>joinFx([`${WHO[to].name} te fait visiter le lycée`,relChange(to,5)])},
   {l:"T'inscrire à un club",sm:"Grosse amitié avec un membre",pick:'club',e:0,fx:to=>{G.club=to;const k=CLUB_OLD[to];if(!myClubs().includes(k)&&myClubs().length<CLUB_MAX)G.clubs=[...myClubs(),k];return joinFx([`Tu rejoins le ${CLUBS[k].n.toLowerCase()} avec ${WHO[to].name}`,relChange(to,6)])}},
@@ -3828,7 +3852,7 @@ function feteSheet(f,msg){
   +(shift?`<p class="muted" style="margin:0">Le vrai jour est le ${dateOf(CAL.findIndex(c=>c&&c.k===f.date)>0?CAL.findIndex(c=>c&&c.k===f.date):f.day).toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})} : il n'y a pas cours ce jour-là, la fête a donc lieu aujourd'hui.</p>`:'')
   +`<p class="story-text">${esc(f.info)}</p>`+(msg?`<div class="card felt"><p style="margin:0">${esc(msg)}</p></div>`:'')
   +(left>0&&acts.length&&!st.done?`<span class="eyebrow">Que fais-tu ? · ${left} action${left>1?'s':''} restante${left>1?'s':''}</span><div class="choices">${acts.map(([a,i])=>`<button class="choice" type="button" data-fact="${f.id}:${i}">${esc(P(a.l))}<small class="t-pos">${a.pick?'Choisis ensuite '+(a.pick==='list'?'une option':a.pick==='club'?'un club':'un personnage')+' · ':''}${esc(a.sm)}${a.e?' · −'+a.e+' énergie':''}</small></button>`).join('')}</div>`:`<p class="muted">${st.n?'Tu as bien profité de la fête !':'La fête est finie.'}</p>`)
-  +`<div class="row"><button class="gbtn ${left>0&&!st.done?'ghost':''}" type="button" data-fend="${f.id}">${left>0&&!st.done?'Terminer la fête':'Fermer'}</button></div>`}
+  +`<div class="row"><button class="gbtn ${left>0&&!st.done?'ghost':''}" type="button" data-fend="${f.id}">${left>0&&!st.done?(f.fin||'Terminer la fête'):'Fermer'}</button></div>`}
 function fetePick(f,i){const a=f.acts[i];
  const opts=a.pick==='list'?a.list.map((x,j)=>[j,x,'']):(a.pick==='love'?NPCS.filter(n=>iLike(n.id)):NPCS).map(n=>[n.id,a.pick==='club'?`${CLUBS[CLUB_OLD[n.id]].n} (${n.name})`:n.name,`amitié ${G.rel[n.id].ami}${npcLikesMe(n.id)&&a.pick==='love'?' · amour '+G.rel[n.id].amour:''}${G.partner===n.id?' · en couple 💞':''}`]);
  openSheet(sheetHead(`${f.ic} ${esc(P(a.l))}`,a.pick==='list'?'Choisis une option':a.pick==='club'?'Quel club ?':'Avec qui ?')+`<div class="choices">${opts.map(([v,l,sm])=>`<button class="choice" type="button" data-fact="${f.id}:${i}" data-to="${v}">${esc(l)}${sm?`<small>${esc(sm)}</small>`:''}</button>`).join('')}</div><div class="row"><button class="gbtn ghost" type="button" data-fback="${f.id}">Retour</button></div>`)}
@@ -4063,10 +4087,7 @@ function drawHUD(){
 }
 function hudTick(){
  if(!G)return;let changed=false;
- while(G.bonus<BONUS_MAX&&Date.now()>=G.nextAt){G.bonus++;G.nextAt+=RECHARGE;changed=true}
- if(G.bonus>=BONUS_MAX)G.nextAt=Date.now()+RECHARGE;
- const ms=Math.max(0,G.nextAt-Date.now()),m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;
- const rc=$('gRecharge');if(rc)rc.textContent=G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${m}:${String(s).padStart(2,'0')}`;
+/* bonus d'énergie : rechargé chaque matin du jeu (dailyContent), plus de minuterie réelle */
  if(changed)drawHUD();
 }
 setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||!cevShown())){cevOpen=false;cevS=null}hudTick();if((!G.paused||mg&&mg.until)&&!document.hidden&&!cevOpen&&!(mg&&mg.paused))advance(mg?1:(G.speed||1))},1000);
@@ -4365,16 +4386,16 @@ function igClick(t){let b;
  return false}
 
 /* ---------- vues ---------- */
+/* barre du bas : « Aujourd'hui » (écran d'ouverture), « Fil » (posts + mon Insta), messages, camarades, profil */
 const NAV=[
- ['home','Accueil','<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="currentColor"/>'],
- ['day','Journée','<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 6.5V12l3.8 2.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'],
+ ['day','Aujourd\'hui','<circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 6.5V12l3.8 2.4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>'],
+ ['home','Fil','<path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" fill="currentColor"/>'],
  ['messages','Messages','<path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z" fill="currentColor"/><circle cx="8" cy="12" r="1.4" fill="#16171c"/><circle cx="12" cy="12" r="1.4" fill="#16171c"/><circle cx="16" cy="12" r="1.4" fill="#16171c"/>'],
  ['mates','Camarades','<circle cx="8.5" cy="8" r="3.6" fill="currentColor"/><circle cx="16.5" cy="9" r="3" fill="currentColor"/><path d="M1.5 20c.6-4 3.4-6.3 7-6.3s6.4 2.3 7 6.3z" fill="currentColor"/><path d="M16.5 13.5c3 0 5.3 2 5.8 5.5h-5.2" fill="currentColor"/>'],
- ['insta','Insta','<rect x="3" y="3" width="18" height="18" rx="5.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.4" cy="6.6" r="1.3" fill="currentColor"/>'],
  ['profil','Profil','<circle cx="12" cy="8" r="4.5" fill="currentColor"/><path d="M3.5 21c.8-4.4 4.2-7 8.5-7s7.7 2.6 8.5 7z" fill="currentColor"/>']];
 function drawNav(){
  const unreadM=Object.values(G.unreadMsg).reduce((a,b)=>a+b,0);
- $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='insta'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
+ $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id||(id==='home'&&view==='insta')?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='home'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
 }
 function knowBars(only){return `<div class="kb">${(only||Object.keys(SUBJ)).map(k=>{const v=G.know[k],c=v>=60?'#3fcf8e':v>=45?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${SUBJ[k]}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}%</b></div>`}).join('')}</div>`}
 function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=TRI_END[2])return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
@@ -4529,20 +4550,22 @@ function drawProfile(){
   <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px"><p class="muted">${SEXC[me().sexe]} · ${oriLabel(me().orient,me().sexe)}</p><p class="muted">Niveau ${G.objDone.length} · Jour ${G.day} · ${G.partner?'En couple avec '+WHO[G.partner].name+' 💞':'Célibataire'}</p>
   <div class="gg"><span>Énergie</span><div class="bar"><i style="width:${G.energy}%;background:#ffd23f"></i></div><b>${G.energy}</b></div>
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
-  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}<button class="gbtn ghost" type="button" id="gRestart">Recommencer la partie</button><button class="gbtn ghost" type="button" id="gMaj">🔄 Mettre à jour l'appli</button></div><p class="muted" style="margin:0">Version ${APP_VERSION}</p></div></div>
+  <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}</div></div></div>
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
  <div class="sec-title">Chances de réussite à l'examen</div><div class="card"><p class="muted" style="margin-top:0">${chapLine()}</p>${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
  <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
  <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
  <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
  <div class="sec-title">Objectifs réussis</div><div class="card">${G.objDone.length?`<div class="objs">${G.objDone.map(id=>OBJ.find(o=>o.id===id)).map(o=>`<div class="obj done"><span class="chk">✓</span><span>${o.t}</span></div>`).join('')}</div>`:'<p class="muted">Aucun pour l\'instant.</p>'}</div>
- <div class="sec-title">Notifications</div>${G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>'}`;
+ <div class="sec-title">Notifications</div>${G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>'}
+ <div class="sec-title">Réglages</div><div class="card reglages"><p class="muted" style="margin:0">Version ${APP_VERSION} · « Mettre à jour l'appli » est dans le menu ⚙</p><hr><button class="gbtn danger" type="button" id="gRestart">Recommencer la partie</button></div>`;
  drawNav();saveG();
 }
 function drawView(){
- $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home';
- if(view==='home'){const n=G.feedN||10;$('gView').innerHTML=G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
- else if(view==='insta')drawInsta();
+ $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home'&&view!=='day';
+ const filSeg=()=>`<div class="seg filseg" role="group" aria-label="Fil"><button type="button" data-filv="home" aria-pressed="${view==='home'}">Fil</button><button type="button" data-filv="insta" aria-pressed="${view==='insta'}">Mon Insta${G.ig.reqs.length?` · ${G.ig.reqs.length}`:''}</button></div>`;
+ if(view==='home'){const n=G.feedN||10;$('gView').innerHTML=filSeg()+G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
+ else if(view==='insta'){drawInsta();$('gView').innerHTML=filSeg()+$('gView').innerHTML}
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
 function drawGame(){drawHUD();drawStories();drawNav();drawView()}
@@ -5859,7 +5882,7 @@ const markNote=id=>{const L=marksOf(id).map(m=>({trahison:`${nameOf('me')} t'a t
 const GROUPS={pop:{n:'Les populaires',ic:'💅',m:['maelle','ines','kenza','meisha']},sport:{n:'Les sportifs',ic:'⚽',m:['kylian','noah','anais','noemie','kellian','willan']},art:{n:'Les artistes',ic:'🎨',m:['jade','sacha','eva','ethan']}};
 function groupState(g){const G0=GROUPS[g],a=mean(G0.m.map(i=>G.rel[i].ami)),tr=G0.m.filter(i=>hasMark(i,'trahison')).length;
  return tr>=1&&a<45||a<0?'rejete':a>=55&&!tr?'adopte':'neutre'}
-const GSTATE={adopte:'Ils t\'ont adopté·e 💛',neutre:'Ils te connaissent',rejete:'Ils te tiennent à l\'écart ❄️'};
+const GSTATE={adopte:'Ils t\'ont adopté·e 💛',neutre:'Ne te connaissent pas encore',rejete:'Ils te tiennent à l\'écart ❄️'};
 function groupTick(){G.gstate=G.gstate||{};Object.keys(GROUPS).forEach(g=>{const s=groupState(g),old=G.gstate[g]||'neutre';if(s===old)return;G.gstate[g]=s;const G0=GROUPS[g];
  if(s==='adopte'){note(P(`${G0.ic} ${G0.n} t'ont adopté·e`));G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : ${myHandle()} traîne avec ${G0.n.toLowerCase()} maintenant 👀`,c:12,r:120,l:3000}));popSheet(sheetHead(`${G0.ic} ${G0.n}`,P('Tu fais partie du groupe !'))+`<p class="story-text">${G0.m.map(i=>WHO[i].name).join(', ')} ${P("te gardent une place à leur table. Tu es invité·e à leurs sorties et ils te défendent dans les commentaires.")}</p><div class="row"><button class="gbtn" type="button" data-close>Trop bien</button></div>`)}
  else if(s==='rejete'){note(`${G0.ic} ${G0.n} te tiennent à l'écart`);G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : ambiance glaciale entre ${myHandle()} et ${G0.n.toLowerCase()}… quelqu'un sait ce qui s'est passé ? 🥶`,c:25,r:300,l:7000}));popSheet(sheetHead(`${G0.ic} ${G0.n}`,'Le groupe te tourne le dos')+`<p class="story-text">${G0.m.map(i=>WHO[i].name).join(', ')} ne t'adressent presque plus la parole. Il faudra du temps (et de vrais efforts) pour regagner leur confiance.</p><div class="row"><button class="gbtn" type="button" data-close>D'accord</button></div>`)}})}
@@ -6028,6 +6051,7 @@ $('gView').addEventListener('click',e=>{
  if(t.id==='gEdit'){showAtelier();return}
  if(igClick(t))return;
  if(t.closest('[data-seatopen]')){openSeat();return}
+ {const b0=t.closest('[data-filv]');if(b0){view=b0.dataset.filv;drawNav();drawView();window.scrollTo(0,0);return}}
  if(t.closest('[data-feedmore]')){G.feedN=(G.feedN||10)+15;drawView();return}
  if(b=t.closest('[data-fetesheet]')){const f=FETES.find(x=>x.id===b.dataset.fetesheet);if(f)openSheet(feteSheet(f));return}
  if(t.id==='gFam'){showFamille(true);return}
@@ -6077,12 +6101,13 @@ function drawMenu(){
   <button class="mbtn${G.paused?' on':''}" type="button" data-m="pause" aria-pressed="${!!G.paused}">${G.paused?'▶️ Reprendre':'⏸ Pause'}</button>
   <div class="mseg" role="group" aria-label="Vitesse du temps">${SPEEDS.map(v=>`<button type="button" data-m="sp${v}" aria-pressed="${sp===v}" class="${sp===v?'on':''}">×${v}</button>`).join('')}</div></div></div>
  <div class="mgroup"><span class="mlbl">Énergie ${G.energy}/100</span><div class="mline">
-  <button class="mbtn${G.bonus?' on':''}" type="button" data-m="bonus"${G.bonus?'':' disabled'}>⚡ Bonus ${G.bonus}/${BONUS_MAX}${G.bonus?` : +${G.bonus*5}`:''}</button><span class="muted" id="gRecharge">${G.bonus>=BONUS_MAX?'Bonus plein':`Recharge dans ${Math.floor(ms/60000)}:${String(Math.floor(ms/1000)%60).padStart(2,'0')}`}</span></div>
+  <button class="mbtn${G.bonus?' on':''}" type="button" data-m="bonus"${G.bonus?'':' disabled'}>⚡ Bonus ${G.bonus}/${BONUS_MAX}${G.bonus?` : +${G.bonus*5}`:''}</button><span class="muted">Se recharge chaque matin</span></div>
   <p class="muted" style="margin:4px 0 0">🎯 Chaque objectif atteint : +${OBJ_ENERGY} ⚡</p></div>
  <div class="menu-list">
   <button class="mrow" type="button" data-m="music" aria-pressed="${MUS.on}"><span class="mic">${MUS.on?'🎵':'🔇'}</span><span><b>Musique</b><small>${MUS.on?'Activée : touche pour couper':'Coupée : touche pour activer'}</small></span></button>
   <button class="mrow" type="button" data-m="notes"><span class="mic">📊</span><span><b>Mes notes</b><small>Moyenne du trimestre : ${fmtG(avg)}/20</small></span></button>
-  <button class="mrow" type="button" data-m="shop"><span class="mic">🛍️</span><span><b>Boutique</b><small>Bientôt disponible</small></span></button>
+  ${GEMS_ON?'<button class="mrow" type="button" data-m="shop"><span class="mic">🛍️</span><span><b>Boutique</b><small>Bientôt disponible</small></span></button>':''}
+  <button class="mrow" type="button" data-m="maj"><span class="mic">🔄</span><span><b>Mettre à jour l'appli</b><small>Version ${APP_VERSION}</small></span></button>
   <button class="mrow danger" type="button" data-m="quit"><span class="mic">🚪</span><span><b>Quitter la partie</b><small>Retour à l'atelier, ta partie est sauvegardée</small></span></button>
  </div><button class="gbtn ghost" type="button" data-m="x">Fermer</button></div>`;
  hudTick();
@@ -6096,6 +6121,7 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
  else if(m==='music'){const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')}
  else if(m==='notes'){$('sheetBody').onclick=null;closeSheet();view='profil';drawNav();drawView();window.scrollTo(0,0);return}
  else if(m==='shop'){toast('La boutique arrive bientôt');return}
+ else if(m==='maj'){forceUpdate();return}
  else if(m==='quit'){$('sheetBody').innerHTML=`<div id="gMenuQuit"><h2>Quitter la partie ?</h2><p class="muted">Tu reviens à l'atelier. Ta partie est sauvegardée : « Commencer la partie » te ramène là où tu en étais.</p><div class="mline"><button class="gbtn ghost" type="button" data-m="back">Rester</button><button class="gbtn red" type="button" data-m="quitok">Quitter</button></div></div>`;return}
  else if(m==='back'){drawMenu();return}
  else if(m==='quitok'){$('sheetBody').onclick=null;saveG();showAtelier();return}
@@ -6138,7 +6164,7 @@ $('famGo').onclick=()=>{
  G.phaseKey=phase().key;G.lastPhase=phase();
  if(G.rel.ines&&G.rel.ines.ami>=60)pushMsg('ines','them',`Coucou ! C'est toi ${me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle'} ? Bienvenue au lycée ✨ si t'as besoin de quoi que ce soit, demande-moi 🥰`);
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
- note('Bienvenue au lycée ! Les cours commencent à 8h.');saveG();showGame();feteDay();saveG();
+ note('Bienvenue au lycée ! Les cours commencent à 8h.');saveG();showGame();G.tuto=0;tutoStart();feteDay();saveG();
 };
 function showGame(){musMode('jeu');
  if(!G){showFamille(false);return}
@@ -6146,11 +6172,11 @@ function showGame(){musMode('jeu');
  {const l=$('loader');if(l&&l.hidden&&l.querySelector){loadShow('Chargement du lycée…');setTimeout(()=>loadHide(),0)}}
  $('atelier').hidden=true;$('famille').hidden=true;$('game').hidden=false;document.body.classList.add('playing');
  if(!G.phaseKey){G.phaseKey=phase().key;G.lastPhase=phase()}
- view='home';drawGame();window.scrollTo(0,0);musAuto();
+ view='day';drawGame();window.scrollTo(0,0);musAuto();
 }
 function setAtelierMode(){const fm=!!editFam,f=fm&&famDraft[editFam.i];
- $('atTitle').textContent=fm?`Apparence de ${state.name||f.role}`:'Création de novas';
- $('atSub').textContent=fm?`${f.role} · visage, cheveux et tenue.`:'Crée le nova qui rentrera au lycée.';
+ $('atTitle').textContent=fm?`Apparence de ${state.name||f.role}`:'Crée ton personnage';
+ $('atSub').textContent=fm?`${f.role} · visage, cheveux et tenue.`:'Ton nova, c\'est toi au lycée Novalya.';
  $('idBlock').hidden=fm;$('bSave').hidden=fm;$('bPlay').hidden=fm;$('codeBox').hidden=fm;$('bFamDone').hidden=!fm;$('nomLbl').textContent=fm?'Prénom':'Prénom du nova';$('nomFamBox').hidden=fm;}
 function editFamLook(i){withLoader('Création de novas…',()=>editFamLook0(i))}
 function editFamLook0(i){

@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v114';
+const VERSION = 'v115';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -130,17 +130,20 @@ const FICHIERS = [
   'fonts/baloo-2-latin-600-normal.woff2', 'fonts/baloo-2-latin-700-normal.woff2', 'fonts/baloo-2-latin-800-normal.woff2',
   'fonts/nunito-latin-400-normal.woff2', 'fonts/nunito-latin-600-normal.woff2', 'fonts/nunito-latin-700-normal.woff2', 'fonts/nunito-latin-800-normal.woff2',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png', 'icons/favicon-32.png',
-  'assets/decors/marche.jpg', 'assets/decors/cascade.jpg', 'assets/decors/soiree.jpg', 'assets/decors/cantine.jpg', 'assets/decors/lycee.jpg', 'assets/decors/couloir.jpg', 'assets/decors/couloir2.jpg', 'assets/decors/plage.jpg', 'assets/decors/basket.jpg',
-  ...['ines', 'kylian', 'maelle', 'noah', 'jade', 'anais', 'sacha', 'kenza', 'meisha', 'eva', 'noemie', 'jessica', 'defaut-blanc', 'defaut-beige', 'defaut-sauge', 'defaut-bleu'].map(n => `assets/chambres/${n}.jpg`),
+  /* décors et chambres (assets/decors, assets/chambres) : pas téléchargés à l'installation, mis en cache la première fois qu'ils servent */
 ];
 
 /* Connexion lente : les images, polices et icônes déjà téléchargées sont reprises de l'ancien cache (pas de re-téléchargement
    à chaque mise à jour) ; seuls le code et les nouveaux fichiers passent par le réseau. */
 const LOURD = u => /^(assets|fonts|icons)\//.test(u);
+/* images du jeu : la copie .webp (tools/webp.py, 2 à 10 fois plus légère) est servie à la place du .png / .jpg demandé */
+const WEBP = u => /^assets\/.+\.(png|jpg)$/.test(u) && u !== 'assets/logo.png';
+const toW = u => u.replace(/\.(png|jpg)$/, '.webp');
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE), olds = (await caches.keys()).filter(k => k.startsWith('lycee-') && k !== CACHE);
     await Promise.all(FICHIERS.map(async u => {
+      if (WEBP(u)) u = toW(u);
       if (LOURD(u)) for (const k of olds) { const r = await (await caches.open(k)).match(u); if (r) { await c.put(u, r); return } }
       try { await c.add(new Request(u, { cache: 'reload' })) } catch (_) { /* fichier repris plus tard, à la demande */ }
     }));
@@ -170,7 +173,17 @@ function revoir(c, req, rel) {
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET' || url.origin !== location.origin) return;
-  const rel = url.pathname.replace(/^.*?\/(assets|fonts|icons)\//, '$1/');
+  let rel = url.pathname.replace(/^.*?\/(assets|fonts|icons)\//, '$1/');
+  if (WEBP(rel)) {
+    const w = new Request(toW(url.pathname));
+    e.respondWith(caches.open(CACHE).then(async c => {
+      const hit = await c.match(w);
+      if (hit) { revoir(c, w, toW(rel)); return hit }
+      try { const r = await fetch(w, { cache: 'no-cache' }); if (r.ok) { c.put(w, r.clone()); return r } } catch (_) {}
+      try { return await fetch(req) } catch (_) { return Response.error() }   /* pas de .webp : l'original */
+    }));
+    return;
+  }
   e.respondWith(caches.open(CACHE).then(async c => {
     const hit = await c.match(req, { ignoreSearch: true }) || (req.mode === 'navigate' ? await c.match('index.html') : null);
     if (LOURD(rel)) {
