@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='126';
+const APP_VERSION='127';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2744,6 +2744,12 @@ function smartLine(id,text,chan){
   if(/(tard|je sais pas|j'sais pas|sais pas|aucune idée|on verra)/.test(t))return sty(id,fresh(par?["Pas trop tard hein, il y a cours demain","Tu me préviens alors, je veux savoir où tu es","Hmm… envoie-moi un message quand tu pars"]:["Ok, tu me dis !","Pas de souci, tiens-moi au courant"]))}
  /* « merci » à un parent après un compliment */
  if(isFam(id)&&famKind(id)==='parent'&&/^\s*merci/.test(t)&&t.length<25)return sty(id,fresh(["Avec plaisir mon cœur ❤️","Je suis fier·e de toi, c'est tout 🥰","Continue comme ça !"]),'happy');
+ /* « je peux venir te voir (à ton match) ? » : invitation à sa passion */
+ if(isNpc(id)&&/(je (peux|pourrais|pourrai|peut|pourrai[ts]?) (venir|passer)|je viens te voir|je viendrai te voir|je peux t'encourager|venir t'encourager|venir te voir)/.test(t)){const k=evOf(id);
+  if(k){let pl=G.plans.find(x=>x.by===id&&x.ev&&(x.status==='pending'||x.status==='accepted'));if(pl)pl.status='accepted';else pl=evInvite(id,true);
+   note(`📅 ${WHO[id].name} : ${EVT[k].n.toLowerCase()} ${planWhen(pl).replace(' vers ',' à ')}`);toast(`📅 ${EVT[k].n} ${planWhen(pl).replace(' vers ',' à ')}`);relChange(id,2,0);
+   return sty(id,fresh([`Trop bien 😄 C'est ${planWhen(pl).replace(' vers ',' à ')}, ${EVT[k].out}. Je compte sur toi ! ${EVT[k].ic}`,`Grave ! ${planWhen(pl).replace(' vers ',' à ').replace(/^./,c=>c.toUpperCase())} ${EVT[k].out}, ça me ferait trop plaisir ${EVT[k].ic}`]),'happy')}
+  return sty(id,fresh(["Bien sûr, quand tu veux 😊","Carrément, passe quand tu veux !"]),'happy')}
  /* « ça va ? » : la personne répond et te retourne la question */
  if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
   G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
@@ -3050,14 +3056,15 @@ const sortieChance=id=>{const r=G.rel[id];if(r.ami<30)return 0;return clamp(.6+(
 const SORTIE_RE=/(on sort|sortir|sortie|on se voit|se voir|on se capte|plage|glacier|cin[ée]ma|ciné|centre[- ]ville|jarry|destreland|mil[ée]nis|on va (à|a|au|en|faire)|t'es chaud|ça te dit|ca te dit|tu viens|viens avec moi)/i;
 function sortieFromChat(id,text){if(!isNpc(id)||!SORTIE_RE.test(text)||G.plans.some(x=>x.by===id&&(x.status==='pending'||x.status==='accepted')))return;
  const r=G.rel[id];if(r.ami<30){setTimeout(()=>{pushMsg(id,'them',pickR(["On se connaît pas encore assez pour sortir ensemble, non ? 😅","Peut-être plus tard, quand on se connaîtra mieux."]));drawChatMsgs()},700);return}
- if(Math.random()<sortieChance(id)){const t=text.toLowerCase(),pl=makePlan(id,/demain/.test(t)?'demain':'ce soir');pl.place=/plage/.test(t)?'plage':/glace|glacier/.test(t)?'glacier':/centre|jarry|destreland|mil[ée]nis|shopping/.test(t)?'centre':pl.place;pl.status='accepted';
-  setTimeout(()=>{pushMsg(id,'them',pickR(["Carrément ! ","Ok, ça marche ! ","Grave, on y va ! "])+`Rendez-vous ${PLACE_OUT[pl.place]} ${planWhen(pl)} 😄`);note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);saveG();drawChatMsgs()},900)}
+ if(Math.random()<sortieChance(id)){const t=text.toLowerCase(),pl=makePlan(id,/demain/.test(t)?'demain':'ce soir');pl.place=/plage/.test(t)?'plage':/glace|glacier/.test(t)?'glacier':/centre|jarry|destreland|mil[ée]nis|shopping/.test(t)?'centre':/cin[ée]/.test(t)?'cinema':/resto/.test(t)?'resto':pl.place;
+  const hh=+((t.match(/\b(\d{1,2}) ?(h|heures?)\b/)||[])[1]||0);planFix(pl);
+  setTimeout(()=>{if(hh&&planHours(pl.place,pl.day).includes(hh)){pl.hour=hh;pl.status='accepted';pushMsg(id,'them',pickR(["Carrément ! ","Ok, ça marche ! ","Grave, on y va ! "])+`Rendez-vous ${PLACE_OUT[pl.place]} ${planWhen(pl).replace(' vers ',' à ')} 😄`);note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`)}else planAskHour(id,pl);saveG();drawChatMsgs()},900)}
  else setTimeout(()=>{pushMsg(id,'them',pickR(["Pas cette fois, j'ai un truc de prévu 😕","Une autre fois peut-être !","Je peux pas, désolé·e…"]));drawChatMsgs()},900)}
 function makePlan(by,when){
  let day=G.day,hour=18;
  if(when==='demain'||G.min>=17*60+30){day=G.day+1;hour=wdOf(day)>=5||!schoolDay(day)?15:18}
  const plan={id:'pl'+Date.now()+Math.floor(Math.random()*999),by,day,hour,place:pickR(['plage','centre','glacier']),status:'pending'};
- G.plans.push(plan);return plan;
+ planFix(plan);G.plans.push(plan);return plan;
 }
 const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase()} vers ${pl.hour}h`;
 const proposalText=(id,pl)=>{const sp=sharedPass(id,'me');if(sp.length&&Math.random()<.5){const p=PASS[pickR(sp)];return `On a la même passion ${p.e} ça te dit de venir ${p.act} avec moi ${planWhen(pl)} ? (rendez-vous ${PLACE_OUT[pl.place]})`}return `${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();};
@@ -3085,6 +3092,8 @@ function npcPing(){
   let p=.03+r.ami/1500+r.amour/900;if(ph.type==='cours')p*=.4;
   /* sans réponse de ta part, il ou elle relance beaucoup moins */const th0=G.threads[n.id]||[];if(th0.length&&th0[th0.length-1].from!=='me')p*=.2;if(Math.random()>p)return;G.lastPing[n.id]=now;
   if(r.amour>=75&&r.ami>=45&&!G.partner&&!G.confessed[n.id]&&!coupleOf(n.id)){G.confessed[n.id]=1;pushMsg(n.id,'them',CONFESS[n.id],{kind:'confess'});note(`${n.name} t'a envoyé un message important 💌`);return}
+  /* invitation à sa passion : match, spectacle, atelier… */
+  if(r.ami>=35&&Math.random()<.3&&evOf(n.id)&&G.day-((G.evInv||{})[n.id]??-99)>=6&&!G.plans.some(x=>x.by===n.id&&x.ev&&(x.status==='pending'||x.status==='accepted'))){const pl=evInvite(n.id);G.evInv=G.evInv||{};G.evInv[n.id]=G.day;pushMsg(n.id,'them',evText(pl),{plan:pl.id});return}
   if(r.ami>=30&&Math.random()<.4&&h<20&&!G.plans.some(x=>x.by===n.id&&(x.status==='pending'||x.status==='accepted'))){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
   if(r.ami<25){pushMsg(n.id,'them',pickR(["T'as un problème avec moi ?","Je sais ce que t'as dit sur moi.","Évite-moi un peu, merci."]));return}
   /* pas encore fait connaissance : son premier message est une question de nouvelle */
@@ -3507,7 +3516,7 @@ function napGo(){setCd('nap');closeSheet();G.asleep=true;advance(90);G.asleep=fa
 
 /* ---------- sorties : seul·e ou à deux, avec des horaires propres à chaque lieu ---------- */
 const VENUES={
- plage:{n:'Plage',ic:'🏖️',sc:'plage',h:[[480,1080]],fx:{fun:18,energy:-8},act:'Te baigner et profiter du soleil',pass:['sport','voyages','photo','fitness'],pl:'plage'},
+ plage:{n:'Plage',ic:'🏖️',sc:'plage',h:[[0,1440]],fx:{fun:18,energy:-8},act:'Te baigner et profiter du soleil',pass:['sport','voyages','photo','fitness'],pl:'plage'},
  promenade:{n:'Promenade',ic:'🚶',sc:'marche',h:[[420,1200]],fx:{fun:10,energy:-5},act:'Flâner dans les rues de Pointe-à-Pitre',pass:['voyages','photo'],pl:'promenade'},
  cafe:{n:'Café',ic:'☕',sc:'cantine',h:[[480,1140]],fx:{fun:8},food:'cafe',act:'Siroter un jus à la terrasse',pass:['lecture','ecriture'],pl:'cafe'},
  brunch:{n:'Brunch',ic:'🥞',sc:'cantine',h:[[540,780]],we:1,fx:{fun:10},food:'brunch',act:'Profiter du brunch',pass:['cuisine','patisserie'],pl:'brunch'},
@@ -3515,6 +3524,35 @@ const VENUES={
  fastfood:{n:'Fast-food',ic:'🍔',sc:'cantine',h:[[660,1380]],fx:{fun:6},food:'fastfood',act:'Traîner au fast-food',pass:['jeux','sport'],pl:'fastfood'},
  shopping:{n:'Shopping à Jarry',ic:'🛍️',sc:'marche',h:[[540,1140]],fx:{fun:15,energy:-8},act:'Faire les boutiques',pass:['mode','maquillage'],pl:'shopping'},
  cinema:{n:'Cinéma',ic:'🎬',sc:'soiree',h:[[840,1380]],fx:{fun:22},act:'Regarder un film',pass:['cinema','animes'],pl:'cinema'}};
+/* invitations des camarades à leur passion (match, spectacle, atelier…) : lieux cachés de la liste « Sortir » */
+const EVT={
+ foot:{n:'Match de foot',ic:'⚽',sc:'cour',wd:5,h:15,what:'un match de foot',verb:"m'encourager",out:'au match de foot'},
+ basket:{n:'Match de basket',ic:'🏀',sc:'basket',wd:5,h:15,what:'un match de basket',verb:"m'encourager",out:'au match de basket'},
+ hand:{n:'Match de hand',ic:'🤾',sc:'basket',wd:5,h:16,what:'un match de hand',verb:"m'encourager",out:'au match de hand'},
+ danse:{n:'Spectacle de danse',ic:'💃',sc:'soiree',wd:4,h:19,what:'un spectacle de danse',verb:'me voir danser',out:'au spectacle de danse'},
+ theatre:{n:'Répétition de théâtre',ic:'🎭',sc:'soiree',wd:2,h:17,what:'une répétition de théâtre',verb:'nous regarder',out:'à la répétition de théâtre'},
+ journal:{n:'Bouclage du journal',ic:'📰',sc:'couloir',wd:0,h:17,what:'le bouclage du journal',verb:'nous donner un coup de main',out:'au bouclage du journal'},
+ arts:{n:"Atelier d'arts plastiques",ic:'🎨',sc:'couloir2',wd:2,h:17,what:"l'atelier d'arts plastiques",verb:'essayer avec moi',out:"à l'atelier d'arts plastiques"},
+ musique:{n:'Petit concert',ic:'🎸',sc:'soiree',wd:4,h:19,what:'un petit concert',verb:'nous écouter',out:'au petit concert'},
+ mecanique:{n:'Garage',ic:'🔧',sc:'marche',wd:5,h:10,what:'un moteur à réparer au garage de mon oncle',verb:'voir comment on fait',out:'au garage'}};
+Object.entries(EVT).forEach(([k,e])=>{VENUES['ev_'+k]={n:e.n,ic:e.ic,sc:e.sc,h:[[540,1290]],fx:{fun:16,energy:-4},act:e.ic==='⚽'||e.ic==='🏀'||e.ic==='🤾'?'Encourager depuis les gradins':'Regarder et participer',pass:[],pl:'ev_'+k,hidden:1};PLACE_OUT['ev_'+k]=e.out;PLACES['ev_'+k]=e.n});
+/* l'événement d'un·e camarade : son club (ou sa passion pour Kaïs) */
+function evOf(id){const c=Object.keys(CLUBS).find(k=>CLUBS[k].m.includes(id)&&EVT[k]);if(c)return c;return passOf(id).find(p=>EVT[p])||null}
+/* prochain jour de l'événement (pas aujourd'hui si l'heure est passée) */
+function evDay(k){const e=EVT[k];for(let d=G.day;d<G.day+8;d++){if(wdOf(d)===e.wd&&!(d===G.day&&G.min>=e.h*60-30))return d}return G.day+1}
+function evInvite(id,accepted){const k=evOf(id);if(!k)return null;const e=EVT[k],pl={id:'pl'+Date.now()+Math.floor(Math.random()*999),by:id,day:evDay(k),hour:e.h,place:'ev_'+k,status:accepted?'accepted':'pending',ev:k};G.plans.push(pl);return pl}
+const evText=pl=>{const e=EVT[pl.ev];return `J'ai ${e.what} ${planWhen(pl).replace(' vers ',' à ')}, tu viens ${e.verb} ? ${e.ic}`};
+/* heures possibles pour une sortie (horaires du lieu, jamais pendant les cours) */
+function planHours(place,day){const k=PLAN_VENUE[place]||place,v=VENUES[k];const we=wdOf(day)>=5||!schoolDay(day),L=[];
+ if(!v){for(let h=we?10:17;h<=20;h++)if(!(day===G.day&&h*60<G.min+30))L.push(h);return L}
+ if(v.we&&!we)return L;
+ for(let h=we?9:17;h<=21;h++){const m=h*60;if(day===G.day&&m<G.min+30)continue;if(k==='shopping'&&wdOf(day)===6&&m>=690)continue;if(v.h.some(([a,b])=>m>=a&&m+60<=b))L.push(h)}return L}
+function planFix(pl){if(pl.ev)return pl;for(let i=0;i<4;i++){const L=planHours(pl.place,pl.day);if(L.length){if(!L.includes(pl.hour))pl.hour=L.reduce((a,b)=>Math.abs(b-pl.hour)<Math.abs(a-pl.hour)?b:a);return pl}pl.day++}return pl}
+/* sortie que tu proposes : tu choisis l'heure (message à choix) */
+function planAskHour(id,pl){pl.status='hour';planFix(pl);let L=planHours(pl.place,pl.day);if(L.length>6)L=L.filter((h,i)=>i%Math.ceil(L.length/6)===0||h===18);
+ const j=pl.day===G.day?(G.min<720?"aujourd'hui":'ce soir'):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase();
+ const m=genderize(pickR(["Carrément ! ","Ok, chaud ! ","Grave ! "]),id)+`${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${j}. On se retrouve à quelle heure ?`;setTimeout(()=>{pushMsg(id,'them',m,{mq:{k:'hour',o:L.map(h=>h+' h'),d:{pl:pl.id,h:L}}});note(`💬 ${WHO[id].name} te demande l'heure de la sortie`);saveG();if(chat&&chat.id===id)drawChatMsgs()},700);return pl}
+MQ_FX.hour=(id,j,d)=>{const pl=G.plans.find(x=>x.id===d.pl);if(!pl)return '';pl.hour=d.h[j];pl.status='accepted';note(`📅 Sortie avec ${WHO[id].name} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);return pickR([`Parfait, à ${pl.hour} h alors 😄`,`Ça marche, ${pl.hour} h !`,`Top, je serai là à ${pl.hour} h`])};
 Object.assign(PLACES,{promenade:'Promenade',cafe:'Café',brunch:'Brunch',resto:'Restaurant',fastfood:'Fast-food',shopping:'Shopping',cinema:'Cinéma',club:'Club'});
 /* plats : [clé, emoji, nom, faim, où, effets en plus] */
 const FOODS=[['tacos','🌮','Tacos',55,'fastfood',{energy:-2}],['burger','🍔','Hamburger',50,'fastfood',{energy:-2}],['kebab','🥙','Kebab',55,'fastfood',{energy:-2}],['pizza','🍕','Pizza',50,'fastfood resto',{}],['bokit','🥪','Bokit',45,'fastfood',{}],
@@ -3522,7 +3560,7 @@ const FOODS=[['tacos','🌮','Tacos',55,'fastfood',{energy:-2}],['burger','🍔'
  ['pancakes','🥞','Pancakes',40,'brunch',{fun:2}],['oeufs','🍳','Œufs brouillés et pain',45,'brunch',{energy:3}],['crepe','🥞','Crêpe',25,'cafe brunch',{fun:2}],['sorbet','🍧','Sorbet coco',10,'cafe fastfood',{fun:4}],['jus','🥤','Jus de fruits frais',8,'cafe brunch fastfood resto',{energy:2}]];
 function venueOpen(k){const v=VENUES[k],m=G.min,we=weekday()>=5||!schoolDay(G.day);if(v.we&&!we)return false;if(k==='shopping'&&weekday()===6&&m>=750)return false;return v.h.some(([a,b])=>m>=a&&m<b)}
 const venueHours=k=>VENUES[k].h.map(([a,b])=>`${fmtT(a)}–${fmtT(b)}`).join(' et ')+(VENUES[k].we?' (week-end)':'')+(k==='shopping'?' (dimanche : matin)':'');
-function goSheet(msg){openSheet(sheetHead('🌴 Sortir','Choisis un endroit ouvert')+(msg?`<p class="story-text">${esc(msg)}</p>`:'')+`<div class="choices">${Object.entries(VENUES).map(([k,v])=>`<button class="choice" type="button" data-venue="${k}" ${venueOpen(k)?'':'disabled'}>${v.ic} ${v.n}<small>${venueOpen(k)?'ouvert · '+needsFx2(v.fx):'fermé · '+venueHours(k)}</small></button>`).join('')}</div>`)}
+function goSheet(msg){openSheet(sheetHead('🌴 Sortir','Choisis un endroit ouvert')+(msg?`<p class="story-text">${esc(msg)}</p>`:'')+`<div class="choices">${Object.entries(VENUES).filter(([k,v])=>!v.hidden).map(([k,v])=>`<button class="choice" type="button" data-venue="${k}" ${venueOpen(k)?'':'disabled'}>${v.ic} ${v.n}<small>${venueOpen(k)?'ouvert · '+needsFx2(v.fx):'fermé · '+venueHours(k)}</small></button>`).join('')}</div>`)}
 const needsFx2=fx=>Object.entries(fx).map(([k,d])=>`${NEED_LBL[k]} ${d>0?'+':''}${d}`).join(', ')+(fx.food?'':'');
 function venuePick(k){const v=VENUES[k];openSheet(sheetHead(`${v.ic} ${v.n}`,'Seul·e ou accompagné·e ?')+`<div class="choices"><button class="choice" type="button" data-vgo="${k}" data-id="">🙋 Y aller seul·e<small>Tu profites à ton rythme</small></button>${NPCS.map(n=>n.id).filter(id=>G.rel[id].ami>=10||G.partner===id).sort((a,b)=>G.rel[b].ami-G.rel[a].ami).map(id=>`<button class="choice" type="button" data-vgo="${k}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>Avec ${esc(WHO[id].name)}<small>amitié ${G.rel[id].ami}${sharedPass(id,'me').length?' · '+sharedPass(id,'me').map(p=>PASS[p].e).join(''):''}${v.pass.some(p=>passOf(id).includes(p))?' · adore cet endroit':''}</small></span></span></button>`).join('')}</div>`)}
 /* un·e camarade accepte selon l'amitié, ses goûts et ce qu'il ou elle fait déjà */
@@ -3908,7 +3946,7 @@ const LOVE={
   sayTo(to,["T'es adorable, mais je ne te vois pas comme ça… désolé·e 😕","Je t'apprécie beaucoup, mais en ami·e."]);if(Math.random()<.4)fPotins(`une déclaration à ${WHO[to].handle} devant le foyer… et un râteau 😬`);
   return joinFx([`${n} te dit gentiment non 💔`,relChange(to,-2,0),j])},
  rencard(to){const n=WHO[to].name,j=jealous(to);
-  if(likesBack(to,30)||G.partner===to){const pl=makePlan(to,'demain');pl.status='accepted';pl.place=pickR(['glacier','plage','centre']);note(`Rencard avec ${n} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);sayTo(to,["Un rencard ? Carrément 🥰","Ok… j'ai trop hâte 🙈"]);return joinFx([`${n} accepte un rencard ${PLACE_OUT[pl.place]} ${planWhen(pl)} 💕`,relChange(to,1,5),j])}
+  if(likesBack(to,30)||G.partner===to){const pl=makePlan(to,'demain');pl.status='accepted';pl.place=pickR(['glacier','plage','centre']);planFix(pl);note(`Rencard avec ${n} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);sayTo(to,["Un rencard ? Carrément 🥰","Ok… j'ai trop hâte 🙈"]);return joinFx([`${n} accepte un rencard ${PLACE_OUT[pl.place]} ${planWhen(pl)} 💕`,relChange(to,1,5),j])}
   sayTo(to,["Pas cette fois… mais merci 😅","Hmm, je préfère qu'on reste potes 😕"]);return joinFx([`${n} refuse le rencard`,relChange(to,-1,0),j])},
  rose(to){const n=WHO[to].name,j=jealous(to);fPotins(`quelqu'un a offert une rose à ${WHO[to].handle} ce matin 🌹 on enquête 👀`);
   if(likesBack(to,30)){sayTo(to,["une rose… pour moi ? 🥹🌹","je la garde, promis 🌹"]);return joinFx([`${n} est touché·e par ta rose 🌹`.replace('touché·e',S(to,'touché·e')),relChange(to,2,8),j])}
@@ -4677,7 +4715,7 @@ function homePick(act,id){const r=G.rel[id],n=WHO[id].name,ph=phase();
   note(`Tu as appelé ${n}`);openTalk(id,{call:1});return}
  if(act==='out'){closeSheet();pushMsg(id,'me',pickR(['Ça te dit qu\'on sorte ?','On se fait une sortie ?','Tu veux sortir avec moi ce week-end ? (en ami·e 😄)']));
   let line,da=0;if(r.ami<30){line=pickR(["On se connaît pas encore assez pour ça…","Hmm, peut-être quand on se connaîtra mieux 😅"])}
-  else if(Math.random()<sortieChance(id)&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');pl.status='accepted';line=`Ok, ${PLACE_OUT[pl.place]} ${planWhen(pl)} !`;da=2;note(`${n} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`)}
+  else if(Math.random()<sortieChance(id)&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');planAskHour(id,pl);line=`Ok, ${PLACE_OUT[pl.place]} ! Je t'écris pour l'heure 📱`;da=2}
   else{line=pickR(["Désolé·e, je peux pas…","Une autre fois peut-être","Hmm… pas cette fois"]);da=-1}
   pushMsg(id,'them',genderize(line,id));relChange(id,da,0);toast(`💬 ${n} : « ${genderize(line,id)} »`);saveG();drawView();return}
  if(act==='invite'){closeSheet();pushMsg(id,'me',pickR(['Tu veux passer à la maison ?','Viens chez moi, on se pose 😄','Ça te dit de venir à la maison ?']));
@@ -4789,7 +4827,7 @@ function personAct(id,a){
   if(G.partner&&G.partner!==id){const map=presence(ph);if((map[G.place]||[]).includes(G.partner)){relChange(G.partner,-4,-10);pushMsg(G.partner,'them',"J'ai tout vu. Sympa… 😒");note(P(`${WHO[G.partner].name} t'a vu·e flirter avec ${WHO[id].name}`))}}}
  else if(a==='sortie'){const p=sortieChance(id);
   if(r.ami<30){line=pickR(["On se connaît pas encore assez pour ça…","Hmm, peut-être quand on se connaîtra mieux 😅","Pas tout de suite, désolé·e."]);da=0}
-  else if(Math.random()<p&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');pl.status='accepted';line=`Ok, ${PLACE_OUT[pl.place]} ${planWhen(pl)} !`;da=2;note(`${WHO[id].name} a accepté une sortie ${PLACE_OUT[pl.place]} ${planWhen(pl)}`)}
+  else if(Math.random()<p&&!G.plans.some(x=>x.by===id&&x.status==='accepted')){const pl=makePlan(id,ph.type==='weekend'||G.min<16*60?'ce soir':'demain');planAskHour(id,pl);line=`Ok, ${PLACE_OUT[pl.place]} ! Je t'écris pour l'heure 📱`;da=2}
   else{line=pickR(["Désolé·e, je ne peux pas…","Une autre fois peut-être","Hmm… pas cette fois"]);da=-1}}
  const ch=relChange(id,da,dl);
  $('paOut').innerHTML=`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}</small>`:''}`;
@@ -5688,7 +5726,7 @@ function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.en
 const PLAN_VENUE={plage:'plage',sainteanne:'plage',centre:'promenade',glacier:'cafe',carbet:'promenade',marche:'promenade',resto:'resto',cinema:'cinema'};
 function startOuting(p){if(p.fam){startFamOuting(p);return}
  if(p.date){openSheet(dateSheet(p));return}
- if(isNpc(p.by)){G.st.outings++;outStart(PLAN_VENUE[p.place]||'promenade',p.by,p.id);return}
+ if(isNpc(p.by)){G.st.outings++;outStart(PLAN_VENUE[p.place]||(VENUES[p.place]?p.place:'promenade'),p.by,p.id);return}
  openSheet(`<div class="who"><div class="av">${avatarOf(p.by)}</div><div><h2>Sortie ${PLACE_OUT[p.place]}</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[p.by].name} · ${fmtT(G.min)}</p></div></div>
  <p class="story-text">${WHO[p.by].name} t'attend ${PLACE_OUT[p.place]}. Qu'est-ce que vous faites ?</p>
  <div class="choices"><button class="choice" type="button" data-out="fun" data-pl="${p.id}">On rigole et on se balade<small class="t-pos">Amitié</small></button>
