@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='129';
+const APP_VERSION='130';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2762,6 +2762,19 @@ function smartLine(id,text,chan){
   if(/(bien|ça va|ca va|tranquille|tranquil|super|nickel|top|la forme|trql|tkt|oui|ouais|ça roule|ca roule|parfait|génial|genial)/.test(t))return sty(id,fresh(/\bet (toi|vous)\b/.test(t)?["Moi aussi ça va 😊","Ça va aussi, merci 😄","Tranquille aussi !"]:["Tant mieux 😊","Cool, ça fait plaisir","Ah trop bien","Parfait alors 😄"]),'happy')}
  /* « quoi de neuf ? » : la personne raconte sa vie (amour, ami·e·s, disputes, sorties, passion…) */
  if(/(quoi de (neuf|nouveau|beau|bon)|du nouveau|tu racontes quoi|tu me racontes quoi|raconte(-| )moi (ta vie|tout|un truc)|les nouvelles|quelles nouvelles|ça dit quoi|ca dit quoi|quoi d'neuf|koi de neuf|qu'est-ce qui se passe dans ta vie|dans ta vie)/.test(t)&&isNpc(id))return sty(id,newsLine(id));
+ /* « je suis ton crush ? », « t'as un crush ? », « je te plais ? », « je pensais que tu m'aimais bien » : selon son vrai crush */
+ if(isNpc(id)&&/(je suis (ton|ta) crush|c'est moi (ton|ta) crush|t ?'?as (un|une) crush|tu as (un|une) crush|c'est qui (ton|ta) crush|(ton|ta) crush c'est qui|qui est (ton|ta) crush|t'as quelqu'un en vue|tu kiffes quelqu'un|je te plais|tu me kiffes|tu m'aimes( bien)?\b|(je pensais|j'pensais|je croyais|j'croyais) (que )?(tu m'aimais|je te plaisais|tu me kiffais|tu m'appr[ée]ciais))/.test(t)){
+  const c=crInit(),cr=c.of[id],v=G.rel[id].amour,bold=crBold(id)>=.7,stmt=/(pensais|croyais)/.test(t);
+  if(G.partner===id)return sty(id,fresh(["Bah oui, c'est toi 😳❤️ t'en doutais ?","Évidemment que c'est toi 🥰"]),'happy');
+  if(cr==='me'&&v>=68){c.st[id+'>me']=Math.max(c.st[id+'>me']||0,2);G.rel[id].amour=clamp(v+3,0,100);
+   return sty(id,fresh(stmt?["Mais je t'aime bien… même plus que bien, en vrai 🙈","Je t'aime bien. Beaucoup trop, peut-être 😳"]:bold?["Peut-être bien… 😏 t'avais pas remarqué ?","Ouais. C'est toi. Voilà, c'est dit 😳","Tu crois que je t'invite à un rendez-vous pour rien ? 😏"]:["Euh… 🙈 je… oui. Peut-être. Te moque pas","Comment t'as deviné ?! 😳 …oui","Je savais que ça se voyait 🙈 oui, c'est toi"]),'happy')}
+  if(cr==='me')return sty(id,fresh(stmt?["Mais si je t'aime bien ! 😊","Bien sûr que je t'aime bien, qu'est-ce que tu racontes 😅"]:["Pourquoi tu demandes ça ? 🙈","Hmm… je dis rien 🤐","Peut-être… peut-être pas 😏"]));
+  if(cr)return sty(id,fresh(stmt?["Je t'aime bien ! Mais en ami·e 😊","Si, je t'aime bien… mais pas comme ça, désolé·e 😕"]:G.rel[id].ami>=60?[`Non… entre nous, c'est ${CNAME(cr)} qui me plaît 🙈 garde-le pour toi`,`Pas toi, désolé·e 😅 il y a ${CNAME(cr)}…`]:["Non… il y a quelqu'un d'autre 😅","Désolé·e, mon cœur est déjà pris… en secret 🤫"]));
+  return sty(id,fresh(stmt?["Mais je t'aime bien ! En ami·e 😊","Je t'aime bien, t'inquiète ! Juste… pas de cette façon 😅"]:["Non, pas de crush en ce moment 😅","Personne pour l'instant, je me concentre sur moi 😌"]))}
+ /* « oui » à « si je t'invite à un rendez-vous, tu dis oui ? » : vrai rendez-vous, tu choisis l'heure */
+ if(isNpc(id)&&lastQ&&/(rendez-vous|\brdv\b|on aille|tu dis oui)/i.test(lastQ)&&!/ensemble/i.test(lastQ)&&/^\s*(oui|ouais|ouai|grave|carrément|carrement|bien sûr|bien sur|évidemment|evidemment|ok|okay|d'accord|dac|avec plaisir|yes|peut-être bien|pourquoi pas|vas-y)/.test(t)&&!G.plans.some(x=>x.by===id&&x.date&&(x.status==='accepted'||x.status==='hour'))){
+  const spot=/glacier/i.test(lastQ)?'glacier':pickR(['glacier','sainteanne','cinema']),pl=makePlan(id,'demain');pl.place=spot;pl.date=true;planAskHour(id,pl);relChange(id,1,3);
+  return sty(id,fresh(["Trop bien 😳💕 j'avais peur que tu dises non","Yes 😏 alors c'est un vrai rendez-vous !","Ahh j'ai trop hâte 🥹"]),'happy')}
  /* « je viendrai plus / pas » : tu refuses ou tu arrêtes (cours particuliers de Jessica, sortie…) */
  if(/(je (ne )?viendrai? (pas|plus)|je (ne )?viens (pas|plus)|j'?viendrai (pas|plus)|je (ne )?pourrai (pas|plus) venir|je peux pas venir|j'arr[eê]te (les|le) cours|plus besoin (de|des) cours|me d[ée]sinscri)/.test(t)){
   const tut=/cours (particulier|de soutien)|soutien/.test(t)||(id===TUTOR.who&&G.tutor&&/(cours|lundi|mercredi|17)/.test(t+' '+(lastQ||'').toLowerCase())),up=/(moyenne|notes?) (est |a |sont )?(mont|remont|augment|meilleure)|j'ai progress|ça va mieux|ca va mieux/.test(t);
@@ -3557,7 +3570,7 @@ function planFix(pl){if(pl.ev)return pl;for(let i=0;i<4;i++){const L=planHours(p
 /* sortie que tu proposes : tu choisis l'heure (message à choix) */
 function planAskHour(id,pl){pl.status='hour';planFix(pl);let L=planHours(pl.place,pl.day);if(L.length>8)L=L.filter((h,i)=>i%2===0||h===18);
  const j=pl.day===G.day?(G.min<720?"aujourd'hui":'ce soir'):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase();
- const m=genderize(pickR(["Carrément ! ","Ok, chaud ! ","Grave ! "]),id)+`${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${j}. On se retrouve à quelle heure ?`;setTimeout(()=>{pushMsg(id,'them',m,{mq:{k:'hour',o:L.map(h=>h+' h'),d:{pl:pl.id,h:L}}});note(`💬 ${WHO[id].name} te demande l'heure de la sortie`);saveG();if(chat&&chat.id===id)drawChatMsgs()},700);return pl}
+ const m=genderize(pickR(pl.date?["Notre rendez-vous 💕 ","Rendez-vous 😏 "]:["Carrément ! ","Ok, chaud ! ","Grave ! "]),id)+`${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${j}. On se retrouve à quelle heure ?`;setTimeout(()=>{pushMsg(id,'them',m,{mq:{k:'hour',o:L.map(h=>h+' h'),d:{pl:pl.id,h:L}}});note(`💬 ${WHO[id].name} te demande l'heure de la sortie`);saveG();if(chat&&chat.id===id)drawChatMsgs()},700);return pl}
 MQ_FX.hour=(id,j,d)=>{const pl=G.plans.find(x=>x.id===d.pl);if(!pl)return '';pl.hour=d.h[j];pl.status='accepted';note(`📅 Sortie avec ${WHO[id].name} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);return pickR([`Parfait, à ${pl.hour} h alors 😄`,`Ça marche, ${pl.hour} h !`,`Top, je serai là à ${pl.hour} h`])};
 Object.assign(PLACES,{promenade:'Promenade',cafe:'Café',brunch:'Brunch',resto:'Restaurant',fastfood:'Fast-food',shopping:'Shopping',cinema:'Cinéma',club:'Club'});
 /* plats : [clé, emoji, nom, faim, où, effets en plus] */
