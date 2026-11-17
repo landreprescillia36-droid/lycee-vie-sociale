@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='120';
+const APP_VERSION='121';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2717,6 +2717,12 @@ function smartLine(id,text,chan){
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
+ /* « je viendrai plus / pas » : tu refuses ou tu arrêtes (cours particuliers de Jessica, sortie…) */
+ if(/(je (ne )?viendrai? (pas|plus)|je (ne )?viens (pas|plus)|j'?viendrai (pas|plus)|je (ne )?pourrai (pas|plus) venir|je peux pas venir|j'arr[eê]te (les|le) cours|plus besoin (de|des) cours|me d[ée]sinscri)/.test(t)){
+  const tut=/cours (particulier|de soutien)|soutien/.test(t)||(id===TUTOR.who&&G.tutor&&/(cours|lundi|mercredi|17)/.test(t+' '+(lastQ||'').toLowerCase())),up=/(moyenne|notes?) (est |a |sont )?(mont|remont|augment|meilleure)|j'ai progress|ça va mieux|ca va mieux/.test(t);
+  if(tut&&id===TUTOR.who){if(G.tutor){G.tutor=false;if(!up)relChange(id,-1)}else if(up)relChange(id,1);
+   return sty(id,fresh(up?["Oh bravo pour ta moyenne 🎉 ! Je suis trop fière de toi. Si un jour tu bloques, tu sais où me trouver 😊","Ça me fait trop plaisir que ta moyenne ait monté ! Pas de souci, et reviens quand tu veux 📚","Félicitations 🥳 ! C'est toi qui as bossé. Ma porte reste ouverte si besoin"]:["D'accord, pas de souci 😊 Si tu changes d'avis, tu sais quand c'est","Ah dommage… mais je comprends. Reviens quand tu veux 📚","Ok ! Si tu as besoin d'aide un jour, écris-moi"]),up?1:0)}
+  return sty(id,fresh(up?["Bravo pour ta moyenne 🎉 ! Pas de souci alors","Trop bien que ça aille mieux ! Ok, pas de problème 😊"]:["Ah dommage 😕 une autre fois !","Ok pas de souci, une prochaine fois 😊","Mince… bon, tant pis, on se rattrape !"]),0)}
  /* tu annonces une nouvelle du lycée (exclusion, colle, mauvaise ou bonne note…) : la personne réagit vraiment */
  {const bad=/(exclu|exclue|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|conseil de discipline|avertissement|sanction|mauvaise note|j'ai eu (0|1|2|3|4|5|6|7)\b|zéro|zero|redoubl)/.test(t),good=/(bonne note|j'ai eu (1[4-9]|20)|félicit|felicit|tableau d'honneur|j'ai réussi|j'ai eu mon bac|admis)/.test(t);
   if(bad||good){const fam=isFam(id),par=fam&&famKind(id)==='parent';
@@ -3025,8 +3031,8 @@ function npcPing(){
   /* pas encore fait connaissance : son premier message est une question de nouvelle */
   if(!G.met[n.id]){G.met[n.id]=1;pushMsg(n.id,'them',introLine(n.id));return}
   /* jamais deux fois de suite le même message */
-  const th=G.threads[n.id]||[],lastTxt=th.length?th[th.length-1].text:'',L=VOICE[n.id].start.filter(t=>genderize(t,n.id)!==lastTxt&&!th.slice(-4).some(m=>m.text===genderize(t,n.id)));
-  pushMsg(n.id,'them',pickR(L.length?L:VOICE[n.id].start.filter(t=>genderize(t,n.id)!==lastTxt)));
+  const th=G.threads[n.id]||[],lastTxt=th.length?th[th.length-1].text:'',L=VOICE[n.id].start.filter(t=>(G.tutor||n.id!==TUTOR.who||!/cours particulier/.test(t))&&genderize(t,n.id)!==lastTxt&&!th.slice(-4).some(m=>m.text===genderize(t,n.id)));
+  pushMsg(n.id,'them',pickR(L.length?L:VOICE[n.id].start.filter(t=>(G.tutor||n.id!==TUTOR.who||!/cours particulier/.test(t))&&genderize(t,n.id)!==lastTxt)));
  });
 }
 function familyPing(){
