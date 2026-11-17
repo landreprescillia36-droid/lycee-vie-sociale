@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='117';
+const APP_VERSION='118';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -202,7 +202,7 @@ function render(s,vb,p,showBg){
   if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
   /* menton plus bas (visage allongé) : la barbe s'étire en hauteur depuis la ligne des lèvres */
   const lip=my-7.45,chin=Math.max(...F.d.match(/-?[\d.]+/g).filter((v,i)=>i%2).map(Number)),k=clamp((chin-lip)/(339.4-294.55),.8,1.4);
-  o+=`<g transform="translate(0,${lip}) scale(1,${k.toFixed(3)}) translate(0,${-lip})"><image href="${T||`assets/${f}.png`}" data-hk="${f}|${bh}" x="${200+x}" y="${my+y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/></g>`}
+  o+=`<g transform="translate(0,${lip}) scale(1,${k.toFixed(3)}) translate(0,${-lip})"><image href="${T||`assets/${f}.webp`}" data-hk="${f}|${bh}" x="${200+x}" y="${my+y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/></g>`}
  o+=`<g transform="translate(200,${252+no+a.noseY}) scale(${a.noseS})">${nose(s.nose,sk,skDD)}</g>`;
  o+=`<g transform="translate(200,${285+mo+a.mouthY}) scale(${a.mouthS})">${mouth(s.mouth,lip,sk,p)}</g>`;
  if(EYEART(s))o+=`<g transform="translate(${200+dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'d',p)}</g><g transform="translate(${200-dx},${cy}) scale(${sc},${sc})">${eyeArt(s,'g',p)}</g>`;
@@ -214,7 +214,7 @@ function render(s,vb,p,showBg){
   for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,bc,clamp((v-l0)/(lm-l0),0,1)):mix(bc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
   const T=hairTint(f,bc,tab);
   if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
-  const img=`<image href="${T||`assets/${f}.png`}" data-hk="${f}|${bc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/>`;
+  const img=`<image href="${T||`assets/${f}.webp`}" data-hk="${f}|${bc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/>`;
   o+=`<g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g>`}
  else o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
@@ -265,8 +265,8 @@ function lidSVG(P,sty){if(!P||P.length<3)return '';const f=v=>v.toFixed(2),C=lid
 function eyeArt(s,side,p){const k=eyeKey(s.eyes),A=EYE_ART[k][side],[x,y,w,h]=A,P=A.slice(7),REF=isEyeG(k)?EYE_REF_G:EYE_REF;
  const g=rgb(s.iris||REF).map((v,i)=>v/Math.max(1,rgb(REF)[i])),same=g.every(v=>Math.abs(v-1)<.03),id=p+'if'+side;
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
-  +`<image href="assets/yeux/${k}-iris-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`
-  +`<image href="assets/yeux/${k}-${side}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
+  +`<image href="assets/yeux/${k}-iris-${side}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`
+  +`<image href="assets/yeux/${k}-${side}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`
   +lidSVG(P,isEyeG(k)?'garcon':s.cils)}
 function eye(E,m,p,skDD){
  const ink='#1d1411';
@@ -335,7 +335,7 @@ function mouth(t,lip,sk,p){
  const g=bsk?rgb(sk).map((v,i)=>v/Math.max(1,rgb(bsk)[i])):rgb(lip).map((v,i)=>v/Math.max(1,rgb(mix(MOUTH_REF_SKIN,'#d9546a',.42))[i]));
  const same=g.every(v=>Math.abs(v-1)<.03),id=p+'mf';
  return (same?'':`<defs><filter id="${id}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${g[0].toFixed(3)} 0 0 0 0 0 ${g[1].toFixed(3)} 0 0 0 0 0 ${g[2].toFixed(3)} 0 0 0 0 0 1 0"/></filter></defs>`)
-  +`<image href="assets/bouches/${k}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`+(MOUTH_TEETH.includes(k)?`<image href="assets/bouches/${k}-dents.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:'');
+  +`<image href="assets/bouches/${k}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same?'':` filter="url(#${id})"`}/>`+(MOUTH_TEETH.includes(k)?`<image href="assets/bouches/${k}-dents.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`:'');
 }
 /* ---------- corps réaliste ---------- */
 const GEO={f:{SH:70,WH:50,HH:59,au:15,f:1},m:{SH:80,WH:58,HH:58,au:18,f:0},nb:{SH:74,WH:53,HH:58,au:16,f:0}};
@@ -445,7 +445,7 @@ const lerpT=(T,y)=>{if(y<=T[0][0])return T[0][1];for(let i=1;i<T.length;i++)if(y
 function jeanSVG(G,s,p,t){
  /* jean décalqué sur ta planche (js/jeans-art.js) : la ceinture à la taille, le bas au-dessus des chaussures ; largeur adaptée à la corpulence */
  if(typeof JEAN_ART!=='undefined'&&JEAN_ART[t]){const A=JEAN_ART[t],Y0=376,sv=(856-Y0)/JEAN_ART.mom.h,sh=(sideX(G,440)+2)/A.hip,w=A.w*sh,h=A.h*sv;
-  return `<image href="assets/bas/jean-${t}.png" x="${fx(200-A.cx*sh)}" y="${Y0}" width="${fx(w)}" height="${fx(h)}" preserveAspectRatio="none"/>`}
+  return `<image href="assets/bas/jean-${t}.webp" x="${fx(200-A.cx*sh)}" y="${Y0}" width="${fx(w)}" height="${fx(h)}" preserveAspectRatio="none"/>`}
 const b=s.bottomColor,PR=JEAN_PROF[t],Y0=376,wx=sideX(G,Y0)+1.5,WR=46.3,HEM=t==='bermuda'?Math.round(Y0+(856-Y0)*PR.L):856,q=p+'je',f=fx,dk=shade(b,-.35),lt=shade(b,.25),ts='#d6a35c',n=PR.o.length-1;
  const at=(A,u)=>{const z=Math.min(n,Math.max(0,u*n)),i=Math.min(n-1,Math.floor(z)),w=z-i;return A[i]+(A[i+1]-A[i])*w};
  const sm=(A,u)=>(at(A,u-.03)+2*at(A,u)+at(A,u+.03))/4;
@@ -574,7 +574,7 @@ function shoeArt(t,c,sk,skFill){if(typeof SHOE_ART==='undefined'||!SHOE_MODEL[t]
  if(hit&&A.img){const [ix,iy,iw,ih]=A.img,sk0=A.layers.find(l=>l[0]==='skin');
   /* dessus du pied (ballerines) : forme du modèle, ombrée comme la jambe, qui part de la largeur de la cheville */
   const foot=sk0&&t!=='ballerines'?`<path d="${sk0[1]}" fill="${skFill||sk}" stroke="none"/>`:'';
-  return foot+`<image href="assets/chaussures/${pick[0]}.png" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/>`}
+  return foot+`<image href="assets/chaussures/${pick[0]}.webp" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/>`}
  const lm=lum(A.main),tint=f=>{if(hit)return f;const dc=Math.hypot(...rgb(f).map((v,i)=>v-rgb(A.main)[i]));return dc<45?shade(c,Math.max(-.6,Math.min(.6,(lum(f)-lm)*1.6))):f};
  return `<g stroke="none">`+A.layers.map(([k,d,f,cy])=>`<path d="${d}" fill="${k==='skin'?sk:k==='sil'?tint(f):(cy!=null&&cy>25&&!hit&&lum(A.main)>.8)?f:tint(f)}"/>`).join('')+`<path d="${A.layers.find(l=>l[0]==='sil')[1]}" fill="none" stroke="${hit?A.edge:shade(c,-.45)}" stroke-width=".8" stroke-linejoin="round" opacity=".8"/></g>`}
 /* chaussures vues de face (modèle de Prescillia, docs/references/chaussures.png) : x local > 0 = côté intérieur du pied */
@@ -869,7 +869,7 @@ function topSVG(G,T,s,p,K){
    /* sous l'image, sa silhouette un peu élargie, de la couleur du haut : le bord dentelé des manches ne laisse plus voir le bras (points clairs ou foncés) */
    +`<defs><filter id="${fid}d" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="1.3"/><feGaussianBlur stdDeviation=".35"/><feComponentTransfer><feFuncA type="linear" slope="3"/></feComponentTransfer><feComposite in="SourceGraphic" operator="out" result="e"/><feFlood flood-color="${same?hg.A[8]:shade(cc,-.18)}"/><feComposite in2="e" operator="in"/></filter></defs>`
    +`<defs><filter id="${fid}h" x="-10%" y="0" width="120%" height="100%" color-interpolation-filters="sRGB"><feMorphology in="SourceAlpha" operator="dilate" radius="5 0" result="d"/><feFlood flood-color="${same?hg.A[8]:shade(cc,-.12)}"/><feComposite in2="d" operator="in"/></filter><clipPath id="${fid}hc"><rect x="${fx(200-(sideX(G0,400)+7)/kx)}" y="${fx(y+h*.5)}" width="${fx(2*(sideX(G0,400)+7)/kx)}" height="${fx(h)}"/></clipPath></defs>`
-   +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><g clip-path="url(#${fid}hc)"><image href="assets/${f}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}h)"/></g><image href="assets/${f}.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}d)"/><image href="${T_||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+J.torso+J.sleeves+hands()}}
+   +`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><g clip-path="url(#${fid}hc)"><image href="assets/${f}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}h)"/></g><image href="assets/${f}.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none" filter="url(#${fid}d)"/><image href="${T_||'assets/'+f+'.webp'}" data-hk="${same?'':f+'|'+cc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T_?'':` filter="url(#${fid})"`}/></g>`+J.torso+J.sleeves+hands()}}
  if(T.vest){
   const U=lum(c)>.5?'#1f2127':'#f4f1ea',VG={...G,SH:G.SH-8};
   o+=`<path d="${torsoD(G,446,3)}" fill="${U}"/>`;
@@ -1038,7 +1038,7 @@ function templeFill(s,p){if(coupeM(s))return '';if(s.sexe!=='m'||!HAIR_NEW.inclu
  const side=k=>{const o=[],I=[];for(let y=T.top;y<=T.bot;y+=3){o.push([200+k*(faceHW(d,y)+T.out),y]);I.push([inner(k,y),y])}return 'M'+o.concat(I.reverse()).map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'};
  const edge=k=>{let o='';for(let y=T.top+16;y<=T.bot;y+=3)o+=(o?' L':'M')+fx(inner(k,y))+','+y;return o};
  /* remplissage = la texture de la coiffure elle-même (l'image décalquée), descendue sur la tempe, sur une base de la couleur des cheveux */
- const cp=`${id}c`,fit=hairFit(s),[ix,iy,iw,ih]=A.img,same=base===A.main,href=(same?null:HTINT[s.hair+'|'+hc])||`assets/coiffures/${s.hair}.png`;
+ const cp=`${id}c`,fit=hairFit(s),[ix,iy,iw,ih]=A.img,same=base===A.main,href=(same?null:HTINT[s.hair+'|'+hc])||`assets/coiffures/${s.hair}.webp`;
  const copy=(dy,n)=>`<g transform="translate(0,${dy})"><g transform="${fit?fit.t:''}"><image href="${href}" x="${ix}" y="${iy}" width="${iw}" height="${ih}" preserveAspectRatio="none"/></g></g>`;
  return `<defs><clipPath id="${cp}">${[-1,1].map(k=>`<path d="${side(k)}"/>`).join('')}</clipPath><pattern id="${id}h" width="3.2" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><path d="M.8,0 L.8,2.6" stroke="${c2}" stroke-width=".8" stroke-linecap="round"/><path d="M2.4,1.4 L2.4,4" stroke="${c3}" stroke-width=".55" stroke-linecap="round" opacity=".7"/></pattern><linearGradient id="${id}m" gradientUnits="userSpaceOnUse" x1="0" y1="${T.top}" x2="0" y2="${T.top+18}"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#fff"/></linearGradient><mask id="${id}k" maskUnits="userSpaceOnUse" x="0" y="0" width="400" height="400"><rect x="0" y="0" width="400" height="400" fill="url(#${id}m)"/></mask></defs>
   <g mask="url(#${id}k)"><g clip-path="url(#${cp})"><rect x="0" y="${T.top-10}" width="400" height="${T.bot-T.top+20}" fill="${c}"/>${copy(20,4)}<rect x="0" y="${T.top+30}" width="400" height="${T.bot-T.top}" fill="${c}" opacity=".92"/></g></g>`/* dégradé court : cheveux ras et serrés sous les boucles */+
@@ -1074,7 +1074,7 @@ function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(H
    for(let ch=0;ch<3;ch++)a[i*4+ch]=Math.round((T[ch][j]+(T[ch][j+1]-T[ch][j])*u)*255)}
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');HTINT[k]=url;bkPut('t|'+k,url);
   document.querySelectorAll(`image[data-hk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('filter')})}catch(e){/* fichier ouvert en local (file://) : le filtre SVG reste */}};
- im.src=f.includes('/')?`assets/${f}.png`:`assets/coiffures/${f}.png`;return null}
+ im.src=f.includes('/')?`assets/${f}.webp`:`assets/coiffures/${f}.webp`;return null}
 /* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
    recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
 const HAIR_PEAU=new Set(['bafro','bafro-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
@@ -1083,8 +1083,8 @@ function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO
   const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){if(a[i+3]<200)continue;R+=a[i];G+=a[i+1];B+=a[i+2];W++}/* teinte de référence : pixels de peau bien opaques */
   if(W){const t=rgb(sk),lr=(R+G+B)/W/3;for(let i=0;i<a.length;i+=4){const l=Math.min(1,(a[i]+a[i+1]+a[i+2])/3/lr)*.9;for(let j=0;j<3;j++)a[i+j]=Math.round(t[j]*l)}}/* couleur de la peau, jamais plus claire, un peu dans l'ombre des cheveux */
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;bkPut('s|'+k,url);document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
- im.src=`assets/coiffures/${f}-peau.png`;return null}
-const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.png`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
+ im.src=`assets/coiffures/${f}-peau.webp`;return null}
+const peauImg=(f,sk,x,y,w,h)=>{if(!HAIR_PEAU.has(f))return '';const T=skinTint(f,sk);return `<image href="${T||`assets/coiffures/${f}-peau.webp`}" data-sk="${f}|${sk}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':' opacity="0"'}/>`};
 /* coupe bouclée courte des garçons copiée pixel par pixel sur le modèle de Prescillia (js/coupe-modele.js) */
 /* + coupes courtes (vagues, bouclettes, court) copiées sur son écran « Forme du visage » (js/coupes-garcons.js) */
 const coupeOf=s=>s.hair==='gtaper'?(typeof COUPE_MODELE!=='undefined'&&COUPE_MODELE):(typeof COUPES_G!=='undefined'&&COUPES_G[s.hair]);
@@ -1097,7 +1097,7 @@ function coupeSVG(s,p){const C=coupeOf(s),[x,y,w,h]=C.img,[l0,lm,l1]=C.lum,hc=s.
  const dk=shade(hc,-.75),lt=s.hair!=='gtaper'?shade(hc,.18):lum(hc)<.15?mix(hc,'#5e3d27',.7):shade(hc,.45)/* cheveux très foncés : reflets bruns chauds, pas gris */,tab=[[],[],[]];for(let i=0;i<16;i++){const v=i/15,c=v<=lm?mix(dk,hc,clamp((v-l0)/(lm-l0),0,1)):mix(hc,lt,clamp((v-lm)/(l1-lm),0,1));rgb(c).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}
  const T=same?null:hairTint(f,hc,tab),fid=p+'cmf',d=faceOf(s).d,k=(faceHW(d,150)+3)/(faceHW(faceOf({...s,face:'allonge'}).d,150)+3);
  return (same||T?'':`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`)
-  +coupeTempes(s,d,hc)+`<defs><clipPath id="${p}cmc"><path d="${coupeClip(d,s.hair==='gvagues')}"/></clipPath></defs><g clip-path="url(#${p}cmc)"><g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.png'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g></g>`}
+  +coupeTempes(s,d,hc)+`<defs><clipPath id="${p}cmc"><path d="${coupeClip(d,s.hair==='gvagues')}"/></clipPath></defs><g clip-path="url(#${p}cmc)"><g transform="translate(200,205) scale(${fx(k)}) translate(-200,-205)"><image href="${T||'assets/'+f+'.webp'}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/></g></g>`}
 /* sous les boucles, la coupe reste sur le crâne (pas de mèche qui flotte à côté du visage) */
 function coupeClip(d,soft){const P=[];if(soft){/* coupes courtes : côtés collés au crâne, le bord des cheveux suit exactement le contour du visage */
   for(let y=100;y<=230;y+=2){const u=clamp((y-112)/72,0,1);P.push([200+faceHW(d,Math.max(y,150))+1+(y<150?(150-y)*.06:0)+34*(1-u*u*(3-2*u)),y])}/* descente arrondie du dôme jusqu'au haut de l'oreille (modèle) */
@@ -1117,13 +1117,13 @@ function hairArt(s,part,p){if(coupeM(s))return part==='front'?coupeSVG(s,p):'';c
   const fit=hairFit(s),G0=fit?`<g transform="${fit.t}">`:'',G1=fit?'</g>':'';
   /* couleur : l'image est reteinte une fois dans un canvas (hairTint) puis réutilisée, sans filtre SVG (certains téléphones
      n'affichaient plus les cheveux filtrés) ; en attendant, le filtre sert de secours */
-  const imgOf=f=>{const T=same?null:hairTint(f,hc,tab);return peauImg(f,s.skin,x,y,w,h)+`<image href="${T||`assets/coiffures/${f}.png`}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/>`};
+  const imgOf=f=>{const T=same?null:hairTint(f,hc,tab);return peauImg(f,s.skin,x,y,w,h)+`<image href="${T||`assets/coiffures/${f}.webp`}" data-hk="${same?'':f+'|'+hc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${same||T?'':` filter="url(#${fid})"`}/>`};
   const img=G0+imgOf(s.hair)+G1;
   /* derrière le cou : fond sombre plein sous l'image, pour qu'il ne reste aucun trou entre les mèches et le cou */
   const FY=A.fcut?A.fcut[0]:345,FX=A.fcut?A.fcut[1]:112;
   if(part==='back'&&A.dos)return flt+G0+imgOf(s.hair+'-dos')+G1;   /* cheveux sous les épaules : vides remplis de mèches, derrière le corps */
   if(part==='back')return `<defs><clipPath id="${cid}n"><rect x="120" y="240" width="160" height="${FY-200}"/></clipPath></defs><path d="${L[0][1]}" fill="${shade(same?A.main:hc,same?-.5:-.62)}" clip-path="url(#${cid}n)"/>`+flt+img;
-  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${A.crane?`<mask id="${cid}k"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="${faceOf(s).d}" fill="#000" stroke="#fff" stroke-width="9"/></mask><mask id="${cid}l"><rect x="-400" y="125" width="1200" height="1000" fill="#fff"/><path d="${faceOf(s).d}" fill="#000"/></mask>${G0}<path d="${A.crane}" fill="${s.skin}" mask="url(#${cid}k)"/><path d="${A.crane}" fill="none" stroke="${mix(s.skin,'#6a2e14',.42)}" stroke-width="2.4" opacity=".5" mask="url(#${cid}l)"/>${G1}`:''}${img}${A.tempe&&(!fit||HAIR_FADE[s.hair])?sideburns(s,A,same?A.main:hc,fit,cid):''}${A.acc?G0+`<image href="assets/coiffures/${s.hair}-acc.png" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`+G1:''}</g>`}
+  return flt+`<defs><clipPath id="${cid}"><path d="M-400,-400 L800,-400 L800,${FY} L${200+FX},${FY} L${200+FX},1600 L${200-FX},1600 L${200-FX},${FY} L-400,${FY}Z ${neckZone(s,FY)}${A.ears?earHoles(s):''}" clip-rule="evenodd"/></clipPath></defs><g clip-path="url(#${cid})">${A.crane?`<mask id="${cid}k"><rect x="-400" y="-400" width="1200" height="1200" fill="#fff"/><path d="${faceOf(s).d}" fill="#000" stroke="#fff" stroke-width="9"/></mask><mask id="${cid}l"><rect x="-400" y="125" width="1200" height="1000" fill="#fff"/><path d="${faceOf(s).d}" fill="#000"/></mask>${G0}<path d="${A.crane}" fill="${s.skin}" mask="url(#${cid}k)"/><path d="${A.crane}" fill="none" stroke="${mix(s.skin,'#6a2e14',.42)}" stroke-width="2.4" opacity=".5" mask="url(#${cid}l)"/>${G1}`:''}${img}${A.tempe&&(!fit||HAIR_FADE[s.hair])?sideburns(s,A,same?A.main:hc,fit,cid):''}${A.acc?G0+`<image href="assets/coiffures/${s.hair}-acc.webp" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"/>`+G1:''}</g>`}
  if(part==='back')return `<path d="${sil}" fill="${shade(tint(A.main),-.45)}"/>`;
  return `<defs><clipPath id="${id}c"><path d="${sil}"/></clipPath><filter id="${id}f" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="2.4"/></filter></defs>`
   +`<path d="${sil}" fill="${tint(L[0][2])}"/><g clip-path="url(#${id}c)"><g filter="url(#${id}f)">${L.slice(1).map(l=>`<path d="${l[1]}" fill="${tint(l[2])}"/>`).join('')}</g></g>`
@@ -2169,7 +2169,9 @@ async function avBake(id,av,vb,bg,tries){try{if(typeof fetch==='undefined'||!win
  let url=c.toDataURL('image/webp',.9);if(!url.startsWith('data:image/webp'))url=c.toDataURL('image/png');AVB_IMG[id]=url;bkPut('a|'+vb+'|'+(bg?1:0)+'|'+JSON.stringify(av),url);
  document.querySelectorAll(`svg[data-avk="${id}"]`).forEach(el=>{const [x,y,ww,hh]=avBox(vb);el.innerHTML=`<image href="${url}" x="${x}" y="${y}" width="${ww}" height="${hh}"/>`});
  const g=document.getElementById(id);if(g)g.remove()   /* dessin détaillé libéré de la mémoire */}catch(e){/* garde la version <use> */}}
-function avatarOf(id){return avUse(avOf(id),AVB,true)}
+/* « Potins du lycée » : un logo (journal) au lieu d'un visage d'élève */
+const POTINS_LOGO='<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="potg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b5cf0"/><stop offset="1" stop-color="#e2558f"/></linearGradient></defs><rect width="64" height="64" fill="url(#potg)"/><text x="32" y="43" text-anchor="middle" font-size="30">🗞️</text></svg>';
+function avatarOf(id){return id==='potins'?POTINS_LOGO:avUse(avOf(id),AVB,true)}
 const slug=n=>'@'+((n||'moi').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'')||'moi');
 const myHandle=()=>slug(me().name)+(me().nom?'.'+slug(me().nom).slice(1):'');
 const isFam=id=>typeof id==='string'&&id.startsWith('fam');
@@ -2179,7 +2181,7 @@ const handleOf=id=>id==='me'?myHandle():isFam(id)?famById(id).role:WHO[id].handl
 const isNpc=id=>!!(id&&FICHES[id]);
 const ilElle=id=>FICHES[id]?.g==='f'?'elle':'il';
 function relChange(id,da=0,dl=0){
- if(!isNpc(id))return'';const r=G.rel[id];da=Math.round(da*markFactor(id,da));dl=Math.round(dl*(hasMark(id,'trahison')&&dl>0?.4:1));
+ if(!isNpc(id))return'';const r=G.rel[id];if(da||dl){G.seen=G.seen||{};G.seen[id]=1}da=Math.round(da*markFactor(id,da));dl=Math.round(dl*(hasMark(id,'trahison')&&dl>0?.4:1));
  if(dl>0&&!npcLikesMe(id))dl=0;r.ami=clamp(r.ami+da,-30,100);r.amour=clamp(r.amour+dl,0,100);
  const p=[];if(da)p.push(`amitié ${da>0?'+':''}${da}`);if(dl)p.push(`amour ${dl>0?'+':''}${dl}`);
  return p.length?`${WHO[id].name} : ${p.join(', ')}`:'';
@@ -2207,7 +2209,9 @@ function ressenti(id){
  return a+b+(mem?` Se souvient : « ${mem.t} »`:'');
 }
 const ressentiShort=id=>ressenti(id).split(' Se souvient')[0];
-function gaugesHTML(id){const r=G.rel[id],met=!!(G.met&&G.met[id]),off=!npcLikesMe(id)&&G.partner!==id;return `<div class="gg"><span>Amitié</span><div class="bar"><i style="width:${Math.max(0,r.ami)}%"></i></div><b>${r.ami}</b></div><div class="gg resp${met?'':' off'}" title="${met?'':'Pas encore rencontré·e'}"><span>Respect</span><div class="bar"><i style="width:${met?respOf(id):0}%"></i></div><b>${met?respOf(id):'–'}</b></div><div class="gg love${off?' off':''}" title="${off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
+/* jauges masquées (« – ») tant que tu n'as pas rencontré la personne (discussion, action, message…) */
+const metOf=id=>!!((G.met&&G.met[id])||(G.seen&&G.seen[id])||G.partner===id);
+function gaugesHTML(id){const r=G.rel[id],met=metOf(id),off=!met||!npcLikesMe(id)&&G.partner!==id;return `<div class="gg${met?'':' off'}" title="${met?'':'Pas encore rencontré·e'}"><span>Amitié</span><div class="bar"><i style="width:${met?Math.max(0,r.ami):0}%"></i></div><b>${met?r.ami:'–'}</b></div><div class="gg resp${met?'':' off'}" title="${met?'':'Pas encore rencontré·e'}"><span>Respect</span><div class="bar"><i style="width:${met?respOf(id):0}%"></i></div><b>${met?respOf(id):'–'}</b></div><div class="gg love${off?' off':''}" title="${!met?'Pas encore rencontré·e':off?'Pas attiré·e par toi':''}"><span>Amour</span><div class="bar"><i style="width:${off?0:r.amour}%"></i></div><b>${off?'–':r.amour}</b></div>`}
 
 /* ---------- famille ---------- */
 const ROLES=['Mère','Père','Belle-mère','Beau-père','Grande sœur','Petite sœur','Grand frère','Petit frère','Grand-mère','Grand-père','Tante','Oncle'];
@@ -2235,7 +2239,7 @@ function famAvatar(role,seed){
 const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',couloir2:'Couloir (côté fenêtres)',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
 function sceneSVG(id,p){
  switch(id){
- case 'plage':return `<rect width="600" height="400" fill="#f0d9b0"/><image href="assets/decors/plage.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'plage':return `<rect width="600" height="400" fill="#f0d9b0"/><image href="assets/decors/plage.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'plage_old':{/* plage : style vectoriel plat, ciel clair, nuages à l'horizon, mer turquoise et sable doré */
   const cl=(c,sh)=>c.map(([x,y,r])=>`<circle cx="${x}" cy="${y+sh}" r="${r}"/>`).join('');
   const L1=[[-6,168,44],[48,158,40],[104,146,48],[168,160,40],[222,174,30],[258,184,20]],R1=[[352,182,22],[392,172,32],[446,156,44],[508,146,50],[566,154,44],[612,166,38]];
@@ -2256,7 +2260,7 @@ function sceneSVG(id,p){
   <path d="M0,318 C90,308 180,326 300,316 C410,307 500,322 600,312 L600,330 C500,338 410,324 300,334 C180,344 90,326 0,336Z" fill="#f8deaa" opacity=".8"/>
   <path d="M0,366 C120,356 230,374 360,364 C460,356 540,368 600,362 L600,400 L0,400Z" fill="#ecc174" opacity=".55"/>
   <g fill="#e2b46a" opacity=".6"><circle cx="80" cy="300" r="1.6"/><circle cx="240" cy="352" r="1.4"/><circle cx="420" cy="306" r="1.6"/><circle cx="530" cy="348" r="1.4"/><circle cx="330" cy="384" r="1.6"/></g>`;}
- case 'basket':return `<rect width="600" height="400" fill="#5f86c4"/><image href="assets/decors/basket.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'basket':return `<rect width="600" height="400" fill="#5f86c4"/><image href="assets/decors/basket.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'basket_old':{/* gymnase : terrain de basket, panier au fond, fenêtre sur le ciel à droite */
   const NET='M274,93 C276,106 280,118 284,134 C290,137 310,137 316,134 C320,118 324,106 326,93Z';
   return `<defs><linearGradient id="${p}bw" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3fa6cb"/><stop offset=".55" stop-color="#6cc2dc"/><stop offset="1" stop-color="#8fd2e6"/></linearGradient>
@@ -2281,7 +2285,7 @@ function sceneSVG(id,p){
   <rect x="258" y="33" width="84" height="57" fill="none" stroke="#e9eef1" stroke-width="4"/>
   <path d="${NET}" fill="url(#${p}bnet)"/><path d="M274,93 C276,106 280,118 284,134 M326,93 C324,106 320,118 316,134 M284,134 C290,137 310,137 316,134" stroke="#e8cf96" stroke-width="2.4" fill="none" stroke-linecap="round"/>
   <ellipse cx="300" cy="93" rx="26" ry="5" fill="none" stroke="#d6362c" stroke-width="4"/>`;}
- case 'couloir':case 'couloir2':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/${id}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décors de Prescillia */
+ case 'couloir':case 'couloir2':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/${id}.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décors de Prescillia */
  case 'couloir_old':{/* couloir du lycée en perspective : casiers orange, carrelage en damier, plafond à dalles */
   const VX=300,VY=168,HW=340,TOP=178,BOT=262,LK=60,ZM=5.2,S=z=>1/(1+z),X=(u,z)=>fx(VX+u*S(z)),Y=(v,z)=>fx(VY+v*S(z));
   const quad=(a,b,c,d)=>`M${a[0]},${a[1]} L${b[0]},${b[1]} L${c[0]},${c[1]} L${d[0]},${d[1]}Z`;
@@ -2312,9 +2316,9 @@ function sceneSVG(id,p){
   [.6,1.8,3.2,4.5].forEach(z=>{const z1=z+.35;o+=`<path d="${quad([X(-46,z),Y(-TOP,z)],[X(46,z),Y(-TOP,z)],[X(46,z1),Y(-TOP,z1)],[X(-46,z1),Y(-TOP,z1)])}" fill="#fffbe8" stroke="#f2c230" stroke-width="${fx(5*S(z))}"/>`});
   o+=`<rect x="${X(-HW,ZM)}" y="${Y(-TOP,ZM)}" width="${fx(2*HW*S(ZM))}" height="${fx((TOP+BOT)*S(ZM))}" fill="none" stroke="#1d4f86" stroke-width="2" opacity=".5"/>`;
   return o;}
- case 'chd_blanc':case 'chd_beige':case 'chd_sauge':case 'chd_bleu':return `<rect width="600" height="400" fill="#efe3d4"/><image href="assets/chambres/defaut-${id.slice(4)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
- case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':case 'ch_kenza':case 'ch_meisha':case 'ch_eva':case 'ch_noemie':case 'ch_jessica':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
- case 'cour':return `<rect width="600" height="400" fill="#efd9c4"/><image href="assets/decors/lycee.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'chd_blanc':case 'chd_beige':case 'chd_sauge':case 'chd_bleu':return `<rect width="600" height="400" fill="#efe3d4"/><image href="assets/chambres/defaut-${id.slice(4)}.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
+ case 'ch_ines':case 'ch_maelle':case 'ch_sacha':case 'ch_kylian':case 'ch_noah':case 'ch_anais':case 'ch_jade':case 'ch_kenza':case 'ch_meisha':case 'ch_eva':case 'ch_noemie':case 'ch_jessica':return `<rect width="600" height="400" fill="#e9d6c4"/><image href="assets/chambres/${id.slice(3)}.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;
+ case 'cour':return `<rect width="600" height="400" fill="#efd9c4"/><image href="assets/decors/lycee.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'cour_old':{/* cour du lycée : bâtiment antillais aux jalousies bleues, palmiers, pelouses et cour pavée */
   const cloud=(x,y,k)=>`<g transform="translate(${x},${y}) scale(${k})" fill="#fff"><circle cx="0" cy="0" r="30"/><circle cx="32" cy="-14" r="36"/><circle cx="70" cy="-2" r="30"/><circle cx="98" cy="10" r="22"/><rect x="-20" y="0" width="130" height="30" rx="15"/></g>`;
   const win=(x,y,w,h)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#2f7fb8"/>`+[0,1,2,3,4].map(i=>`<rect x="${x+2}" y="${y+3+i*(h-4)/5}" width="${w-4}" height="${(h-4)/5-2}" fill="#5aa7d8"/>`).join('')+`<rect x="${x-3}" y="${y+h}" width="${w+6}" height="4" fill="#e8d2a2"/>`;
@@ -2341,14 +2345,14 @@ function sceneSVG(id,p){
   <path d="M172,266 H428" stroke="#e9e5dc" stroke-width="3"/>
   <g transform="translate(468,300)"><rect x="0" y="0" width="70" height="8" rx="2" fill="#8a5a35"/><rect x="0" y="-16" width="70" height="7" rx="2" fill="#8a5a35"/><rect x="6" y="8" width="5" height="16" fill="#555"/><rect x="59" y="8" width="5" height="16" fill="#555"/></g>
   ${palm(560,402,250,-28)}${palm(520,404,200,22)}`;}
- case 'cascade':return `<rect width="600" height="400" fill="#7fb6c8"/><image href="assets/decors/cascade.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'cascade':return `<rect width="600" height="400" fill="#7fb6c8"/><image href="assets/decors/cascade.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'cascade_old':return `<rect width="600" height="400" fill="#2f6b3f"/><path d="M0,0 H600 V140 C520,120 460,170 380,150 C320,136 280,170 200,150 C120,130 60,160 0,140Z" fill="#3f8a4f"/><path d="M240,0 C250,120 236,240 250,330 L350,330 C364,240 350,120 360,0Z" fill="#dff4ff"/><path d="M262,0 C270,120 258,240 270,330 M300,0 C306,120 296,240 304,330 M338,0 C344,120 334,240 340,330" stroke="#a9dcf2" stroke-width="5" fill="none" opacity=".8"/><ellipse cx="300" cy="336" rx="190" ry="34" fill="#5fb8d9"/><rect y="350" width="600" height="50" fill="#4a8f9f"/><g fill="#57a85e"><circle cx="60" cy="120" r="50"/><circle cx="140" cy="90" r="44"/><circle cx="520" cy="110" r="52"/><circle cx="450" cy="80" r="40"/></g>`;
- case 'marche':return `<rect width="600" height="400" fill="#e6cdb4"/><image href="assets/decors/marche.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'marche':return `<rect width="600" height="400" fill="#e6cdb4"/><image href="assets/decors/marche.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'marche_old':{let st='';const cols=[['#e8613c','#fff3c4'],['#2fa36b','#f4f1ea'],['#f2c230','#d93b5e']];for(let i=0;i<3;i++){const x=20+i*195,[a,b]=cols[i];for(let k=0;k<6;k++)st+='';st+=`<rect x="${x}" y="60" width="180" height="50" fill="${a}"/>`+[0,1,2,3,4,5].map(k=>`<rect x="${x+k*30}" y="60" width="15" height="50" fill="${b}"/>`).join('')+`<rect x="${x+10}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x+162}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x}" y="220" width="180" height="40" rx="4" fill="#a8743f"/>`+['#ffb627','#e8613c','#7cc35f','#ffd23f','#d93b5e','#ff8a3d','#9bd16a'].map((f,k)=>`<circle cx="${x+18+k*24}" cy="212" r="11" fill="${f}"/>`).join('')}return `<rect width="600" height="400" fill="#bfe3ff"/>${st}<rect y="260" width="600" height="140" fill="#d8cdbb"/>`;}
- case 'cantine':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/cantine.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'cantine':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/cantine.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'cantine_old':{let f='';for(let i=0;i<12;i++)f+=`<rect x="${i*50}" y="300" width="25" height="100" fill="#e4dccd"/>`;
   return `<rect width="600" height="400" fill="#f6efe2"/><rect x="40" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="410" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="230" y="50" width="140" height="90" rx="8" fill="#2f4a3e"/><text x="300" y="82" text-anchor="middle" font-family="Baloo 2, Trebuchet MS, sans-serif" font-weight="700" font-size="17" fill="#f4f1ea">MENU</text><rect y="300" width="600" height="100" fill="#efe8da"/>${f}`;}
- case 'soiree':return `<rect width="600" height="400" fill="#e9c9c4"/><image href="assets/decors/soiree.jpg" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'soiree':return `<rect width="600" height="400" fill="#e9c9c4"/><image href="assets/decors/soiree.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'soiree_old':{let l='';const cols=['#ff5f8f','#ffd23f','#5fd3ff','#9b6bff','#3fcf8e'];for(let i=0;i<13;i++){const x=20+i*47,y=50+Math.sin(i/12*Math.PI)*45;l+=`<circle cx="${x}" cy="${y}" r="9" fill="${cols[i%5]}"/><circle cx="${x}" cy="${y}" r="20" fill="${cols[i%5]}" opacity=".18"/>`}
   return `<defs><radialGradient id="${p}sr" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#4a2f7a"/><stop offset="1" stop-color="#1c1430"/></radialGradient></defs><rect width="600" height="400" fill="url(#${p}sr)"/>${l}`;}
  default:return `<rect width="600" height="400" fill="#f3d9e2"/><rect x="380" y="50" width="160" height="130" rx="6" fill="#bfe3ff" stroke="#fff" stroke-width="10"/><path d="M460,50 V180 M380,115 H540" stroke="#fff" stroke-width="6"/><rect x="60" y="60" width="90" height="120" rx="4" fill="#9b6bff" transform="rotate(-4 105 120)"/><rect y="320" width="600" height="80" fill="#8fb3e0"/><rect y="312" width="600" height="14" rx="7" fill="#f4f1ea"/>`;
@@ -2516,10 +2520,12 @@ function checkObjectives(){
 
 /* ---------- état ---------- */
 function initLinks(){const L={};NPCS.forEach(a=>{L[a.id]={};NPCS.forEach(b=>{if(a.id!==b.id){const v=LINKS0[a.id+'>'+b.id]||[40,0];L[a.id][b.id]={ami:v[0],amour:attracted(FICHES[a.id].o,FICHES[a.id].g,FICHES[b.id].g)?v[1]:0}}})});return L}
-const mkPost=o=>Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o);
+/* les posts de « Potins du lycée » restent à quelques centaines de j'aime (c'est le compte d'un lycée) */
+const potinsCap=p=>{if(p&&p.by==='potins'){const h=hash(String(p.id||p.text||''));p.l=Math.min(p.l||0,180+h%520);p.r=Math.min(p.r||0,8+h%37);p.c=Math.min(p.c||0,6+h%24)}return p};
+const mkPost=o=>potinsCap(Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o));
 function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
-  rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
+  money:2000,rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
   met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
@@ -2548,7 +2554,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
+if(G){if(G.money==null)G.money=2000;(G.posts||[]).forEach(p=>{if(p.by==='potins'){const h=hash(String(p.id||p.text||''));p.l=Math.min(p.l||0,180+h%520);p.r=Math.min(p.r||0,8+h%37);p.c=Math.min(p.c||0,6+h%24)}});if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
 if(G){needInit();G.cd=G.cd||{};/* G.chap est créé plus tard (chapInit), ses constantes ne sont pas encore définies ici */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
  G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
@@ -3703,7 +3709,7 @@ function onNewDay(){
  G.plans=G.plans.filter(p=>p.day>=G.day-1);
 }
 function dailyContent(){
- G.bonus=BONUS_MAX;planStories();socialDay();
+ G.bonus=BONUS_MAX;if(weekday()===0&&G.payDay!==G.day){G.payDay=G.day;G.money=(G.money||0)+POCHE;note('💶 Argent de poche de la semaine : +'+eur(POCHE))}planStories();socialDay();
  if(0)[...NPCS].forEach(n=>{
   if(Math.random()<.5)G.stories.push({id:'st'+Date.now()+n.id,by:n.id,type:'text',text:pickR(STORY_POOL),bg:Math.floor(Math.random()*STORY_BG.length),seen:false,reacted:false});
   else{const c=coupleOf(n.id),withMe=G.rel[n.id].ami>=65&&Math.random()<.5,friend=c&&c!=='me'?c:pickR(NPCS.filter(x=>x.id!==n.id)).id;
@@ -3875,8 +3881,9 @@ function feteDay(){
  fetesToday().forEach(f=>{
   const p=mkPost({by:'potins',text:f.post,min:7*60,c:20+Math.floor(Math.random()*30),r:200+Math.floor(Math.random()*400),l:5000+Math.floor(Math.random()*9000)});
   if(f.id!=='abolition')rndNpc(2).forEach(id=>p.comments.push(mkC(id,genderize(pickR(FETE_COM),id))));
-  G.posts.unshift(p);note(`${f.ic} ${f.n} aujourd'hui au lycée`);if(!G.asleep&&!$('game').hidden)toast(`${f.ic} ${f.n} aujourd'hui !`)});
- const f=fetesOpen()[0];if(f)popSheet(feteSheet(f));
+  G.posts.unshift(p);note(`${f.ic} ${f.n} aujourd'hui au lycée`);if(!G.asleep&&!G.tutoOn&&!$('game').hidden)toast(`${f.ic} ${f.n} aujourd'hui !`)});
+ /* fête au lycée un jour de cours : elle s'ouvre une fois arrivé·e au lycée (vsTick), après le réveil, pas avant */
+ const f=fetesOpen()[0];if(!f)return;if(!f.free&&schoolDay(G.day)&&weekday()<5&&G.min<480){G.feteDue=f.id;return}popSheet(feteSheet(f));
 }
 /* première rencontre : ton personnage est nouveau, les camarades posent des questions pour faire connaissance */
 const nouv=()=>me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle';
@@ -4151,7 +4158,7 @@ const STANCES={
  calmer:{label:'Apaiser',cls:'neu',d:1,v:2,lines:["Allez, on se calme, chacun son avis ✌️","On peut ne pas être d'accord sans se clasher 🙏","Vous avez tous un peu raison"]},
  mechant:{label:'Méchant',cls:'neg',d:-8,v:0,lines:["Personne t'a demandé ton avis","Franchement, tu saoules {n}"]}};
 const THANKS=["merci de me défendre 🙏","enfin quelqu'un de raisonnable ❤️","merci, vraiment","ça fait plaisir de lire ça 🥹"];
-const cmRow=c=>`<div class="cm${c.re?' re':''}"><div class="av sm">${avatarOf(c.by)}</div><div style="min-width:0;flex:1"><b>${esc(nameOf(c.by))}</b> <span class="muted">${handleOf(c.by)}</span><p>${c.to?`<span class="mention">${esc(handleOf(c.to))}</span> `:''}${fmtText(c.text)}</p>${c.by!=='me'?`<button class="rep" type="button" data-reply="${c.id}">Répondre</button>`:''}</div></div>`;
+const cmRow=c=>`<div class="cm${c.re?' re':''}"><div class="av sm">${avatarOf(c.by)}</div><div style="min-width:0;flex:1">${c.by!=='me'&&(isNpc(c.by)||c.by==='potins')?`<button class="cm-who" type="button" data-ig="${c.by}"><b>${esc(nameOf(c.by))}</b> <span class="muted">${handleOf(c.by)}</span></button>`:`<b>${esc(nameOf(c.by))}</b> <span class="muted">${handleOf(c.by)}</span>`}<p>${c.to?`<span class="mention">${esc(handleOf(c.to))}</span> `:''}${fmtText(c.text)}</p>${c.by!=='me'?`<button class="rep" type="button" data-reply="${c.id}">Répondre</button>`:''}</div></div>`;
 function threadHTML(p){const ids=new Set(p.comments.map(c=>c.id)),tops=p.comments.filter(c=>!c.re||!ids.has(c.re));
  return tops.map(c=>cmRow(c)+p.comments.filter(r=>r.re===c.id).map(cmRow).join('')).join('')}
 function replySugg(R){const n=nameOf(R.by),v=R.vs&&R.vs!=='me'?nameOf(R.vs):null;
@@ -4399,7 +4406,7 @@ const NAV=[
  ['profil','Profil','<circle cx="12" cy="8" r="4.5" fill="currentColor"/><path d="M3.5 21c.8-4.4 4.2-7 8.5-7s7.7 2.6 8.5 7z" fill="currentColor"/>']];
 function drawNav(){
  const unreadM=Object.values(G.unreadMsg).reduce((a,b)=>a+b,0);
- $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id||(id==='home'&&view==='insta')?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='home'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}${id==='profil'&&G.unread?'<span class="dot"></span>':''}</button>`).join('');
+ $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id||(id==='home'&&view==='insta')?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='home'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}</button>`).join('');
 }
 function knowBars(only){return `<div class="kb">${(only||Object.keys(SUBJ)).map(k=>{const v=G.know[k],c=v>=60?'#3fcf8e':v>=45?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${SUBJ[k]}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}%</b></div>`}).join('')}</div>`}
 function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=TRI_END[2])return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
@@ -4532,7 +4539,7 @@ function placeBody(ph,place,map){
  }
  const ids=map[place]||[];
  if(place==='cantine')h+=`<div class="acts two"><button class="act" type="button" data-do="eat" ${G.ate?'disabled':''}><span class="ico">🍛</span><span>Manger</span><small class="r-ok">faim +45 · énergie +10</small></button></div>`;
- if(place==='cafet'){const n=G.done[ph.key+'cafet']||0;h+=`<p class="muted">${n>=2?P('Tu as déjà pris deux choses à la cafétéria pendant cette pause.'):'Un petit quelque chose avant les cours ? (2 achats par pause)'}</p><div class="acts two">${CAFET.map(([k,ic,l,fx])=>`<button class="act" type="button" data-cafet="${k}" ${n>=2?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${Object.entries(fx).map(([q,v])=>`${NEED_LBL[q].toLowerCase()} +${v}`).join(' · ')}</small></button>`).join('')}</div>`}
+ if(place==='cafet'){const n=G.done[ph.key+'cafet']||0;h+=`<p class="muted">${n>=2?P('Tu as déjà pris deux choses à la cafétéria pendant cette pause.'):'Un petit quelque chose ? (2 achats par pause)'} · 💶 Argent de poche : <b>${eur(G.money||0)}</b></p><div class="acts two">${CAFET.map(([k,ic,l,fx,pr])=>{const ed=k==='energ'&&G.energLast===G.day;return `<button class="act" type="button" data-cafet="${k}" ${n>=2||(G.money||0)<pr?'disabled':''}><span class="ico">${ic}</span><span>${l} · ${eur(pr)}</span><small class="${ed?'r-hi':'r-ok'}">${ed?'déjà une aujourd\'hui : énergie −8':Object.entries(fx).map(([q,v])=>`${NEED_LBL[q].toLowerCase()} +${v}`).join(' · ')}</small></button>`}).join('')}</div>`}
  if(place==='cdi')h+=`<div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser au calme</span><small class="r-ok">−4 énergie</small></button></div>`;
  h+=ids.length?`<p class="muted">Présents ici :</p><div class="present">${ids.map(id=>{const c=coupleOf(id);return `<button class="pers" type="button" data-person="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${c&&c!=='me'&&ids.includes(c)?'avec '+WHO[c].name:G.rel[id].ami>=65?S(id,'ami·e'):''}</small></button>`}).join('')}</div>`:`<p class="muted">Personne ici pour l'instant.</p>`;
  return h;
@@ -4547,9 +4554,16 @@ function drawMessages(){
  $('gView').innerHTML=`<div class="sec-title">Messages</div><p class="muted">${SAMPLE?'Tes camarades et ta famille te répondent avec leur propre personnalité.':'Les réponses utilisent la personnalité de chacun.'}</p><div class="list">${ids.map(id=>{const last=(G.threads[id]||[]).slice(-1)[0],u=G.unreadMsg[id]||0;
   return `<button class="card thread" type="button" data-chat="${id}"><div class="relrow"><div class="av">${avatarOf(id)}</div><div class="info"><div class="top"><span>${esc(nameOf(id))}</span><small>${last?last.tm:isFam(id)?famById(id).role:''}</small></div><span class="muted prev">${last?(last.from==='me'?'Toi : ':'')+esc(last.text):'Commencer une conversation'}</span></div>${u?`<span class="badge">${u}</span>`:''}</div></button>`}).join('')}</div>`;
 }
+/* « Mes notes » (menu ⚙) : moyenne, chances de réussite, évaluations, bulletins et bac, au même endroit */
+function notesSheet(){const a=avg();openSheet(sheetHead('📊 Mes notes',`Moyenne générale : ${fmtG(a)}/20 · trimestre ${curTri()} : ${fmtG(triAvg(curTri()))}/20`)+`<div class="notes-sheet">
+ <div class="sec-title">Chances de réussite à l'examen</div><div class="card"><p class="muted" style="margin-top:0">${chapLine()}</p>${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
+ <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
+ <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
+ <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
+ </div><div class="row"><button class="gbtn ghost" type="button" data-close>Fermer</button></div>`,true)}
+function notifSheet(){G.unread=0;openSheet(sheetHead('🔔 Notifications','Ce qui s\'est passé récemment')+(G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>')+`<div class="row"><button class="gbtn ghost" type="button" data-close>Fermer</button></div>`,true);drawNav()}
 function drawProfile(){
  const a=avg(),bySub={};G.grades.forEach(g=>(bySub[g.sub]=bySub[g.sub]||[]).push(g.v));
- G.unread=0;
  $('gView').innerHTML=`<div class="sec-title">${esc(fullName(me())||'Moi')} <span class="muted" style="font-size:15px">${myHandle()}</span></div>
  <div class="card" style="flex-direction:row;align-items:center;flex-wrap:wrap"><div class="full-av sm">${render(me(),FVB,uid(),true)}</div>
   <div style="display:flex;flex-direction:column;gap:6px;flex:1;min-width:160px"><p class="muted">${SEXC[me().sexe]} · ${oriLabel(me().orient,me().sexe)}</p><p class="muted">Niveau ${G.objDone.length} · Jour ${G.day} · ${G.partner?'En couple avec '+WHO[G.partner].name+' 💞':'Célibataire'}</p>
@@ -4557,13 +4571,7 @@ function drawProfile(){
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
   <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}</div></div></div>
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
- <div class="sec-title">Chances de réussite à l'examen</div><div class="card"><p class="muted" style="margin-top:0">${chapLine()}</p>${knowBars()}<p class="muted">Révise pendant ton temps libre (maison, CDI, week-end) et prends des notes en cours pour les faire monter. Une matière que tu ne travailles pas baisse un peu chaque jour.</p></div>
- <div class="sec-title">Évaluations du vendredi</div><div class="card list">${G.evals.length?G.evals.slice(-6).reverse().map(e=>`<button class="prof linkrow" type="button" data-evsd="${e.sd}"><span>Jour ${e.sd} · trimestre ${e.tri}</span><b>${fmtG(e.glob)}/20 ›</b></button>`).join(''):'<p class="muted">Pas encore d\'évaluation. La première a lieu vendredi à 14h.</p>'}</div>
- <div class="sec-title">Bulletins</div><div class="card list">${[1,2,3].map(t=>{const b=G.bulletins.find(x=>x.tri===t);return b?`<button class="prof linkrow" type="button" data-bul="${t}"><span>Trimestre ${t}</span><b>${fmtG(b.avg)}/20 ${b.ok?'✅':'❌'} ›</b></button>`:`<div class="prof"><span>Trimestre ${t}</span><span class="muted">${t===curTri()?'en cours · '+fmtG(triAvg(t))+'/20':'à venir'}</span></div>`}).join('')}
- <div class="prof"><span>Bac</span>${G.bac.result?`<button class="linkrow" type="button" data-bacres="1"><b>${fmtG(G.bac.result.fin)}/20 ${G.bac.result.ok?'✅':'❌'} ›</b></button>`:`<span class="muted">${BAC_DAYS.map(x=>fmtDay(schoolDayToCal(x))).join(' et ')}</span>`}</div></div>
- <div class="sec-title">Objectifs réussis</div><div class="card">${G.objDone.length?`<div class="objs">${G.objDone.map(id=>OBJ.find(o=>o.id===id)).map(o=>`<div class="obj done"><span class="chk">✓</span><span>${o.t}</span></div>`).join('')}</div>`:'<p class="muted">Aucun pour l\'instant.</p>'}</div>
- <div class="sec-title">Notifications</div>${G.log.length?`<div class="list">${G.log.slice().reverse().slice(0,40).map(l=>`<div class="card"><p style="margin:0">${esc(l.t)}</p><p class="muted">Jour ${l.day}${l.at?' · '+l.at:''}</p></div>`).join('')}</div>`:'<p class="muted">Rien pour l\'instant.</p>'}
- <div class="sec-title">Réglages</div><div class="card reglages"><p class="muted" style="margin:0">Version ${APP_VERSION} · « Mettre à jour l'appli » est dans le menu ⚙</p><hr><button class="gbtn danger" type="button" id="gRestart">Recommencer la partie</button></div>`;
+ <details class="card reglages"><summary><b>⚙️ Réglages</b></summary><p class="muted" style="margin:8px 0 0">Version ${APP_VERSION} · « Mettre à jour l'appli » est dans le menu ⚙</p><hr><button class="gbtn danger" type="button" id="gRestart">Recommencer la partie</button></details>`;
  drawNav();saveG();
 }
 function drawView(){
@@ -4936,8 +4944,9 @@ function provAgendaHTML(){const p=provInit(),up=[...p.conv.filter(c=>c.st==='due
   ${up.length?up.map(x=>`<div class="prof"><span>${x.t}</span><small class="muted">${x.w}</small></div>`).join(''):'<p class="muted">Aucun rendez-vous prévu.</p>'}
   ${p.hist.length?`<span class="eyebrow" style="display:block;margin-top:8px">Historique</span>${p.hist.slice(0,12).map(h=>`<div class="prof"><span>${h.t} ${esc(h.txt)}</span><small class="muted">${fmtDay(h.day)}</small></div>`).join('')}`:''}</div>`}
 
-function vsTick(){if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase(),v=vsInit();if(v.expelled)return;
+function vsTick(){if(!G||G.asleep||G.tutoOn||cevOpen||mg||!$('sheet').hidden||$('game').hidden||document.getElementById('tuto'))return;const ph=phase(),v=vsInit();if(v.expelled)return;
  if(ph.type==='matin'&&schoolDay(G.day)&&weekday()<5&&v.wake!==G.day){vsMorning();return}
+ if(G.feteDue&&(G.min>=465||ph.type!=='matin')){const f=FETES.find(x=>x.id===G.feteDue);G.feteDue=null;if(f&&!fst(f.id).done&&!vsHome()&&fetesToday().includes(f)){openSheet(feteSheet(f),true);return}}
  if(provTick(ph))return;
  if(ph.type==='cours'&&v.bc!==ph.key){v.bc=ph.key;if(vsHome())return;hwCollect(ph);vsBeforeClass(ph)}}
 function classEventTick(n){
@@ -5005,7 +5014,7 @@ function discReact(o){const g=o.g,who=o.who,ac=o.accuse;
 
 /* ----- le matin ----- */
 function vsMorning(){const v=vsInit();if(v.wake===G.day||!schoolDay(G.day)||weekday()>=5||vsHome())return;v.wake=G.day;
- vsPop({eb:'☀️ '+fmtDay(G.day,true),t:'Le réveil sonne',b:`Il est ${fmtT(G.min)}. Premier cours : ${SUBJ[firstSub()]||'les cours'} à 8 h.`,ch:[
+ vsPop({eb:'☀️ '+fmtDay(G.day,true),t:'Le réveil sonne',b:`Il est ${fmtT(G.min)}. Premier cours : ${SUBJ[firstSub()]||'les cours'} à 8\u00a0h.`,ch:[
   ['Se lever et aller en cours',()=>{G.energy=clamp(G.energy-2,0,100);return 'Tu te prépares et tu pars au lycée à l\'heure.'}],
   ['Rester à la maison (absence)',()=>{v.home=v.home||{};v.home[G.day]=1;G.place='maison';G.energy=clamp(G.energy+10,0,100);return P('Tu décides de ne pas aller au lycée. Chaque cours de la journée comptera comme une absence injustifiée. +10 énergie.')}],
   ['Dormir un peu plus longtemps',()=>{G.energy=clamp(G.energy+10,0,100);if(Math.random()<.6){v.lateFirst=G.day;return 'Ces 20 minutes de plus… tu vas sûrement arriver en retard. +10 énergie.'}return 'Tu te rendors un peu, mais tu arrives juste à l\'heure. +10 énergie.'}],
@@ -5052,12 +5061,16 @@ function pickSkipBuddy(ph){const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.re
 
 /* ----- dans la cour : activités et actions à risque ----- */
 /* cafétéria du lycée : le matin avant les cours et aux récrés */
-const CAFET=[['fruit','🍎','Des fruits',{faim:12}],['sandwich','🥪','Un sandwich',{faim:28}],['cafe','☕','Un café',{energy:8}],['energ','⚡','Une boisson énergisante',{energy:14}]];
+/* argent de poche : 20 € au début de la partie puis chaque lundi matin (G.money, en centimes) */
+const POCHE=2000,eur=c=>(c/100).toFixed(2).replace('.',',').replace(',00','')+'\u00a0€';
+const CAFET=[['fruit','🍎','Des fruits',{faim:12},100],['sandwich','🥪','Un sandwich',{faim:28},350],['cafe','☕','Un café',{energy:8},120],['energ','⚡','Une boisson énergisante',{energy:14},200]];
 const CAFET_MSG={fruit:['Une pomme et une banane, parfait pour tenir jusqu\'à midi 🍎','Petite salade de fruits frais 🍍'],sandwich:['Sandwich jambon-fromage avalé en deux minutes 🥪','Un pain au thon, comme d\'hab 🥪'],cafe:['Un café bien chaud ☕ ça réveille !','Café serré, les yeux s\'ouvrent enfin ☕'],energ:['Boisson énergisante : tu te sens d\'attaque ⚡','Une canette d\'énergie… à ne pas prendre tous les jours 😅']};
-function cafetBuy(k){const ph=phase(),dk=ph.key+'cafet';if((G.done[dk]||0)>=2)return;const it=CAFET.find(c=>c[0]===k);if(!it)return;G.done[dk]=(G.done[dk]||0)+1;
+function cafetBuy(k){const ph=phase(),dk=ph.key+'cafet';if((G.done[dk]||0)>=2)return;const it=CAFET.find(c=>c[0]===k);if(!it)return;
+ if((G.money||0)<it[4]){toast('Pas assez d\'argent de poche 💸 (le prochain arrive lundi)');return}G.money-=it[4];G.done[dk]=(G.done[dk]||0)+1;
  if(k==='energ'){G.energN=(G.energLast===G.day?(G.energN||0):0)+1;G.energLast=G.day}
- const fx=Object.assign({},it[3]);if(k==='energ'&&G.energN>1)fx.energy=6;/* la deuxième canette de la journée fait moins d'effet */
- toast(pickR(CAFET_MSG[k])+' · '+needsFx(fx));saveG();drawView()}
+ const fx=Object.assign({},it[3]);let msg=pickR(CAFET_MSG[k]);
+ if(k==='energ'&&G.energN>1){fx.energy=-8;msg='Une deuxième canette… ton cœur s\'emballe, puis le coup de barre arrive 😵';}/* plus d'une boisson énergisante par jour : l'énergie baisse */
+ toast(msg+' · '+needsFx(fx)+' · −'+eur(it[4]));saveG();drawView()}
 const COUR_ACT=[['ballon','⚽','Jouer au ballon'],['cartes','🃏','Faire une partie de cartes'],['musique','🎧','Écouter de la musique'],['photos','📸','Prendre des photos avec tes amis'],['blague','😜','Faire une blague à un·e camarade'],
  ['connaitre','👋','Faire connaissance avec un nouvel élève'],['groupe','👥',"Rejoindre un groupe d'élèves"],['dejeuner','🍽️','Déjeuner avec tes amis']];
 const COUR_RISK=[['bagarre','👊','Se bagarrer avec un élève',4],['insulte','🤬',"Insulter quelqu'un",2],['secher','🏃','Sécher le cours suivant',0],['farce','🪤','Faire une farce à un prof',4],['zone','🚧','Aller dans une zone interdite',2],['degrader','🖊️','Dégrader du matériel',5],['dispute','🔥','Participer à une dispute entre groupes',3]];
@@ -5114,7 +5127,7 @@ function hwCollect(ph){const v=vsInit();let m=[];v.hw.filter(h=>h.sub===ph.sub&&
  if(m.length){const t=m.join(' ');note(t);toast('📚 '+m[0])}}
 const vsCard=()=>hwCard();
 function hwCard(){const v=vsInit(),open=v.hw.filter(h=>['todo','done','late'].includes(h.st));
- return `<div class="card"><div class="ph-top"><span class="eyebrow">🏫 Vie scolaire · devoirs</span><span><button class="linkbtn" type="button" data-vsopen>Bilan</button> · <button class="linkbtn" type="button" data-hw="list">Mes devoirs</button></span></div>${open.length?open.slice(0,3).map(h=>`<div class="prof"><div><b>${SUBJ[h.sub]}</b><span class="muted"> · pour le ${fmtDay(h.due,true)}</span></div><span class="hwst r-${HW_ST[h.st][1]}">${HW_ST[h.st][0]}</span></div>`).join(''):'<p class="muted">Aucun devoir à faire pour le moment.</p>'}</div>`}
+ return `<div class="card"><div class="ph-top"><span class="eyebrow">🏫 Vie scolaire · devoirs</span></div><div class="row vsbtns"><button class="gbtn ghost" type="button" data-vsopen>📊 Bilan</button><button class="gbtn ghost" type="button" data-hw="list">📚 Mes devoirs</button></div>${open.length?open.slice(0,3).map(h=>`<div class="prof"><div><b>${SUBJ[h.sub]}</b><span class="muted"> · pour le ${fmtDay(h.due,true)}</span></div><span class="hwst r-${HW_ST[h.st][1]}">${HW_ST[h.st][0]}</span></div>`).join(''):'<p class="muted">Aucun devoir à faire pour le moment.</p>'}</div>`}
 function hwSheet(){const v=vsInit(),L=v.hw.slice().reverse();
  openSheet(sheetHead('Mes devoirs',`${L.filter(h=>['todo','late'].includes(h.st)).length} à faire`)+(L.length?`<div class="card list">${L.map(h=>`<div class="hw"><div class="prof"><div><b>${SUBJ[h.sub]}</b><span class="muted"> · ${PROFS[h.sub][0]}</span></div><span class="hwst r-${HW_ST[h.st][1]}">${HW_ST[h.st][0]}</span></div>
   <p style="margin:2px 0">${h.desc}</p><small class="muted">Donné le ${fmtDay(h.given,true)} · à rendre le ${fmtDay(h.due,true)}${h.q&&h.st!=='todo'?` · qualité ${Math.round(h.q*100)} %`:''}</small>
@@ -5979,6 +5992,7 @@ EVENTS.push(...EVENTS2);
 $('sheetBody').addEventListener('click',e=>{
  const t=e.target;
  if(t.id==='gRestartOk'){restartGame();return}
+ {let b;if(b=t.closest('[data-evsd]')){const e=G.evals.find(x=>x.sd===+b.dataset.evsd);if(e)openSheet(evalSheet(e),true);return}if(b=t.closest('[data-bul]')){const x=G.bulletins.find(y=>y.tri===+b.dataset.bul);if(x)openSheet(bulletinSheet(x),true);return}if(b=t.closest('[data-bacres]')){openSheet(bacSheet(G.bac.result),true);return}}
  {let b;if(b=t.closest('[data-hpick]')){homePick(b.dataset.hpick,b.dataset.id);return}
  if(b=t.closest('[data-hpc]')){homePc(b.dataset.hpc);return}
  if(b=t.closest('[data-hfilm]')){homeFilm(b.dataset.hfilm);return}
@@ -6109,10 +6123,11 @@ const SPEEDS=[1,2,5,10];
 function drawMenu(){
  const sp=G.speed||1,avg=triAvg(curTri()),ms=Math.max(0,G.nextAt-Date.now());
  $('sheetBody').innerHTML=`<div id="gMenuBody"><h2>Menu</h2>
- <p class="muted">${fmtDay(G.day)} · ${fmtT(G.min)} · trimestre ${curTri()}</p>
+ <p class="muted">${schoolDay(G.day)?`Jour ${schoolDay(G.day)} sur ${YEAR_DAYS} · `:''}${fmtDay(G.day)} · ${fmtT(G.min)} · trimestre ${curTri()}</p>
  <div class="mgroup"><span class="mlbl">Temps</span><div class="mline">
   <button class="mbtn${G.paused?' on':''}" type="button" data-m="pause" aria-pressed="${!!G.paused}">${G.paused?'▶️ Reprendre':'⏸ Pause'}</button>
   <div class="mseg" role="group" aria-label="Vitesse du temps">${SPEEDS.map(v=>`<button type="button" data-m="sp${v}" aria-pressed="${sp===v}" class="${sp===v?'on':''}">×${v}</button>`).join('')}</div></div></div>
+ <p class="muted" style="margin:0">💶 Argent de poche : <b>${eur(G.money||0)}</b> · +${eur(POCHE)} chaque lundi</p>
  <div class="mgroup"><span class="mlbl">Énergie ${G.energy}/100</span><div class="mline">
   <button class="mbtn${G.bonus?' on':''}" type="button" data-m="bonus"${G.bonus?'':' disabled'}>⚡ Bonus ${G.bonus}/${BONUS_MAX}${G.bonus?` : +${G.bonus*5}`:''}</button><span class="muted">Se recharge chaque matin</span></div>
   <p class="muted" style="margin:4px 0 0">🎯 Chaque objectif atteint : +${OBJ_ENERGY} ⚡</p></div>
@@ -6120,6 +6135,7 @@ function drawMenu(){
   <button class="mrow" type="button" data-m="music" aria-pressed="${MUS.on}"><span class="mic">${MUS.on?'🎵':'🔇'}</span><span><b>Musique</b><small>${MUS.on?'Activée : touche pour couper':'Coupée : touche pour activer'}</small></span></button>
   <button class="mrow" type="button" data-m="notes"><span class="mic">📊</span><span><b>Mes notes</b><small>Moyenne du trimestre : ${fmtG(avg)}/20</small></span></button>
   ${GEMS_ON?'<button class="mrow" type="button" data-m="shop"><span class="mic">🛍️</span><span><b>Boutique</b><small>Bientôt disponible</small></span></button>':''}
+  <button class="mrow" type="button" data-m="notif"><span class="mic">🔔</span><span><b>Notifications</b><small>${G.unread?G.unread+' nouvelle'+(G.unread>1?'s':''):'Ce qui s\'est passé récemment'}</small></span></button>
   <button class="mrow" type="button" data-m="maj"><span class="mic">🔄</span><span><b>Mettre à jour l'appli</b><small>Version ${APP_VERSION}</small></span></button>
   <button class="mrow danger" type="button" data-m="quit"><span class="mic">🚪</span><span><b>Quitter la partie</b><small>Retour à l'atelier, ta partie est sauvegardée</small></span></button>
  </div><button class="gbtn ghost" type="button" data-m="x">Fermer</button></div>`;
@@ -6132,7 +6148,8 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
  else if(m.startsWith('sp')){G.speed=+m.slice(2);toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)}
  else if(m==='bonus'){const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE}
  else if(m==='music'){const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')}
- else if(m==='notes'){$('sheetBody').onclick=null;closeSheet();view='profil';drawNav();drawView();window.scrollTo(0,0);return}
+ else if(m==='notes'){$('sheetBody').onclick=null;notesSheet();return}
+ else if(m==='notif'){$('sheetBody').onclick=null;notifSheet();return}
  else if(m==='shop'){toast('La boutique arrive bientôt');return}
  else if(m==='maj'){forceUpdate();return}
  else if(m==='quit'){$('sheetBody').innerHTML=`<div id="gMenuQuit"><h2>Quitter la partie ?</h2><p class="muted">Tu reviens à l'atelier. Ta partie est sauvegardée : « Commencer la partie » te ramène là où tu en étais.</p><div class="mline"><button class="gbtn ghost" type="button" data-m="back">Rester</button><button class="gbtn red" type="button" data-m="quitok">Quitter</button></div></div>`;return}

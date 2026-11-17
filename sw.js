@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v117';
+const VERSION = 'v118';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -181,7 +181,7 @@ self.addEventListener('fetch', e => {
       const hit = await c.match(w);
       if (hit) { revoir(c, w, toW(rel)); return hit }
       try { const r = await fetch(w, { cache: 'no-cache' }); if (r.ok) { c.put(w, r.clone()); return r } } catch (_) {}
-      try { return await fetch(req) } catch (_) { return Response.error() }   /* pas de .webp : l'original */
+      return Response.error()
     }));
     return;
   }

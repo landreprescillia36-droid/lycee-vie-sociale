@@ -543,9 +543,9 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .needs .ndw:nth-child(1) .nd b{background:#f2a65a}.needs .ndw:nth-child(2) .nd b{background:#ffd23f}.needs .ndw:nth-child(3) .nd b{background:#e98bb5}.needs .ndw:nth-child(4) .nd b{background:#7fb4e8}
 .needs .nd.low b{background:#ff6b5b!important}
 .needs .ndw{display:flex;flex-direction:column;align-items:center;gap:1px}
-.needs .ndw em{font-style:normal;font-size:9px;line-height:1}
-#gEnergy .needs{height:34px;gap:4px}
-.needs .nd{height:20px}
+.needs .ndw em{font-style:normal;font-size:14px;line-height:1}
+#gEnergy .needs{height:42px;gap:5px}
+.needs .nd{height:20px;width:11px}
 .gg.resp .bar i{background:#9b8bd9}
 #gEnergy .hdot{left:auto;right:1px;top:1px}
 
@@ -571,3 +571,17 @@ h1,h2,.sec-title,.eyebrow{color:var(--g-slate,#263B55)}
 .tuto-bub p{margin:6px 0 12px;line-height:1.4}
 .tuto-bub .row{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .tuto-bub .gbtn.ghost{background:#eef1f6;color:#1d2433}
+
+.vsbtns{display:flex;gap:8px;margin:8px 0 6px}.vsbtns .gbtn{flex:1;min-height:44px}
+#gView{padding-bottom:calc(240px + env(safe-area-inset-bottom,0px))}
+details.reglages summary{cursor:pointer;min-height:44px;display:flex;align-items:center;list-style:none}
+details.reglages summary::-webkit-details-marker{display:none}
+details.reglages summary::after{content:"▾";margin-left:auto;opacity:.6}
+details.reglages[open] summary::after{content:"▴"}
+.notes-sheet .sec-title{margin-top:14px}
+/* zones de toucher 44 px : + de Ma story, noms dans les commentaires, choix de l'atelier, Répondre */
+.story .add{width:30px;height:30px;top:38px;right:-2px;font-size:19px}
+.story .add::before{inset:-8px}
+.cm-who{background:none;border:0;padding:0 4px 0 0;margin:0;min-height:44px;display:inline-flex;align-items:center;gap:4px;text-align:left;color:inherit;font:inherit;cursor:pointer}
+.cm .rep{min-height:44px;padding:0 8px 0 0}
+.segs .sub,#viewSeg .sub{min-height:44px;padding-left:16px;padding-right:16px}

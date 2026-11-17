@@ -29,6 +29,8 @@ jobs:
         run: |
           mkdir site
           cp -r index.html manifest.webmanifest sw.js css js fonts icons assets legal site/
+          # images : seules les copies .webp sont mises en ligne (les .png / .jpg restent dans le dépôt comme originaux)
+          find site/assets -type f \( -name '*.png' -o -name '*.jpg' \) ! -name 'logo.png' -delete
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
