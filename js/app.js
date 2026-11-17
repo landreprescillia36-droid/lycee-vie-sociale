@@ -2525,7 +2525,7 @@ const potinsCap=p=>{if(p&&p.by==='potins'){const h=hash(String(p.id||p.text||'')
 const mkPost=o=>potinsCap(Object.assign({id:'p'+Date.now()+Math.floor(Math.random()*1e5),day:G?G.day:0,min:G?G.min:0,c:0,r:0,l:0,comments:[],liked:false,rt:false,fav:false,mine:false},o));
 function newGame(fam){
  const g={day:1,min:7*60+30,energy:85,bonus:4,nextAt:Date.now()+RECHARGE,gems:45,events:0,
-  money:2000,rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
+  money:4000,rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
   met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
@@ -2554,7 +2554,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
-if(G){if(G.money==null)G.money=2000;(G.posts||[]).forEach(p=>{if(p.by==='potins'){const h=hash(String(p.id||p.text||''));p.l=Math.min(p.l||0,180+h%520);p.r=Math.min(p.r||0,8+h%37);p.c=Math.min(p.c||0,6+h%24)}});if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
+if(G){if(G.money==null)G.money=4000;(G.posts||[]).forEach(p=>{if(p.by==='potins'){const h=hash(String(p.id||p.text||''));p.l=Math.min(p.l||0,180+h%520);p.r=Math.min(p.r||0,8+h%37);p.c=Math.min(p.c||0,6+h%24)}});if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
 if(G){needInit();G.cd=G.cd||{};/* G.chap est créé plus tard (chapInit), ses constantes ne sont pas encore définies ici */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&r.resp==null)r.resp=clamp(Math.round(20+Math.max(0,r.ami)*.4),0,100)});
  G.stories=(G.stories||[]).filter(s=>s.t!=null);if(!G.livingIn){G.livingIn=1;G.storyQ=null;socInit();raisInit()}}
@@ -5063,8 +5063,8 @@ function pickSkipBuddy(ph){const L=NPCS.slice().sort((a,b)=>G.rel[b.id].ami-G.re
 
 /* ----- dans la cour : activités et actions à risque ----- */
 /* cafétéria du lycée : le matin avant les cours et aux récrés */
-/* argent de poche : 20 € au début de la partie puis chaque lundi matin (G.money, en centimes) */
-const POCHE=2000,eur=c=>(c/100).toFixed(2).replace('.',',').replace(',00','')+'\u00a0€';
+/* argent de poche : 40 € au début de la partie puis chaque lundi matin (G.money, en centimes) */
+const POCHE=4000,eur=c=>(c/100).toFixed(2).replace('.',',').replace(',00','')+'\u00a0€';
 const CAFET=[['fruit','🍎','Des fruits',{faim:12},100],['sandwich','🥪','Un sandwich',{faim:28},350],['cafe','☕','Un café',{energy:8},120],['energ','⚡','Une boisson énergisante',{energy:14},200]];
 const CAFET_MSG={fruit:['Une pomme et une banane, parfait pour tenir jusqu\'à midi 🍎','Petite salade de fruits frais 🍍'],sandwich:['Sandwich jambon-fromage avalé en deux minutes 🥪','Un pain au thon, comme d\'hab 🥪'],cafe:['Un café bien chaud ☕ ça réveille !','Café serré, les yeux s\'ouvrent enfin ☕'],energ:['Boisson énergisante : tu te sens d\'attaque ⚡','Une canette d\'énergie… à ne pas prendre tous les jours 😅']};
 function cafetBuy(k){const ph=phase(),dk=ph.key+'cafet';if((G.done[dk]||0)>=2)return;const it=CAFET.find(c=>c[0]===k);if(!it)return;
