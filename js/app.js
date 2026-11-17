@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='124';
+const APP_VERSION='125';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3756,12 +3756,12 @@ function crToNpc(a,b,lvl,bold,st){const A=CNAME(a),B=CNAME(b),g=t=>CG(a,t),c=crI
   if(yes&&formCouple(a,b,g(`${A} s'est déclaré·e et c'est réciproque 🥹`))){const sn=socInit().news;sn.splice(0,sn.length,...sn.filter(x=>!(x.ic==='💞'&&x.t.includes(A)&&x.t.includes(B))));newsPush(g(`${A} s'est déclaré·e à ${B}… et c'est réciproque !`),'💞');c.of[a]=b;c.of[b]=a}
   else{c.dec[a+'>'+b]={r:'non',day:G.day};crSet(a,b,crAm(a,b)-25);link(a,b).ami=clamp(link(a,b).ami-4,0,100);link(b,a).ami=clamp(link(b,a).ami-2,0,100);
    newsPush(bc?`${A} a avoué ses sentiments à ${B}… qui est déjà en couple avec ${CNAME(bc)} 😬`:g(`${A} s'est déclaré·e à ${B}, mais ${B} a dit non`),'💔')}}}
-/* ce que tu sais de son crush (il ou elle se confie à partir de 60 d'amitié) */
-function crKnown(id){const b=crInit().of[id];if(!b)return null;if(coupleOf(id)===b||G.rel[id].ami>=60||(b==='me'&&crInit().st[id+'>me']>=3))return b;return '?'}
-function crushCard(id){const c=crInit(),k=crKnown(id),mine=c.me===id;
- const line=!k?"Pas de crush en ce moment":k==='?'?"Il y a quelqu'un… mais "+ilElle(id)+" garde ça pour "+(ilElle(id)==='il'?'lui':'elle')+" 🤫":k==='me'?"C'est toi 😳💘":(coupleOf(id)===k?`En couple avec ${CNAME(k)} 💞`:`${CNAME(k)} 💘`);
- return `<div class="card"><span class="eyebrow">💘 Crush</span><p style="margin:0">${esc(line)}</p>${iLike(id)?`<div class="row" style="margin-top:8px"><button class="gbtn ${mine?'':'ghost'}" type="button" data-mycrush="${id}">${mine?'💘 C\'est ton crush':'💘 C\'est mon crush'}</button></div>`:''}</div>`}
-function setMyCrush(id){const c=crInit();c.me=c.me===id?null:id;toast(c.me?`💘 ${CNAME(id)} est ton crush`:'Tu n\'as plus de crush')}
+/* ton crush : choisi dans le Profil (secret, personne ne le voit) */
+function myCrushCard(){const c=crInit().me;
+ return `<div class="sec-title">💘 Mon crush</div><div class="card"><div class="relrow">${c?`<div class="av">${avatarOf(c)}</div><div class="info"><b>${esc(fullNameOf(c))}</b><small class="muted">Secret : personne ne le sait 🤫</small></div>`:`<div class="info"><b>Pas de crush pour l'instant</b><small class="muted">Choisis la personne qui te plaît, ça reste secret 🤫</small></div>`}</div><div class="row" style="justify-content:flex-start"><button class="gbtn ghost" type="button" data-crushpick>${c?'Changer':'Choisir mon crush'}</button></div></div>`}
+function crushPickSheet(){const c=crInit().me,L=NPCS.filter(n=>iLike(n.id));
+ openSheet(sheetHead('💘 Mon crush','Qui te plaît ? Ça reste secret.')+`<div class="card list">${L.length?L.map(n=>`<button class="relrow" type="button" data-crushset="${n.id}" style="width:100%;text-align:left;background:none;border:0;cursor:pointer;font:inherit;color:inherit"><div class="av">${avatarOf(n.id)}</div><div class="info"><b>${esc(fullNameOf(n.id))}</b></div><span>${c===n.id?'💘':''}</span></button>`).join(''):'<p class="muted">Personne ne correspond à ton attirance.</p>'}</div>`+(c?`<div class="row"><button class="gbtn ghost" type="button" data-crushset="">Je n'ai plus de crush</button></div>`:''))}
+function setMyCrush(id){const c=crInit();c.me=id||null;closeSheet();toast(c.me?`💘 ${CNAME(id)} est ton crush (secret)`:'Tu n\'as plus de crush');drawView()}
 
 /* ---------- horloge ---------- */
 function advance(n){
@@ -4724,6 +4724,7 @@ function drawProfile(){
   <div class="gg"><span>Énergie</span><div class="bar"><i style="width:${G.energy}%;background:#ffd23f"></i></div><b>${G.energy}</b></div>
   <div class="gg"><span>Notes</span><div class="bar"><i style="width:${(a||0)*5}%;background:#3fcf8e"></i></div><b>${fmtG(a)}</b></div>
   <div class="row" style="justify-content:flex-start;flex-wrap:wrap"><button class="gbtn ghost" type="button" id="gEdit">Modifier mon avatar</button><button class="gbtn ghost" type="button" id="gFam">Modifier ma famille</button>${window.CLOUD?'<button class="gbtn ghost" type="button" id="gCompte">Mon compte</button>':''}</div></div></div>
+ ${myCrushCard()}
  <div class="sec-title">Ma famille${me().nom?' · '+esc(me().nom):''}</div><div class="card list">${G.family.length?G.family.map(f=>`<div class="relrow"><div class="av">${avatarOf(f.id)}</div><div class="info"><div class="top"><span>${esc(f.name)}</span><small>${f.role} · ${S(f.id,f.trait)}</small></div><div class="gg"><span>Complicité</span><div class="bar"><i style="width:${G.famRel[f.id]}%;background:#ff9f5a"></i></div><b>${G.famRel[f.id]}</b></div></div><button class="gbtn ghost" type="button" data-chat="${f.id}">Écrire</button></div>`).join(''):'<p class="muted">Aucun membre de famille.</p>'}</div>
  <details class="card reglages"><summary><b>⚙️ Réglages</b></summary><p class="muted" style="margin:8px 0 0">Version ${APP_VERSION} · « Mettre à jour l'appli » est dans le menu ⚙</p><hr><button class="gbtn danger" type="button" id="gRestart">Recommencer la partie</button></details>`;
  drawNav();saveG();
@@ -4748,7 +4749,6 @@ function openFiche(id){
  openSheet(`<div class="row" style="justify-content:flex-end"><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="full-av">${render(avOf(id),FVB,uid(),true)}</div><h2 style="text-align:center">${esc(fullNameOf(id))}, ${f.age} ans</h2><p class="muted" style="text-align:center">${n.handle} · ${statusOf(id)}</p>
  <div class="card felt"><span class="eyebrow">Ce qu${/^[aeiouy]/.test(ilElle(id))?"'":"e "}${ilElle(id)} pense de toi</span><p style="margin:0">${esc(ressenti(id))}</p>${gaugesHTML(id)}</div>
- ${crushCard(id)}
  <dl class="fiche">${[['Passé',f.passe],['Famille',f.famille],['Qualités',f.qualites],['Défauts',f.defauts],['Peurs',f.peurs],['Passions',f.passions+' · '+passOf(id).map(p=>PASS[p].e+' '+PASS[p].n).join(', ')+(sharedPass(id,'me').length?' (en commun avec toi : '+sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')+')':'')],['Façon de parler',f.parle],['Relations',f.relations],['Attirance',oriLabel(f.o,f.g)]].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
  <div class="card list"><span class="eyebrow">Ses liens en ce moment</span>${rels}</div>
  <div class="row"><button class="gbtn" type="button" data-chat="${id}">Envoyer un message</button></div>`,true);
@@ -6194,7 +6194,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
  if(b=q('[data-bffopen]')){bffSheet(b.dataset.bffopen);return}
- if(b=q('[data-mycrush]')){setMyCrush(b.dataset.mycrush);openFiche(b.dataset.mycrush);return}
+ if(b=q('[data-crushset]')){setMyCrush(b.dataset.crushset);return}
  if(b=q('[data-ro]')){romAct(b.dataset.id,b.dataset.ro);return}
  if(b=q('[data-gift]')){giveGift(b.dataset.id,b.dataset.gift);return}
  if(b=q('[data-rdv]')){proposeDate(b.dataset.id,b.dataset.rdv);return}
@@ -6254,6 +6254,7 @@ $('gView').addEventListener('click',e=>{
  if(t.closest('[data-outopen]')){outSheet();return}
  if(t.closest('[data-outhome]')){outEnd();return}
  if(t.closest('[data-clubopen]')){clubSheet();return}
+ if(t.closest('[data-crushpick]')){crushPickSheet();return}
  if(t.closest('[data-tutorjoin]')){tutorJoin(1);return}
  if(t.closest('[data-tutorquit]')){tutorJoin(0);return}
  if(t.closest('[data-tutorgo]')){tutorGo();return}
