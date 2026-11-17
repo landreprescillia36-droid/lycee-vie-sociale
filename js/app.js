@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='119';
+const APP_VERSION='120';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2722,7 +2722,7 @@ function smartLine(id,text,chan){
  if(/^\s*(et )?(pourquoi|pk|pq|ah bon pourquoi|comment ça|comment ca)\s*\??\s*$/.test(t)&&used.length){const last=used[used.length-1].toLowerCase(),lk=(LIKE[id]||[]).some(w=>last.includes(w));
   return sty(id,fresh(lk?["Parce que j'adore ça, c'est vraiment mon truc ✨","Parce que ça me rend heureux·se, tout simplement","C'est ma passion, je peux pas l'expliquer autrement"]:["Je sais pas trop, c'est comme ça 😅","Parce que ! 😂","Bonne question… je sais pas trop t'expliquer","C'est compliqué à dire, je te raconterai en vrai"]))}
  /* « (ma réponse), et toi ? » : la personne répond sur le sujet que tu viens d'aborder */
- if(/\bet (toi|vous)\b/.test(t)){const own=t.replace(/\bet (toi|vous)\b.*$/,''),ht=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(own)&&R[k]);if(ht){G.ctopic=G.ctopic||{};G.ctopic[id]=ht[0];return fresh(R[ht[0]])}}
+ if(/\bet (toi|vous)\b/.test(t)){const own=t.replace(/\bet (toi|vous)\b.*$/,''),qt=lastQ&&TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(lastQ.toLowerCase())&&R[k]),ot=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(own)&&R[k]),ht=qt&&(!ot||ot[0]===qt[0]||(qt[0]==='spe'&&ot[0]==='ecole'))?qt/* tu réponds à sa question (des matières pour « ta spé ? ») : même question pour lui ou elle */:ot;if(ht){G.ctopic=G.ctopic||{};G.ctopic[id]=ht[0];return fresh(R[ht[0]])}}
  const u=understand(id,text,lastQ);if(u)return sty(id,fresh(u.c),u.mood);
  if(s<0)return fresh(V.hurt);
  /* « moi aussi », « pareil » : vous avez un point commun */
