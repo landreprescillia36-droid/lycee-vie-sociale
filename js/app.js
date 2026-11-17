@@ -2609,7 +2609,9 @@ Réponds uniquement avec un objet JSON :
 {"reponse":"ton message","amitie":entier de -6 à 6,"amour":entier de -6 à 6,"proposition":null}
 "amitie" et "amour" mesurent l'effet du dernier message de ${me} sur tes sentiments. Si tu proposes une sortie, remplace null par {"lieu":"plage|centre|glacier","quand":"ce soir|demain"}.`;
 }
-function sentiment(t){t=t.toLowerCase();if(/(nul|ferme[ -]la|idiot|débile|moche|dégage|tais-toi|je te déteste|chiant|bête|pathétique)/.test(t))return -1;if(/(merci|cool|trop bien|génial|j'adore|❤|😍|🥰|mdr|ptdr|haha|bravo|bisou|beau|belle|mignon|gentil|super|top|manqué|t'aime)/.test(t))return 1;return 0}
+/* insultes (−2) : la personne est blessée et la relation baisse nettement */
+const INSULTE=/(ta g[ue]{1,2}ule|\btg\b|\bftg\b|ferme ta|connard|connasse|\bconne?\b|abruti|imb[ée]cile|va te faire|\bfdp\b|\bpute\b|salope|encul|\bmerde\b|cr[eè]ve|casse[ -]toi|je m'en fous|osef|t'es (moche|nul|bête|bete|con)|d[ée]bile|nique)/;
+function sentiment(t){t=t.toLowerCase();if(INSULTE.test(t))return -2;if(/(nul|ferme[ -]la|idiot|débile|moche|dégage|tais-toi|je te déteste|chiant|bête|pathétique)/.test(t))return -1;if(/(merci|cool|trop bien|génial|j'adore|❤|😍|🥰|mdr|ptdr|haha|bravo|bisou|beau|belle|mignon|gentil|super|top|manqué|t'aime)/.test(t))return 1;return 0}
 /* ---------- réponses de secours (sans IA) : selon le sujet du message, la personnalité, sans se répéter ---------- */
 const TOPICS=[
  ['salut',/^(salut|coucou|bonjour|bonsoir|hey|yo|wesh|wsh|slt|cc)\b/],
@@ -2715,6 +2717,10 @@ function smartLine(id,text,chan){
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
+ /* tu annonces une nouvelle du lycée (exclusion, colle, mauvaise ou bonne note…) : la personne réagit vraiment */
+ {const bad=/(exclu|exclue|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|conseil de discipline|avertissement|sanction|mauvaise note|j'ai eu (0|1|2|3|4|5|6|7)\b|zéro|zero|redoubl)/.test(t),good=/(bonne note|j'ai eu (1[4-9]|20)|félicit|felicit|tableau d'honneur|j'ai réussi|j'ai eu mon bac|admis)/.test(t);
+  if(bad||good){const fam=isFam(id),par=fam&&famKind(id)==='parent';
+   return sty(id,fresh(bad?(par?["Quoi ?! Explique-moi tout de suite ce qui s'est passé.","Je suis vraiment déçu·e… On en parle ce soir, sérieusement.","Tu te rends compte ? Le bac c'est cette année !","Je ne veux plus recevoir de mot du lycée, c'est clair ?"]:fam?["Oh non… qu'est-ce que tu as fait ?","Aïe. Les parents sont au courant ?","Courage, ça va s'arranger"]:["Sérieux ?! Qu'est-ce qui s'est passé ?","Oh non 😬 ça va aller ?","Aïe… t'as fait quoi ?","La vie scolaire t'a pas raté 😬"]):(par?["Bravo mon cœur, je suis fier·ère de toi ❤️",(me().sexe==='f'?"Ça c'est ma fille ! Continue comme ça 👏":me().sexe==='m'?"Ça c'est mon fils ! Continue comme ça 👏":"Continue comme ça, je suis fier·ère 👏"),"Tu vois quand tu travailles ? Bravo !"]:["Trop fort ! 🎉","Bravo, tu gères 👏","Ah ouais, la classe 😎"])),bad?'hurt':'happy')}}
  /* ce que la personne pense de toi */
  if(/(tu me trouves|tu penses quoi de moi|t'en penses quoi de moi|je te plais|tu m'aimes bien|on est (ami|pote)s?|t'es mon (ami|pote))/.test(t)&&isNpc(id)){const a=G.rel[id].ami;
   return sty(id,fresh(a>=60?["T'es vraiment cool, je suis content·e qu'on soit proches 🥹","Franchement ? T'es devenu·e quelqu'un d'important pour moi","T'es une des personnes que je préfère ici, sérieux"]:a>=30?["T'es sympa, j'aime bien parler avec toi 😊","T'es cool, on s'entend bien je trouve","J'aime bien ta compagnie, vraiment"]:a>=0?["On se connaît pas encore trop… mais t'as l'air sympa","Je sais pas encore, on vient à peine de se parler 😅","Laisse-moi te connaître un peu avant de répondre 😄"]:["Franchement… pas ouf pour l'instant","On n'est pas partis du bon pied, toi et moi","Je préfère pas répondre 😒"]))}
@@ -2953,11 +2959,11 @@ function fallbackReply(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(te
  /* première rencontre : sa première réponse est une question pour faire connaissance, puis quelques questions de suite */
  const met=isNpc(id)?(G.met[id]||0):3;
  const words=([text,...(G.threads[id]||[]).filter(m=>m.from==='me').slice(-8).map(m=>m.text)].join(' ').toLowerCase().match(/[a-zà-ÿ]{4,}/g)||[]),fq=isNpc(id)?FOLLOW_Q[id].filter(q=>!words.some(w=>q.toLowerCase().includes(w))&&!lastLines(id).some(u=>u.includes(genderize(q,id)))&&!askedSame(id,q)&&!((G.askedQ||{})[id]||[]).includes(q)):[];
- let sl=met===0?'':(isNpc(id)&&passionLine(id,text))||smartLine(id,text);
+ let sl=met===0&&s>=0?'':(isNpc(id)&&passionLine(id,text))||smartLine(id,text);
  /* tu as déjà donné ta réponse (« …, et toi ? ») : la personne ne te repose pas la question */
  if(sl&&/\bet (toi|vous)\b/i.test(text))sl=sl.replace(/[,.]?\s*et toi( frr| frère| ma belle)?\s*\?\s*/i,' ').trim();
- const fqq=met<3&&fq.length&&!sl.includes('?')?pickR(fq):null;if(fqq){G.askedQ=G.askedQ||{};(G.askedQ[id]=G.askedQ[id]||[]).push(fqq)}
- return{reponse:met===0?introLine(id):sl+(fqq?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+fqq:''),amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ const fqq=s>=0&&met<3&&fq.length&&!sl.includes('?')?pickR(fq):null;if(fqq){G.askedQ=G.askedQ||{};(G.askedQ[id]=G.askedQ[id]||[]).push(fqq)}
+ return{reponse:met===0&&s>=0?introLine(id):sl+(fqq?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+fqq:''),amitie:isFam(id)&&/(exclu|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|discipline|avertissement|sanction|mauvaise note|zéro)/i.test(text)?-2:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
