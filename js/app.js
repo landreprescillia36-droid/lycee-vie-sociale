@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='123';
+const APP_VERSION='124';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2715,8 +2715,9 @@ function newsLine(id){const s=socInit(),c=coupleOf(id),a=G.rel[id].ami,L=[],nm=x
  if(BDAY(id)===G.day)L.push("C'est mon anniversaire aujourd'hui 🎂 !");
  if(c==='me'||G.partner===id)L.push(pickR(["Bah… à part toi, rien de spécial 😳","Je pense à toi, c'est tout 🥰"]));
  else if(c)L.push(pickR([`Ça se passe trop bien avec ${nm(c)} 🥰`,`${nm(c)} m'a fait une surprise hier, trop mignon 🥹`,`Avec ${nm(c)} ça va, petite prise de tête hier mais c'est réglé 😅`]));
- else{const cr=NPCS.filter(n=>n.id!==id&&(s.rom[pk(id,n.id)]||0)>=2).sort((x,y)=>(s.rom[pk(id,y.id)]||0)-(s.rom[pk(id,x.id)]||0))[0];
-  if(cr)L.push(a>=40?pickR([`Entre nous… je crois que ${nm(cr.id)} me plaît 🙈 garde ça pour toi`,`Chut… je passe beaucoup de temps avec ${nm(cr.id)}, et j'avoue que ça me fait quelque chose 😳`]):"Il y a quelqu'un qui me plaît… mais je dis rien 🤫")}
+ else{const cr=crInit().of[id];
+  if(cr==='me')L.push(a>=40?pickR(["Bah… il y a quelqu'un qui me plaît. Mais je te dirai pas qui 🙈","Rien… à part que je pense un peu trop à quelqu'un 😳"]):"Il y a quelqu'un qui me plaît… mais je dis rien 🤫");
+  else if(cr)L.push(a>=40?pickR([`Entre nous… je crois que ${nm(cr)} me plaît 🙈 garde ça pour toi`,`Chut… je passe beaucoup de temps avec ${nm(cr)}, et j'avoue que ça me fait quelque chose 😳`]):"Il y a quelqu'un qui me plaît… mais je dis rien 🤫")}
  s.fights.filter(f=>f.a===id||f.b===id).forEach(f=>L.push(pickR([`Je suis en froid avec ${nm(f.a===id?f.b:f.a)}, on s'est pris la tête 😕`,`Je me suis disputé·e avec ${nm(f.a===id?f.b:f.a)}… ça m'énerve`])));
  Object.entries(s.fr).filter(([k,d])=>G.day-d<=10&&k.split('|').includes(id)).slice(-1).forEach(([k])=>{const o=k.split('|').find(x=>x!==id);if(o&&WHO[o])L.push(`Je passe beaucoup de temps avec ${nm(o)} en ce moment, on s'entend trop bien`)});
  const st=liveStories().filter(x=>x.by===id&&x.text).pop();if(st)L.push(`T'as vu ma story ? ${st.text}`);
@@ -3028,7 +3029,8 @@ function nickStrip(id,s){const L=G.noNick&&G.noNick[id];if(!L||!L.length)return 
  for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(\\s*,\\s*|\\s+)(mon |ma )?${x}(?![a-zà-ÿ])`,'gi'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
  return s===s0||/^[a-zà-ÿ]/.test(s0)?s:s.replace(/^\s*([a-zà-ÿ])/,(m,c)=>c.toUpperCase())}
 function pushMsg(id,from,text,extra){
- text=genderize(text,from==='me'?'me':id);if(from!=='me')text=nickStrip(id,couplePolish(id,text));
+ text=genderize(text,from==='me'?'me':id);
+ if(from==='me'&&isNpc(id)){const c=crInit();if(c.last!==G.day+id){c.last=G.day+id;crIt(id,'me')}}if(from!=='me')text=nickStrip(id,couplePolish(id,text));
  (G.threads[id]=G.threads[id]||[]).push(Object.assign({from,text,at:G.day*1440+G.min,tm:fmtT(G.min)},extra||{}));
  if(from!=='me'){if(!(chat&&chat.id===id)){G.unreadMsg[id]=(G.unreadMsg[id]||0)+1;if(!$('game').hidden)toast(`💬 ${nameOf(id)} : ${text.slice(0,48)}${text.length>48?'…':''}`)}}
  if(chat&&chat.id===id)drawChatMsgs();
@@ -3106,11 +3108,8 @@ function autoStep(ph){
   for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
    if(Math.random()>.55)continue;const a=ids[i],b=ids[j],ab=link(a,b),ba=link(b,a);
    const d=Math.round(rnd(-2,4)+(ab.ami>60?1:0)+sharedPass(a,b).length*.7);ab.ami=clamp(ab.ami+d,0,100);ba.ami=clamp(ba.ami+d,0,100);
-   if(ab.ami>50&&attracted(FICHES[a].o,FICHES[a].g,FICHES[b].g))ab.amour=clamp(ab.amour+Math.round(FICHES[a].rom*rnd(0,4)),0,100);
-   if(ba.ami>50&&attracted(FICHES[b].o,FICHES[b].g,FICHES[a].g))ba.amour=clamp(ba.amour+Math.round(FICHES[b].rom*rnd(0,4)),0,100);
-   if(ab.amour>60&&ba.amour>55&&!coupleOf(a)&&!coupleOf(b)&&(socInit().rom[pk(a,b)]||0)>=3&&Math.random()<.25){
-    formCouple(a,b);
-   } else if(d<=-2&&Math.random()<.2){newsPush(`${WHO[a].name} et ${WHO[b].name} se sont accroché·e·s`,'⚡');note(`${WHO[a].name} et ${WHO[b].name} se sont accrochés ${PLACES[Object.keys(map).find(k=>map[k].includes(a))]?'au '+PLACES[Object.keys(map).find(k=>map[k].includes(a))].toLowerCase():''}`)}
+   crIt(a,b);
+   if(d<=-2&&Math.random()<.2){newsPush(`${WHO[a].name} et ${WHO[b].name} se sont accroché·e·s`,'⚡');note(`${WHO[a].name} et ${WHO[b].name} se sont accrochés ${PLACES[Object.keys(map).find(k=>map[k].includes(a))]?'au '+PLACES[Object.keys(map).find(k=>map[k].includes(a))].toLowerCase():''}`)}
   }
  });
  G.couples=G.couples.filter(([a,b])=>{if((link(a,b).ami<45||Math.random()<.02)&&Math.random()<.3){
@@ -3323,18 +3322,13 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
   if(sp.length&&ab.ami<70&&Math.random()<.05*sp.length){ab.ami=clamp(ab.ami+4,0,100);ba.ami=clamp(ba.ami+4,0,100);const p=pickR(sp);storyJoin(a,b,p);if(ab.ami>=50&&ab.ami<56)newsPush(`${CNAME(a)} et ${CNAME(b)} passent de plus en plus de temps ensemble (${PASS[p].n.toLowerCase()} ${PASS[p].e})`,'🤝')}
   /* nouvelle amitié */
   if(!s.fr[k]&&ab.ami>=65&&ba.ami>=65){s.fr[k]=G.day;if(G.day>1)newsPush(`${CNAME(a)} et ${CNAME(b)} sont devenu·e·s très proches`,'🤝')}else if(s.fr[k]&&ab.ami<40&&ba.ami<40)delete s.fr[k];
-  /* étapes amoureuses : rapprochement → attirance → flirt → sentiments → couple */
-  [[a,b],[b,a]].forEach(([x,y])=>{if(!attracted(FICHES[x].o,FICHES[x].g,FICHES[y].g)||cp)return;const xy=link(x,y),yx=link(y,x);
-   const st=xy.amour>=55&&yx.amour>=50?4:xy.amour>=45&&yx.amour>=35?3:xy.amour>=30?2:xy.ami>=50?1:0,old=s.rom[k]||0;
-   if(st>old&&!coupleOf(x)&&!coupleOf(y)){s.rom[k]=st;if(st===3)newsPush(`${CNAME(x)} et ${CNAME(y)} se lancent des regards en cours… ça flirte 👀`,'👀');
-    if(st===4){newsPush(`Il y a vraiment quelque chose entre ${CNAME(x)} et ${CNAME(y)}…`,'💓');if(Math.random()<.5)G.posts.unshift(mkPost({by:'potins',text:`[Anonyme] : ${WHO[x].handle} et ${WHO[y].handle} au glacier hier soir… juste « ami·e·s » ? 👀`,c:18,r:220,l:6000}))}}});
   /* dispute entre ami·e·s, puis réconciliation */
   if(ab.ami>=55&&!cp&&!s.fights.some(f=>pk(f.a,f.b)===k)&&Math.random()<.004){ab.ami=clamp(ab.ami-18,0,100);ba.ami=clamp(ba.ami-18,0,100);s.fights.push({a,b,day:G.day});newsPush(`${CNAME(a)} et ${CNAME(b)} se sont disputé·e·s`,'⚡')}
  }
  s.fights=s.fights.filter(f=>{const age=G.day-f.day;if(age>=2&&Math.random()<.3){link(f.a,f.b).ami=clamp(link(f.a,f.b).ami+12,0,100);link(f.b,f.a).ami=clamp(link(f.b,f.a).ami+12,0,100);newsPush(`${CNAME(f.a)} et ${CNAME(f.b)} se sont réconcilié·e·s`,'🕊️');return false}return age<12});
  /* passion : un moment fort dans la vie d'un·e camarade */
  if(Math.random()<.12){const id=pickR(ids),p=pickR(passOf(id));if(p){const t=S(id,PASS[p].ev);newsPush(`${CNAME(id)} ${t}`,PASS[p].e);G.storyQ=G.storyQ||[];G.storyQ.push({at:Math.max(G.min,600)+Math.floor(Math.random()*500),by:id,pass:p,txt:('J\'ai '+t.replace(/^a /,'')).replace(/ ses /g,' mes ').replace(/ son /g,' mon ').replace(/ sa /g,' ma ')});G.storyQ.sort((a,b)=>a.at-b.at)}}
- advFollow();raisDay();chapTick();coupleAskTick();
+ crushDay();advFollow();raisDay();chapTick();
  if(G.day-(s.last.adv||0)>=3&&Math.random()<.45)s.advAt={day:G.day,h:17+Math.floor(Math.random()*4),k:Math.random()<.5?'F':'L'};
  bdayDay()}
 /* chaque heure : demande de conseil prévue, nouvelles du soir (20 h) */
@@ -3530,7 +3524,7 @@ function venueGo(k,id){if(!venueOpen(k)){toast('C\'est fermé à cette heure-ci'
   if(!outAccept(id,k)){const l=genderize(pickR(["Désolé·e, je peux pas là…","Pas maintenant, une autre fois ?","Je suis déjà occupé·e, désolé·e 😕"]),id);pushMsg(id,'them',l);goSheet(`${n} : « ${l} »`);saveG();return}
   pushMsg(id,'them',genderize(pickR(["J'arrive ! 😄","Trop bien, j'arrive dans 10 min","Chaud ! On se rejoint là-bas"]),id))}
  outStart(k,id,null)}
-function outStart(k,id,plan){G.outS={v:k,with:id||null,day:G.day,start:G.min,used:[],photo:0,msg:'',plan:plan||null};G.place=VENUES[k].pl;G.st.outings=(G.st.outings||0)+(id?1:0);advance(20);
+function outStart(k,id,plan){if(id&&isNpc(id))crIt(id,'me',4);G.outS={v:k,with:id||null,day:G.day,start:G.min,used:[],photo:0,msg:'',plan:plan||null};G.place=VENUES[k].pl;G.st.outings=(G.st.outings||0)+(id?1:0);advance(20);
  const fx=needsFx(VENUES[k].fx);G.outS.msg=id?`Tu retrouves ${WHO[id].name} : ${VENUES[k].n.toLowerCase()} (${fx}).`:`Tu arrives : ${VENUES[k].n.toLowerCase()} (${fx}).`;note(G.outS.msg);outSheet()}
 const OUT_ACTS_W=[['talk','🗣️','Discuter en face à face','vraie conversation'],['news','💬','Prendre de ses nouvelles','20 min'],['time','😄','Passer du temps ensemble','30 min'],['walk','🚶','Se promener ensemble','30 min'],['eat','🍴','Manger ensemble','choisir un plat'],['photo','📸','Photo souvenir','un post'],['home','🏠','Rentrer','fin de la sortie']];
 const OUT_ACTS_S=[['enjoy','✨','','45 min'],['eat','🍴','Manger quelque chose','choisir un plat'],['meet','👀','Regarder qui est là','rencontre possible'],['photo','📸','Faire une story',''],['home','🏠','Rentrer','']];
@@ -3683,11 +3677,91 @@ MQ_FX.couple=(id,j)=>{const n=WHO[id].name;
 const ROM_LBL=['','','',' · ça flirte 👀',' · des sentiments 💓',''];
 /* ce que le ou la camarade sait de la vie sociale du moment (pour l'IA) */
 function socNote(id){const s=socInit(),L=[];const c=coupleOf(id);
+ {const cr=crInit().of[id];if(cr&&cr!==c)L.push(cr==='me'?`tu as un crush sur ${nameOf('me')} (tu ne l'as peut-être pas encore dit)`:`tu as un crush sur ${CNAME(cr)}`)}
  NPCS.forEach(n=>{if(n.id===id)return;const st=s.rom[pk(id,n.id)]||0;if(st>=3&&c!==n.id)L.push(`tu as un faible pour ${n.name}${st>=4?' (c\'est réciproque, tu le sens)':''}`)});
  s.fights.filter(f=>f.a===id||f.b===id).forEach(f=>L.push(`tu es en froid avec ${CNAME(f.a===id?f.b:f.a)} depuis une dispute`));
  s.adv.filter(x=>x.a===id&&x.j!=null).slice(-2).forEach(x=>L.push(`${nameOf('me')} t'a conseillé « ${(x.k==='ami'?['Oui, il/elle a l\'air sympa','Apprends à le/la connaître avant','Je ne le/la sens pas','Fais comme tu le sens']:['Avoue ce que tu ressens','Rapproche-toi avant','Attends des signes','Passe à autre chose'])[x.j]} » au sujet de ${CNAME(x.b)}`));
  if(BDAY(id)===G.day)L.push("c'est ton anniversaire aujourd'hui");
  return L.length?'Vie sociale du moment : '+L.join(' ; ')+'.':''}
+
+/* ---------- crushs ----------
+   Chaque camarade a au plus UN crush (G.cr.of[id] = id d'un·e camarade ou 'me'). Les sentiments = link(a,b).amour (ou G.rel[a].amour pour toi).
+   Ils montent vers une « cible » : attirance physique (fixe par paire, crPhys) + compatibilité (caractère, passions, club) + amitié + interactions/sorties,
+   le tout seulement si l'orientation le permet. Une forte amitié seule ne suffit pas. Étapes : discret (≥55), avances (≥68), déclaration (≥80).
+   Timide (soc+rom faibles) = avances subtiles ; spontané·e = avances directes. Déclaration → acceptée (couple) ou refusée (crush non réciproque). */
+function crInit(){G.cr=G.cr||{};const c=G.cr;c.of=c.of||{};c.it=c.it||{};c.dec=c.dec||{};c.st=c.st||{};c.seed=c.seed||Math.floor(Math.random()*1e6);c.me=c.me||null;return c}
+const crG=x=>x==='me'?me().sexe:FICHES[x].g;
+const crCan=(a,b)=>a!==b&&(a==='me'?attracted(me().orient,me().sexe,crG(b)):attracted(FICHES[a].o,FICHES[a].g,crG(b)));
+function crPhys(a,b){let h=crInit().seed;for(const ch of a+'>'+b)h=(h*31+ch.charCodeAt(0))|0;return .1+((h>>>0)%1000)/1000*.9}
+function crCompat(a,b){if(a==='me'||b==='me'){const o=a==='me'?b:a;return clamp(.45+.15*sharedPass(o,'me').length,0,1)}
+ const A=FICHES[a],B=FICHES[b],d=['soc','stud','hum','rom'].reduce((t,k)=>t+Math.abs(A[k]-B[k]),0)/4,club=Object.values(CLUBS).some(c=>c.m.includes(a)&&c.m.includes(b));
+ return clamp(.65-d*1.2+.15*sharedPass(a,b).length+(club?.1:0),0,1)}
+const crAmi=(a,b)=>b==='me'?G.rel[a].ami:link(a,b).ami;
+const crAm=(a,b)=>b==='me'?G.rel[a].amour:link(a,b).amour;
+function crSet(a,b,v){v=clamp(Math.round(v),0,100);if(b==='me')G.rel[a].amour=v;else link(a,b).amour=v}
+function crIt(a,b,n){const c=crInit(),k=pk(a,b);c.it[k]=Math.min(40,(c.it[k]||0)+(n||1))}
+const crBold=a=>FICHES[a].soc*.6+FICHES[a].rom*.4;
+function crTarget(a,b){const c=crInit(),ami=crAmi(a,b),it=c.it[pk(a,b)]||0,d=c.dec[a+'>'+b];
+ let t=crPhys(a,b)*42+crCompat(a,b)*26+clamp(ami,0,100)*.14+Math.min(it,30)*.5;
+ t*=.75+FICHES[a].rom*.4;if(ami<20)t*=.45;
+ if(d&&(d.r==='non'||d.r==='ami')&&G.day-d.day<45)t=Math.min(t,30);
+ const cb=coupleOf(b);if(cb&&cb!==a)t*=.8;return t}
+/* chaque matin : les sentiments évoluent, chacun·e choisit (ou garde) son crush, puis passe à l'action */
+function crushDay(){const c=crInit(),ids=NPCS.map(n=>n.id),s=socInit();
+ ids.forEach(a=>{const cand=[...ids,'me'].filter(b=>crCan(a,b));
+  cand.forEach(b=>{const v=crAm(a,b),t=crTarget(a,b);crSet(a,b,v+(t>v?(t-v)*.1:(t-v)*.05)+rnd(-2,2))});
+  const cp=coupleOf(a);let cur=c.of[a];
+  if(cp){c.of[a]=cp;return}
+  const best=cand.slice().sort((x,y)=>crAm(a,y)-crAm(a,x))[0];
+  if(cur&&(!crCan(a,cur)||crAm(a,cur)<45||(best!==cur&&crAm(a,best)>crAm(a,cur)+10)))cur=null;
+  if(!cur&&best&&crAm(a,best)>=55){cur=best;c.st[a+'>'+cur]=0}
+  c.of[a]=cur||null});
+ ids.forEach(a=>{const b=c.of[a];if(!b||coupleOf(a)===b)return;const v=crAm(a,b),k=a+'>'+b,st=c.st[k]||0,bold=crBold(a)>=.7,d=c.dec[k];
+  if(d&&(d.r==='non'||d.r==='ami'))return;           /* refus : il ou elle respecte ta décision */
+  const lvl=v>=80?3:v>=68?2:1;
+  if(b==='me')crToMe(a,lvl,bold,st,d);else crToNpc(a,b,lvl,bold,st);
+  if(b!=='me'&&lvl>st)c.st[k]=lvl;
+  if(b!=='me')s.rom[pk(a,b)]=Math.max(s.rom[pk(a,b)]||0,lvl+1)})}
+/* envers toi */
+const CR_SUB=[n=>`👀 ${n} te regarde souvent en cours…`,n=>`😊 ${n} t'a souri dans le couloir`,n=>`🪑 ${n} s'est assis·e à côté de toi en cours`,n=>`💬 ${n} trouve toujours une excuse pour venir te parler`];
+const CR_MSG_SUB=["Elle te va trop bien cette tenue aujourd'hui 😊","J'aime bien quand on parle tous les deux 😊","Ça te dit qu'on aille au glacier un de ces jours ? 🍦","T'as un super sourire, je sais pas si on te l'a déjà dit 🙈"];
+const CR_MSG_DIR=["T'es vraiment canon aujourd'hui 😏","Je crois que je passe un peu trop de temps à penser à toi… 😳","Si je t'invite à un vrai rendez-vous, tu dis oui ? 😏","Avoue, toi aussi tu sens qu'il y a un truc entre nous 👀"];
+const CR_HINT=["J'ai un crush sur quelqu'un… mais j'ose pas lui dire 🙈","Tu crois que je devrais avouer à quelqu'un qu'il ou elle me plaît ? 😳"];
+const crMsg=(a,L)=>{const th=(G.threads[a]||[]).slice(-30).map(m=>m.text),f=L.filter(x=>!th.includes(genderize(x,a)));pushMsg(a,'them',pickR(f.length?f:L))};
+function crToMe(a,lvl,bold,st,d){const n=CNAME(a),r=Math.random(),c=crInit(),k=a+'>me';c.nt=c.nt||{};
+ if(lvl>=3&&(!d||(d.r==='temps'&&G.day-d.day>=7)||(d.r==='interet'&&G.day-d.day>=4))&&r<.25+crBold(a)*.35){crDeclare(a,d);return}
+ if(G.day-(c.nt[a]||-9)<2)return;                                             /* pas tous les jours */
+ const sub=()=>{const L=CR_SUB.map(f=>CG(a,f(n))).filter(x=>!G.log.slice(-15).some(l=>l.t===x));note(pickR(L.length?L:[CG(a,CR_SUB[0](n))]))};
+ if(lvl>=2&&(c.st[k]||0)<2){c.st[k]=2;c.nt[a]=G.day;crMsg(a,bold?CR_MSG_DIR:CR_HINT);return}
+ if(lvl>=2&&r<.4){c.nt[a]=G.day;if(bold)crMsg(a,CR_MSG_DIR);else if(r<.15)crMsg(a,CR_MSG_SUB);else sub();return}
+ if(r<.3){c.nt[a]=G.day;if(bold&&r<.12)crMsg(a,CR_MSG_SUB);else sub()}}
+function crDeclare(a,d){const re=d&&(d.r==='temps'||d.r==='interet');
+ pushMsg(a,'them',re?pickR(d.r==='temps'?["Alors… t'as eu le temps de réfléchir ? 🙈","Je voulais savoir… t'as réfléchi à ce que je t'ai dit ? 😳"]:["Bon, j'ai bien vu que toi aussi… alors je te le demande vraiment : on sort ensemble ? 💕","Tu m'as fait comprendre que je te plaisais aussi… alors, on se lance ? 😳💕"])
+  :crBold(a)>=.7?pickR(["Bon, je vais être direct·e : tu me plais. Beaucoup. 😳💘","J'ai un crush sur toi depuis un moment… voilà, c'est dit 💘"]):pickR(["Je sais pas comment te dire ça… mais je crois que je suis amoureux·se de toi 🥺💘","Ça fait longtemps que je voulais te le dire… tu me plais vraiment 🙈💘"]),
+  {mq:{k:'crush',o:['Moi aussi, tu me plais 💞','Hmm… peut-être que toi aussi tu me plais un peu 😏','Désolé·e, je ne ressens pas la même chose','Je tiens à toi, mais restons ami·e·s','Laisse-moi un peu de temps pour réfléchir'],d:{}}});
+ note(`💘 ${CNAME(a)} t'a avoué ses sentiments`)}
+MQ_FX.crush=(id,j)=>{const c=crInit(),k=id+'>me',r=G.rel[id];c.st[k]=3;
+ if(j===0){delete c.dec[k];return MQ_FX.couple(id,0)}
+ if(j===1){c.dec[k]={r:'interet',day:G.day};r.amour=clamp(r.amour+8,0,100);relChange(id,2,0);return pickR(["😳 ah ouais ? Bon… je retiens 😏","Hmm, je prends ça comme un oui à moitié 😏💕"])}
+ if(j===2){c.dec[k]={r:'non',day:G.day};r.amour=clamp(r.amour-30,0,100);relChange(id,-2,0);c.of[id]=null;return pickR(["Ah… d'accord. Merci d'avoir été honnête avec moi 🙂","Je m'y attendais un peu… t'inquiète, je respecte ça 🙂"])}
+ if(j===3){c.dec[k]={r:'ami',day:G.day};r.amour=clamp(r.amour-25,0,100);relChange(id,3,0);c.of[id]=null;return pickR(["Ok… je préfère t'avoir comme ami·e que pas du tout 🙂","D'accord. On reste ami·e·s, et c'est déjà beaucoup 💛"])}
+ c.dec[k]={r:'temps',day:G.day};return pickR(["Prends ton temps, je t'attends 💕","D'accord… je serai là quand tu sauras 🙈"])};
+/* entre camarades */
+function crToNpc(a,b,lvl,bold,st){const A=CNAME(a),B=CNAME(b),g=t=>CG(a,t),c=crInit(),r=Math.random(),bc=coupleOf(b);
+ if(lvl>=1&&st<1&&r<.5)newsPush(pickR([`${A} regarde souvent ${B}…`,`${A} s'assoit toujours à côté de ${B} en ce moment`]),'👀');
+ if(lvl>=2&&st<2)newsPush(bold?pickR([`${A} flirte ouvertement avec ${B}`,`${A} enchaîne les compliments à ${B}…`]):`${A} cherche toutes les occasions de parler à ${B}`,bold?'😏':'🙈');
+ if(lvl>=2&&crCan(b,a))crSet(b,a,crAm(b,a)+crPhys(b,a)*3);                    /* être courtisé·e peut faire naître quelque chose… ou pas */
+ if(lvl>=3&&(!bc||crBold(a)>=.9)&&r<.15+crBold(a)*.35){
+  const yes=!bc&&crCan(b,a)&&(c.of[b]===a||crAm(b,a)>=55);
+  if(yes&&formCouple(a,b,g(`${A} s'est déclaré·e et c'est réciproque 🥹`))){const sn=socInit().news;sn.splice(0,sn.length,...sn.filter(x=>!(x.ic==='💞'&&x.t.includes(A)&&x.t.includes(B))));newsPush(g(`${A} s'est déclaré·e à ${B}… et c'est réciproque !`),'💞');c.of[a]=b;c.of[b]=a}
+  else{c.dec[a+'>'+b]={r:'non',day:G.day};crSet(a,b,crAm(a,b)-25);link(a,b).ami=clamp(link(a,b).ami-4,0,100);link(b,a).ami=clamp(link(b,a).ami-2,0,100);
+   newsPush(bc?`${A} a avoué ses sentiments à ${B}… qui est déjà en couple avec ${CNAME(bc)} 😬`:g(`${A} s'est déclaré·e à ${B}, mais ${B} a dit non`),'💔')}}}
+/* ce que tu sais de son crush (il ou elle se confie à partir de 60 d'amitié) */
+function crKnown(id){const b=crInit().of[id];if(!b)return null;if(coupleOf(id)===b||G.rel[id].ami>=60||(b==='me'&&crInit().st[id+'>me']>=3))return b;return '?'}
+function crushCard(id){const c=crInit(),k=crKnown(id),mine=c.me===id;
+ const line=!k?"Pas de crush en ce moment":k==='?'?"Il y a quelqu'un… mais "+ilElle(id)+" garde ça pour "+(ilElle(id)==='il'?'lui':'elle')+" 🤫":k==='me'?"C'est toi 😳💘":(coupleOf(id)===k?`En couple avec ${CNAME(k)} 💞`:`${CNAME(k)} 💘`);
+ return `<div class="card"><span class="eyebrow">💘 Crush</span><p style="margin:0">${esc(line)}</p>${iLike(id)?`<div class="row" style="margin-top:8px"><button class="gbtn ${mine?'':'ghost'}" type="button" data-mycrush="${id}">${mine?'💘 C\'est ton crush':'💘 C\'est mon crush'}</button></div>`:''}</div>`}
+function setMyCrush(id){const c=crInit();c.me=c.me===id?null:id;toast(c.me?`💘 ${CNAME(id)} est ton crush`:'Tu n\'as plus de crush')}
 
 /* ---------- horloge ---------- */
 function advance(n){
@@ -4673,7 +4747,8 @@ function openFiche(id){
  const rels=NPCS.filter(x=>x.id!==id).map(x=>{const l=link(id,x.id),c=coupleOf(id)===x.id;return `<div class="prof"><span>${x.name}</span><span class="muted">${c?'en couple 💞':l.ami>=75?'très proches':l.ami>=55?'amis':l.ami>=35?'se connaissent':'en froid'}${!c?ROM_LBL[(socInit().rom[pk(id,x.id)]||0)]||(l.amour>=60?' · semble attiré·e':''):''}${socInit().fights.some(f=>pk(f.a,f.b)===pk(id,x.id))?' · dispute en cours ⚡':''}${sharedPass(id,x.id).length?' · '+sharedPass(id,x.id).map(p=>PASS[p].e).join(''):''}</span></div>`}).join('');
  openSheet(`<div class="row" style="justify-content:flex-end"><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="full-av">${render(avOf(id),FVB,uid(),true)}</div><h2 style="text-align:center">${esc(fullNameOf(id))}, ${f.age} ans</h2><p class="muted" style="text-align:center">${n.handle} · ${statusOf(id)}</p>
- <div class="card felt"><span class="eyebrow">Ce que ${ilElle(id)} pense de toi</span><p style="margin:0">${esc(ressenti(id))}</p>${gaugesHTML(id)}</div>
+ <div class="card felt"><span class="eyebrow">Ce qu${/^[aeiouy]/.test(ilElle(id))?"'":"e "}${ilElle(id)} pense de toi</span><p style="margin:0">${esc(ressenti(id))}</p>${gaugesHTML(id)}</div>
+ ${crushCard(id)}
  <dl class="fiche">${[['Passé',f.passe],['Famille',f.famille],['Qualités',f.qualites],['Défauts',f.defauts],['Peurs',f.peurs],['Passions',f.passions+' · '+passOf(id).map(p=>PASS[p].e+' '+PASS[p].n).join(', ')+(sharedPass(id,'me').length?' (en commun avec toi : '+sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')+')':'')],['Façon de parler',f.parle],['Relations',f.relations],['Attirance',oriLabel(f.o,f.g)]].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
  <div class="card list"><span class="eyebrow">Ses liens en ce moment</span>${rels}</div>
  <div class="row"><button class="gbtn" type="button" data-chat="${id}">Envoyer un message</button></div>`,true);
@@ -6119,6 +6194,7 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
  if(b=q('[data-bffopen]')){bffSheet(b.dataset.bffopen);return}
+ if(b=q('[data-mycrush]')){setMyCrush(b.dataset.mycrush);openFiche(b.dataset.mycrush);return}
  if(b=q('[data-ro]')){romAct(b.dataset.id,b.dataset.ro);return}
  if(b=q('[data-gift]')){giveGift(b.dataset.id,b.dataset.gift);return}
  if(b=q('[data-rdv]')){proposeDate(b.dataset.id,b.dataset.rdv);return}
