@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='125';
+const APP_VERSION='126';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2735,6 +2735,15 @@ function smartLine(id,text,chan){
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
+ /* « tu rentres à quelle heure ? », « t'es où ? » : ta réponse (je suis là, j'arrive, à 18 h, tard…) */
+ if(lastQ&&/(rentres|rentre|reviens|arrives|seras là|seras la|t'es où|tu es où|t es ou|t'es ou)/i.test(lastQ)&&!/\?/.test(t)){const par=isFam(id)&&famKind(id)==='parent',fam=isFam(id);
+  if(/(je su[ia]?s? (l[aà]|rentr|à la maison|a la maison|chez moi|devant)|suis rentr|déjà là|deja la|déjà rentr|à la maison|a la maison|chez nous)/.test(t))return sty(id,fresh(fam?(par?["Ah tu es là ! Viens me faire un bisou 😘","Ah super, tu es rentré·e. Tu as faim ?","Enfin ! Pose tes affaires et viens me raconter ta journée"]:["Ah t'es là ! Viens voir 😄","Ok, je descends !"]):["Ah ok, cool !","Trop bien, je te rejoins ?"]),'happy');
+  if(/(j ?'?arrive|en route|sur la route|bientôt|bientot|dans (\d+|cinq|dix|quinze|vingt) ?(min|minutes)|tout de suite|dans pas longtemps)/.test(t))return sty(id,fresh(par?["Ok, à tout de suite. Fais attention sur la route","D'accord, je t'attends 😊","Parfait, le repas sera prêt"]:["Ok, à tout de suite !","Ça marche, je t'attends"]),'happy');
+  if(/(\b\d{1,2} ?(h|heures?)\b|\bvers \d|\bmidi\b|\bminuit\b|après (le|les) cours|apres (le|les) cours|après le club|ce soir)/.test(t)){const h=+((t.match(/\b(\d{1,2}) ?(h|heures?)/)||[])[1]||0);
+   return sty(id,fresh(par&&h>=21?["C'est tard ça… pas après 21 h, il y a cours demain","Hmm, je préférerais que tu rentres plus tôt"]:par?["D'accord, à tout à l'heure. Préviens-moi si ça change","Ok, je t'attends pour manger 😊","Très bien, fais attention en rentrant"]:["Ok, à tout à l'heure !","Ça marche !"]))}
+  if(/(tard|je sais pas|j'sais pas|sais pas|aucune idée|on verra)/.test(t))return sty(id,fresh(par?["Pas trop tard hein, il y a cours demain","Tu me préviens alors, je veux savoir où tu es","Hmm… envoie-moi un message quand tu pars"]:["Ok, tu me dis !","Pas de souci, tiens-moi au courant"]))}
+ /* « merci » à un parent après un compliment */
+ if(isFam(id)&&famKind(id)==='parent'&&/^\s*merci/.test(t)&&t.length<25)return sty(id,fresh(["Avec plaisir mon cœur ❤️","Je suis fier·e de toi, c'est tout 🥰","Continue comme ça !"]),'happy');
  /* « ça va ? » : la personne répond et te retourne la question */
  if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
   G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
