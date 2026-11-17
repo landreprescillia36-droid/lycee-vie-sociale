@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='122';
+const APP_VERSION='123';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2710,6 +2710,23 @@ sacha:{spe:["Musique et HLP, gros","Arts-musique, forcément 🎧"],origine:["La
 const askedSame=(id,q)=>{const k=TOPICS.find(([,re])=>re.test(q.toLowerCase()));return lastLines(id).some(u=>u.includes(genderize(q,id))||(k&&k[0]!=='salut'&&u.includes('?')&&k[1].test(u.toLowerCase())))};
 /* dernière phrase dite par la personne, pour ne pas se répéter */
 const lastLines=id=>[...(G.threads[id]||[]),...((G.talks&&G.talks[id])||[])].filter(m=>m.from==='them').slice(-6).map(m=>m.text);
+/* « quoi de neuf ? » : ce qui se passe vraiment dans la vie du ou de la camarade (couple, attirance, amitiés, disputes, passion, club…) */
+function newsLine(id){const s=socInit(),c=coupleOf(id),a=G.rel[id].ami,L=[],nm=x=>CNAME(x),used=lastLines(id);
+ if(BDAY(id)===G.day)L.push("C'est mon anniversaire aujourd'hui 🎂 !");
+ if(c==='me'||G.partner===id)L.push(pickR(["Bah… à part toi, rien de spécial 😳","Je pense à toi, c'est tout 🥰"]));
+ else if(c)L.push(pickR([`Ça se passe trop bien avec ${nm(c)} 🥰`,`${nm(c)} m'a fait une surprise hier, trop mignon 🥹`,`Avec ${nm(c)} ça va, petite prise de tête hier mais c'est réglé 😅`]));
+ else{const cr=NPCS.filter(n=>n.id!==id&&(s.rom[pk(id,n.id)]||0)>=2).sort((x,y)=>(s.rom[pk(id,y.id)]||0)-(s.rom[pk(id,x.id)]||0))[0];
+  if(cr)L.push(a>=40?pickR([`Entre nous… je crois que ${nm(cr.id)} me plaît 🙈 garde ça pour toi`,`Chut… je passe beaucoup de temps avec ${nm(cr.id)}, et j'avoue que ça me fait quelque chose 😳`]):"Il y a quelqu'un qui me plaît… mais je dis rien 🤫")}
+ s.fights.filter(f=>f.a===id||f.b===id).forEach(f=>L.push(pickR([`Je suis en froid avec ${nm(f.a===id?f.b:f.a)}, on s'est pris la tête 😕`,`Je me suis disputé·e avec ${nm(f.a===id?f.b:f.a)}… ça m'énerve`])));
+ Object.entries(s.fr).filter(([k,d])=>G.day-d<=10&&k.split('|').includes(id)).slice(-1).forEach(([k])=>{const o=k.split('|').find(x=>x!==id);if(o&&WHO[o])L.push(`Je passe beaucoup de temps avec ${nm(o)} en ce moment, on s'entend trop bien`)});
+ const st=liveStories().filter(x=>x.by===id&&x.text).pop();if(st)L.push(`T'as vu ma story ? ${st.text}`);
+ const cl=Object.values(CLUBS).find(x=>x.m.includes(id));if(cl)L.push(pickR([`Côté ${cl.n.toLowerCase()}, ça se passe bien ${cl.ic}`,`On prépare : ${cl.big.charAt(0).toLowerCase()+cl.big.slice(1)} ${cl.ic}`]));
+ const p=pickR(passOf(id));if(p&&PASS[p])L.push(pickR([`Je suis à fond dans ${PASS[p].n.toLowerCase()} en ce moment ${PASS[p].e}`,pickR(PASS[p].h)]));
+ if(REP[id]&&REP[id].weekend)L.push(pickR(REP[id].weekend));
+ const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));const pick=(f.length?f:L.map(x=>genderize(x,id)));
+ const first=pick[0]&&/(anniversaire|à part toi|pense à toi)/.test(pick[0])?pick[0]:pickR(pick.slice(0,Math.min(pick.length,3)));
+ const rest=pick.filter(x=>x!==first),two=rest.length&&Math.random()<.4?' '+pickR(rest):'';
+ return (first||"Rien de spécial, tranquille 😄")+two+(Math.random()<.5?' Et toi, quoi de neuf ?':'')}
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
  const fresh=L=>{const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
@@ -2717,6 +2734,17 @@ function smartLine(id,text,chan){
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
+ /* « ça va ? » : la personne répond et te retourne la question */
+ if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
+  G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
+  const pool=["Je vais bien et toi ?","Ça va bien, et toi ?","Oui ça va, et toi ?","Tranquille, et toi ?","Ça va super, et toi ?",...own.map(x=>x.replace(/[.!…]*\s*([\p{Extended_Pictographic}️]*)\s*$/u,(m,e)=>(e?' '+e:'')).trim()+(/[\p{Extended_Pictographic}]\s*$/u.test(x)?' Et toi ?':', et toi ?'))];
+  return sty(id,fresh(pool),'happy')}
+ /* ta réponse à son « et toi ? » après « ça va » */
+ if(G.ctopic&&G.ctopic[id]==='cava'&&lastQ&&/et toi|ça va|ca va/i.test(lastQ)&&!/\?/.test(t)){G.ctopic[id]=null;
+  if(/(pas (trop|top|ouf|bien|terrible)|bof|mal\b|nul|triste|fatigu|crev|stress|déprim|deprim|pas la forme|bof)/.test(t))return sty(id,fresh(["Oh… qu'est-ce qui va pas ?","Ah mince, il s'est passé quoi ?","Oh non 😕 tu veux en parler ?"]),'sad');
+  if(/(bien|ça va|ca va|tranquille|tranquil|super|nickel|top|la forme|trql|tkt|oui|ouais|ça roule|ca roule|parfait|génial|genial)/.test(t))return sty(id,fresh(/\bet (toi|vous)\b/.test(t)?["Moi aussi ça va 😊","Ça va aussi, merci 😄","Tranquille aussi !"]:["Tant mieux 😊","Cool, ça fait plaisir","Ah trop bien","Parfait alors 😄"]),'happy')}
+ /* « quoi de neuf ? » : la personne raconte sa vie (amour, ami·e·s, disputes, sorties, passion…) */
+ if(/(quoi de (neuf|nouveau|beau|bon)|du nouveau|tu racontes quoi|tu me racontes quoi|raconte(-| )moi (ta vie|tout|un truc)|les nouvelles|quelles nouvelles|ça dit quoi|ca dit quoi|quoi d'neuf|koi de neuf|qu'est-ce qui se passe dans ta vie|dans ta vie)/.test(t)&&isNpc(id))return sty(id,newsLine(id));
  /* « je viendrai plus / pas » : tu refuses ou tu arrêtes (cours particuliers de Jessica, sortie…) */
  if(/(je (ne )?viendrai? (pas|plus)|je (ne )?viens (pas|plus)|j'?viendrai (pas|plus)|je (ne )?pourrai (pas|plus) venir|je peux pas venir|j'arr[eê]te (les|le) cours|plus besoin (de|des) cours|me d[ée]sinscri)/.test(t)){
   const tut=/cours (particulier|de soutien)|soutien/.test(t)||(id===TUTOR.who&&G.tutor&&/(cours|lundi|mercredi|17)/.test(t+' '+(lastQ||'').toLowerCase())),up=/(moyenne|notes?) (est |a |sont )?(mont|remont|augment|meilleure)|j'ai progress|ça va mieux|ca va mieux/.test(t);
@@ -2821,7 +2849,7 @@ function sty(id,s,mood){
  const tic=w=>{const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
  const emo=e=>{if(!/[\p{Extended_Pictographic}]\uFE0F?\s*$/u.test(s))s=s.replace(/\s*$/,'')+e};
  if(k==='jade'){s=s.toLowerCase().replace(/[\p{Extended_Pictographic}️‍]/gu,'').replace(/!+/g,'.').replace(/\s+([.?])/g,'$1').replace(/\s{2,}/g,' ').trim();if(!/[.?]$/.test(s))s+='.';return s}
- if(k==='kylian'){s=s.toLowerCase().replace(/\s*!+\s*(?=\S)/g,', ').replace(/\s*!+/g,'');if(r<.35)s=tic(' frr');return s}
+ if(k==='kylian'){s=s.toLowerCase().replace(/\s*!+\s*(?=\S)/g,', ').replace(/\s*!+/g,'');if(r<.35&&!/\bfrr\b/.test(s))s=tic(' frr');return s}
  if(k==='maelle'){if(r<.3&&mood!=='sad')emo(' 💅');return s}
  if(k==='ines'){if(r<.55)emo(pickR(mood==='sad'?[' 🥺',' 💕']:[' ✨',' 🥺',' 🥰']));return s}
  if(k==='noah'){if(r<.25)s=tic(' frère');else if(r<.4&&mood!=='sad'&&!/\?/.test(s))emo(' ptdr');return s}
