@@ -2722,6 +2722,9 @@ function smartLine(id,text,chan){
  if(/^\s*(et )?(pourquoi|pk|pq|ah bon pourquoi|comment ça|comment ca)\s*\??\s*$/.test(t)&&used.length){const last=used[used.length-1].toLowerCase(),lk=(LIKE[id]||[]).some(w=>last.includes(w));
   return sty(id,fresh(lk?["Parce que j'adore ça, c'est vraiment mon truc ✨","Parce que ça me rend heureux·se, tout simplement","C'est ma passion, je peux pas l'expliquer autrement"]:["Je sais pas trop, c'est comme ça 😅","Parce que ! 😂","Bonne question… je sais pas trop t'expliquer","C'est compliqué à dire, je te raconterai en vrai"]))}
  /* « (ma réponse), et toi ? » : la personne répond sur le sujet que tu viens d'aborder */
+ /* devoirs : la personne dit si elle les a faits (selon son sérieux) */
+ if(/devoir|exo\b|exos\b|exercice/.test(t)&&(/\bet (toi|vous)\b|t'as fait|tu as fait|t as fait|fini/.test(t))&&isNpc(id)){const st=(FICHES[id]||{}).stud||.5,neg=/(pas fait|pas fini|rien fait|oublié|oublie|pas eu le temps|flemme)/.test(t);
+  return sty(id,fresh(st>=.65?[neg?"Moi je les ai faits hier soir. Tu veux que je t'aide ?":"Oui, finis hier soir 📚","Oui oui, c'était pas si dur. T'as bloqué où ?"]:st>=.4?[neg?"Moi non plus 😅 on les fait ensemble ?":"À moitié… il me reste la fin","J'ai fait le début, je finis ce soir"]:[neg?"Moi non plus 😭 on est deux":"Devoirs ? Quels devoirs ? 😂","Pas du tout, tu me les passes ? 😅"]))}
  if(/\bet (toi|vous)\b/.test(t)){const own=t.replace(/\bet (toi|vous)\b.*$/,''),qt=lastQ&&TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(lastQ.toLowerCase())&&R[k]),ot=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(own)&&R[k]),ht=qt&&(!ot||ot[0]===qt[0]||(qt[0]==='spe'&&ot[0]==='ecole'))?qt/* tu réponds à sa question (des matières pour « ta spé ? ») : même question pour lui ou elle */:ot;if(ht){G.ctopic=G.ctopic||{};G.ctopic[id]=ht[0];return fresh(R[ht[0]])}}
  const u=understand(id,text,lastQ);if(u)return sty(id,fresh(u.c),u.mood);
  if(s<0)return fresh(V.hurt);
