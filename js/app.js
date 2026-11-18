@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='131';
+const APP_VERSION='132';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2767,6 +2767,13 @@ function smartLine(id,text,chan){
   if(/(bien|ça va|ca va|tranquille|tranquil|super|nickel|top|la forme|trql|tkt|oui|ouais|ça roule|ca roule|parfait|génial|genial)/.test(t))return sty(id,fresh(/\bet (toi|vous)\b/.test(t)?["Moi aussi ça va 😊","Ça va aussi, merci 😄","Tranquille aussi !"]:["Tant mieux 😊","Cool, ça fait plaisir","Ah trop bien","Parfait alors 😄"]),'happy')}
  /* « quoi de neuf ? » : la personne raconte sa vie (amour, ami·e·s, disputes, sorties, passion…) */
  if(/(quoi de (neuf|nouveau|beau|bon)|du nouveau|tu racontes quoi|tu me racontes quoi|raconte(-| )moi (ta vie|tout|un truc)|les nouvelles|quelles nouvelles|ça dit quoi|ca dit quoi|quoi d'neuf|koi de neuf|qu'est-ce qui se passe dans ta vie|dans ta vie)/.test(t)&&isNpc(id))return sty(id,newsLine(id));
+ /* ta copine (toi) parle à son copain : questions de couple (exemples de Prescillia) */
+ if(isNpc(id)&&G.partner===id&&me().sexe==='f'&&FICHES[id].g==='m'){
+  if(/maquill|make-?up|makeup/.test(t)&&/(jolie|belle|trouve|pr[ée]f[èe]re|mieux|avec ou sans)/.test(t))return fresh(["Sans maquillage, tu es magnifique.","Avec ou sans, tu me plais.","Ça dépend de ton maquillage 😏","Je préfère quand tu te sens belle."]);
+  if(/(tu me trouves|je suis|j'suis|tu trouves que je suis|je suis pas|je deviens)[^?]{0,15}(grosse|trop ronde|enrob[ée]e)|j'ai (grossi|pris du poids|pris des kilos)/.test(t))return fresh(["Non, tu es très bien comme tu es.","Tu me plais comme tu es ❤️","Pourquoi tu te poses cette question ?","Ton poids ne change rien à mes sentiments."]);
+  if(/(coiffure|cheveux|coupe|tresses|perruque|teinture)/.test(t)&&/(chang|coup|nouvelle|teind|si je|tu aimerais|t'aimerais)/.test(t))return fresh(["Oui, je suis sûr que ça t'irait bien 😊","Tant que tu aimes, ça me va.","Je préfère ta coiffure actuelle 😅","Il faut voir le résultat !"]);
+  if(/(est[- ]ce que |esque |dis-moi )?tu m ?'?aimes( vraiment| encore| toujours| pour de vrai)?\s*\??\s*$|tu m ?'?aimes (vraiment|encore|toujours)/.test(t)){relChange(id,0,2);
+   return fresh(["Bien sûr que je t'aime ❤️","Ne te pose plus jamais la question.","Tu es la personne la plus importante pour moi.","Je t'aime de tout mon cœur ❤️","Mais je t'aime chérie ❤️","C'est quoi cette question enfin, ne doute jamais de mon amour 💘"])}}
  /* « je suis ton crush ? », « t'as un crush ? », « je te plais ? », « je pensais que tu m'aimais bien » : selon son vrai crush */
  if(isNpc(id)&&/(je suis (ton|ta) crush|c'est moi (ton|ta) crush|t ?'?as (un|une) crush|tu as (un|une) crush|c'est qui (ton|ta) crush|(ton|ta) crush c'est qui|qui est (ton|ta) crush|t'as quelqu'un en vue|tu kiffes quelqu'un|je te plais|tu me kiffes|tu m'aimes( bien)?\b|(je pensais|j'pensais|je croyais|j'croyais) (que )?(tu m'aimais|je te plaisais|tu me kiffais|tu m'appr[ée]ciais))/.test(t)){
   const c=crInit(),cr=c.of[id],v=G.rel[id].amour,bold=crBold(id)>=.7,stmt=/(pensais|croyais)/.test(t);
@@ -2885,7 +2892,7 @@ const clean=x=>x.replace(/[?!.…,;]+$/,'').replace(/[\p{Extended_Pictographic}�
 /* style de chacun ajouté au bout de la phrase */
 function sty(id,s,mood){
  const k=isFam(id)?'f_'+famKind(id):id,r=Math.random();
- const tic=w=>{const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
+ const tic=w=>{if(/fr[èe]r|frr/.test(w)&&me().sexe!=='m')return s;/* « frère », « frr » : seulement à un garçon */const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
  const emo=e=>{if(!/[\p{Extended_Pictographic}]\uFE0F?\s*$/u.test(s))s=s.replace(/\s*$/,'')+e};
  if(k==='jade'){s=s.toLowerCase().replace(/[\p{Extended_Pictographic}️‍]/gu,'').replace(/!+/g,'.').replace(/\s+([.?])/g,'$1').replace(/\s{2,}/g,' ').trim();if(!/[.?]$/.test(s))s+='.';return s}
  if(k==='kylian'){s=s.toLowerCase().replace(/\s*!+\s*(?=\S)/g,', ').replace(/\s*!+/g,'');if(r<.35&&!/\bfrr\b/.test(s))s=tic(' frr');return s}
