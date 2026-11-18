@@ -2733,6 +2733,22 @@ function newsLine(id){const s=socInit(),c=coupleOf(id),a=G.rel[id].ami,L=[],nm=x
  const first=pick[0]&&/(anniversaire|à part toi|pense à toi)/.test(pick[0])?pick[0]:pickR(pick.slice(0,Math.min(pick.length,3)));
  const rest=pick.filter(x=>x!==first),two=rest.length&&Math.random()<.4?' '+pickR(rest):'';
  return (first||"Rien de spécial, tranquille 😄")+two+(Math.random()<.5?' Et toi, quoi de neuf ?':'')}
+/* questions qu'une fille pose à son copain (exemples de Prescillia) : [question, 4 réponses du plus romantique au plus franc] */
+const COUPLE_Q=[
+ [/tu m ?'?aimes pourquoi|pourquoi (est-ce que )?tu m ?'?aimes/,["Parce que tu me rends heureux.","Parce que tu es différente des autres.","Parce que je me sens bien avec toi.","Je ne sais pas comment l'expliquer, je t'aime, c'est tout."]],
+ [/(toujours|encore) aussi (belle|jolie)|(belle|jolie) (qu'au|comme au) d[ée]but/,["Encore plus belle.","Oui, rien n'a changé.","Tu es belle même quand tu ne fais aucun effort.","Bien sûr, pourquoi cette question ?"]],
+ [/tu penses (parfois |souvent |un peu )?à moi/,["Tout le temps.","Oui, surtout quand je vois quelque chose qui me fait penser à toi.","Ça m'arrive souvent.","Je préfère te parler directement."]],
+ [/peur de me perdre/,["Oui, énormément.","Je n'aime pas imaginer ma vie sans toi.","Je ferai tout pour qu'on reste ensemble.","Je préfère profiter de notre relation sans penser au pire."]],
+ [/(une fille|quelqu'une?) (te )?drague|si on te drague|on te drague/,["Je lui dis que je suis en couple.","Je mets directement les limites.","Je l'ignore.","Je te le raconte après."]],
+ [/tu regardes (les )?(autres )?filles|tu mates (les )?(autres )?filles/,["Je ne regarde que toi.","Non, je n'y prête pas attention.","Ça peut arriver de remarquer quelqu'un, mais ça ne va pas plus loin.","Je ne vais pas te mentir, oui."]],
+ [/(parle|parler|parlais|écrire|ecrire|voir) (à|a|avec)? ?mon ex|mon ex\b/,["Je ne serais pas à l'aise.","Non, je ne vois pas l'intérêt.","Ça dépend de votre relation actuelle.","Oui, si c'est sans ambiguïté."]],
+ [/(me |m')?tromper|tu me tromperais|infid[eè]le/,["Jamais.","Non, je respecte trop notre relation.","Je ne vois pas l'intérêt de prendre ce risque.","Si je ne suis plus heureux, je préfère partir."]],
+ [/(pourquoi )?tu (ne )?m ?'?(envoies|écris|ecris) (pas|jamais)( de messages?)? en premier|tu m'écris jamais en premier|jamais toi qui (m'écris|écris)/,["Je vais faire plus d'efforts.","Je ne savais pas que ça te dérangeait.","J'aime aussi quand tu viens vers moi.","Je ne suis pas toujours très téléphone."]],
+ [/(tu remarques|tu vois|tu sens) quand (je ne vais pas|je vais pas|ça va pas|ca va pas|je suis triste)/,["Oui, même quand tu essaies de le cacher.","Je le remarque à ton comportement.","Pas toujours, mais j'aimerais que tu m'en parles.","Parfois, j'ai besoin que tu me le dises."]],
+ [/moins attentionn|tu fais moins (attention|d'efforts)|tu as chang[ée] depuis le d[ée]but/,["Je vais essayer de retrouver ces petites attentions.","Ce n'est pas que je t'aime moins.","Je ne m'en rends pas compte.","Je me suis peut-être installé dans une routine."]],
+ [/(tu te vois|tu nous vois)[^?]{0,20}(dans \d+ ans|dans (cinq|dix) ans|plus tard|dans le futur|à l'avenir)/,["Oui, et même plus longtemps.","Je l'espère vraiment.","Oui, si on continue à construire ensemble.","Je préfère ne pas faire de promesses, mais je veux avancer avec toi."]],
+ [/(vivre|habiter|emménager) (avec moi|ensemble)/,["Oui, sans hésiter.","Pourquoi pas, ce serait une belle étape.","Oui, mais il faut qu'on soit prêts.","J'aimerais d'abord qu'on stabilise notre situation."]],
+ [/p[ée]riode difficile|(rester|abandonner) ou (rester|abandonner)|si (ça|ca) va (mal|pas) entre nous/,["Je préfère qu'on se batte pour notre couple.","Je veux qu'on trouve des solutions ensemble.","Ça dépend de la situation.","Je ne veux pas rester dans une relation qui nous fait souffrir."]]];
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
@@ -2769,6 +2785,9 @@ function smartLine(id,text,chan){
  if(/(quoi de (neuf|nouveau|beau|bon)|du nouveau|tu racontes quoi|tu me racontes quoi|raconte(-| )moi (ta vie|tout|un truc)|les nouvelles|quelles nouvelles|ça dit quoi|ca dit quoi|quoi d'neuf|koi de neuf|qu'est-ce qui se passe dans ta vie|dans ta vie)/.test(t)&&isNpc(id))return sty(id,newsLine(id));
  /* ta copine (toi) parle à son copain : questions de couple (exemples de Prescillia) */
  if(isNpc(id)&&G.partner===id&&me().sexe==='f'&&FICHES[id].g==='m'){
+  /* réponse selon son caractère : romantique → les premières réponses, plus franc → les dernières */
+  const cq=L=>{const h=Math.ceil(L.length/2);return Math.random()<.25+FICHES[id].rom*.6?pickR(L.slice(0,h)):pickR(L.slice(h))};
+  for(const [re,L] of COUPLE_Q)if(re.test(t)){relChange(id,0,1);return cq(L)}
   if(/maquill|make-?up|makeup/.test(t)&&/(jolie|belle|trouve|pr[ée]f[èe]re|mieux|avec ou sans)/.test(t))return fresh(["Sans maquillage, tu es magnifique.","Avec ou sans, tu me plais.","Ça dépend de ton maquillage 😏","Je préfère quand tu te sens belle."]);
   if(/(tu me trouves|je suis|j'suis|tu trouves que je suis|je suis pas|je deviens)[^?]{0,15}(grosse|trop ronde|enrob[ée]e)|j'ai (grossi|pris du poids|pris des kilos)/.test(t))return fresh(["Non, tu es très bien comme tu es.","Tu me plais comme tu es ❤️","Pourquoi tu te poses cette question ?","Ton poids ne change rien à mes sentiments."]);
   if(/(coiffure|cheveux|coupe|tresses|perruque|teinture)/.test(t)&&/(chang|coup|nouvelle|teind|si je|tu aimerais|t'aimerais)/.test(t))return fresh(["Oui, je suis sûr que ça t'irait bien 😊","Tant que tu aimes, ça me va.","Je préfère ta coiffure actuelle 😅","Il faut voir le résultat !"]);
