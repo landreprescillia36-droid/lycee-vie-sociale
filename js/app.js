@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='130';
+const APP_VERSION='131';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2236,7 +2236,7 @@ function famAvatar(role,seed){
 }
 
 /* ---------- photos ---------- */
-const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',couloir2:'Couloir (côté fenêtres)',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché'};
+const SCENES={plage:'Plage',cour:'Devant le lycée',couloir:'Couloir du lycée',couloir2:'Couloir (côté fenêtres)',basket:'Terrain de basket',cantine:'Cantine',soiree:'Soirée',chambre:'Chambre',cascade:'Chutes du Carbet',marche:'Marché',fastfood:'Fast-food',glacier:'Glacier',cinema:'Cinéma'};
 function sceneSVG(id,p){
  switch(id){
  case 'plage':return `<rect width="600" height="400" fill="#f0d9b0"/><image href="assets/decors/plage.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
@@ -2349,6 +2349,9 @@ function sceneSVG(id,p){
  case 'cascade_old':return `<rect width="600" height="400" fill="#2f6b3f"/><path d="M0,0 H600 V140 C520,120 460,170 380,150 C320,136 280,170 200,150 C120,130 60,160 0,140Z" fill="#3f8a4f"/><path d="M240,0 C250,120 236,240 250,330 L350,330 C364,240 350,120 360,0Z" fill="#dff4ff"/><path d="M262,0 C270,120 258,240 270,330 M300,0 C306,120 296,240 304,330 M338,0 C344,120 334,240 340,330" stroke="#a9dcf2" stroke-width="5" fill="none" opacity=".8"/><ellipse cx="300" cy="336" rx="190" ry="34" fill="#5fb8d9"/><rect y="350" width="600" height="50" fill="#4a8f9f"/><g fill="#57a85e"><circle cx="60" cy="120" r="50"/><circle cx="140" cy="90" r="44"/><circle cx="520" cy="110" r="52"/><circle cx="450" cy="80" r="40"/></g>`;
  case 'marche':return `<rect width="600" height="400" fill="#e6cdb4"/><image href="assets/decors/marche.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'marche_old':{let st='';const cols=[['#e8613c','#fff3c4'],['#2fa36b','#f4f1ea'],['#f2c230','#d93b5e']];for(let i=0;i<3;i++){const x=20+i*195,[a,b]=cols[i];for(let k=0;k<6;k++)st+='';st+=`<rect x="${x}" y="60" width="180" height="50" fill="${a}"/>`+[0,1,2,3,4,5].map(k=>`<rect x="${x+k*30}" y="60" width="15" height="50" fill="${b}"/>`).join('')+`<rect x="${x+10}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x+162}" y="110" width="8" height="150" fill="#7a4f2e"/><rect x="${x}" y="220" width="180" height="40" rx="4" fill="#a8743f"/>`+['#ffb627','#e8613c','#7cc35f','#ffd23f','#d93b5e','#ff8a3d','#9bd16a'].map((f,k)=>`<circle cx="${x+18+k*24}" cy="212" r="11" fill="${f}"/>`).join('')}return `<rect width="600" height="400" fill="#bfe3ff"/>${st}<rect y="260" width="600" height="140" fill="#d8cdbb"/>`;}
+ case 'fastfood':return `<rect width="600" height="400" fill="#f3dccc"/><image href="assets/decors/fastfood.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'glacier':return `<rect width="600" height="400" fill="#f6dde4"/><image href="assets/decors/glacier.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
+ case 'cinema':return `<rect width="600" height="400" fill="#4a3560"/><image href="assets/decors/cinema.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'cantine':return `<rect width="600" height="400" fill="#f1dcc6"/><image href="assets/decors/cantine.webp" x="0" y="0" width="600" height="400" preserveAspectRatio="xMidYMid slice"/>`;/* décor de Prescillia */
  case 'cantine_old':{let f='';for(let i=0;i<12;i++)f+=`<rect x="${i*50}" y="300" width="25" height="100" fill="#e4dccd"/>`;
   return `<rect width="600" height="400" fill="#f6efe2"/><rect x="40" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="410" y="40" width="150" height="110" rx="8" fill="#a9d6ef" stroke="#fff" stroke-width="8"/><rect x="230" y="50" width="140" height="90" rx="8" fill="#2f4a3e"/><text x="300" y="82" text-anchor="middle" font-family="Baloo 2, Trebuchet MS, sans-serif" font-weight="700" font-size="17" fill="#f4f1ea">MENU</text><rect y="300" width="600" height="100" fill="#efe8da"/>${f}`;}
@@ -2367,7 +2370,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[285,400,[[170,450]]],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[285,400,[[170,450]]],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]],fastfood:[285,400,[[150,450]]],glacier:[285,400,[[240,470]]],cinema:[285,400,[[180,560]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
@@ -3537,12 +3540,13 @@ function napGo(){setCd('nap');closeSheet();G.asleep=true;advance(90);G.asleep=fa
 const VENUES={
  plage:{n:'Plage',ic:'🏖️',sc:'plage',h:[[0,1440]],fx:{fun:18,energy:-8},act:'Te baigner et profiter du soleil',pass:['sport','voyages','photo','fitness'],pl:'plage'},
  promenade:{n:'Promenade',ic:'🚶',sc:'marche',h:[[420,1200]],fx:{fun:10,energy:-5},act:'Flâner dans les rues de Pointe-à-Pitre',pass:['voyages','photo'],pl:'promenade'},
- cafe:{n:'Café',ic:'☕',sc:'cantine',h:[[480,1140]],fx:{fun:8},food:'cafe',act:'Siroter un jus à la terrasse',pass:['lecture','ecriture'],pl:'cafe'},
+ cafe:{n:'Café',ic:'☕',sc:'glacier',h:[[480,1140]],fx:{fun:8},food:'cafe',act:'Siroter un jus à la terrasse',pass:['lecture','ecriture'],pl:'cafe'},
  brunch:{n:'Brunch',ic:'🥞',sc:'cantine',h:[[540,780]],we:1,fx:{fun:10},food:'brunch',act:'Profiter du brunch',pass:['cuisine','patisserie'],pl:'brunch'},
  resto:{n:'Restaurant créole',ic:'🍽️',sc:'cantine',h:[[720,870],[1140,1350]],fx:{fun:12},food:'resto',act:'Profiter de l\'ambiance',pass:['cuisine'],pl:'resto'},
- fastfood:{n:'Fast-food',ic:'🍔',sc:'cantine',h:[[660,1380]],fx:{fun:6},food:'fastfood',act:'Traîner au fast-food',pass:['jeux','sport'],pl:'fastfood'},
+ fastfood:{n:'Fast-food',ic:'🍔',sc:'fastfood',h:[[660,1380]],fx:{fun:6},food:'fastfood',act:'Traîner au fast-food',pass:['jeux','sport'],pl:'fastfood'},
+ glacier:{n:'Glacier',ic:'🍦',sc:'glacier',h:[[600,1320]],fx:{fun:10},food:'glacier',act:'Déguster une glace',pass:['patisserie','cuisine','photo'],pl:'glacier'},
  shopping:{n:'Shopping à Jarry',ic:'🛍️',sc:'marche',h:[[540,1140]],fx:{fun:15,energy:-8},act:'Faire les boutiques',pass:['mode','maquillage'],pl:'shopping'},
- cinema:{n:'Cinéma',ic:'🎬',sc:'soiree',h:[[840,1380]],fx:{fun:22},act:'Regarder un film',pass:['cinema','animes'],pl:'cinema'}};
+ cinema:{n:'Cinéma',ic:'🎬',sc:'cinema',h:[[840,1380]],fx:{fun:22},act:'Regarder un film',pass:['cinema','animes'],pl:'cinema'}};
 /* invitations des camarades à leur passion (match, spectacle, atelier…) : lieux cachés de la liste « Sortir » */
 const EVT={
  foot:{n:'Match de foot',ic:'⚽',sc:'cour',wd:5,h:15,what:'un match de foot',verb:"m'encourager",out:'au match de foot'},
@@ -3572,11 +3576,11 @@ function planAskHour(id,pl){pl.status='hour';planFix(pl);let L=planHours(pl.plac
  const j=pl.day===G.day?(G.min<720?"aujourd'hui":'ce soir'):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase();
  const m=genderize(pickR(pl.date?["Notre rendez-vous 💕 ","Rendez-vous 😏 "]:["Carrément ! ","Ok, chaud ! ","Grave ! "]),id)+`${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${j}. On se retrouve à quelle heure ?`;setTimeout(()=>{pushMsg(id,'them',m,{mq:{k:'hour',o:L.map(h=>h+' h'),d:{pl:pl.id,h:L}}});note(`💬 ${WHO[id].name} te demande l'heure de la sortie`);saveG();if(chat&&chat.id===id)drawChatMsgs()},700);return pl}
 MQ_FX.hour=(id,j,d)=>{const pl=G.plans.find(x=>x.id===d.pl);if(!pl)return '';pl.hour=d.h[j];pl.status='accepted';note(`📅 Sortie avec ${WHO[id].name} ${PLACE_OUT[pl.place]} ${planWhen(pl)}`);toast(`📅 Sortie avec ${WHO[id].name} ${planWhen(pl)}`);return pickR([`Parfait, à ${pl.hour} h alors 😄`,`Ça marche, ${pl.hour} h !`,`Top, je serai là à ${pl.hour} h`])};
-Object.assign(PLACES,{promenade:'Promenade',cafe:'Café',brunch:'Brunch',resto:'Restaurant',fastfood:'Fast-food',shopping:'Shopping',cinema:'Cinéma',club:'Club'});
+Object.assign(PLACES,{promenade:'Promenade',cafe:'Café',glacier:'Glacier',brunch:'Brunch',resto:'Restaurant',fastfood:'Fast-food',shopping:'Shopping',cinema:'Cinéma',club:'Club'});
 /* plats : [clé, emoji, nom, faim, où, effets en plus] */
 const FOODS=[['tacos','🌮','Tacos',55,'fastfood',{energy:-2}],['burger','🍔','Hamburger',50,'fastfood',{energy:-2}],['kebab','🥙','Kebab',55,'fastfood',{energy:-2}],['pizza','🍕','Pizza',50,'fastfood resto',{}],['bokit','🥪','Bokit',45,'fastfood',{}],
  ['salade','🥗','Salade',30,'resto cafe brunch',{energy:4}],['colombo','🍛','Colombo de poulet',60,'resto',{}],['poisson','🐟','Poisson grillé et riz',55,'resto',{energy:3}],['accras','🍤','Accras de morue',25,'resto cafe',{}],['sushi','🍣','Sushis',40,'resto',{}],
- ['pancakes','🥞','Pancakes',40,'brunch',{fun:2}],['oeufs','🍳','Œufs brouillés et pain',45,'brunch',{energy:3}],['crepe','🥞','Crêpe',25,'cafe brunch',{fun:2}],['sorbet','🍧','Sorbet coco',10,'cafe fastfood',{fun:4}],['jus','🥤','Jus de fruits frais',8,'cafe brunch fastfood resto',{energy:2}]];
+ ['pancakes','🥞','Pancakes',40,'brunch',{fun:2}],['oeufs','🍳','Œufs brouillés et pain',45,'brunch',{energy:3}],['crepe','🥞','Crêpe',25,'cafe brunch',{fun:2}],['sorbet','🍧','Sorbet coco',10,'cafe fastfood glacier',{fun:4}],['jus','🥤','Jus de fruits frais',8,'cafe brunch fastfood resto glacier',{energy:2}],['glace','🍦','Glace deux boules',15,'glacier',{fun:5}],['milkshake','🥤','Milkshake',15,'glacier fastfood',{fun:3}],['coupe','🍨','Coupe glacée',25,'glacier',{fun:6}]];
 function venueOpen(k){const v=VENUES[k],m=G.min,we=weekday()>=5||!schoolDay(G.day);if(v.we&&!we)return false;if(k==='shopping'&&weekday()===6&&m>=750)return false;return v.h.some(([a,b])=>m>=a&&m<b)}
 const venueHours=k=>VENUES[k].h.map(([a,b])=>`${fmtT(a)}–${fmtT(b)}`).join(' et ')+(VENUES[k].we?' (week-end)':'')+(k==='shopping'?' (dimanche : matin)':'');
 function goSheet(msg){openSheet(sheetHead('🌴 Sortir','Choisis un endroit ouvert')+(msg?`<p class="story-text">${esc(msg)}</p>`:'')+`<div class="choices">${Object.entries(VENUES).filter(([k,v])=>!v.hidden).map(([k,v])=>`<button class="choice" type="button" data-venue="${k}" ${venueOpen(k)?'':'disabled'}>${v.ic} ${v.n}<small>${venueOpen(k)?'ouvert · '+needsFx2(v.fx):'fermé · '+venueHours(k)}</small></button>`).join('')}</div>`)}
@@ -3625,7 +3629,7 @@ function outPop(){const o=G.outS,id=o.with,v=VENUES[o.v];if(!id)return false;con
   {t:`${n} veut une photo pour Insta, mais elle est ratée.`,ch:[['La reprendre jusqu\'à ce qu\'elle soit parfaite',()=>joinFx([relChange(id,3,0),needsFx({energy:-2})])],['La poster quand même',()=>joinFx([relChange(id,-1,0),needsFx({fun:3})])]]}];
  const Q=pickR(L);vsPop({eb:`${v.ic} ${v.n}`,t:'Imprévu',html:`<div class="av">${avatarOf(id)}</div>`,b:Q.t,ch:Q.ch.map(([l,f])=>[l,()=>{o.msg=f()||'';outSheet();saveG();return KEEP}])});return true}
 /* prix des plats en sortie (centimes), payés avec l'argent de poche */
-const FOOD_PRIX={tacos:700,burger:650,kebab:600,pizza:900,bokit:400,salade:800,colombo:1200,poisson:1300,accras:500,sushi:1400,pancakes:700,oeufs:750,crepe:400,sorbet:300,jus:350};
+const FOOD_PRIX={tacos:700,burger:650,kebab:600,pizza:900,bokit:400,salade:800,colombo:1200,poisson:1300,accras:500,sushi:1400,pancakes:700,oeufs:750,crepe:400,sorbet:300,jus:350,glace:350,milkshake:450,coupe:600};
 function foodSheet(where){const L=FOODS.filter(f=>f[4].split(' ').includes(where)),o=G.outS,id=o&&o.with,fav=id&&FAV[id]&&FAV[id].plat||'';
  openSheet(sheetHead('🍴 Que veux-tu manger ?',id?`Avec ${WHO[id].name}`:'')+`<p class="muted" style="margin:0">💶 Argent de poche : <b>${eur(G.money||0)}</b></p><div class="choices">${L.map(([k,ic,n,fa,,x])=>`<button class="choice" type="button" data-food="${k}" ${(G.money||0)<(FOOD_PRIX[k]||0)?'disabled':''}>${ic} ${n} · ${eur(FOOD_PRIX[k]||0)}<small>faim +${fa}${Object.entries(x).map(([a,d])=>` · ${NEED_LBL[a]} ${d>0?'+':''}${d}`).join('')}</small></button>`).join('')}</div>`)}
 function foodEat(k){const F=FOODS.find(f=>f[0]===k);if(!F)return;const pr=FOOD_PRIX[k]||0;if((G.money||0)<pr){toast('Pas assez d\'argent de poche 💸 (le prochain arrive lundi)');return}G.money-=pr;const o=G.outS,id=o&&o.with;advance(30);if(o)o.ate=1;
@@ -4193,7 +4197,7 @@ function checkPlans(){
   else if($('sheet').hidden&&!$('game').hidden&&!G.asleep){p.status='done';startOuting(p)}
  });
 }
-const FAM_PLACES=['sainteanne','carbet','marche'],FAM_SCENE={sainteanne:'plage',carbet:'cascade',marche:'marche',resto:'cantine',cinema:'soiree'};
+const FAM_PLACES=['sainteanne','carbet','marche'],FAM_SCENE={sainteanne:'plage',carbet:'cascade',marche:'marche',resto:'cantine',cinema:'cinema'};
 const famPending=()=>G.plans.some(p=>p.fam&&(p.status==='pending'||p.status==='accepted'));
 function famPlan(by){
  const wd=weekday(),m=G.min;let day,hour,place;
@@ -4904,7 +4908,7 @@ function giveGift(id,gk){if(G.done[G.day+'gift'+id])return;const x=giftsFor(id).
  const ch=relChange(id,da,dl),sf=seenFlirt(id);if(G.partner&&G.partner!==id&&!sf&&Math.random()<.3){fPotins(`${myHandle()} a offert un cadeau à ${WHO[id].handle}… et ce n'est pas son ou sa partenaire 👀`);jealous(id)}
  note(`Cadeau pour ${WHO[id].name} : ${x.n}${ch?' · '+ch.split(' : ')[1]:''}`);saveG();drawHUD();
  openSheet(giftSheet(id,`<b>${WHO[id].name} :</b> « ${esc(genderize(line,id))} »${ch?`<br><small class="muted">${esc(ch)}${GEMS_ON&&x.g?` · −${x.g} gemmes`:''}${esc(sf)}</small>`:''}`))}
-const DATE_SPOTS={sainteanne:['Coucher de soleil à la plage de Sainte-Anne 🌅','plage'],glacier:['Une glace au glacier du Gosier 🍦','cantine'],cinema:['Une séance de cinéma 🍿','soiree'],resto:['Un dîner au restaurant créole 🕯️','soiree'],carbet:['Un pique-nique aux chutes du Carbet 🌿','plage']};
+const DATE_SPOTS={sainteanne:['Coucher de soleil à la plage de Sainte-Anne 🌅','plage'],glacier:['Une glace au glacier du Gosier 🍦','glacier'],cinema:['Une séance de cinéma 🍿','cinema'],resto:['Un dîner au restaurant créole 🕯️','soiree'],carbet:['Un pique-nique aux chutes du Carbet 🌿','plage']};
 function rdvSheet(id,msg){const done=G.done[G.day+'rdv'+id];
  return `<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>Rendez-vous amoureux</h2><p class="muted" style="margin:2px 0 0">avec ${WHO[id].name} · amour ${G.rel[id].amour}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>`
  +(msg?`<div class="card felt"><p style="margin:0">${msg}</p></div>`:'')
@@ -5742,7 +5746,7 @@ function bacGame(k){if(G.bac.bonus[k]!=null){toast('Épreuve déjà passée');re
   miniResult(scoreLbl(sc),`Épreuve de ${SUBJ[k]} terminée · score ${Math.round(sc*100)} %`,`<p class="muted">Ton résultat compte dans la note de l'épreuve (de −2 à +2 points).</p>`);saveG();drawView()})}
 function revise(s){const cost=G.place==='cdi'&&phase().type!=='soir'?4:6;if(G.energy<cost){toast("Pas assez d'énergie pour réviser");return}
  G.energy=clamp(G.energy-cost,0,100);G.know[s]=clamp(G.know[s]+gainK(s,4),0,100);G.studied[s]=1;closeSheet();toast(`📚 ${SUBJ[s]} : ${G.know[s]} % de chances de réussite`);note(`Révisions de ${SUBJ[s]}`);saveG();drawHUD();drawView()}
-const PLAN_VENUE={plage:'plage',sainteanne:'plage',centre:'promenade',glacier:'cafe',carbet:'promenade',marche:'promenade',resto:'resto',cinema:'cinema'};
+const PLAN_VENUE={plage:'plage',sainteanne:'plage',centre:'promenade',glacier:'glacier',carbet:'promenade',marche:'promenade',resto:'resto',cinema:'cinema'};
 function startOuting(p){if(p.fam){startFamOuting(p);return}
  if(p.date){openSheet(dateSheet(p));return}
  if(isNpc(p.by)){G.st.outings++;outStart(PLAN_VENUE[p.place]||(VENUES[p.place]?p.place:'promenade'),p.by,p.id);return}
