@@ -2370,7 +2370,7 @@ const ROOMS={ines:'ch_ines',sacha:'ch_sacha',kylian:'ch_kylian',noah:'ch_noah',a
 /* photos : cadrage « buste » (portrait) ou « pied » (corps entier), pose, photo amicale ou amoureuse (ph.love).
    Les poses jouent sur l'inclinaison, la distance et la profondeur des personnes (les bras restent dessinés avec les vêtements). */
 const PFB='54 -40 292 930';
-const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[285,400,[[170,450]]],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]],fastfood:[285,400,[[150,450]]],glacier:[285,400,[[240,470]]],cinema:[285,400,[[180,560]]]};/* [hauteur, sol, zones de sol libre en x] */
+const PIED_SC={def:[250,388],plage:[285,400,[[285,505]]],cour:[270,400,[[240,530]]],couloir:[290,402,[[200,420]]],couloir2:[290,402,[[230,430]]],basket:[285,400,[[170,450]]],cantine:[285,400,[[245,455]]],soiree:[275,402,[[195,405]]],chambre:[255,392],ch:[335,421],cascade:[235,398,[[30,215]]],marche:[300,402,[[200,460]]],cinema:[285,400,[[180,560]]]};/* [hauteur, sol, zones de sol libre en x] */
 const POSES={
  naturel:{n:'Naturel·le',f:()=>({})},
  complices:{n:'Complices',f:(i,n,c)=>({gap:.78,rot:3*c})},
@@ -2383,8 +2383,10 @@ const POSES={
  coeur:{n:'Petits cœurs',love:1,f:(i,n,c)=>({gap:.6,rot:5*c})}};
 const POSE_AMI=['naturel','complices','penche','fun','decale','selfie'],POSE_LOVE=['tendre','epaule','coeur'];
 const heartP=(x,y,s,c,o)=>`<path d="M${x},${y+s*.3} C${x},${y-s*.2} ${x-s},${y-s*.2} ${x-s},${y+s*.3} C${x-s},${y+s*.8} ${x},${y+s*1.1} ${x},${y+s*1.4} C${x},${y+s*1.1} ${x+s},${y+s*.8} ${x+s},${y+s*.3} C${x+s},${y-s*.2} ${x},${y-s*.2} ${x},${y+s*.3}Z" fill="${c}" opacity="${o}"/>`;
+/* fast-food et glacier : pas de sol libre devant (tables partout) → photos en buste seulement */
+const NO_PIED=new Set(['fastfood','glacier']);
 function photoSVG(ph){
- const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length),pied=ph.frame==='pied';
+ const p=uid(),ppl=ph.people.filter(x=>x==='me'||WHO[x]||isFam(x)),n=Math.max(1,ppl.length),pied=ph.frame==='pied'&&!NO_PIED.has(ph.scene);
  const P=POSES[ph.pose]&&!(pied&&POSES[ph.pose].buste)?POSES[ph.pose]:POSES.naturel;
  /* en pied : taille des personnes à l'échelle du décor (hauteur de la silhouette, ligne du sol) */
  const PS=PIED_SC[ph.scene==='chambre'&&roomOf(ph.author)?'ch':ph.scene]||PIED_SC.def,ph0=PS[0]*(n>3?.92:1);
@@ -5968,6 +5970,8 @@ function loveFx(id){if(!id||!isNpc(id))return '';
  let fx='';if(G.partner&&isNpc(G.partner)){relChange(G.partner,-6,-8);fx=`${WHO[G.partner].name} a vu la photo… 😠`}
  const tk=coupleOf(id);if(tk&&tk!=='me')relChange(tk,-6,0);
  const r=npcLikesMe(id)?relChange(id,1,3):relChange(id,-3,0);return [r,fx].filter(Boolean).join(' · ')}
+/* en buste seulement au fast-food et au glacier : le bouton « En pied » est désactivé */
+function cpFrameLock(){const no=NO_PIED.has(cp.scene);if(no)cp.frame='buste';document.querySelectorAll('[data-frame]').forEach(x=>{if(x.dataset.frame==='pied')x.disabled=no;x.setAttribute('aria-pressed',x.dataset.frame===cp.frame)})}
 const cpPhoto=()=>Object.assign({scene:cp.scene,people:['me',...cp.tags],author:'me',frame:cp.frame},cp.love&&cp.tags.size===1?{love:1,pose:'tendre'}:{});
 function publishCompose(){
  if(cp.mode==='photo'&&cp.love&&cp.tags.size!==1){toast('Photo amoureuse : identifie une seule personne');return}
@@ -6282,9 +6286,9 @@ $('sheetBody').addEventListener('click',e=>{
  if(cp){
   if(b=q('[data-mode]')){cp.mode=b.dataset.mode;document.querySelectorAll('[data-mode]').forEach(x=>x.setAttribute('aria-pressed',x===b));$('cpPhoto').hidden=cp.mode!=='photo';$('cpText').hidden=!(cp.kind==='story'&&cp.mode==='text');updatePreview();return}
   if(b=q('[data-room]')){G.chambre=b.dataset.room;document.querySelectorAll('[data-room]').forEach(x=>x.setAttribute('aria-pressed',x===b));const th=document.querySelector('[data-scene="chambre"] .scth svg');if(th)th.innerHTML=sceneSVG(roomOf('me'),uid());saveG();updatePreview();return}
-  if(b=q('[data-frame]')){cp.frame=b.dataset.frame;document.querySelectorAll('[data-frame]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
+  if(b=q('[data-frame]')){if(b.disabled)return;cp.frame=b.dataset.frame;document.querySelectorAll('[data-frame]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(b=q('[data-love]')){cp.love=+b.dataset.love;document.querySelectorAll('[data-love]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
-  if(b=q('[data-scene]')){cp.scene=b.dataset.scene;document.querySelectorAll('[data-scene]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
+  if(b=q('[data-scene]')){cp.scene=b.dataset.scene;document.querySelectorAll('[data-scene]').forEach(x=>x.setAttribute('aria-pressed',x===b));cpFrameLock();updatePreview();return}
   if(b=q('[data-tag]')){const id=b.dataset.tag;cp.tags.has(id)?cp.tags.delete(id):cp.tags.size<3?cp.tags.add(id):toast('3 amis maximum par photo');b.setAttribute('aria-pressed',cp.tags.has(id));updatePreview();return}
   if(b=q('[data-bg]')){cp.bg=+b.dataset.bg;document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',x===b));updatePreview();return}
   if(t.id==='cpSend'){publishCompose();return}
