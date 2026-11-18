@@ -3840,13 +3840,13 @@ const BRK={
  triangle:{n:'Triangle amoureux',x:'crush',pub:2,v:(P,X)=>`${P.Il} s'intéressait à ${X}.`,c:(P,X)=>`${X} m'intéressait… je pouvais pas continuer comme ça.`},
  maturite:{n:'Manque de maturité',pub:5,v:()=>"On savait pas gérer, on était pas prêt·e·s.",c:()=>"On était pas assez mûr·e·s pour être ensemble."},
  toxique:{n:'Relation toxique',pub:6,v:()=>"On se faisait du mal tout le temps.",c:()=>"C'était devenu toxique, pour tous les deux."}};
-const BRK_PUB=["Oups… Un couple que tout le lycée pensait inséparable ne serait apparemment plus ensemble. Les choses auraient-elles mal tourné ? 👀",
- "Il semblerait que les regards se tournent désormais vers quelqu'un d'autre… Une histoire qui sentait pourtant le grand amour vient de prendre fin. 💔",
- "On ne les voit plus déjeuner ensemble, plus de photos à deux et encore moins de petits mots en cours. Vous avez deviné ?",
- "Une rupture vient de faire son apparition dans les couloirs. Certains disent que les amis auraient joué un rôle dans cette histoire… Mais qui sait ?",
- "Célibataire à nouveau ! Une personne aurait décidé de mettre fin à son histoire. Est-ce vraiment terminé ou juste une pause ?",
- "Il paraît qu'un ancien couple ne peut même plus se regarder dans les yeux. La séparation aurait-elle été plus compliquée que prévu ?",
- "Les messages privés feraient-ils encore des victimes ? Une histoire d'amour vient de prendre fin et certains téléphones auraient beaucoup de choses à raconter…"];
+const BRK_PUB=[(A,B)=>`Oups… ${A} et ${B}, que tout le lycée pensait inséparables, ne seraient apparemment plus ensemble. Les choses auraient-elles mal tourné ? 👀`,
+ (A,B)=>`Il semblerait que ${A} et ${B} regardent désormais ailleurs… Une histoire qui sentait pourtant le grand amour vient de prendre fin. 💔`,
+ (A,B)=>`On ne voit plus ${A} et ${B} déjeuner ensemble, plus de photos à deux et encore moins de petits mots en cours. Vous avez deviné ?`,
+ (A,B)=>`Une rupture vient de faire son apparition dans les couloirs : ${A} et ${B}, c'est fini… Mais qui sait vraiment pourquoi ?`,
+ (A,B)=>`Célibataires à nouveau ! ${A} et ${B} ne sont plus ensemble. Est-ce vraiment terminé ou juste une pause ?`,
+ (A,B)=>`Il paraît que ${A} et ${B} ne peuvent même plus se regarder dans les yeux. La séparation aurait-elle été plus compliquée que prévu ?`,
+ (A,B)=>`${A} et ${B}, c'est terminé 💔 Certains téléphones auraient beaucoup de choses à raconter… ou pas ?`];
 const brP=id=>{const g=FICHES[id]&&FICHES[id].g;return g==='f'?{il:'elle',Il:'Elle',e:'e',x:'se',de:"d'elle"}:g==='nb'?{il:'iel',Il:'Iel',e:'·e',x:'·se',de:"d'iel"}:{il:'il',Il:'Il',e:'',x:'x',de:'de lui'}};
 const npcBff=(id,not)=>NPCS.map(n=>n.id).filter(y=>y!==id&&!(not||[]).includes(y)).sort((p,q)=>link(id,q).ami-link(id,p).ami)[0];
 /* la personne impliquée dans le motif (un vrai camarade), ou null si le motif ne colle pas */
@@ -3862,7 +3862,7 @@ function breakCouple(a,b){const c=link(a,b).amour<=link(b,a).amour?a:b,v=c===a?b
  const cr=crInit().of[c],W=ids.map(k=>{let w=1;if(cr&&cr!==v&&['emotion','triangle','infidele','reseaux'].includes(k))w=4;if(link(a,b).ami<45&&['disputes','toxique','attention','sentiments','rivalite'].includes(k))w=3;return [k,w]});
  let k,x;for(let n=0;n<20;n++){const tot=W.reduce((q,[,w])=>q+w,0);let r=Math.random()*tot;k=W.find(([,w])=>(r-=w)<0)[0];x=brkThird(k,v,c);if(x!==null)break}
  G.breaks=G.breaks||[];G.breaks.push({v,c,k,x:x||'',day:G.day,done:[]});G.exes=G.exes||[];G.exes.push([a,b,G.day]);
- G.posts.unshift(mkPost({by:'potins',text:'[Anonyme] : '+BRK_PUB[BRK[k].pub-1],c:22,r:300,l:7000}));
+ G.posts.unshift(mkPost({by:'potins',text:'[Anonyme] : '+pickR(BRK_PUB)(WHO[a].handle,WHO[b].handle),c:22,r:300,l:7000}));/* les noms, jamais la vraie cause */
  newsPush(`${WHO[a].name} et ${WHO[b].name} se sont séparé·e·s`,'💔');delete socInit().rom[pk(a,b)];link(a,b).amour=20;link(b,a).amour=20;crInit().of[a]=crInit().of[a]===b?null:crInit().of[a];crInit().of[b]=crInit().of[b]===a?null:crInit().of[b]}
 const lastBreak=(id,w)=>(G.breaks||[]).filter(r=>(r.v===id||r.c===id)&&(!w||r.v===w||r.c===w)).pop();
 /* ce que l'ex répond quand on lui demande pourquoi : toujours le même motif que l'autre ex */
@@ -3875,7 +3875,7 @@ function breakAfter(){(G.breaks||[]).filter(r=>G.day-r.day<=30&&G.day>r.day&&cou
  pool.push(['dispute',()=>{link(v,c).ami=clamp(link(v,c).ami-5,0,100);link(c,v).ami=clamp(link(c,v).ami-5,0,100);newsPush(`${V} et ${C} se sont disputé·e·s dans les couloirs`,'⚡')}]);
  if(r.k!=='toxique'&&!coupleOf(v)&&!coupleOf(c))pool.push(['recup',()=>{const back=link(v,c).ami>50&&Math.random()<.3;newsPush(`${C} essaie de récupérer ${V}… 💌`,'💌');if(back&&formCouple(v,c,'Ils se sont remis ensemble !')){G.breaks=G.breaks.filter(z=>z!==r)}}]);
  if(bv)pool.push(['parti',()=>{link(bv,c).ami=clamp(link(bv,c).ami-6,0,100);newsPush(`${CNAME(bv)} a pris le parti de ${V} contre ${C}`,'🛡️')}]);
- pool.push(['rumeur',()=>{G.posts.unshift(mkPost({by:'potins',text:pickR(["[Anonyme] : il paraît que l'un des deux avait déjà quelqu'un d'autre en vue… 👀","[Anonyme] : on raconte que la rupture ne s'est pas faite à l'amiable du tout 😬","[Anonyme] : quelqu'un aurait vu un des deux pleurer aux toilettes après les cours…"]),c:14,r:200,l:4000}))}]);
+ pool.push(['rumeur',()=>{const A=WHO[v].handle,B=WHO[c].handle;G.posts.unshift(mkPost({by:'potins',text:pickR([`[Anonyme] : ${A} et ${B}… on raconte que la rupture ne s'est pas faite à l'amiable du tout 😬`,`[Anonyme] : quelqu'un aurait vu ${A} ou ${B} pleurer aux toilettes après les cours…`,`[Anonyme] : ${A} et ${B} se sont croisé·e·s au CDI. Ambiance glaciale 🥶`]),c:14,r:200,l:4000}))}]);
  const grp=Object.values(GROUPS).find(g=>g.m.includes(v)),gy=grp&&grp.m.find(y=>y!==c&&y!==v&&crCan(c,y)&&!coupleOf(y));
  if(gy&&!coupleOf(c))pool.push(['groupe',()=>{crSet(c,gy,crAm(c,gy)+15);newsPush(`${C} se rapproche de ${CNAME(gy)}… du groupe de ${V} 👀`,'👀')}]);
  if(!['infidele','toxique','respect'].includes(r.k))pool.push(['amis',()=>{link(v,c).ami=clamp(link(v,c).ami+10,0,100);link(c,v).ami=clamp(link(c,v).ami+10,0,100);newsPush(`${V} et ${C} sont resté·e·s ami·e·s malgré la rupture`,'🤝')}]);
