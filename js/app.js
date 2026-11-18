@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='132';
+const APP_VERSION='133';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2749,6 +2749,22 @@ const COUPLE_Q=[
  [/(tu te vois|tu nous vois)[^?]{0,20}(dans \d+ ans|dans (cinq|dix) ans|plus tard|dans le futur|à l'avenir)/,["Oui, et même plus longtemps.","Je l'espère vraiment.","Oui, si on continue à construire ensemble.","Je préfère ne pas faire de promesses, mais je veux avancer avec toi."]],
  [/(vivre|habiter|emménager) (avec moi|ensemble)/,["Oui, sans hésiter.","Pourquoi pas, ce serait une belle étape.","Oui, mais il faut qu'on soit prêts.","J'aimerais d'abord qu'on stabilise notre situation."]],
  [/p[ée]riode difficile|(rester|abandonner) ou (rester|abandonner)|si (ça|ca) va (mal|pas) entre nous/,["Je préfère qu'on se batte pour notre couple.","Je veux qu'on trouve des solutions ensemble.","Ça dépend de la situation.","Je ne veux pas rester dans une relation qui nous fait souffrir."]]];
+/* flirt d'une fille avec un garçon (exemples de Prescillia) : [question, réponses : intéressé, plutôt intéressé, hésitant, pas intéressé] */
+const FLIRT_Q=[
+ [/tu me trouves (jolie|belle|mignonne|charmante)/,["Oui, tu es vraiment mon genre.","Oui, tu as beaucoup de charme.","Tu es mignonne.","Je préfère être honnête, tu n'es pas vraiment mon genre."]],
+ [/(apprenne|apprendre) à (se|nous) conna[îi]tre/,["Oui, j'aimerais beaucoup.","Pourquoi pas, on peut prendre notre temps.","Je ne sais pas encore.","Pour être honnête, je préfère qu'on reste amis."]],
+ [/(pourquoi )?tu (ne )?m ?'?(envoies|écris|ecris) (pas|jamais)( de messages?)? en premier|tu m'écris jamais en premier|jamais toi qui (m'écris|écris)/,["J'attends parfois que tu viennes vers moi.","Je ne suis pas très téléphone.","Je ne sais pas trop quoi te dire.","Parce que je ne cherche pas vraiment à discuter avec toi."]],
+ [/(pens[ée]|envie) (à|de) m ?'?embrasser|tu voudrais m'embrasser/,["Oui, j'y pense depuis un moment.","Ça m'a traversé l'esprit.","Non, pas vraiment.","Je ne ressens pas cette attirance entre nous."]],
+ [/tu parles (à|aux) (d'autres|les autres) filles comme/,["Non, tu es particulière.","Je parle à d'autres filles, mais tu m'intéresses.","Oui, je suis naturellement comme ça avec les gens.","Je ne pensais pas que tu prenais nos échanges comme du flirt."]],
+ [/(si je te proposais|si je t'invitais|si je te propose|si je t'invite)[^?]{0,15}(rendez-vous|rdv|date|sortir)/,["Avec plaisir !","Oui, ça pourrait être sympa.","Je ne sais pas, peut-être.","Je préfère ne pas te donner de faux espoirs."]],
+ [/tu penses que je te plais|est-ce que je te plais|je te plais (un peu|vraiment)/,["Oui, beaucoup.","Tu commences à me plaire.","Tu es une fille intéressante, mais je ne sais pas si c'est plus que ça.","Non, je ne ressens pas d'attirance particulière."]],
+ [/pourquoi tu me regardes|tu me regardes (souvent|tout le temps|beaucoup)/,["Parce que tu attires mon attention.","Je te trouve jolie.","Je regarde un peu tout le monde.","Je ne pensais même pas te regarder."]],
+ [/(tu serais|t'serais|tu seras) jaloux/,["Oui, je n'aimerais pas ça.","Un peu, je crois.","Non, on n'est pas ensemble.","Tu es libre de parler à qui tu veux."]],
+ [/tu envisages (quelque chose|qqch|un truc)|(quelque chose|un truc) entre nous|on pourrait (sortir ensemble|être ensemble)/,["Oui, j'aimerais qu'on essaie.","Je voudrais apprendre à te connaître avant.","Je ne suis pas prêt pour une relation.","Non, je préfère qu'on en reste là."]],
+ [/(réponds|reponds|répond) (parfois |souvent |toujours )?(plusieurs heures|des heures|tard|en retard)|tu mets (des heures|longtemps) à (me )?répondre/,["Je suis occupé, mais j'aime discuter avec toi.","Je ne suis pas souvent sur mon téléphone.","Je ne sais pas toujours quoi répondre.","Je ne suis pas particulièrement pressé de te répondre."]],
+ [/(remarques|vois) (jamais |pas )?quand je fais (un effort|des efforts)/,["Si, et ça me fait plaisir.","Je le remarque, mais je ne sais pas toujours comment le montrer.","Honnêtement, je n'y avais pas fait attention.","Je ne voudrais pas que tu fasses des efforts en pensant qu'on est sur la même longueur d'onde."]],
+ [/si je te disais que (tu me plais|je t'aime|j'ai un crush)/,["Je te dirais que c'est réciproque.","Je serais content, mais un peu gêné.","Je ne saurais pas quoi répondre.","Je te dirais gentiment que ce n'est pas réciproque."]],
+ [/(se voie|se voit|on se voie|on se voit|nous voir) plus souvent/,["Oui, j'aimerais passer plus de temps avec toi.","Oui, quand on est disponibles.","Ça ne me dérange pas.","Pas spécialement, je préfère garder nos distances."]]];
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
@@ -2793,6 +2809,16 @@ function smartLine(id,text,chan){
   if(/(coiffure|cheveux|coupe|tresses|perruque|teinture)/.test(t)&&/(chang|coup|nouvelle|teind|si je|tu aimerais|t'aimerais)/.test(t))return fresh(["Oui, je suis sûr que ça t'irait bien 😊","Tant que tu aimes, ça me va.","Je préfère ta coiffure actuelle 😅","Il faut voir le résultat !"]);
   if(/(est[- ]ce que |esque |dis-moi )?tu m ?'?aimes( vraiment| encore| toujours| pour de vrai)?\s*\??\s*$|tu m ?'?aimes (vraiment|encore|toujours)/.test(t)){relChange(id,0,2);
    return fresh(["Bien sûr que je t'aime ❤️","Ne te pose plus jamais la question.","Tu es la personne la plus importante pour moi.","Je t'aime de tout mon cœur ❤️","Mais je t'aime chérie ❤️","C'est quoi cette question enfin, ne doute jamais de mon amour 💘"])}}
+ /* une fille (toi) flirte avec un garçon qui n'est pas son copain : sa réponse suit ce qu'il ressent VRAIMENT
+    (intéressé → hésitant → pas intéressé), son caractère (timide, séducteur, joueur) — même les meilleures questions ne le font pas forcément craquer */
+ if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const Q=FLIRT_Q.find(([re])=>re.test(t));
+  if(Q){const v=G.rel[id].amour,F=FICHES[id],shy=crBold(id)<.45,player=F.soc>=.75&&F.rom<.45;
+   let i=!crCan(id,'me')||coupleOf(id)?3:v>=68?0:v>=45?1:v>=25?2:3;
+   if(shy&&i<2&&Math.random()<.5)i++;                    /* le timide est intéressé mais n'ose pas le montrer */
+   if(player&&i>=2&&crCan(id,'me')&&!coupleOf(id)&&Math.random()<.5)i=1;   /* le joueur flirte sans vouloir de relation */
+   if(i<3&&Math.random()<.15)i=Math.min(3,i+1);
+   if(i<=1)relChange(id,0,1);
+   const r=Q[1][i];return i===3&&coupleOf(id)&&Math.random()<.5?`${r} Et puis… je suis avec ${CNAME(coupleOf(id))}.`:r}}
  /* « je suis ton crush ? », « t'as un crush ? », « je te plais ? », « je pensais que tu m'aimais bien » : selon son vrai crush */
  if(isNpc(id)&&/(je suis (ton|ta) crush|c'est moi (ton|ta) crush|t ?'?as (un|une) crush|tu as (un|une) crush|c'est qui (ton|ta) crush|(ton|ta) crush c'est qui|qui est (ton|ta) crush|t'as quelqu'un en vue|tu kiffes quelqu'un|je te plais|tu me kiffes|tu m'aimes( bien)?\b|(je pensais|j'pensais|je croyais|j'croyais) (que )?(tu m'aimais|je te plaisais|tu me kiffais|tu m'appr[ée]ciais))/.test(t)){
   const c=crInit(),cr=c.of[id],v=G.rel[id].amour,bold=crBold(id)>=.7,stmt=/(pensais|croyais)/.test(t);
