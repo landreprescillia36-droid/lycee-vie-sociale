@@ -3214,7 +3214,10 @@ function autoStep(ph){
    if(d<=-2&&Math.random()<.2){newsPush(`${WHO[a].name} et ${WHO[b].name} se sont accroché·e·s`,'⚡');note(`${WHO[a].name} et ${WHO[b].name} se sont accrochés ${PLACES[Object.keys(map).find(k=>map[k].includes(a))]?'au '+PLACES[Object.keys(map).find(k=>map[k].includes(a))].toLowerCase():''}`)}
   }
  });
- G.couples=G.couples.filter(([a,b])=>{if((link(a,b).ami<45||Math.random()<.02)&&Math.random()<.3){
+ /* ruptures rares : un couple tient au moins 3 semaines, une seule rupture tous les 20 jours dans le lycée */
+ G.cday=G.cday||{};
+ G.couples=G.couples.filter(([a,b])=>{const k=pk(a,b);if(G.cday[k]==null)G.cday[k]=G.day;if(G.day-G.cday[k]<21||G.day-(G.lastBreak??-99)<20)return true;
+  if(Math.random()<(link(a,b).ami<45?.02:.002)){G.lastBreak=G.day;
   breakCouple(a,b);return false}return true});
 }
 function presence(ph){
@@ -3399,7 +3402,7 @@ function advAnswer(a,j,d){const s=socInit(),b=d.b,p=prn(b),ab=link(a,b),ba=link(
  if(j===1){ab.ami=clamp(ab.ami+8,0,100);ba.ami=clamp(ba.ami+8,0,100);ba.amour=clamp(ba.amour+(r>=20?10:3),0,100);return `Bonne idée, je vais passer plus de temps avec ${p.lui} 😊`}
  if(j===2)return "Ouais… je vais observer 👀";
  ab.amour=clamp(ab.amour-25,0,100);return "T'as peut-être raison… 😔"}
-function formCouple(a,b,why){if(coupleOf(a)||coupleOf(b))return false;G.couples.push([a,b]);socInit().rom[pk(a,b)]=5;
+function formCouple(a,b,why){if(coupleOf(a)||coupleOf(b))return false;G.couples.push([a,b]);(G.cday=G.cday||{})[pk(a,b)]=G.day;socInit().rom[pk(a,b)]=5;
  G.posts.unshift(mkPost({by:'potins',text:`[Officiel] 💞 ${WHO[a].handle} et ${WHO[b].handle} sont ensemble !! ${why||"On l'avait vu venir ou pas ?"}`,c:30,r:400,l:9000,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==a&&n.id!==b)).id)]}));
  newsPush(`${WHO[a].name} et ${WHO[b].name} sont maintenant en couple`,'💞');return true}
 /* suite des conseils, quelques jours plus tard */
