@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='144';
+const APP_VERSION='145';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2861,6 +2861,11 @@ function smartLine(id,text,chan){
  if(isNpc(id)&&chan==='talk'&&!(talk&&talk.call)){
   if(/(ton (num|num[ée]ro|06|0690|tel|t[ée]l[ée]phone|portable)|passe[- ]moi ton|je peux avoir ton|tu me (donnes|passes|files) ton|on s'[ée]change (nos|les) num)/.test(t)){phInit();if(G.phone[id])return sty(id,fresh(["Mais tu l'as déjà 😂","T'as déjà mon numéro, écris-moi !"]));const r=phAsk(id);if(/s'[ée]change/.test(t)&&G.phone[id])G.knows[id]=1;return r}
   if(/(je te (donne|passe|file|note) mon (num|num[ée]ro|06|tel)|voil[aà] mon (num|num[ée]ro)|prends mon num|note mon num)/.test(t)){phInit();if(G.knows[id])return sty(id,fresh(["Je l'ai déjà 😉","T'inquiète, je l'ai déjà !"]));return phGive(id)}}
+ /* « t'as des nouvelles ? », « quoi de neuf au lycée ? », « des potins ? » : les nouvelles des derniers jours, seulement quand tu demandes */
+ if(isNpc(id)&&/(des nouvelles|t'as des potins|des potins|les potins|quoi de neuf au lyc|il se passe quoi|y a quoi de nouveau|ça dit quoi au lyc|raconte[- ]moi (les potins|tout)|t'es au courant de quoi|tu sais quoi de nouveau)/.test(t)){
+  const g=(socInit().gossip||[]).filter(n=>G.day-n.day<=3&&!n.t.includes(CNAME(id))).slice(-6);
+  if(!g.length)return sty(id,fresh(["Rien de spécial, c'est calme en ce moment 😴","Pas grand-chose… le lycée est mort cette semaine 😂"]));
+  const L=[...g].sort(()=>Math.random()-.5).slice(0,2);return sty(id,pickR(["T'as pas vu ? ","Attends, t'es pas au courant ? ","Alors… "])+L.map(n=>n.t+' '+n.ic).join('. Et '))}
  /* « avec qui tu t'entends le mieux ? », « c'est qui ton meilleur pote ? » / « avec qui tu t'entends pas ? » : ses vraies relations */
  if(isNpc(id)&&/(avec qui tu t'?entends? (le mieux|bien|le plus)|c'est qui (ton|ta) (meilleur|meilleure|best|bff)|(ton|ta) (meilleur|meilleure) (ami|amie|pote|pot)|t'es (pote|ami|amie|proche) avec qui|tu tra[iî]nes? avec qui|qui sont tes (amis|potes|amies)|t'as (des|quels) potes)/.test(t)){
   const ids=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q)=>link(id,q).ami-link(id,p).ami),a=ids[0],b=ids[1],pr=x=>FICHES[x].g==='f'?'elle':'il',me1=G.rel[id].ami>=link(id,a).ami&&G.rel[id].ami>=60,cp=coupleOf(id);
@@ -3536,7 +3541,7 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
   /* passion commune : ils se retrouvent pour la pratiquer, l'amitié monte */
   if(sp.length&&ab.ami<70&&Math.random()<.05*sp.length){ab.ami=clamp(ab.ami+4,0,100);ba.ami=clamp(ba.ami+4,0,100);const p=pickR(sp);storyJoin(a,b,p);if(ab.ami>=50&&ab.ami<56)newsPush(`${CNAME(a)} et ${CNAME(b)} passent de plus en plus de temps ensemble (${PASS[p].n.toLowerCase()} ${PASS[p].e})`,'🤝')}
   /* nouvelle amitié */
-  if(!s.fr[k]&&ab.ami>=65&&ba.ami>=65){s.fr[k]=G.day;if(G.day>1)newsPush(`${CNAME(a)} et ${CNAME(b)} sont devenu·e·s très proches`,'🤝')}else if(s.fr[k]&&ab.ami<40&&ba.ami<40)delete s.fr[k];
+  if(!s.fr[k]&&ab.ami>=65&&ba.ami>=65){s.fr[k]=G.day;if(G.day>1)newsPush(`${CNAME(a)} et ${CNAME(b)} sont maintenant super proches`,'🤝')}else if(s.fr[k]&&ab.ami<40&&ba.ami<40)delete s.fr[k];
   /* dispute entre ami·e·s, puis réconciliation */
   if(ab.ami>=55&&!cp&&!s.fights.some(f=>pk(f.a,f.b)===k)&&Math.random()<.004){ab.ami=clamp(ab.ami-18,0,100);ba.ami=clamp(ba.ami-18,0,100);s.fights.push({a,b,day:G.day});newsPush(`${CNAME(a)} et ${CNAME(b)} se sont disputé·e·s`,'⚡')}
  }
@@ -3550,9 +3555,8 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
 function socialHour(){const s=socInit(),h=G.min/60;
  if(s.advAt&&s.advAt.day===G.day&&h>=s.advAt.h){const ok=s.advAt.k==='L'?askLoveAdvice()||askFriendAdvice():askFriendAdvice()||askLoveAdvice();s.advAt=null;if(ok)s.last.adv=G.day}
  if(h===20&&s.news.length){const L=s.news.splice(0);L.forEach(n=>note(`${n.ic} ${n.t}`));
-  const best=NPCS.map(n=>n.id).filter(id=>G.rel[id].ami>=30&&!hasMark(id,'trahison')).sort((a,b)=>G.rel[b].ami-G.rel[a].ami)[0];
-  if(best){const pick=L.filter(n=>!n.t.includes(CNAME(best))||L.length===1).slice(0,2);pushMsg(best,'them',pickR(['Tu as vu ? ','Les nouvelles du jour : ','Attends, t\'es au courant ? '])+pick.map(n=>n.t.charAt(0).toLowerCase()+n.t.slice(1)+' '+n.ic).join(' Et ')+(L.length>2?` (et c'est pas tout 👀)`:''))}
-  else if(!$('game').hidden)toast(`📰 Nouvelles du soir : ${L[0].t}`)}}
+  /* plus de message spontané : les nouvelles restent dans le journal, et les camarades te les racontent si tu demandes */
+  s.gossip=(s.gossip||[]).concat(L.map(n=>({...n,day:G.day}))).slice(-20)}}
 /* anniversaires des camarades (date fixe pour chaque personne) */
 const BDAY=id=>4+hash(id+'anniv')%285;
 function bdayDay(){NPCS.forEach(n=>{if(BDAY(n.id)!==G.day)return;
