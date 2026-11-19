@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='136';
+const APP_VERSION='137';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3134,7 +3134,7 @@ function pushMsg(id,from,text,extra){
  if(isNpc(id)&&!(chat&&chat.face&&chat.id===id)){phInit();
   if(from==='me')G.knows[id]=1;                       /* en lui écrivant, tu lui donnes ton numéro */
   else{if(G.blocked[id])return;
-   if(!G.knows[id]){if(!(extra&&(extra.mq||extra.plan)))return;phAdd(id,`${WHO[id].name} a eu ton numéro par un·e ami·e`)}
+   if(!G.knows[id])return;                            /* il ou elle n'a pas ton numéro : pas de SMS */
    else if(!G.phone[id])phAdd(id,`${WHO[id].name} t'a écrit : nouveau contact`)}}
  text=genderize(text,from==='me'?'me':id);
  if(from==='me'&&isNpc(id)){const c=crInit();if(c.last!==G.day+id){c.last=G.day+id;crIt(id,'me')}}if(from!=='me')text=nickStrip(id,couplePolish(id,text));
@@ -3973,6 +3973,7 @@ const CR_MSG_DIR=["T'es vraiment canon aujourd'hui 😏","Je crois que je passe 
 const CR_HINT=["J'ai un crush sur quelqu'un… mais j'ose pas lui dire 🙈","Tu crois que je devrais avouer à quelqu'un qu'il ou elle me plaît ? 😳"];
 const crMsg=(a,L)=>{if(G.noOut&&G.noOut[a]!=null)L=L.filter(x=>!/(glacier|rendez-vous|on aille)/.test(x));if(!L.length)return;const th=(G.threads[a]||[]).slice(-30).map(m=>m.text),f=L.filter(x=>!th.includes(genderize(x,a)));pushMsg(a,'them',pickR(f.length?f:L))};
 function crToMe(a,lvl,bold,st,d){const n=CNAME(a),r=Math.random(),c=crInit(),k=a+'>me';c.nt=c.nt||{};
+ phInit();if(!G.knows[a]||G.blocked[a]){if(G.blocked[a])return;if(lvl>=2&&Math.random()<.3){G.knows[a]=1;phAdd(a,CG(a,`${n} t'a donné son numéro en rougissant 😳`))}else if(Math.random()<.3)note(CG(a,pickR(CR_SUB)(n)));return}
  if(lvl>=3&&(!d||(d.r==='temps'&&G.day-d.day>=7)||(d.r==='interet'&&G.day-d.day>=4))&&r<.25+crBold(a)*.35){crDeclare(a,d);return}
  if(G.day-(c.nt[a]||-9)<2)return;                                             /* pas tous les jours */
  const sub=()=>{const L=CR_SUB.map(f=>CG(a,f(n))).filter(x=>!G.log.slice(-15).some(l=>l.t===x));note(pickR(L.length?L:[CG(a,CR_SUB[0](n))]))};
@@ -4887,7 +4888,7 @@ function homeOff(k){if(k==='meal')return mealOff();if(k==='go')return goOff();
  if(k==='invite'&&guestHere())return 'déjà quelqu\'un';return homeTimeOff(k)}
 function guestTick(){if(G.guest&&!guestHere()&&!G.guest.gone){G.guest.gone=1;note(`${WHO[G.guest.id].name} est rentré·e chez ${ilElle(G.guest.id)==='il'?'lui':'elle'}`)}}
 function pickMateSheet(title,sub,act,filt){const L=NPCS.map(n=>n.id).filter(filt||(()=>true)).sort((a,b)=>G.rel[b].ami-G.rel[a].ami);
- openSheet(sheetHead(title,sub)+`<div class="choices">${L.map(id=>`<button class="choice" type="button" data-hpick="${act}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>${esc(fullNameOf(id))}<small>amitié ${G.rel[id].ami}${coupleOf(id)==='me'?' · en couple 💞':''}</small></span></span></button>`).join('')}</div>`)}
+ openSheet(sheetHead(title,sub)+(L.length?'':`<p class="muted">📱 Tu n'as encore le numéro d'aucun·e camarade. Demande-le sur sa fiche, ou échangez-le après une sortie.</p>`)+`<div class="choices">${L.map(id=>`<button class="choice" type="button" data-hpick="${act}" data-id="${id}"><span style="display:flex;align-items:center;gap:10px"><span class="av sm">${avatarOf(id)}</span><span>${esc(fullNameOf(id))}<small>amitié ${G.rel[id].ami}${coupleOf(id)==='me'?' · en couple 💞':''}</small></span></span></button>`).join('')}</div>`)}
 function homeAct(k){const ph=phase(),gst=guestHere()?G.guest.id:null;
  if(homeOff(k)){toast(homeOff(k));return}
  if(k==='meal'){mealGo();return}
@@ -4895,9 +4896,9 @@ function homeAct(k){const ph=phase(),gst=guestHere()?G.guest.id:null;
  if(k==='go'){goSheet();return}
  if(k==='hobby'){hobbySheet();return}
  if(k==='hw'){hwSheet();return}
- if(k==='call'){pickMateSheet('Appeler quelqu\'un','Qui veux-tu appeler ?','call');return}
- if(k==='out'){pickMateSheet('Inviter à sortir','Tu lui écris pour proposer une sortie','out');return}
- if(k==='invite'){if(homeOff('invite')){toast(homeOff('invite'));return}pickMateSheet('Inviter à la maison','Qui veux-tu inviter chez toi ?','invite');return}
+ if(k==='call'){pickMateSheet('Appeler quelqu\'un','Qui veux-tu appeler ?','call',hasNum);return}
+ if(k==='out'){pickMateSheet('Inviter à sortir','Tu lui écris pour proposer une sortie','out',hasNum);return}
+ if(k==='invite'){if(homeOff('invite')){toast(homeOff('invite'));return}pickMateSheet('Inviter à la maison','Qui veux-tu inviter chez toi ?','invite',hasNum);return}
  if(k==='tv'){tvSheet();return}
  if(k==='pc'){openSheet(sheetHead('💻 Sur l\'ordinateur','Qu\'est-ce que tu fais ?')+`<div class="choices">${[['jeu','🎮 Jouer à un jeu vidéo','+6 énergie · un·e camarade peut te rejoindre en ligne'],['videos','▶️ Regarder des vidéos','+6 énergie'],['musique','🎧 Écouter de la musique','+5 énergie']].map(([v,l,sm])=>`<button class="choice" type="button" data-hpc="${v}">${l}<small>${sm}</small></button>`).join('')}</div>`);return}
  if(k==='film'){
@@ -5242,7 +5243,11 @@ const CEV=[
    ['Désigner ton voisin',()=>CG(x.nb,`${CNAME(x.nb)} se lève en te fusillant du regard 😅`)+cRel(x.nb,FICHES[x.nb].hum>.5?1:-3)]]}}},
  {id:'tombe',w:.8,run(x){const id=pickR(NPCS).id;return{t:'Tout par terre',b:CG(id,`La trousse de ${CNAME(id)} tombe : stylos et feuilles partout. Quelques élèves rigolent.`),ch:[
    ["L'aider à ramasser",()=>`Tu l'aides à tout ramasser.`+cRel(id,4)],['Rire avec les autres',()=>CG(id,`${CNAME(id)} est vexé·e.`)+cRel(id,-3)],['Ne rien faire',()=>`Tu continues à écrire.`]]}}},
- {id:'phone',w:1,run(x){const from=pickR(NPCS).id;return{t:'Ton téléphone vibre',b:`Bzz… Ton téléphone vibre dans ton sac. Sur l'écran : un message de ${CNAME(from)}.`,ch:[
+ {id:'phone',w:1,run(x){phInit();/* seulement quelqu'un qui a ton numéro (sinon : ta famille) */const L=NPCS.map(n=>n.id).filter(id=>G.knows[id]&&!G.blocked[id]);
+  if(!L.length){const f=pickR(G.family.filter(m=>famKind(m.id)==='parent'))||G.family[0];if(!f)return null;return{t:'Ton téléphone vibre',b:`Bzz… Ton téléphone vibre dans ton sac. Sur l'écran : un message de ${f.name}.`,ch:[
+   ['Lire le message en cachette',()=>cCaught(x.ph,.25)?cSanction(x.ph,'téléphone')+' Ton téléphone est confisqué jusqu\'à la fin du cours.':`« ${pickR(["Tu rentres à quelle heure ce soir ?","N'oublie pas de manger à midi 😘","Bonne journée mon cœur ❤️","Tu peux acheter du pain en rentrant ?"])} »`],
+   ['Le mettre en silencieux',()=>{cBeh(1);return 'Tu coupes le son sans le regarder.'}]]}}
+  const from=pickR(L);return{t:'Ton téléphone vibre',b:`Bzz… Ton téléphone vibre dans ton sac. Sur l'écran : un message de ${CNAME(from)}.`,ch:[
    ['Lire le message en cachette',()=>cCaught(x.ph,.25)?cSanction(x.ph,'téléphone')+' Ton téléphone est confisqué jusqu\'à la fin du cours.':`« ${pickR(VOICE[from].start)} »`+cRel(from,1)],
    ['Répondre discrètement',()=>cCaught(x.ph,.38)?cSanction(x.ph,'téléphone')+' Ton téléphone est confisqué jusqu\'à la fin du cours.':`Tu réponds sous la table.`+cRel(from,3)],
    ['Le mettre en silencieux',()=>{cBeh(1);return 'Tu coupes le son sans le regarder.'}]]}}},
@@ -5367,7 +5372,7 @@ function openClassEvent(ph,force){const c=clsInit(),sub=ph.sub,prof=ph.prof[0];
  const x={ph,sub,prof,sev:ph.prof[1],nb:neighborOf(ph),pron:profSex(prof)==='f'?'elle':'il'};
  let L=CEV.filter(v=>!v.ok||v.ok(x));if(force)L=L.filter(v=>v.id===force);
  L=L.map(v=>[v,v.w*(c.seen[v.id]===G.day?.15:1)]);let r=Math.random()*L.reduce((a,b)=>a+b[1],0),i=0;while(i<L.length-1&&r>L[i][1]){r-=L[i][1];i++}
- const ev=L[i][0],d=ev.run(x);c.ev.n=(c.ev.n||0)+1;c.ev.last=G.min;c.seen[ev.id]=G.day;
+ const ev=L[i][0],d=ev.run(x);if(!d)return;c.ev.n=(c.ev.n||0)+1;c.ev.last=G.min;c.seen[ev.id]=G.day;
  cevOpen=true;cevS={ev:ev.id,x,ch:d.ch};
  openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">📚 ${SUBJ[sub]} · ${prof}</span><h2>${P(d.t)}</h2></div></div><p class="cev-txt">${P(d.b)}</p>
   <div class="choices">${d.ch.map((ch,j)=>`<button class="choice" type="button" data-cev="${j}">${P(ch[0])}</button>`).join('')}</div>`)}
