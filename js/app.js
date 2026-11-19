@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='135';
+const APP_VERSION='136';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2533,7 +2533,7 @@ function newGame(fam){
   money:4000,rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
-  met:{},talks:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
+  met:{},talks:{},phone:{},knows:{},blocked:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
   stories:START_STORIES.map((s,i)=>({id:'st'+i,t:1440+450,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
@@ -2558,6 +2558,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.naelIn){G.naelIn=1;if(G.posts&&!G.posts.some(x=>x.by==='nael'))G.posts.unshift(mkPost({...NAEL_POST,photo:{...NAEL_POST.photo,author:'nael'}}))}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
+if(G&&G.posts&&!G.phone){G.phone={};G.knows={};G.blocked={};NPCS.forEach(n=>{if((G.threads[n.id]||[]).length||(G.rel[n.id]&&G.rel[n.id].ami>=30)){G.phone[n.id]=1;G.knows[n.id]=1}})}/* parties d'avant le téléphone : on garde les conversations existantes */
 if(G&&G.posts){G.talks=G.talks||{};if(!G.postQ)planPosts();G.posts.forEach((p,i)=>{if(p.day==null){p.day=Math.max(0,G.day-Math.floor(i/5));p.min=1200-(i%5)*120}});if(!G.met){G.met={};Object.keys(G.threads||{}).forEach(id=>{if(FICHES[id]&&G.threads[id].length)G.met[id]=3})}if(!G.ig)G.ig={bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}};G.posts.forEach(p=>(p.comments||[]).forEach(c=>{if(!c.id)c.id=mkC().id}))}
 if(G){if(G.money==null)G.money=4000;(G.posts||[]).forEach(p=>{if(p.by==='potins'){const h=hash(String(p.id||p.text||''));p.l=Math.min(p.l||0,180+h%520);p.r=Math.min(p.r||0,8+h%37);p.c=Math.min(p.c||0,6+h%24)}});if(G.tuto==null)G.tuto=1;G.tutoOn=0;G.evals=G.evals||[];G.bulletins=G.bulletins||[];G.bac=G.bac||{scores:{}};G.bac.bonus=G.bac.bonus||{};G.evalBonus=G.evalBonus||{};G.clubs=G.clubs||(G.club?[{ines:'danse',kylian:'foot',maelle:'danse',noah:'basket',jade:'journal',anais:'hand',kenza:'danse',eva:'arts',noemie:'foot',jessica:'journal',meisha:'journal',sacha:'musique',ethan:'arts',kellian:'basket',willan:'foot',nael:'journal'}[G.club]].filter(Boolean):[]);G.clubXP=G.clubXP||{};G.speed=G.speed||1;G.marks=G.marks||[];G.gstate=G.gstate||{};G.evOnce=G.evOnce||[];G.studied=G.studied||{};G.pend=G.pend||[];G.mgPts=G.mgPts||{};G.mgSeen=G.mgSeen||{};vsInit();provInit();G.askd=G.askd||{};(G.family||[]).forEach(f=>{if(f.av)boucheSexe(f.av)})}
 /* monde vivant : stories datées à l'heure du jeu, vie sociale, raison du changement */
@@ -3130,6 +3131,11 @@ function nickStrip(id,s){const L=G.noNick&&G.noNick[id];if(!L||!L.length)return 
  for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(\\s*,\\s*|\\s+)(mon |ma )?${x}(?![a-zà-ÿ])`,'gi'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
  return s===s0||/^[a-zà-ÿ]/.test(s0)?s:s.replace(/^\s*([a-zà-ÿ])/,(m,c)=>c.toUpperCase())}
 function pushMsg(id,from,text,extra){
+ if(isNpc(id)&&!(chat&&chat.face&&chat.id===id)){phInit();
+  if(from==='me')G.knows[id]=1;                       /* en lui écrivant, tu lui donnes ton numéro */
+  else{if(G.blocked[id])return;
+   if(!G.knows[id]){if(!(extra&&(extra.mq||extra.plan)))return;phAdd(id,`${WHO[id].name} a eu ton numéro par un·e ami·e`)}
+   else if(!G.phone[id])phAdd(id,`${WHO[id].name} t'a écrit : nouveau contact`)}}
  text=genderize(text,from==='me'?'me':id);
  if(from==='me'&&isNpc(id)){const c=crInit();if(c.last!==G.day+id){c.last=G.day+id;crIt(id,'me')}}if(from!=='me')text=nickStrip(id,couplePolish(id,text));
  (G.threads[id]=G.threads[id]||[]).push(Object.assign({from,text,at:G.day*1440+G.min,tm:fmtT(G.min)},extra||{}));
@@ -3435,7 +3441,7 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
  s.fights=s.fights.filter(f=>{const age=G.day-f.day;if(age>=2&&Math.random()<.3){link(f.a,f.b).ami=clamp(link(f.a,f.b).ami+12,0,100);link(f.b,f.a).ami=clamp(link(f.b,f.a).ami+12,0,100);newsPush(`${CNAME(f.a)} et ${CNAME(f.b)} se sont réconcilié·e·s`,'🕊️');return false}return age<12});
  /* passion : un moment fort dans la vie d'un·e camarade */
  if(Math.random()<.12){const id=pickR(ids),p=pickR(passOf(id));if(p){const t=S(id,PASS[p].ev);newsPush(`${CNAME(id)} ${t}`,PASS[p].e);G.storyQ=G.storyQ||[];G.storyQ.push({at:Math.max(G.min,600)+Math.floor(Math.random()*500),by:id,pass:p,txt:('J\'ai '+t.replace(/^a /,'')).replace(/ ses /g,' mes ').replace(/ son /g,' mon ').replace(/ sa /g,' ma ')});G.storyQ.sort((a,b)=>a.at-b.at)}}
- crushDay();breakAfter();advFollow();raisDay();chapTick();
+ crushDay();breakAfter();phoneDay();advFollow();raisDay();chapTick();
  if(G.day-(s.last.adv||0)>=3&&Math.random()<.45)s.advAt={day:G.day,h:17+Math.floor(Math.random()*4),k:Math.random()<.5?'F':'L'};
  bdayDay()}
 /* chaque heure : demande de conseil prévue, nouvelles du soir (20 h) */
@@ -3702,7 +3708,7 @@ function foodSheet(where){const L=FOODS.filter(f=>f[4].split(' ').includes(where
 function foodEat(k){const F=FOODS.find(f=>f[0]===k);if(!F)return;const pr=FOOD_PRIX[k]||0;if((G.money||0)<pr){toast('Pas assez d\'argent de poche 💸 (le prochain arrive lundi)');return}G.money-=pr;const o=G.outS,id=o&&o.with;advance(30);if(o)o.ate=1;
  let m=`${F[1]} ${F[2]} (${eur(pr)}) : `+needsFx({faim:F[3],...F[5]});if(id){const fav=(FAV[id]&&FAV[id].plat||'').toLowerCase(),same=fav.includes(F[2].toLowerCase().split(' ')[0]);m+=' · '+joinFx([relChange(id,same?5:3,0),needsFx({soc:5})])+(same?` · ${WHO[id].name} : « Mon plat préféré !! »`:'')}
  note(m);if(o){o.msg=m;outSheet()}else{closeSheet();toast(m)}saveG();drawHUD()}
-function outEnd(msg){const o=G.outS;if(!o)return;G.outS=null;G.place=phase().type==='weekend'?'maison':'maison';advance(20);
+function outEnd(msg){const o=G.outS;if(!o)return;G.outS=null;if(o.with&&isNpc(o.with)){phInit();const w=o.with;if(!G.phone[w]&&!G.blocked[w]&&G.rel[w].ami>=15){G.knows[w]=1;phAdd(w,`Vous avez échangé vos numéros avec ${WHO[w].name} après la sortie`)}}G.place=phase().type==='weekend'?'maison':'maison';advance(20);
  const t=msg||(o.with?`Tu rentres après ta sortie avec ${WHO[o.with].name}.`:'Tu rentres à la maison.');closeSheet();toast('🏠 '+t);note(t);checkObjectives();saveG();drawGame()}
 function outCard(){const o=G.outS,c=G.clubS;let h='';
  if(o)h+=`<div class="card felt"><span class="eyebrow">${VENUES[o.v].ic} Sortie en cours</span><div class="prof"><span>${VENUES[o.v].n}${o.with?' avec '+esc(WHO[o.with].name):''}</span><span><button class="gbtn" type="button" data-outopen>Reprendre</button> <button class="gbtn ghost" type="button" data-outhome>Rentrer</button></span></div></div>`;
@@ -3891,6 +3897,36 @@ function breakAfter(){(G.breaks||[]).filter(r=>G.day-r.day<=30&&G.day>r.day&&cou
  if(!['infidele','toxique','respect'].includes(r.k))pool.push(['amis',()=>{link(v,c).ami=clamp(link(v,c).ami+10,0,100);link(c,v).ami=clamp(link(c,v).ami+10,0,100);newsPush(`${V} et ${C} sont resté·e·s ami·e·s malgré la rupture`,'🤝')}]);
  if(r.x&&['emotion','triangle','reseaux','infidele'].includes(r.k))pool.push(['decouv',()=>{newsPush(`${V} a découvert la vérité sur ${C} et ${CNAME(r.x)}…`,'😶');link(v,r.x).ami=clamp(link(v,r.x).ami-8,0,100)}]);
  const P=pool.filter(([k])=>!r.done.includes(k));if(!P.length)return;const [k,f]=pickR(P);r.done.push(k);f()})}
+
+/* ---------- téléphone : numéros et contacts ----------
+   G.phone[id] = tu as son numéro (contact) ; G.knows[id] = il ou elle a le tien ; G.blocked[id] = numéro bloqué.
+   Au début, seulement la famille. Un numéro s'obtient en le demandant (en vrai), en donnant le tien, par un·e ami·e commun·e,
+   ou quand l'amitié grandit. Sans numéro, pas de SMS (ni dans un sens ni dans l'autre). */
+function phInit(){G.phone=G.phone||{};G.knows=G.knows||{};G.blocked=G.blocked||{};G.phAsk=G.phAsk||{}}
+const hasNum=id=>!isNpc(id)||(phInit(),!!G.phone[id]&&!G.blocked[id]);
+function phAdd(id,why){phInit();const nw=!G.phone[id];G.phone[id]=1;G.knows[id]=1;if(nw){note(`📱 ${why||WHO[id].name+' : nouveau contact'}`);if(!G.asleep&&!$('game').hidden)toast(`📱 ${why||'Nouveau contact : '+WHO[id].name}`)}}
+/* ami·e commun·e qui peut te passer le numéro */
+const phMutual=id=>NPCS.map(n=>n.id).find(f=>f!==id&&G.phone[f]&&!G.blocked[f]&&G.rel[f].ami>=50&&link(f,id).ami>=50);
+function phAsk(id){phInit();const r=G.rel[id],F=FICHES[id],cr=crInit().of[id]==='me',n=WHO[id].name;
+ if(G.phAsk[id]!=null&&G.day-G.phAsk[id]<3){toast(`${n} t'a déjà dit non… attends un peu`);return}
+ const ok=r.ami>=25||cr||(r.ami>=5&&Math.random()<F.soc*.8)||(r.ami>=0&&Math.random()<F.soc*.35);
+ if(ok){phAdd(id,`${n} t'a donné son numéro`);relChange(id,1,0);personLine(id,pickR(["Oui, tiens ! 📱","Bien sûr, note-le 😊","Vas-y, je te l'écris"]))}
+ else{G.phAsk[id]=G.day;relChange(id,-1,0);personLine(id,pickR(r.ami<0?["Non, désolé·e.","Euh… non."]:["Euh… on se connaît pas encore assez 😅","Plus tard peut-être 😅","Je le donne pas trop, désolé·e"]))}
+ saveG();openFiche(id)}
+function phGive(id){phInit();G.knows[id]=1;const r=G.rel[id];personLine(id,pickR(r.ami>=20?["Ok, je t'écris ce soir 😊","Super, je t'enregistre !"]:["Ah… ok, merci 😅","D'accord, je le note"]));note(`📱 Tu as donné ton numéro à ${WHO[id].name}`);saveG();openFiche(id)}
+function phViaFriend(id){const f=phMutual(id);if(!f)return;phAdd(id,`${WHO[f].name} t'a passé le numéro de ${WHO[id].name}`);saveG();openFiche(id)}
+function phBlock(id){phInit();if(G.blocked[id]){delete G.blocked[id];toast(`${WHO[id].name} est débloqué·e`)}else{G.blocked[id]=1;toast(`🚫 ${WHO[id].name} est bloqué·e : plus aucun message`)}saveG();openFiche(id)}
+function phDelete(id){phInit();delete G.phone[id];toast(`Contact supprimé (${WHO[id].name} a toujours ton numéro)`);saveG();openFiche(id)}
+/* ce que la personne dit en vrai : petite bulle sur la fiche */
+function personLine(id,t){G.phLine={id,t:genderize(t,id),day:G.day}}
+function phoneCard(id){phInit();const L=G.phLine&&G.phLine.id===id&&G.phLine.day===G.day?`<p class="bubble-them" style="margin:6px 0 10px">« ${esc(G.phLine.t)} »</p>`:'';
+ if(G.blocked[id])return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<p class="muted" style="margin-top:0">Numéro bloqué : tu ne reçois plus ses messages.</p><div class="row" style="justify-content:flex-start"><button class="gbtn ghost" type="button" data-phblock="${id}">Débloquer</button></div></div>`;
+ if(G.phone[id])return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<div class="row" style="justify-content:flex-start"><button class="gbtn" type="button" data-chat="${id}">Envoyer un message</button><button class="gbtn ghost" type="button" data-phdel="${id}">Supprimer le contact</button><button class="gbtn ghost" type="button" data-phblock="${id}">Bloquer</button></div></div>`;
+ const mf=phMutual(id);
+ return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<p class="muted" style="margin-top:0">Tu n'as pas son numéro.${G.knows[id]?' '+WHO[id].name+' a le tien.':''}</p><div class="row" style="justify-content:flex-start"><button class="gbtn" type="button" data-phask="${id}">Demander son numéro</button>${G.knows[id]?'':`<button class="gbtn ghost" type="button" data-phgive="${id}">Donner mon numéro</button>`}${mf?`<button class="gbtn ghost" type="button" data-phvia="${id}">Demander à ${esc(WHO[mf].name)}</button>`:''}</div></div>`}
+/* chaque matin : les camarades proches finissent par échanger leurs numéros avec toi */
+function phoneDay(){phInit();NPCS.forEach(n=>{const id=n.id;if(G.phone[id]||G.blocked[id])return;const a=G.rel[id].ami;
+ if(a>=40&&(G.met[id]||0)>=1&&Math.random()<.25)phAdd(id,`${n.name} t'a donné son numéro`)})}
 
 /* ---------- crushs ----------
    Chaque camarade a au plus UN crush (G.cr.of[id] = id d'un·e camarade ou 'me'). Les sentiments = link(a,b).amour (ou G.rel[a].amour pour toi).
@@ -4468,7 +4504,7 @@ setInterval(()=>{if(!G||$('game').hidden)return;if(cevOpen&&($('sheet').hidden||
 /* ---------- stories ---------- */
 function drawStories(){
  const LS=liveStories(),mine=LS.filter(s=>s.by==='me');
- const authors=NPCS.map(n=>n.id).filter(id=>LS.some(s=>s.by===id));
+ const authors=NPCS.map(n=>n.id).filter(id=>G.ig.following[id]&&LS.some(s=>s.by===id));
  authors.sort((a,b)=>(LS.some(s=>s.by===b&&!s.seen)?1:0)-(LS.some(s=>s.by===a&&!s.seen)?1:0));
  $('gStories').innerHTML=`<div class="story me ${mine.length?'':'none'}"><button class="ring" type="button" data-who="me" aria-label="Ma story">${avatarOf('me')}</button><button class="add" type="button" data-add="1" aria-label="Ajouter une story">+</button><span>Ma story</span></div>`+
   authors.map(id=>`<div class="story ${LS.some(s=>s.by===id&&!s.seen)?'':'seen'}"><button class="ring" type="button" data-who="${id}" aria-label="Story de ${WHO[id].name}">${avatarOf(id)}</button><span>${WHO[id].name}</span></div>`).join('');
@@ -4485,9 +4521,11 @@ function showStory(){
  <div class="who"><div class="av sm">${avatarOf(s.by)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(s.by))}</b> <span class="muted">${handleOf(s.by)}</span></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="sv-stage">${storyContent(s)}<button class="sv-zone l" type="button" data-sv="prev" aria-label="Story précédente"></button><button class="sv-zone r" type="button" data-sv="next" aria-label="Story suivante"></button></div>
  ${s.type==='photo'?tagLine(s.photo):''}
- ${s.by==='me'?`<p class="muted" style="text-align:center">Vue par ${Math.min(NPCS.length,2+Math.floor(G.day*1.5))} personnes</p>`:`<div class="reacts">${['❤️','😂','😮','🔥'].map(e=>`<button type="button" data-react="${e}" aria-label="Réagir ${e}" ${s.reacted?'disabled':''}>${e}</button>`).join('')}</div>`}`,true);
+ ${s.by==='me'?`<p class="muted" style="text-align:center">${storyViewers(s)}</p>`:`<div class="reacts">${['❤️','😂','😮','🔥'].map(e=>`<button type="button" data-react="${e}" aria-label="Réagir ${e}" ${s.reacted?'disabled':''}>${e}</button>`).join('')}</div><div class="row" style="justify-content:center"><button class="gbtn ghost" type="button" data-sreply="${s.by}">💬 Répondre</button></div>`}`,true);
  svTimer=setTimeout(nextStory,6000);
 }
+/* ta story : vue par tes abonné·e·s camarades (ceux qui te suivent) */
+function storyViewers(s){const V=igFollowers().filter(id=>hash(id+(s.t||0))%4!==0);if(!V.length)return 'Personne ne l\'a encore vue';const N=V.map(id=>WHO[id].name);return 'Vue par '+(N.length<=3?N.join(', '):N.slice(0,3).join(', ')+` et ${N.length-3} autre${N.length>4?'s':''}`)}
 function nextStory(){if(!sv)return;if(sv.i<sv.list.length-1){sv.i++;showStory()}else closeSheet()}
 function prevStory(){if(sv&&sv.i>0){sv.i--;showStory()}}
 
@@ -4694,7 +4732,9 @@ function npcPost(by,t){
 const igFollowers=()=>NPCS.map(n=>n.id).filter(id=>G.ig.followers[id]);
 const igFriends=()=>igFollowers().filter(id=>G.ig.following[id]);
 function followTick(){
- const ig=G.ig;let ch=false;
+ const ig=G.ig;let ch=false;ig.sent=ig.sent||{};
+ Object.keys(ig.sent).forEach(id=>{if(G.day<=ig.sent[id]||Math.random()>.2)return;const ok=G.rel[id].ami>=10||Math.random()<.35;delete ig.sent[id];ch=true;
+  if(ok){ig.following[id]=1;note(`🔓 ${WHO[id].name} a accepté ta demande d'abonnement`);if(!G.asleep&&!$('game').hidden)toast(`🔓 ${WHO[id].name} a accepté ta demande`)}else note(`${WHO[id].name} a refusé ta demande d'abonnement`)});
  NPCS.forEach(n=>{const id=n.id,a=G.rel[id].ami,f=ig.followers[id],rq=ig.reqs.includes(id),th=FOLLOW_AT-(ig.following[id]?6:0);
   if(!f&&!rq&&a>=th&&Math.random()<.3){ch=true;
    if(ig.priv){ig.reqs.push(id);note(`${n.name} veut s'abonner à ton compte Insta`);if(!G.asleep&&!$('game').hidden)toast(`📩 ${n.name} veut s'abonner à ton compte`)}
@@ -4703,8 +4743,12 @@ function followTick(){
   else if(rq&&a<0){ig.reqs=ig.reqs.filter(x=>x!==id);ch=true}});
  if(ch&&!$('game').hidden){drawNav();if(view==='insta')drawView()}
 }
+/* camarades au compte privé : il faut qu'ils acceptent ta demande (G.ig.sent) */
+const IG_PRIV=['kais','ethan','jessica','nael','sacha'];
+const igLocked=id=>IG_PRIV.includes(id)&&!G.ig.following[id];
 function igFollow(id){
- const ig=G.ig;let msg;
+ const ig=G.ig;let msg;ig.sent=ig.sent||{};
+ if(!ig.following[id]&&IG_PRIV.includes(id)){if(ig.sent[id]!=null){delete ig.sent[id];msg='Demande annulée'}else{ig.sent[id]=G.day;msg=`🔒 Demande envoyée à ${handleOf(id)}`;note(msg)}saveG();toast(msg);return}
  if(ig.following[id]){delete ig.following[id];msg=`Tu ne suis plus ${nameOf(id)}`;if(isNpc(id)&&ig.followers[id]){const c=relChange(id,-2);if(c)msg+=' · '+c}}
  else{ig.following[id]=1;msg=P(`Tu t'es abonné·e à ${handleOf(id)}`);if(isNpc(id)&&!ig.once[id]){ig.once[id]=1;const c=relChange(id,1);if(c)msg+=' · '+c}note(msg)}
  checkObjectives();saveG();toast(msg);
@@ -4743,8 +4787,8 @@ function openInsta(id){
  openSheet(`<div class="row" style="justify-content:flex-end"><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="ig-top" style="margin-top:0"><div class="ig-av">${avatarOf(id)}</div><div class="ig-stats">${igStat(c.posts,'publications')}${igStat(c.fol,'abonnés')}${igStat(c.ing,'abonnements')}</div></div>
  <div class="ig-id"><b>${esc(isNpc(id)?fullNameOf(id):nameOf(id))}</b><span class="muted">${handleOf(id)}${them?' · <span class="ig-chip">Te suit</span>':ig.reqs.includes(id)?' · <span class="ig-chip">Demande envoyée</span>':''}</span><p class="ig-bio">${fmtText(BIO[id]||'')}</p></div>
- <div class="row" style="justify-content:flex-start"><button class="gbtn ${f?'ghost':''}" type="button" data-follow="${id}">${f?'Abonné·e ✓':them?"S'abonner en retour":"S'abonner"}</button>${isNpc(id)?`<button class="gbtn ghost" type="button" data-chat="${id}">Message</button><button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}</div>
- ${igGrid(G.posts.filter(p=>p.by===id))}`.replace('Abonné·e ✓',P('Abonné·e ✓')),true);
+ <div class="row" style="justify-content:flex-start"><button class="gbtn ${f?'ghost':''}" type="button" data-follow="${id}">${f?'Abonné·e ✓':(ig.sent||{})[id]!=null?'Demande envoyée':them?"S'abonner en retour":"S'abonner"}</button>${isNpc(id)?`<button class="gbtn ghost" type="button" data-chat="${id}">Message</button><button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}</div>
+ ${igLocked(id)?'<div class="card" style="text-align:center"><p style="margin:0">🔒 Ce compte est privé</p><p class="muted">Abonne-toi pour voir ses publications et ses stories.</p></div>':igGrid(G.posts.filter(p=>p.by===id))}`.replace('Abonné·e ✓',P('Abonné·e ✓')),true);
 }
 /* clics communs au fil, à l'onglet Insta et aux fiches */
 function igClick(t){let b;
@@ -4911,9 +4955,9 @@ function drawMates(){
  <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}${G.cls&&G.cls.appr[k]?` · ${G.cls.appr[k]>=3?'t\'apprécie 😊':G.cls.appr[k]<=-3?gtxt('agacé·e',profSex(n))+' 😒':'neutre'}`:''}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
 }
 function drawMessages(){
- const ids=[...NPCS.map(n=>n.id),...G.family.map(f=>f.id)];
+ phInit();const ids=[...G.family.map(f=>f.id),...NPCS.map(n=>n.id).filter(id=>G.phone[id]&&!G.blocked[id])];
  ids.sort((a,b)=>((G.threads[b]||[]).slice(-1)[0]?.at??-1)-((G.threads[a]||[]).slice(-1)[0]?.at??-1));
- $('gView').innerHTML=`<div class="sec-title">Messages</div><p class="muted">${SAMPLE?'Tes camarades et ta famille te répondent avec leur propre personnalité.':'Les réponses utilisent la personnalité de chacun.'}</p><div class="list">${ids.map(id=>{const last=(G.threads[id]||[]).slice(-1)[0],u=G.unreadMsg[id]||0;
+ $('gView').innerHTML=`<div class="sec-title">Messages</div><p class="muted">📇 ${ids.length} contact${ids.length>1?'s':''}. Pour écrire à un·e camarade, demande-lui son numéro (sur sa fiche).</p><div class="list">${ids.map(id=>{const last=(G.threads[id]||[]).slice(-1)[0],u=G.unreadMsg[id]||0;
   return `<button class="card thread" type="button" data-chat="${id}"><div class="relrow"><div class="av">${avatarOf(id)}</div><div class="info"><div class="top"><span>${esc(nameOf(id))}</span><small>${last?last.tm:isFam(id)?famById(id).role:''}</small></div><span class="muted prev">${last?(last.from==='me'?'Toi : ':'')+esc(last.text):'Commencer une conversation'}</span></div>${u?`<span class="badge">${u}</span>`:''}</div></button>`}).join('')}</div>`;
 }
 /* « Mes notes » (menu ⚙) : moyenne, chances de réussite, évaluations, bulletins et bac, au même endroit */
@@ -4940,7 +4984,7 @@ function drawProfile(){
 function drawView(){
  $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home'&&view!=='day';
  const filSeg=()=>`<div class="seg filseg" role="group" aria-label="Fil"><button type="button" data-filv="home" aria-pressed="${view==='home'}">Fil</button><button type="button" data-filv="insta" aria-pressed="${view==='insta'}">Mon Insta${G.ig.reqs.length?` · ${G.ig.reqs.length}`:''}</button></div>`;
- if(view==='home'){const n=G.feedN||10;$('gView').innerHTML=filSeg()+G.posts.slice(0,n).map(postHTML).join('')+(G.posts.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
+ if(view==='home'){const n=G.feedN||10,FP=G.posts.filter(p=>p.by==='me'||G.ig.following[p.by]);$('gView').innerHTML=filSeg()+(FP.length?'':`<div class="card"><p style="margin:0">Ton fil est vide pour l'instant 📭</p><p class="muted">Seuls les comptes que tu suis apparaissent ici. Va dans <b>Mon Insta</b> → « Comptes à découvrir » pour t'abonner.</p></div>`)+FP.slice(0,n).map(postHTML).join('')+(FP.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
  else if(view==='insta'){drawInsta();$('gView').innerHTML=filSeg()+$('gView').innerHTML}
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
@@ -4959,7 +5003,7 @@ function openFiche(id){
  <div class="card felt"><span class="eyebrow">Ce qu${/^[aeiouy]/.test(ilElle(id))?"'":"e "}${ilElle(id)} pense de toi</span><p style="margin:0">${esc(ressenti(id))}</p>${gaugesHTML(id)}</div>
  <dl class="fiche">${[['Passé',f.passe],['Famille',f.famille],['Qualités',f.qualites],['Défauts',f.defauts],['Peurs',f.peurs],['Passions',f.passions+' · '+passOf(id).map(p=>PASS[p].e+' '+PASS[p].n).join(', ')+(sharedPass(id,'me').length?' (en commun avec toi : '+sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')+')':'')],['Façon de parler',f.parle],['Relations',f.relations],['Attirance',oriLabel(f.o,f.g)]].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
  <div class="card list"><span class="eyebrow">Ses liens en ce moment</span>${rels}</div>
- <div class="row"><button class="gbtn" type="button" data-chat="${id}">Envoyer un message</button></div>`,true);
+ ${phoneCard(id)}`,true);
 }
 const PACTS=[['parler','Discuter'],['compliment','Complimenter'],['blague','Faire une blague'],['taquiner','Taquiner'],['flirt','Flirter'],['sortie','Proposer une sortie']];
 function openPerson(id){
@@ -5907,6 +5951,7 @@ function outing(kind,pid){
 const SUGG=["Ça va ?","Tu fais quoi ?","T'as fait les devoirs ?","Tu m'as manqué 😊","On se voit demain ?"];
 const chatSub=id=>isNpc(id)?`Amitié ${G.rel[id].ami} · Amour ${G.rel[id].amour}`:isFam(id)?`${famById(id).role} · complicité ${G.famRel[id]}`:'';
 function openChat(id,face){
+ if(!face&&isNpc(id)&&!hasNum(id)){toast(G.blocked&&G.blocked[id]?`Tu as bloqué ${WHO[id].name}`:`📱 Tu n'as pas le numéro de ${WHO[id].name}`);openFiche(id);return}
  chat={id,face};G.unreadMsg[id]=0;
  openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="chatSub">${chatSub(id)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  ${face?`<p class="muted" style="margin:0">Vous discutez ${PLACES[G.place]?'au '+PLACES[G.place].toLowerCase():''} en face à face.</p>`:''}
@@ -6401,9 +6446,15 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-stance]')){cm.stance=b.dataset.stance;cm.stanceSet=true;document.querySelectorAll('[data-stance]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
  if(t.id==='cSend'){const v=$('cTxt').value.trim();if(!v){toast('Écris un commentaire ou choisis une suggestion');return}cm.re?sendReply(v,cm.stanceSet?cm.stance:(sentiment(v)<0?'mechant':'accord')):sendComment(v,cm.tone);return}
  if(b=q('[data-sv]')){b.dataset.sv==='next'?nextStory():prevStory();return}
+ if(b=q('[data-sreply]')){const id=b.dataset.sreply;closeSheet();if(!hasNum(id)){toast(`📱 Tu n'as pas le numéro de ${WHO[id].name} pour lui répondre`);return}openChat(id);const i=$('chatIn');if(i){i.value='Ta story 😍 ';i.focus()}return}
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
  if(b=q('[data-bffopen]')){bffSheet(b.dataset.bffopen);return}
+ if(b=q('[data-phask]')){phAsk(b.dataset.phask);return}
+ if(b=q('[data-phgive]')){phGive(b.dataset.phgive);return}
+ if(b=q('[data-phvia]')){phViaFriend(b.dataset.phvia);return}
+ if(b=q('[data-phblock]')){phBlock(b.dataset.phblock);return}
+ if(b=q('[data-phdel]')){phDelete(b.dataset.phdel);return}
  if(b=q('[data-crushset]')){setMyCrush(b.dataset.crushset);return}
  if(b=q('[data-ro]')){romAct(b.dataset.id,b.dataset.ro);return}
  if(b=q('[data-gift]')){giveGift(b.dataset.id,b.dataset.gift);return}
