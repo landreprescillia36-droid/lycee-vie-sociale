@@ -2866,11 +2866,14 @@ function smartLine(id,text,chan){
   const g=(socInit().gossip||[]).filter(n=>G.day-n.day<=3&&!n.t.includes(CNAME(id))).slice(-6);
   if(!g.length)return sty(id,fresh(["Rien de spécial, c'est calme en ce moment 😴","Pas grand-chose… le lycée est mort cette semaine 😂"]));
   const L=[...g].sort(()=>Math.random()-.5).slice(0,2);return sty(id,pickR(["T'as pas vu ? ","Attends, t'es pas au courant ? ","Alors… "])+L.map(n=>n.t+' '+n.ic).join('. Et '))}
+ /* questions pour apprendre à le ou la connaître (écrites à la main) : la fiche se remplit */
+ if(isNpc(id)){const LQ=[[/(tu aimes faire quoi|t'?aimes faire quoi|c'est quoi tes passions|tes passions|tu kiffes faire quoi)/,'q_pass'],[/(tes (amis|amies|potes) disent quoi de toi|c'est quoi tes qualit|tes qualit)/,'q_qual'],[/(c'est quoi tes d[ée]fauts|tes d[ée]fauts)/,'q_def'],[/(tu vis avec qui|t'habites avec qui|parle[- ]moi de ta famille|elle est comment ta famille|ta famille)/,'q_fam'],[/(t'[ée]tais comment avant|au coll[eè]ge t'[ée]tais|ton pass[ée]|avant (le|ce) lyc[ée]e)/,'q_passe'],[/(qu'est-ce qui te fait peur|qu'est ce qui te fait peur|t'as peur de quoi|tu as peur de quoi|tes peurs)/,'q_peur'],[/(attir[ée]·?e?s? par (les )?(filles|garçons|gars|mecs)|t'aimes les (filles|garçons|gars|mecs)|tu pr[ée]f[èe]res les (filles|garçons)|t'es (hétéro|gay|bi|lesbienne))/,'q_att']];
+  const m=LQ.find(([re])=>re.test(t));if(m){const r=learnAsk(id,m[1]);if(r)return sty(id,r.t)}}
  /* « avec qui tu t'entends le mieux ? », « c'est qui ton meilleur pote ? » / « avec qui tu t'entends pas ? » : ses vraies relations */
  if(isNpc(id)&&/(avec qui tu t'?entends? (le mieux|bien|le plus)|c'est qui (ton|ta) (meilleur|meilleure|best|bff)|(ton|ta) (meilleur|meilleure) (ami|amie|pote|pot)|t'es (pote|ami|amie|proche) avec qui|tu tra[iî]nes? avec qui|qui sont tes (amis|potes|amies)|t'as (des|quels) potes)/.test(t)){
   const ids=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q)=>link(id,q).ami-link(id,p).ami),a=ids[0],b=ids[1],pr=x=>FICHES[x].g==='f'?'elle':'il',me1=G.rel[id].ami>=link(id,a).ami&&G.rel[id].ami>=60,cp=coupleOf(id);
   let r=me1?pickR([`Bah… toi, en vrai 😊 Et ${CNAME(a)} aussi.`,`Toi ! Et sinon ${CNAME(a)}, ${pr(a)} est trop cool.`]):pickR([`${CNAME(a)}, sans hésiter. Et ${CNAME(b)} aussi.`,`Avec ${CNAME(a)} ! On se connaît trop bien. Et ${CNAME(b)}, ${pr(b)} est cool.`,`${CNAME(a)}, c'est ${FICHES[a].g==='f'?'ma meilleure amie':'mon meilleur pote'}. ${CNAME(b)} aussi je l'aime bien.`]);
-  if(cp&&cp!=='me'&&Math.random()<.5)r+=` Et ${CNAME(cp)} évidemment 🥰`;return sty(id,r,'happy')}
+  if(cp&&cp!=='me'&&Math.random()<.5)r+=` Et ${CNAME(cp)} évidemment 🥰`;if(G.rel[id].ami>=LEARN_MIN.relations)learnSet(id,'relations');return sty(id,r,'happy')}
  if(isNpc(id)&&/(avec qui tu t'?entends? (pas|mal|le moins)|tu (n'aimes|aimes) pas qui|qui tu (peux pas|supportes pas|aimes pas)|t'as des (ennemis|embrouilles))/.test(t)){
   const w=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q)=>link(id,p).ami-link(id,q).ami)[0];
   if(G.rel[id].ami<40)return sty(id,fresh(["Je préfère pas dire du mal des gens 😅","Hmm, je m'entends avec à peu près tout le monde… 🤐"]));
@@ -3232,7 +3235,7 @@ function couplePolish(id,t){if(!t||!isNpc(id)||(G.partner!==id&&coupleOf(id)!=='
 /* surnoms que tu as demandé d'arrêter (« arrête de m'appeler frère ») */
 const NICK_ALT={'frérot':['frérot','frerot','frère','frere','frr'],'frerot':['frérot','frerot','frère','frere','frr'],'frère':['frère','frere','frr','frérot'],'frere':['frère','frere','frr','frérot'],'frr':['frère','frere','frr'],'sœur':['sœur','soeur'],'soeur':['sœur','soeur'],'gros':['gros','grosse'],'chérie':['chérie','chéri','cherie'],'chéri':['chérie','chéri','cheri']};
 function nickStrip(id,s){const L=[...((G.noNick&&G.noNick[id])||[]),...(me().sexe!=='m'?['frère','frérot','frr']:[])];if(!L.length)return s;const s0=s;
- for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(\\s*,\\s*|\\s+)(mon |ma )?${x}(?![a-zà-ÿ])`,'gi'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
+ for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(?<!(petit|grand|son|ton|sa|ses|tes|mes|leur|demi-|beau-|un|le|du|au)\\s?)(\\s*,\\s*|\\s+)(mon |ma )?${x}(?=\\s*([,!?.…:]|\\p{Extended_Pictographic}|$))`,'giu'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
  return s===s0||/^[a-zà-ÿ]/.test(s0)?s:s.replace(/^\s*([a-zà-ÿ])/,(m,c)=>c.toUpperCase())}
 function pushMsg(id,from,text,extra){
  if(isNpc(id)&&!(chat&&chat.face&&chat.id===id)){phInit();
@@ -5137,8 +5140,8 @@ function openFiche(id){
  openSheet(`<div class="row" style="justify-content:flex-end"><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="full-av">${render(avOf(id),FVB,uid(),true)}</div><h2 style="text-align:center">${esc(fullNameOf(id))}, ${f.age} ans</h2><p class="muted" style="text-align:center">${n.handle} · ${statusOf(id)}</p>
  <div class="card felt"><span class="eyebrow">Ce qu${/^[aeiouy]/.test(ilElle(id))?"'":"e "}${ilElle(id)} pense de toi</span><p style="margin:0">${esc(ressenti(id))}</p>${gaugesHTML(id)}</div>
- <dl class="fiche">${[['Passé',f.passe],['Famille',f.famille],['Qualités',f.qualites],['Défauts',f.defauts],['Peurs',f.peurs],['Passions',f.passions+' · '+passOf(id).map(p=>PASS[p].e+' '+PASS[p].n).join(', ')+(sharedPass(id,'me').length?' (en commun avec toi : '+sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')+')':'')],['Façon de parler',f.parle],['Relations',f.relations],['Attirance',oriLabel(f.o,f.g)]].map(([k,v])=>`<dt>${k}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
- <div class="card list"><span class="eyebrow">Ses liens en ce moment</span>${rels}</div>
+ ${ficheInfo(id)}
+ ${learned(id,'relations')?`<div class="card list"><span class="eyebrow">Ses liens en ce moment</span>${rels}</div>`:''}
  ${phoneCard(id)}`,true);
 }
 const PACTS=[['parler','Discuter'],['compliment','Complimenter'],['blague','Faire une blague'],['taquiner','Taquiner'],['flirt','Flirter'],['sortie','Proposer une sortie']];
@@ -5770,7 +5773,8 @@ sacha:{res:'Pointe-à-Pitre',avant:null,lycee:null,raison:null,gt:'gt',shop:'cen
 const KB_SORTIE={'Plage de Sainte-Anne':'à la plage de Sainte-Anne','Marina de Saint-François':'à la marina de Saint-François','Bas-du-Fort':'à Bas-du-Fort, au Gosier','Chutes du Carbet':'aux chutes du Carbet',
  'Pointe des Châteaux':'à la Pointe des Châteaux','Les Salines au Gosier':'aux Salines, au Gosier','Grande-Anse à Deshaies':'à Grande-Anse, à Deshaies','Plage de la Caravelle':'à la plage de la Caravelle',
  'Jardin botanique de Deshaies':'au jardin botanique de Deshaies','La Soufrière':'à la Soufrière, en rando'};
-const ASKQ=[['🏝️ La Guadeloupe',[['pap','Tu connais bien Pointe-à-Pitre ?'],['commune','Tu habites dans quelle commune ?'],['gtbt','Tu préfères Grande-Terre ou Basse-Terre ?']]],
+const ASKQ=[['🙂 Apprendre à se connaître',[['q_pass','Tu aimes faire quoi ?'],['q_qual','Tes ami·e·s disent quoi de toi ?'],['q_def',"C'est quoi tes défauts ?"],['q_fam','Tu vis avec qui ?'],['q_passe','Tu étais comment avant, au collège ?'],['q_peur',"Qu'est-ce qui te fait peur ?"],['q_att','Tu es plutôt attiré·e par les filles ou les garçons ?'],['q_rel',"Avec qui tu t'entends le mieux ?"]]],
+ ['🏝️ La Guadeloupe',[['pap','Tu connais bien Pointe-à-Pitre ?'],['commune','Tu habites dans quelle commune ?'],['gtbt','Tu préfères Grande-Terre ou Basse-Terre ?']]],
  ['🛍️ Le shopping',[['destmil','Tu préfères Destreland ou Milénis ?'],['jarry','Tu vas souvent faire du shopping à Jarry ?'],['habits','Tu achètes tes vêtements où ?']]],
  ['🌅 Les sorties',[['plage','Tu vas souvent à la plage ?'],['sagos','Tu préfères Sainte-Anne ou Le Gosier ?'],['sors','Tu sors souvent avec tes amis ?']]],
  ['⛵ Les voyages',[['saintes','Tu es déjà allé·e aux Saintes ?'],['mg','Tu connais Marie-Galante ?'],['mq','Tu es déjà allé·e en Martinique ?']]],
@@ -5778,7 +5782,36 @@ const ASKQ=[['🏝️ La Guadeloupe',[['pap','Tu connais bien Pointe-à-Pitre ?'
  ['⏰ Les habitudes',[['apres','Tu fais quoi après les cours ?'],['wedest','Tu passes souvent tes week-ends à Destreland ?'],['maison','Tu préfères rester chez toi ou sortir ?']]]];
 const ASK_SENS={parents:['parents','raison'],pere:['parents']};
 /* réponse : courte si on se connaît peu (amitié < 20), plus détaillée entre ami·e·s (≥ 50) ; les sujets sensibles restent fermés tant que l'amitié est < 50 */
-function askAnswer(id,q){const K=KB[id],a=G.rel[id].ami,tier=a<20?0:a<50?1:2,ile=n=>K.iles.includes(n);let A,B='';
+/* ---------- apprendre à connaître ----------
+   La fiche d'un·e camarade est cachée : chaque information se découvre en lui posant la bonne question (G.learn[id]).
+   Les sujets intimes demandent plus d'amitié (LEARN_MIN). « Façon de parler » se découvre en discutant. */
+const LEARN_F=[['passions','Passions'],['qualites','Qualités'],['defauts','Défauts'],['famille','Famille'],['passe','Passé'],['peurs','Peurs'],['attirance','Attirance'],['relations','Relations'],['parle','Façon de parler']];
+const LEARN_Q={q_pass:'passions',q_qual:'qualites',q_def:'defauts',q_fam:'famille',q_passe:'passe',q_peur:'peurs',q_att:'attirance',q_rel:'relations'};
+const LEARN_MIN={passions:0,qualites:0,defauts:30,famille:20,passe:40,peurs:50,attirance:40,relations:10};
+const learned=(id,k)=>!!((G.learn||{})[id]||{})[k];
+function learnSet(id,k){G.learn=G.learn||{};const L=G.learn[id]=G.learn[id]||{};if(L[k])return false;L[k]=G.day;const lab=(LEARN_F.find(x=>x[0]===k)||[])[1];if(lab)toast(`📖 Tu en sais plus sur ${WHO[id].name} : ${lab.toLowerCase()}`);return true}
+const firstP=t=>t.replace(/\bses\b/g,'mes').replace(/\bsa\b/g,'ma').replace(/\bson\b/g,'mon').replace(/\bleurs?\b/g,m=>m);
+/* sa réponse (et la fiche se remplit) — refus poli si vous n'êtes pas assez proches */
+function learnAsk(id,q){const k=LEARN_Q[q],f=FICHES[id],a=G.rel[id].ami;if(!k)return null;
+ if(a<LEARN_MIN[k])return {t:pickR(["On se connaît pas encore assez pour ça 😅","Hmm… je te dirai quand on sera plus proches 🙂","C'est un peu perso, ça… une autre fois ?"]),d:0,closed:1};
+ const lo=x=>x.charAt(0).toLowerCase()+x.slice(1);let t;
+ switch(k){
+  case 'passions':t=`Mes passions ? ${f.passions} 😄`;break;
+  case 'qualites':t=`On me dit souvent que je suis ${lo(f.qualites)}.`;break;
+  case 'defauts':t=`Mes défauts ? Bah… ${lo(firstP(f.defauts))} 😅`;break;
+  case 'peurs':t=`Ce qui me fait peur ? ${firstP(f.peurs)}… voilà, tu sais tout.`;break;
+  case 'famille':{let x=f.famille.split(/[.;(]/)[0].trim().replace(/^Vit /,'Je vis ').replace(/^Alterne /,"J'alterne ").replace(/\bdont (elle|il) s'occupe/,"dont je m'occupe").replace(/\bqu'(il|elle) (protège|admire)/,'que je $2');x=firstP(x);t=pickR(["Chez moi ? ","Ma famille ? ",""])+x+'.';break}
+  case 'passe':t=pickR(["Avant ? C'était différent… je t'explique.","Au collège ? Ouh, c'est une longue histoire 😅"]);break;
+  case 'attirance':t=f.o==='hetero'?(f.g==='f'?'Les garçons 😊':'Les filles 😊'):f.o==='homo'?(f.g==='f'?'Les filles, en vrai 🙂':'Les garçons, en vrai 🙂'):f.o==='ace'?"Personne, honnêtement… ça m'intéresse pas trop":"Les deux, ça dépend de la personne 🙂";break;
+  case 'relations':{const b=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q2)=>link(id,q2).ami-link(id,p).ami);t=`Avec ${CNAME(b[0])} surtout. Et ${CNAME(b[1])} aussi.`;break}}
+ learnSet(id,k);return {t:t.trim(),d:1}}
+/* fiche : visible seulement si appris */
+function ficheInfo(id){const f=FICHES[id],val={passions:f.passions+' · '+passOf(id).map(p=>PASS[p].e+' '+PASS[p].n).join(', ')+(sharedPass(id,'me').length?' (en commun avec toi : '+sharedPass(id,'me').map(p=>PASS[p].n.toLowerCase()).join(', ')+')':''),qualites:f.qualites,defauts:f.defauts,famille:f.famille,passe:f.passe,peurs:f.peurs,attirance:oriLabel(f.o,f.g),relations:f.relations,parle:f.parle};
+ if((G.met[id]||0)>=4)learnSet(id,'parle');
+ const n=LEARN_F.filter(([k])=>learned(id,k)).length;
+ return `<p class="muted" style="margin:10px 0 4px">📖 Ce que tu sais sur ${ilElle(id)==='il'?'lui':'elle'} : ${n}/${LEARN_F.length}. Pose-lui des questions (❓ quand tu le ou la croises) pour en découvrir plus.</p><dl class="fiche">${LEARN_F.map(([k,l])=>`<dt>${l}</dt><dd>${learned(id,k)?esc(val[k]):'<span class="muted">🔒 ???</span>'}</dd>`).join('')}</dl>`}
+
+function askAnswer(id,q){if(LEARN_Q[q])return learnAsk(id,q);const K=KB[id],a=G.rel[id].ami,tier=a<20?0:a<50?1:2,ile=n=>K.iles.includes(n);let A,B='';
  const sens=K.sens.some(s=>(ASK_SENS[s]||[s]).includes(q));
  if(sens&&a<50)return {t:pickR(["Je préfère ne pas trop en parler, c'est encore récent.","Hmm… on en parlera une autre fois, ok ?","C'est un peu compliqué chez moi. Je préfère pas en parler."]),d:0,closed:1};
  switch(q){
