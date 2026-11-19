@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='140';
+const APP_VERSION='141';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2735,6 +2735,10 @@ function newsLine(id){const s=socInit(),c=coupleOf(id),a=G.rel[id].ami,L=[],nm=x
  const rest=pick.filter(x=>x!==first),two=rest.length&&Math.random()<.4?' '+pickR(rest):'';
  return (first||"Rien de spécial, tranquille 😄")+two+(Math.random()<.5?' Et toi, quoi de neuf ?':'')}
 /* questions qu'une fille pose à son copain (exemples de Prescillia) : [question, 4 réponses du plus romantique au plus franc] */
+/* apparence (exemples 15-17 de Prescillia) : réponses du plus tendre au plus franc */
+const APP_Q=[[/maquill|make-?up|makeup/,["Sans maquillage, tu es magnifique.","Avec ou sans, tu me plais.","Ça dépend de ton maquillage 😏","Je préfère quand tu te sens belle."]],
+ [/(tu me trouves|je suis|j'suis|tu trouves que je suis|je suis pas|je deviens)[^?]{0,15}(grosse|trop ronde|enrob[ée]e)|j'ai (grossi|pris du poids|pris des kilos)/,["Non, tu es très bien comme tu es.","Tu me plais comme tu es ❤️","Pourquoi tu te poses cette question ?","Ton poids ne change rien à mes sentiments."]],
+ [/(coiffure|cheveux|coupe|tresses|perruque|teinture).*(chang|nouvelle|teind|si je|tu aimerais|t'aimerais)|(chang|si je)[^?]*(coiffure|cheveux|tresses)/,["Oui, je suis sûr que ça t'irait bien 😊","Tant que tu aimes, ça me va.","Je préfère ta coiffure actuelle 😅","Il faut voir le résultat !"]]];
 const COUPLE_Q=[
  [/tu m ?'?aimes pourquoi|pourquoi (est-ce que )?tu m ?'?aimes/,["Parce que tu me rends heureux.","Parce que tu es différente des autres.","Parce que je me sens bien avec toi.","Je ne sais pas comment l'expliquer, je t'aime, c'est tout."]],
  [/(toujours|encore) aussi (belle|jolie)|(belle|jolie) (qu'au|comme au) d[ée]but/,["Encore plus belle.","Oui, rien n'a changé.","Tu es belle même quand tu ne fais aucun effort.","Bien sûr, pourquoi cette question ?"]],
@@ -2784,9 +2788,26 @@ const COMPL_Q=[
  [/(j'aime|j'adore) (bien |trop )?quand tu (viens|venais) me parler/,["Alors je viendrai te voir plus souvent.","J'attends souvent de te croiser pour venir te parler.","Je viendrai plus souvent alors.","C'est gentil, on se voit en cours de toute façon."]],
  [/tu me plais (beaucoup|trop|vraiment|grave|énormément)/,["Toi aussi, tu me plais énormément.","J'espérais que tu me le dises.","Je ne savais pas que tu ressentais ça.","Je préfère être honnête, je ne ressens pas la même chose."]],
  [/(j'aimerais|je voudrais) (bien )?qu'on se rapproche/,["J'en ai envie aussi.","On pourrait commencer par sortir tous les deux.","Pourquoi pas, ça me ferait plaisir.","Je préfère qu'on garde notre relation actuelle."]]];
+/* phrases modèles de Prescillia : si tu écris une phrase qui leur RESSEMBLE (fautes, mots en plus ou en moins),
+   le jeu la comprend comme la phrase modèle la plus proche, puis le camarade répond avec les réponses prévues */
+const MODELES=["Tu me trouves plus jolie avec ou sans maquillage ?","Tu me trouves grosse ?","Si je change complètement de coiffure, tu aimerais ?","Est-ce que tu m'aimes ?",
+ "Tu m'aimes pourquoi ?","Tu me trouves toujours aussi belle qu'au début ?","Tu penses parfois à moi quand on ne se parle pas ?","Tu as peur de me perdre ?","Si une fille te drague devant moi, tu fais quoi ?","Tu regardes les autres filles quand tu es avec moi ?","Tu accepterais que je parle à mon ex ?","Tu pourrais me tromper si tu étais sûr que je ne le saurais jamais ?","Pourquoi tu ne m'envoies pas de message en premier ?","Tu remarques quand je ne vais pas bien ?","Pourquoi tu es moins attentionné qu'au début ?","Tu te vois encore avec moi dans 5 ans ?","Tu pourrais vivre avec moi ?","Si on traverse une période difficile, tu préfères rester ou abandonner ?",
+ "Tu me trouves jolie ?","Tu aimerais qu'on apprenne à se connaître davantage ?","Pourquoi tu ne m'envoies jamais de message en premier ?","Tu as déjà pensé à m'embrasser ?","Tu parles à d'autres filles comme tu me parles ?","Si je te proposais un rendez-vous, tu accepterais ?","Tu penses que je te plais ?","Pourquoi tu me regardes souvent ?","Tu serais jaloux si je commençais à parler à un autre garçon ?","Tu envisages quelque chose avec moi ?","Pourquoi tu réponds parfois plusieurs heures après ?","Tu ne remarques jamais quand je fais un effort pour toi ?","Si je te disais que tu me plais, tu ferais quoi ?","Tu aimerais qu'on se voie plus souvent ?",
+ "J'aime trop ton sourire.","T'as vraiment de beaux yeux.","Cette coupe te va trop bien.","T'es vraiment beau aujourd'hui.","J'aime bien ton style vestimentaire.","T'es vraiment drôle.","J'aime bien ta façon de penser.","T'es vraiment gentil avec moi.","J'aime bien passer du temps avec toi.","Tu es vraiment mon genre de garçon.","Tu me déconcentres quand tu es près de moi.","Je crois que tu me plais.","J'aime bien quand tu viens me parler.","Tu me plais beaucoup.","J'aimerais bien qu'on se rapproche.",
+ "Je t'aime.","Je suis amoureuse de toi.","Je peux plus me passer de toi.","Je pense à toi tout le temps.","Tu comptes énormément pour moi.","Mon cœur bat très fort pour toi.","Qu'est-ce qui te plaît chez moi ?",
+ "Tu penses à moi des fois ?","T'es trop drôle.","Tu me trouves belle ?","Tu es beau.","Pourquoi vous avez rompu ?","Est-ce que je suis ton crush ?","Tu as un crush ?","Arrête de me proposer de sortir.","Arrête de m'appeler frère.","Tu peux me passer ton numéro ?"];
+const mdNorm=t=>t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’`]/g,"'").replace(/[^a-z0-9' ]+/g,' ').replace(/\s+/g,' ').trim();
+const mdTri=t=>{const x='  '+t+' ',S=new Set();for(let i=0;i<x.length-2;i++)S.add(x.slice(i,i+3));return S};
+const mdTok=t=>new Set(t.replace(/'/g,' ').split(' ').filter(w=>w.length>1).map(w=>w.slice(0,5)));
+const mdDice=(A,B)=>{let n=0;A.forEach(x=>{if(B.has(x))n++});return A.size+B.size?2*n/(A.size+B.size):0};
+const MD_IDX=MODELES.map(m=>{const n=mdNorm(m);return {m,tri:mdTri(n),tok:mdTok(n)}});
+/* la phrase modèle la plus proche (null si rien d'assez proche) */
+function modeleProche(t){const n=mdNorm(t);if(n.split(' ').length<3)return null;const tri=mdTri(n),tok=mdTok(n);let best=null,bs=0;
+ for(const e of MD_IDX){const sc=.55*mdDice(tri,e.tri)+.45*mdDice(tok,e.tok);if(sc>bs){bs=sc;best=e.m}}if(best==="Je t'aime."&&/aime bien/.test(n))return null;return bs>=.56?best:null}
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
+ {const m=modeleProche(text);if(m)t=m.toLowerCase()}/* phrase qui ressemble à un modèle de Prescillia */
  const fresh=L=>{if(!L||!L.length)L=(isNpc(id)&&(voiceOf(id).neutral||[]).length)?voiceOf(id).neutral:["Ah ouais ?","Je vois 🙂","Ok !"];/* liste manquante : jamais d'erreur */const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
  if(!R){if(!isFam(id)){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}R=FAMREP[famKind(id)]}
  const V=isFam(id)?R:VOICE[id];
@@ -2849,6 +2870,12 @@ function smartLine(id,text,chan){
    return fresh(["Bien sûr que je t'aime ❤️","Ne te pose plus jamais la question.","Tu es la personne la plus importante pour moi.","Je t'aime de tout mon cœur ❤️","Mais je t'aime chérie ❤️","C'est quoi cette question enfin, ne doute jamais de mon amour 💘"])}}
  /* une fille (toi) flirte avec un garçon qui n'est pas son copain : sa réponse suit ce qu'il ressent VRAIMENT
     (intéressé → hésitant → pas intéressé), son caractère (timide, séducteur, joueur) — même les meilleures questions ne le font pas forcément craquer */
+ /* apparence (maquillage, poids, coiffure) à un garçon qui n'est pas ton copain : gentil, plus tendre s'il est attiré */
+ if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const A=APP_Q.find(([re])=>re.test(t));if(A){const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+  const L=A[1].filter(x=>!/sentiments/.test(x));return att&&v>=55?pickR(L.slice(0,2)):pickR(L.slice(2))}}
+ /* question « de couple » posée à quelqu'un qui n'est pas ton copain : il le rappelle, selon son attirance */
+ if(isNpc(id)&&G.partner!==id&&COUPLE_Q.some(([re])=>re.test(t))&&!FLIRT_Q.some(([re])=>re.test(t))){const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+  return sty(id,fresh(att&&v>=55?["Euh… on n'est pas encore ensemble, mais… peut-être que oui 😏","Tu me poses une question de couple là… t'essaies de me dire quelque chose ? 😳"]:att&&v>=25?["Haha, on n'est pas ensemble 😅 mais c'est mignon comme question","Pourquoi tu me demandes ça ? 🙈"]:["Mais… on n'est pas ensemble 😅","Euh, c'est une question pour ton copain ça, non ? 😅"]))}
  if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const C=COMPL_Q.find(([re])=>re.test(t));
   if(C){const v=G.rel[id].amour,shy=FICHES[id].soc<=.5,att=crCan(id,'me')&&!coupleOf(id);
    /* intéressé (≥55) : flirte en retour ; touché mais timide ou à moitié intéressé : maladroit ; sinon : poli */
@@ -2862,6 +2889,18 @@ function smartLine(id,text,chan){
    if(i<3&&Math.random()<.15)i=Math.min(3,i+1);
    if(i<=1)relChange(id,0,1);
    const r=Q[1][i];return i===3&&coupleOf(id)&&Math.random()<.5?`${r} Et puis… je suis avec ${CNAME(coupleOf(id))}.`:r}}
+ /* « qu'est-ce qui te plaît chez moi ? » : selon ce qu'il ou elle ressent vraiment */
+ if(isNpc(id)&&/(qu'?est[- ]ce qu'?(il |qui )?te pla[iî]t chez moi|qu'est qui te pla[iî]t chez moi|ce qui te pla[iî]t chez moi|tu (aimes|kiffes) quoi chez moi|pourquoi tu m'aimes bien)/.test(t)){
+  const v=G.rel[id].amour,a=G.rel[id].ami;
+  if(G.partner===id||(v>=55&&crCan(id,'me')))return sty(id,fresh(["Ton sourire, déjà… et ta façon de me regarder 😳","Tout. Ta façon de parler, ton rire… t'as vraiment un truc 😏","T'es {p:différent·e} des autres. Avec toi je me sens bien, c'est tout","Quand t'es là, la journée passe mieux. Voilà 🙈"]),'happy');
+  if(a>=50)return sty(id,fresh(["T'es quelqu'un de vrai, on rigole bien ensemble 😄","T'es {p:gentil·le}, et avec toi y a jamais de prise de tête","T'es là quand il faut, c'est rare 🙂"]),'happy');
+  return sty(id,fresh(["Euh… on se connaît pas encore assez pour que je réponde 😅","Bonne question… laisse-moi le temps de te connaître 😄"]))}
+ /* « je t'aime », « je peux plus me passer de toi »… à quelqu'un qui n'est pas ton ou ta partenaire : selon son attirance réelle */
+ if(isNpc(id)&&G.partner!==id&&!/\?/.test(t)&&/(je t ?'?aime\b(?! bien)|je suis (amoureu|piqu|accro)|je (ne )?peux (plus|pas) me passer de toi|je pense à toi (tout le temps|sans arr)|tu comptes (énormément|tellement) pour moi|mon c(œ|oe)ur bat)/.test(t)){
+  const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+  if(att&&v>=55){relChange(id,1,3);return pickR(["Oh… 😳 ","Sérieux ? ","Ça me fait trop plaisir… "])+(ilyLine(id)||"Moi aussi, je crois.")}
+  if(att&&v>=25){relChange(id,0,1);return sty(id,fresh(["Ah… 😳 je savais pas. Ça me touche, vraiment","Wow… je sais pas quoi dire. Laisse-moi un peu de temps 🙈"]))}
+  relChange(id,0,0);return sty(id,fresh(coupleOf(id)?[`C'est gentil… mais je suis avec ${CNAME(coupleOf(id))} 😕`]:["Je t'aime bien aussi… mais en ami·e 😅","Ça me touche, mais je ne ressens pas la même chose, désolé·e"]))}
  /* « je suis ton crush ? », « t'as un crush ? », « je te plais ? », « je pensais que tu m'aimais bien » : selon son vrai crush */
  if(isNpc(id)&&/(je suis (ton|ta) crush|c'est moi (ton|ta) crush|t ?'?as (un|une) crush|tu as (un|une) crush|c'est qui (ton|ta) crush|(ton|ta) crush c'est qui|qui est (ton|ta) crush|t'as quelqu'un en vue|tu kiffes quelqu'un|je te plais|tu me kiffes|tu m'aimes( bien)?\b|(je pensais|j'pensais|je croyais|j'croyais) (que )?(tu m'aimais|je te plaisais|tu me kiffais|tu m'appr[ée]ciais))/.test(t)){
   const c=crInit(),cr=c.of[id],v=G.rel[id].amour,bold=crBold(id)>=.7,stmt=/(pensais|croyais)/.test(t);
@@ -2887,7 +2926,7 @@ function smartLine(id,text,chan){
   return sty(id,fresh(["Ah… d'accord, j'arrête 😕 Si un jour t'as envie, c'est toi qui me dis","Ok, compris. Je te proposerai plus rien, promis","D'accord, désolé·e si j'ai insisté 😅 c'est toi qui proposeras alors"]),'sad')}
  /* « arrête de m'appeler frère » : la personne arrête (G.noNick) */
  {const m=t.match(/(arr[eê]te[rsz]?|stop|évite|evite) (de |d')?(m'|m |me |m)?app?ell?er? (?:comme (?:ça|ca)\s*)?(?:["«“ ]*)([a-zà-ÿœ]+(?: (?:belle|beau|sœur|soeur|frère|frere))?)/);
-  if(m||/(m'appelle pas|m'appelles pas|appelle moi pas) (frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/.test(t)){const w=m?m[4]:t.match(/(frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/)[1];
+  if(m||/(m'appelle pas|m'appelles pas|appelle moi pas|m'appelle plus) (frérot|frerot|frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/.test(t)){const w=m?m[4]:t.match(/(frérot|frerot|frère|frere|frr|gros|ma belle|bébé|bebe|chérie?|cherie?)/)[1];
    if(!/^(comme|ça|ca|tout|le|la|les|tous)$/.test(w)){G.noNick=G.noNick||{};const L=G.noNick[id]=G.noNick[id]||[];if(!L.includes(w))L.push(w);
     return fresh(["Ah pardon, j'avais pas capté que ça te dérangeait 😅 c'est noté","Ok désolé·e, j'arrête !","Oups, pardon 😬 je le dirai plus","Ah ok, pas de souci, je ferai attention"])}}}
  /* « ok je viendrai », « j'y serai » : la personne est contente (et Jessica t'inscrit aux cours particuliers) */
@@ -2980,7 +3019,7 @@ const clean=x=>x.replace(/[?!.…,;]+$/,'').replace(/[\p{Extended_Pictographic}�
 /* style de chacun ajouté au bout de la phrase */
 function sty(id,s,mood){
  const k=isFam(id)?'f_'+famKind(id):id,r=Math.random();
- const tic=w=>{if(/fr[èe]r|frr/.test(w)&&me().sexe!=='m')return s;/* « frère », « frr » : seulement à un garçon */const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
+ const tic=w=>{if(/fr[èée]r|frr/.test(w)&&me().sexe!=='m')return s;/* « frère », « frr » : seulement à un garçon */const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
  const emo=e=>{if(!/[\p{Extended_Pictographic}]\uFE0F?\s*$/u.test(s))s=s.replace(/\s*$/,'')+e};
  if(k==='jade'){s=s.toLowerCase().replace(/[\p{Extended_Pictographic}️‍]/gu,'').replace(/!+/g,'.').replace(/\s+([.?])/g,'$1').replace(/\s{2,}/g,' ').trim();if(!/[.?]$/.test(s))s+='.';return s}
  if(k==='kylian'){s=s.toLowerCase().replace(/\s*!+\s*(?=\S)/g,', ').replace(/\s*!+/g,'');if(r<.35&&!/\bfrr\b/.test(s))s=tic(' frr');return s}
@@ -3157,8 +3196,8 @@ const BRO_RE=/(^|[^\p{L}'’-])(?<!(?:mon|ton|son|ma|ta|sa|le|la|un|une|du|au|pe
 function couplePolish(id,t){if(!t||!isNpc(id)||(G.partner!==id&&coupleOf(id)!=='me'))return t;const nm=(me().name||'').trim()||petName(id);
  return t.replace(BRO_RE,(m,pre)=>pre+(Math.random()<.6?petName(id):nm)).replace(/\b(mon|ma) (mon|ma) /g,'$2 ')}
 /* surnoms que tu as demandé d'arrêter (« arrête de m'appeler frère ») */
-const NICK_ALT={'frère':['frère','frere','frr','frérot'],'frere':['frère','frere','frr','frérot'],'frr':['frère','frere','frr'],'sœur':['sœur','soeur'],'soeur':['sœur','soeur'],'gros':['gros','grosse'],'chérie':['chérie','chéri','cherie'],'chéri':['chérie','chéri','cheri']};
-function nickStrip(id,s){const L=G.noNick&&G.noNick[id];if(!L||!L.length)return s;const s0=s;
+const NICK_ALT={'frérot':['frérot','frerot','frère','frere','frr'],'frerot':['frérot','frerot','frère','frere','frr'],'frère':['frère','frere','frr','frérot'],'frere':['frère','frere','frr','frérot'],'frr':['frère','frere','frr'],'sœur':['sœur','soeur'],'soeur':['sœur','soeur'],'gros':['gros','grosse'],'chérie':['chérie','chéri','cherie'],'chéri':['chérie','chéri','cheri']};
+function nickStrip(id,s){const L=[...((G.noNick&&G.noNick[id])||[]),...(me().sexe!=='m'?['frère','frérot','frr']:[])];if(!L.length)return s;const s0=s;
  for(const w of L)for(const x of (NICK_ALT[w]||[w]))s=s.replace(new RegExp(`(\\s*,\\s*|\\s+)(mon |ma )?${x}(?![a-zà-ÿ])`,'gi'),'').replace(new RegExp(`^(mon |ma )?${x}(?![a-zà-ÿ])[ ,]*`,'i'),'');
  return s===s0||/^[a-zà-ÿ]/.test(s0)?s:s.replace(/^\s*([a-zà-ÿ])/,(m,c)=>c.toUpperCase())}
 function pushMsg(id,from,text,extra){
@@ -6044,7 +6083,7 @@ const voiceOf=id=>isFam(id)?FAMREP[famKind(id)]:VOICE[id];
    Différent des messages : dialogue à l'oral, au lieu où l'on se trouve, avec gestes ; historique séparé (G.talks).
    Le ou la camarade sait que c'est en vrai (consigne dans le prompt, gestes et remarques sur le lieu en secours). */
 let talk=null;
-const TALK_SCENE={cafet:'cantine',cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'cantine',brunch:'cantine',resto:'cantine',fastfood:'cantine',shopping:'marche',cinema:'soiree',club:'couloir'};
+const TALK_SCENE={cafet:'cantine',cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'glacier',glacier:'glacier',brunch:'cantine',resto:'cantine',fastfood:'fastfood',shopping:'marche',cinema:'cinema',club:'couloir'};
 const TALK_SUGG=["Salut !","Ça va ?","Tu fais quoi ici ?","On s'assoit ensemble ?","T'as vu le dernier post des Potins ?","Tu fais quoi ce week-end ?"];
 const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux qui brillent*'],neg:['*fronce les sourcils*','*croise les bras*','*soupire*','*détourne le regard*'],neu:['*hausse les épaules*','*hoche la tête*','*réfléchit une seconde*','*te regarde*']};
 const PLACE_TALK={cafet:["Tu prends quoi ? Moi un café, je dors debout ☕","Les croissants sont déjà partis, c'est un scandale 😭"],cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
@@ -6095,6 +6134,7 @@ function talkFallback(id,text){
  let r=met===0?'*te regarde avec curiosité* '+introLine(id):g+' '+(sl=>sl+(met<3&&fq.length&&!sl.includes('?')?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+pickR(fq):''))(strip(smartLine(id,text,'talk')));
  const pt=(isFam(id)?FAMREP[famKind(id)].maison:(PLACE_TALK[talk.pl]||PLACE_TALK.cour)).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
+ r=isNpc(id)?nickStrip(id,r):r;
  return {reponse:r,amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?(crCan(id,'me')?Math.round(1+crPhys(id,'me')*3):0):-2):0};
 }
 async function sendTalk(text){
