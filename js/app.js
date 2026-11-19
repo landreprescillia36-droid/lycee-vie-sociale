@@ -2820,7 +2820,7 @@ function friendAdvice(id){const pm=passOf('me'),ids=NPCS.map(n=>n.id).filter(x=>
  if(!L.length)return pickR(["Hmm… honnêtement je sais pas trop, je traîne pas avec grand monde 😅","Bonne question… essaie les clubs, c'est là qu'on rencontre du monde !"]);
  const a=L[0],b=L[1],worst=NPCS.map(n=>n.id).filter(x=>x!==id&&x!==a&&x!==b).sort((p,q)=>link(id,p).ami-link(id,q).ami)[0];
  let r=`${pickR(["Va voir","Parle à","Essaie avec"])} ${CNAME(a)} ! ${why(a)}.`;
- if(b&&Math.random()<.7){const w=sharedPass(b,'me').length?why(b):(()=>{const q=(FICHES[b].qualites||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);return `${pr(b)} est ${q[0]||'cool'}${q[1]?' et '+q[1]:''}`})();r+=` ${pickR(['Et','Sinon,','Tu peux aussi aller voir'])} ${CNAME(b)}${pickR([' aussi',''])} : ${w.replace(/^./,c=>c.toLowerCase())}.`}
+ if(b&&Math.random()<.7){const w=sharedPass(b,'me').length?why(b):(()=>{const q=(FICHES[b].qualites||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);return `${pr(b)} est ${q[0]||'cool'}${q[1]?' et '+q[1]:''}`})();const [p1,p2]=pickR([['Et',' aussi'],['Sinon,',''],['Tu peux aussi aller voir','']]);r+=` ${p1} ${CNAME(b)}${p2} : ${w.replace(/^./,c=>c.toLowerCase())}.`}
  if(worst&&link(id,worst).ami<30&&Math.random()<.5){const d=(FICHES[worst].defauts||'').split(',')[0].trim().toLowerCase();r+=` Par contre, méfie-toi de ${CNAME(worst)}${d?`, ${pr(worst).toLowerCase()} peut être ${d}`:''} 😬`}
  return r}
 function smartLine(id,text,chan){
@@ -2861,6 +2861,15 @@ function smartLine(id,text,chan){
  if(isNpc(id)&&chan==='talk'&&!(talk&&talk.call)){
   if(/(ton (num|num[ée]ro|06|0690|tel|t[ée]l[ée]phone|portable)|passe[- ]moi ton|je peux avoir ton|tu me (donnes|passes|files) ton|on s'[ée]change (nos|les) num)/.test(t)){phInit();if(G.phone[id])return sty(id,fresh(["Mais tu l'as déjà 😂","T'as déjà mon numéro, écris-moi !"]));const r=phAsk(id);if(/s'[ée]change/.test(t)&&G.phone[id])G.knows[id]=1;return r}
   if(/(je te (donne|passe|file|note) mon (num|num[ée]ro|06|tel)|voil[aà] mon (num|num[ée]ro)|prends mon num|note mon num)/.test(t)){phInit();if(G.knows[id])return sty(id,fresh(["Je l'ai déjà 😉","T'inquiète, je l'ai déjà !"]));return phGive(id)}}
+ /* « avec qui tu t'entends le mieux ? », « c'est qui ton meilleur pote ? » / « avec qui tu t'entends pas ? » : ses vraies relations */
+ if(isNpc(id)&&/(avec qui tu t'?entends? (le mieux|bien|le plus)|c'est qui (ton|ta) (meilleur|meilleure|best|bff)|(ton|ta) (meilleur|meilleure) (ami|amie|pote|pot)|t'es (pote|ami|amie|proche) avec qui|tu tra[iî]nes? avec qui|qui sont tes (amis|potes|amies)|t'as (des|quels) potes)/.test(t)){
+  const ids=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q)=>link(id,q).ami-link(id,p).ami),a=ids[0],b=ids[1],pr=x=>FICHES[x].g==='f'?'elle':'il',me1=G.rel[id].ami>=link(id,a).ami&&G.rel[id].ami>=60,cp=coupleOf(id);
+  let r=me1?pickR([`Bah… toi, en vrai 😊 Et ${CNAME(a)} aussi.`,`Toi ! Et sinon ${CNAME(a)}, ${pr(a)} est trop cool.`]):pickR([`${CNAME(a)}, sans hésiter. Et ${CNAME(b)} aussi.`,`Avec ${CNAME(a)} ! On se connaît trop bien. Et ${CNAME(b)}, ${pr(b)} est cool.`,`${CNAME(a)}, c'est ${FICHES[a].g==='f'?'ma meilleure amie':'mon meilleur pote'}. ${CNAME(b)} aussi je l'aime bien.`]);
+  if(cp&&cp!=='me'&&Math.random()<.5)r+=` Et ${CNAME(cp)} évidemment 🥰`;return sty(id,r,'happy')}
+ if(isNpc(id)&&/(avec qui tu t'?entends? (pas|mal|le moins)|tu (n'aimes|aimes) pas qui|qui tu (peux pas|supportes pas|aimes pas)|t'as des (ennemis|embrouilles))/.test(t)){
+  const w=NPCS.map(n=>n.id).filter(x=>x!==id).sort((p,q)=>link(id,p).ami-link(id,q).ami)[0];
+  if(G.rel[id].ami<40)return sty(id,fresh(["Je préfère pas dire du mal des gens 😅","Hmm, je m'entends avec à peu près tout le monde… 🤐"]));
+  return sty(id,link(id,w).ami<30?pickR([`Entre nous… ${CNAME(w)}. On a jamais accroché 😬`,`${CNAME(w)}, j'ai du mal. Mais garde ça pour toi 🤫`]):"Franchement, je m'entends avec tout le monde 😄")}
  /* « j'essaie de me faire des ami·e·s, tu me conseilles qui ? », « je sais pas à qui parler » : il ou elle te conseille de vrais camarades */
  if(isNpc(id)&&/(me faire des (ami|pote|copain|copine)|(conseill|recommand)[a-z]* qui|tu me conseill|je sais pas (à|a) qui parler|je (ne )?sais pas (à|a) qui (aller|m'adresser)|je connais personne|je connais pas grand monde|qui (je peux|j'peux|pourrais-je) (aller voir|parler|aborder)|t'as quelqu'un (à|a) me pr[ée]senter|tu (connais|vois) qui de (sympa|cool|gentil))/.test(t))return sty(id,friendAdvice(id),'happy');
  /* « ça va ? » : la personne répond et te retourne la question */
