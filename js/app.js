@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='137';
+const APP_VERSION='138';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3119,7 +3119,7 @@ function fallbackReply0(id,text){const v=VOICE[isFam(id)?'fam':id],s=sentiment(t
  /* tu as déjà donné ta réponse (« …, et toi ? ») : la personne ne te repose pas la question */
  if(sl&&/\bet (toi|vous)\b/i.test(text))sl=sl.replace(/[,.]?\s*et toi( frr| frère| ma belle)?\s*\?\s*/i,' ').trim();
  const fqq=s>=0&&met<3&&fq.length&&!sl.includes('?')&&!STOP_OUT_RE.test(text.toLowerCase())?pickR(fq):null;if(fqq){G.askedQ=G.askedQ||{};(G.askedQ[id]=G.askedQ[id]||[]).push(fqq)}
- return{reponse:met===0&&s>=0?introLine(id):sl+(fqq?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+fqq:''),amitie:isFam(id)&&/(exclu|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|discipline|avertissement|sanction|mauvaise note|zéro)/i.test(text)?-2:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0,proposition:null}}
+ return{reponse:met===0&&s>=0?introLine(id):sl+(fqq?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+fqq:''),amitie:isFam(id)&&/(exclu|viré|virée|renvoy|colle\b|collé|collée|retenue|convoqu|discipline|avertissement|sanction|mauvaise note|zéro)/i.test(text)?-2:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?(crCan(id,'me')?Math.round(1+crPhys(id,'me')*3):0):-2):0,proposition:null}}
 
 /* ---------- messages ---------- */
 let chat=null,busyId=null;
@@ -3946,7 +3946,7 @@ function crCompat(a,b){if(a==='me'||b==='me'){const o=a==='me'?b:a;return clamp(
 const crAmi=(a,b)=>b==='me'?G.rel[a].ami:link(a,b).ami;
 const crAm=(a,b)=>b==='me'?G.rel[a].amour:link(a,b).amour;
 function crSet(a,b,v){v=clamp(Math.round(v),0,100);if(b==='me')G.rel[a].amour=v;else link(a,b).amour=v}
-function crIt(a,b,n){const c=crInit(),k=pk(a,b);c.it[k]=Math.min(40,(c.it[k]||0)+(n||1))}
+function crIt(a,b,n){const c=crInit(),k=pk(a,b);c.it[k]=Math.min(40,(c.it[k]||0)+(n||1));if(b==='me'){c.lit=c.lit||{};c.lit[a]=G.day}}
 const crBold=a=>FICHES[a].soc*.6+FICHES[a].rom*.4;
 function crTarget(a,b){const c=crInit(),ami=crAmi(a,b),it=c.it[pk(a,b)]||0,d=c.dec[a+'>'+b];
  let t=crPhys(a,b)*42+crCompat(a,b)*26+clamp(ami,0,100)*.14+Math.min(it,30)*.5;
@@ -3956,7 +3956,10 @@ function crTarget(a,b){const c=crInit(),ami=crAmi(a,b),it=c.it[pk(a,b)]||0,d=c.d
 /* chaque matin : les sentiments évoluent, chacun·e choisit (ou garde) son crush, puis passe à l'action */
 function crushDay(){const c=crInit(),ids=NPCS.map(n=>n.id),s=socInit();
  ids.forEach(a=>{const cand=[...ids,'me'].filter(b=>crCan(a,b));
-  cand.forEach(b=>{const v=crAm(a,b),t=crTarget(a,b);crSet(a,b,v+(t>v?(t-v)*.1:(t-v)*.05)+rnd(-2,2))});
+  cand.forEach(b=>{const v=crAm(a,b),t=crTarget(a,b);
+   /* envers toi : ça ne monte que si vous avez passé du temps ensemble ces 3 derniers jours, et lentement (+1,5 max par jour) */
+   if(b==='me'){const recent=G.day-((c.lit||{})[a]??-99)<=3;crSet(a,b,t>v?(recent?v+Math.min((t-v)*.08,1.5):v):v+(t-v)*.04);return}
+   crSet(a,b,v+(t>v?(t-v)*.1:(t-v)*.05)+(v>=10?rnd(-2,2):0))});
   const cp=coupleOf(a);let cur=c.of[a];
   if(cp){c.of[a]=cp;return}
   const best=cand.slice().sort((x,y)=>crAm(a,y)-crAm(a,x))[0];
@@ -5996,7 +5999,7 @@ const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?
 function openTalk(id,o){o=o||{};
  const pl=o.pl||(isFam(id)||guestHere()&&G.guest.id===id?'maison':talkPlace());talk={id,pl,day:G.day,call:!!o.call};
  const th=(G.talks[id]=G.talks[id]||[]);if(th.length&&th[th.length-1].day!==G.day)th.push({sep:1,day:G.day,pl});
- if(isNpc(id)&&!G.done[G.day+'vrai'+id]){G.done[G.day+'vrai'+id]=1;G.st.talks++}
+ if(isNpc(id)&&!G.done[G.day+'vrai'+id]){G.done[G.day+'vrai'+id]=1;crIt(id,'me');G.st.talks++}
  openSheet(`<div class="who"><div class="av sm">${avatarOf(id)}</div><div style="flex:1;min-width:0"><b>${esc(nameOf(id))}</b><div class="muted" id="talkSub">${talk.call?'📞 Au téléphone':'En vrai · '+(PLACES[pl]||'Maison')} · ${fmtT(G.min)}</div></div>${isNpc(id)?`<button class="gbtn ghost" type="button" data-fiche="${id}">Fiche</button>`:''}<button class="gbtn ghost" type="button" data-close aria-label="Partir">Partir</button></div>
  <div class="talk-scene">${photoSVG({scene:talk.call?'chambre':TALK_SCENE[pl]||'cour',people:talk.call?[id]:[id,'me'],author:id})}<span class="talk-tag">${talk.call?'📞 Appel en cours':'🗣️ Vous parlez en vrai'}</span></div>
  <div class="talk" id="talkLines"></div>
@@ -6038,7 +6041,7 @@ function talkFallback(id,text){
  let r=met===0?'*te regarde avec curiosité* '+introLine(id):g+' '+(sl=>sl+(met<3&&fq.length&&!sl.includes('?')?(/[.!?…\p{Extended_Pictographic}]\s*$/u.test(sl)?' ':'. ')+pickR(fq):''))(strip(smartLine(id,text,'talk')));
  const pt=(isFam(id)?FAMREP[famKind(id)].maison:(PLACE_TALK[talk.pl]||PLACE_TALK.cour)).filter(x=>!x.includes(nameOf(id)));if(met>0&&pt.length&&Math.random()<.3)r+=' '+pickR(pt);
  const love=/(t'aime|tu me plais|mignon|craque|beau|belle)/i.test(text);
- return {reponse:r,amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?4:-2):0};
+ return {reponse:r,amitie:s*3+(s===0?1:0),amour:love&&isNpc(id)?(G.rel[id].ami>=50?(crCan(id,'me')?Math.round(1+crPhys(id,'me')*3):0):-2):0};
 }
 async function sendTalk(text){
  text=(text||'').trim();if(!text||!talk||busyId)return;const id=talk.id;
