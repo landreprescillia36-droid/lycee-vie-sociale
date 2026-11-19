@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='141';
+const APP_VERSION='142';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1587,7 +1587,7 @@ WEAR.set.items.push(
  {n:'Tenue d\'Inès : robe portefeuille',r:'K',g:'f',x:"La tenue d'Inès telle que tu l'as créée.",set:{dress:'portefeuille',dressColor:'#d93b5e',bag:'tote',bagColor:'#ece2cc',necklace:'chaine',shoes:'basses',shoesColor:'#f4f1ea'}},
  {n:'Tenue de Maëlle : chemise et jupe plissée',r:'K',g:'f',x:"La tenue de Maëlle telle que tu l'as créée.",set:{bag:'aucun',top:'chemise',topColor:'#f4f1ea',bottom:'jupe',bottomColor:'#1f2127',shoes:'basses',shoesColor:'#f4f1ea',necklace:'perles'}},
  {n:'Tenue de Jade : chemise camel et pantalon noir',r:'K',g:'f',x:"La tenue de Jade telle que tu l'as créée.",set:{bag:'aucun',top:'chemise',topColor:'#c49a6c',bottom:'cordon',bottomColor:'#1f2127',shoes:'retro',shoesColor:'#f4f1ea',necklace:'rasdecou'}},
- {n:'Tenue de Kylian : sweat bleu et jogging',r:'K',g:'m',x:"La tenue de Kylian telle que tu l'as créée.",set:{bag:'aucun',top:'ghood',topColor:'#3d6fd8',bottom:'jogging',bottomColor:'#c4c7cb',shoes:'running',shoesColor:'#f4f1ea',necklace:'chaine'}},
+ {n:'Tenue de Soan : sweat bleu et jogging',r:'K',g:'m',x:"La tenue de Soan telle que tu l'as créée.",set:{bag:'aucun',top:'ghood',topColor:'#3d6fd8',bottom:'jogging',bottomColor:'#c4c7cb',shoes:'running',shoesColor:'#f4f1ea',necklace:'chaine'}},
  {n:'Tenue de Noah : t-shirt crème et pantalon à cordon',r:'K',g:'m',x:"La tenue de Noah telle que tu l'as créée.",set:{bag:'aucun',top:'gtee',topColor:'#ece2cc',bottom:'cordon',bottomColor:'#1f2127',shoes:'sabots',shoesColor:'#c49a6c',necklace:'chaine'}},
  {n:'Tenue de Sacha : pull côtelé et baggy gris',r:'K',g:'m',x:"La tenue de Sacha telle que tu l'as créée.",set:{bag:'aucun',top:'gcote',topColor:'#1f2127',bottom:'large',bottomColor:'#9aa0a6',shoes:'basses',shoesColor:'#f4f1ea',necklace:'chaine'}});
 (()=>{const F={top:['crop','ajuste','epaules','blouse','henley','asym','salopette'],bottom:['flare','yoga','jupe'],dress:['nuisette','tshirtdress','portefeuille','bretelles','madras','pull'],jacket:['matelassee','cardigan'],shoes:['fourrees','bottes'],hat:['foulard'],necklace:['perles','rasdecou'],glasses:['coeur'],earrings:['anneaux','etoiles']};
@@ -1845,7 +1845,7 @@ function randAvatar(seed,over){const r=seeded(seed),p=a=>a[Math.floor(r()*a.leng
  if(r()<.7)s.glasses='aucune';if(r()<.6)s.earrings='aucune';s.bgPattern='uni';s.dress='aucune';return Object.assign(s,over)}
 const NPCS=[
  {id:'ines',name:'Inès',handle:'@ines.mrl',av:{face:'ovale',skin:'#b8784a',nose:'bouton',mouth:'remontante',cheeks:'rose',freckles:'aucune',eyes:'amande',iris:'#4a2a17',brows:'epais',hair:'longs',hairColor:'#1c1412',top:'tshirt',topColor:'#d93b5e',glasses:'aucune',earrings:'anneaux',bgPattern:'uni',bgColor:'#f7d9e3',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
- {id:'kylian',name:'Kylian',handle:'@kyky971',av:{face:'carre',skin:'#80502f',nose:'petit',mouth:'asymetrique',cheeks:'aucune',freckles:'aucune',eyes:'grands',iris:'#4a2a17',brows:'epais',hair:'court',hairColor:'#1c1412',top:'capuche',topColor:'#3d6fd8',glasses:'aucune',earrings:'aucune',bgPattern:'uni',bgColor:'#d6ecf7',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
+ {id:'kylian',name:'Soan',handle:'@soan971',av:{face:'carre',skin:'#80502f',nose:'petit',mouth:'asymetrique',cheeks:'aucune',freckles:'aucune',eyes:'grands',iris:'#4a2a17',brows:'epais',hair:'court',hairColor:'#1c1412',top:'capuche',topColor:'#3d6fd8',glasses:'aucune',earrings:'aucune',bgPattern:'uni',bgColor:'#d6ecf7',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
  {id:'maelle',name:'Maëlle',handle:'@maelle_cheer',av:{face:'coeur',skin:'#f6cfae',nose:'bouton',mouth:'remontante',cheeks:'rose',freckles:'aucune',eyes:'brillants',iris:'#3d7f9a',brows:'arques',hair:'queue',hairColor:'#c08a4e',top:'chemise',topColor:'#e8613c',glasses:'aucune',earrings:'perles',bgPattern:'uni',bgColor:'#fff3c4',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
  {id:'noah',name:'Noah',handle:'@noah.bsk',av:{face:'rond',skin:'#9a6140',nose:'bouton',mouth:'entrouverte',cheeks:'aucune',freckles:'aucune',eyes:'grands',iris:'#4a2a17',brows:'epais',hair:'boucles',hairColor:'#1c1412',top:'tshirt',topColor:'#2fa3a0',glasses:'aucune',earrings:'aucune',bgPattern:'uni',bgColor:'#e3f2e6',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
  {id:'jade',name:'Jade',handle:'@jadou',av:{face:'joufflu',skin:'#eab48a',nose:'petit',mouth:'ronde',cheeks:'rose',freckles:'legeres',eyes:'grands',iris:'#4f7a3a',brows:'fins',hair:'carre',hairColor:'#3b2219',top:'colroule',topColor:'#7a4fd0',glasses:'rondes',earrings:'aucune',bgPattern:'uni',bgColor:'#efe3fb',adj:{eyesY:0,eyesX:0,eyesS:1,browsY:0,browsX:0,mouthY:0,mouthS:1,noseY:0,noseS:1}}},
@@ -1933,7 +1933,7 @@ const FICHES={
   qualites:"Gentil, patient, travailleur",defauts:"Indécis, tête en l'air, oublie tout",
   peurs:"Décevoir ses parents, parler en public",passions:"Basket, mangas, cuisine avec sa grand-mère",
   parle:"Calme, phrases courtes, dit « frère », rit avec « ptdr », très poli avec les adultes",
-  relations:"Meilleur ami de Kylian, apprécie Jade en secret"},
+  relations:"Meilleur ami de Soan, apprécie Jade en secret"},
  jade:{g:'f',o:'bi',age:16,soc:.3,stud:1,rom:.4,hum:.4,
   passe:"Première de la classe depuis la sixième, elle a sauté une classe et s'est toujours sentie un peu à part.",
   famille:"Vit avec sa grand-mère à Sainte-Anne depuis que ses parents travaillent en métropole.",
@@ -1947,28 +1947,28 @@ const FICHES={
   qualites:"Charismatique, sûre d'elle, drôle, très fidèle avec ses amies",defauts:"Aime être admirée, joue avec les sentiments des garçons, un peu superficielle en apparence, supporte mal la critique",
   peurs:"Qu'on ne l'aime que pour son physique, tomber vraiment amoureuse et souffrir, perdre sa place chez les populaires",passions:"Danse, mode et shopping, photos pour Insta, maquillage, R&B",
   parle:"Assurée et taquine, dit « bébé », « trop mignon », « jsp », emojis 😘💋✨, laisse parfois ses messages en vu exprès",
-  relations:"Meilleure amie de Meisha depuis la maternelle ; membre des populaires avec Maëlle et Inès ; Maëlle la voit comme une rivale pour la place de reine du lycée ; Kylian l'a draguée sans succès avant de se mettre avec Eva ; Noah perd ses moyens devant elle"},
+  relations:"Meilleure amie de Meisha depuis la maternelle ; membre des populaires avec Maëlle et Inès ; Maëlle la voit comme une rivale pour la place de reine du lycée ; Soan l'a draguée sans succès avant de se mettre avec Eva ; Noah perd ses moyens devant elle"},
  eva:{g:'f',o:'hetero',age:17,soc:.6,stud:.7,rom:.8,hum:.6,
-  passe:"Elle dessine depuis toute petite et a gagné l'an dernier le concours d'affiches de la région. Très timide en seconde, elle s'est ouverte en rencontrant Kylian, avec qui elle sort depuis l'été dernier.",
+  passe:"Elle dessine depuis toute petite et a gagné l'an dernier le concours d'affiches de la région. Très timide en seconde, elle s'est ouverte en rencontrant Soan, avec qui elle sort depuis l'été dernier.",
   famille:"Vit à Petit-Bourg avec sa mère, professeure d'arts plastiques, et son beau-père menuisier. Une petite sœur de 8 ans, Lou, qui veut tout faire comme elle.",
-  qualites:"Gentille, douce, créative, toujours prête à aider",defauts:"Naïve, évite les disputes, doute beaucoup d'elle, un peu jalouse quand on tourne autour de Kylian",
-  peurs:"Que Kylian la quitte pour une autre, que ses dessins ne valent rien, décevoir sa mère",passions:"Dessin, peinture, carnets de croquis, couchers de soleil, musique douce",
+  qualites:"Gentille, douce, créative, toujours prête à aider",defauts:"Naïve, évite les disputes, doute beaucoup d'elle, un peu jalouse quand on tourne autour de Soan",
+  peurs:"Que Soan la quitte pour une autre, que ses dessins ne valent rien, décevoir sa mère",passions:"Dessin, peinture, carnets de croquis, couchers de soleil, musique douce",
   parle:"Douce et polie, « oh c'est trop mignon », s'excuse souvent, emojis 🎨🌸💕",
-  relations:"En couple avec Kylian depuis l'été ; amie de Jade et Sacha chez les artistes ; se méfie de Kenza, que Kylian a draguée avant elle"},
+  relations:"En couple avec Soan depuis l'été ; amie de Jade et Sacha chez les artistes ; se méfie de Kenza, que Soan a draguée avant elle"},
  noemie:{g:'f',o:'hetero',age:17,soc:.8,stud:.4,rom:.4,hum:.8,spo:1,
   passe:"Seule fille de l'équipe de foot du lycée depuis la seconde. Au début, certains garçons riaient ; elle a marqué un triplé dès son premier match et plus personne n'a rien dit. Elle rêve d'intégrer un centre de formation féminin en métropole.",
   famille:"Vit à Morne-à-l'Eau avec sa mère aide-soignante et ses trois grands frères, tous footballeurs. C'est avec eux qu'elle a appris à jouer dans la cour, pieds nus.",
   qualites:"Déterminée, franche, loyale, meneuse sur le terrain, très drôle",defauts:"Tête de mule, s'énerve vite, mauvaise perdante, cache ses émotions derrière des blagues",
   peurs:"Qu'on ne la prenne pas au sérieux parce qu'elle est une fille, se blesser avant les détections, quitter sa famille pour la métropole",passions:"Foot, matchs de l'équipe de France féminine, dancehall, cuisine créole de sa mère",
   parle:"Directe, chambreuse, « wesh », « vas-y », « on est ensemble », emojis ⚽😤😂",
-  relations:"Coéquipière et amie de Kylian et Noah, qui la respectent sur le terrain ; meilleure amie d'Anaïs, avec qui elle s'entraîne ; Maëlle et Kenza la trouvent trop « brute »"},
+  relations:"Coéquipière et amie de Soan et Noah, qui la respectent sur le terrain ; meilleure amie d'Anaïs, avec qui elle s'entraîne ; Maëlle et Kenza la trouvent trop « brute »"},
  jessica:{g:'f',o:'hetero',age:17,soc:.5,stud:1,rom:.5,hum:.6,
   passe:"Major de sa promo depuis le collège, elle vise une prépa scientifique. L'an dernier, elle a commencé à donner des cours particuliers aux élèves en difficulté, le lundi et le mercredi soir, et elle a fait remonter la moyenne de toute la classe.",
   famille:"Vit aux Abymes avec ses parents, tous deux pharmaciens, et son petit frère Hugo, 12 ans, à qui elle fait réviser chaque soir.",
   qualites:"Brillante, patiente, pédagogue, organisée, bienveillante",defauts:"Perfectionniste, stresse pour tout, a du mal à dire non, un peu donneuse de leçons",
   peurs:"Rater le bac ou sa prépa, décevoir ses parents, qu'on ne l'apprécie que pour son aide",passions:"Sciences, énigmes et sudokus, romans policiers, pâtisserie",
   parle:"Claire et encourageante, « tu vas y arriver », « on reprend ensemble », adore les explications, emojis 📚✏️😊",
-  relations:"Respecte Jade, sa rivale amicale pour la première place ; aide souvent Kylian et Noémie en maths ; Maëlle la trouve « trop scolaire »"},
+  relations:"Respecte Jade, sa rivale amicale pour la première place ; aide souvent Soan et Noémie en maths ; Maëlle la trouve « trop scolaire »"},
  meisha:{g:'f',o:'hetero',age:17,soc:.95,stud:.55,rom:.7,hum:.8,
   passe:"Meilleure amie de Kenza depuis la maternelle, elle est toujours à ses côtés. Juste après Kenza, c'est la fille la plus convoitée du lycée, ce qui l'amuse plus qu'autre chose. Au journal du lycée, elle tient la rubrique mode, la plus lue de chaque numéro.",
   famille:"Vit à Baie-Mahault, dans la même rue que Kenza, avec sa mère qui tient une boutique de prêt-à-porter à Jarry et sa grand-mère. Son père travaille en Martinique et rentre un week-end sur deux.",
@@ -1982,7 +1982,7 @@ const FICHES={
   qualites:"Joviale, pleine d'énergie, généreuse, super esprit d'équipe",defauts:"Têtue, très compétitive, parle fort, ne tient jamais en place",
   peurs:"Se blesser à nouveau, devoir arrêter le sport, laisser tomber son équipe",passions:"Handball, footing au lever du soleil sur la plage, danse, playlists de motivation",
   parle:"Toujours de bonne humeur, plein d'exclamations, « allez ! », « trop fort », emojis 💪😂🔥, rigole beaucoup et motive tout le monde",
-  relations:"Partenaire d'entraînement de Kylian et Noah, s'entend bien avec tout le monde, taquine gentiment Jade pour la sortir de ses livres"},
+  relations:"Partenaire d'entraînement de Soan et Noah, s'entend bien avec tout le monde, taquine gentiment Jade pour la sortir de ses livres"},
   ethan:{g:'m',o:'hetero',age:17,soc:.4,stud:.6,rom:.8,hum:.5,
   passe:"17 ans, Sainte-Anne. Calme, observateur, sensible et rêveur ; il remarque les détails que les autres ne voient pas. Il aide parfois son père à préparer son matériel d'arts plastiques.",
   famille:"Vit avec son père, professeur d'arts plastiques, qu'il admire (peur de ne pas être à la hauteur), et sa grande sœur Océane (21 ans), sa confidente. Parents séparés : sa mère vit en Martinique, relation distante, il en parle peu.",
@@ -2030,7 +2030,7 @@ sacha:{g:'m',o:'homo',age:17,soc:.7,stud:.3,rom:.8,hum:.7,
   qualites:"Créatif, charmeur, ouvert",defauts:"Rêveur, toujours en retard, évite les conflits",
   peurs:"Que son père ait raison, rester un inconnu",passions:"Musique (zouk, gwo ka, rap), guitare, skate",
   parle:"Détendu, un peu poète, dit « gros » et « vibe », références musicales",
-  relations:"Ami d'Inès (qui a un faible pour lui), très proche de Jade, rivalité amicale avec Kylian"}
+  relations:"Ami d'Inès (qui a un faible pour lui), très proche de Jade, rivalité amicale avec Soan"}
 };
 const SEXC={f:'Fille',m:'Garçon',nb:'Non-binaire'},SEXL={f:'une fille',m:'un garçon',nb:'une personne non-binaire'};
 /* accord : transforme « content·e », « amoureux·se », « lycéen·ne »… selon le genre (f, m ; nb garde l'écriture inclusive) */
@@ -2079,7 +2079,7 @@ const VOICE={
 sacha:{start:["Yo, j'ai un nouveau son, tu veux l'écouter ? 🎧","Grosse vibe aujourd'hui","T'es où là ?"],happy:["Gros t'es une vibe à toi tout seul","Ça me touche ça","Ahah j'kiffe"],hurt:["Pas cool gros","Ok… ça casse la vibe","Je préfère pas répondre à ça"],neutral:["Ah ouais","Tranquille","On verra"]},
  fam:{start:["Tout se passe bien au lycée ?","N'oublie pas de ranger ta chambre","On mange à 19h30 ce soir"],happy:["Je suis fier·ère de toi ❤️","Haha tu me fais rire","Ça me fait plaisir de t'entendre"],hurt:["On en reparle à la maison.","Ce ton, non merci.","Je ne t'ai pas élevé·e comme ça."],neutral:["D'accord.","Ok mon cœur.","On verra ça ce soir."]}
 };
-const CONFESS={ines:"Je peux te dire un truc ? 🥺 Je crois que je craque pour toi… vraiment.",kylian:"frr je vais pas tourner autour du pot… tu me plais. voilà c'est dit 😅",maelle:"Bon. Littéralement je pense à toi tout le temps. Tu me plais 💅❤️",noah:"Je sais pas trop comment le dire… mais je t'aime bien. Plus qu'un ami.",jade:"je préfère être honnête : je crois que je tiens à toi plus que je ne le devrais.",ethan:"Je vais pas tourner autour… je pense souvent à toi. Je suis pas du genre à dire ça à la légère. Tu me plais vraiment.",kellian:"Bon… je suis pas trop du genre à dire ça, mais t'es différent·e des autres. Tu me plais vraiment 😭",kais:"Je suis pas doué pour ça… mais je préfère être avec toi qu'avec n'importe qui d'autre. Voilà. C'est dit.",willan:"Bon, pour une fois je vais pas faire de blague… tu me plais vraiment. Genre vraiment. Je suis sérieux 😭",nael:"J'ai essayé d'analyser ça logiquement… et je n'y arrive pas. Je pense que tu me plais. Beaucoup. Voilà, je l'ai dit 😅",sacha:"Gros… t'es dans toutes mes chansons en ce moment. Tu me plais ❤️",anais:"Bon, je suis nulle pour tourner autour du pot alors je fonce : tu me plais 🙈 voilà, c'est dit !",meisha:"Promets-moi de pas le dire à Kenza tout de suite… mais tu me plais. Vraiment 🙈💕",jessica:"J'ai résolu des centaines d'équations, mais celle-là je n'arrive pas à la résoudre : je crois que tu me plais 🙈📚",noemie:"Bon, je suis pas douée pour ça… mais tu me plais. Voilà. Rigole pas 😤❤️",eva:"Je… je suis désolée, je ne devrais pas ressentir ça alors que je suis avec Kylian. Mais tu me plais 🥺💕",kenza:"Tout le monde croit que je joue avec les gens… mais avec toi c'est différent. Tu me plais vraiment 💋"};
+const CONFESS={ines:"Je peux te dire un truc ? 🥺 Je crois que je craque pour toi… vraiment.",kylian:"frr je vais pas tourner autour du pot… tu me plais. voilà c'est dit 😅",maelle:"Bon. Littéralement je pense à toi tout le temps. Tu me plais 💅❤️",noah:"Je sais pas trop comment le dire… mais je t'aime bien. Plus qu'un ami.",jade:"je préfère être honnête : je crois que je tiens à toi plus que je ne le devrais.",ethan:"Je vais pas tourner autour… je pense souvent à toi. Je suis pas du genre à dire ça à la légère. Tu me plais vraiment.",kellian:"Bon… je suis pas trop du genre à dire ça, mais t'es différent·e des autres. Tu me plais vraiment 😭",kais:"Je suis pas doué pour ça… mais je préfère être avec toi qu'avec n'importe qui d'autre. Voilà. C'est dit.",willan:"Bon, pour une fois je vais pas faire de blague… tu me plais vraiment. Genre vraiment. Je suis sérieux 😭",nael:"J'ai essayé d'analyser ça logiquement… et je n'y arrive pas. Je pense que tu me plais. Beaucoup. Voilà, je l'ai dit 😅",sacha:"Gros… t'es dans toutes mes chansons en ce moment. Tu me plais ❤️",anais:"Bon, je suis nulle pour tourner autour du pot alors je fonce : tu me plais 🙈 voilà, c'est dit !",meisha:"Promets-moi de pas le dire à Kenza tout de suite… mais tu me plais. Vraiment 🙈💕",jessica:"J'ai résolu des centaines d'équations, mais celle-là je n'arrive pas à la résoudre : je crois que tu me plais 🙈📚",noemie:"Bon, je suis pas douée pour ça… mais tu me plais. Voilà. Rigole pas 😤❤️",eva:"Je… je suis désolée, je ne devrais pas ressentir ça alors que je suis avec Soan. Mais tu me plais 🥺💕",kenza:"Tout le monde croit que je joue avec les gens… mais avec toi c'est différent. Tu me plais vraiment 💋"};
 
 /* ---------- emploi du temps ---------- */
 const SUBJ={maths:'Maths',francais:'Français',histoire:'Histoire-Géo',svt:'SVT',anglais:'Anglais',physique:'Physique-Chimie',philo:'Philosophie',eps:'EPS',espagnol:'Espagnol'};
@@ -2415,7 +2415,7 @@ const tagLine=ph=>{const t=ph.people.filter(x=>x!==ph.author);return t.length?`<
 const mkC=(by,text,o)=>Object.assign({id:'c'+Date.now().toString(36)+Math.floor(Math.random()*1e8).toString(36),by,text},o||{});
 const C=(by,text)=>mkC(by,text);
 const START_POSTS=[
- {by:'potins',text:"[Anonyme] : quelqu'un a vu avec qui Kylian est reparti après le match ?\n[Sceptique] : arrête d'inventer\n[Anonyme] : ouvrez bien les yeux demain matin devant les casiers.",c:15,r:848,l:18900,comments:[C('kylian',"n'importe quoi 🙄"),C('maelle',"oh le drama 👀")]},
+ {by:'potins',text:"[Anonyme] : quelqu'un a vu avec qui Soan est reparti après le match ?\n[Sceptique] : arrête d'inventer\n[Anonyme] : ouvrez bien les yeux demain matin devant les casiers.",c:15,r:848,l:18900,comments:[C('kylian',"n'importe quoi 🙄"),C('maelle',"oh le drama 👀")]},
  {by:'maelle',text:"Après-midi plage avant les contrôles 🌊",photo:{scene:'plage',people:['maelle','ines']},c:24,r:520,l:12400,comments:[C('ines',"meilleure journée 🥰"),C('noah',"et on m'invite pas ?")]},
  {by:'noah',text:"Entraînement annulé mais on a trouvé un ballon 🏀",photo:{scene:'basket',people:['noah','kylian']},c:40,r:96,l:2300,comments:[C('kylian',"je t'ai mis 3 paniers d'affilée")]},
  {by:'jade',text:"est-ce que le vent raconte nos secrets aux palmiers pendant qu'on dort",c:17,r:310,l:7200,comments:[C('sacha',"ça ferait une belle chanson")]},
@@ -2555,6 +2555,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.kellianIn){G.kellianIn=1;if(G.posts&&!G.posts.some(x=>x.by==='kellian'))G.posts.unshift(mkPost({...KELLIAN_POST,photo:{...KELLIAN_POST.photo,author:'kellian'}}))}
  if(!G.kaisIn){G.kaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='kais'))G.posts.unshift(mkPost({...KAIS_POST,photo:{...KAIS_POST.photo,author:'kais'}}))}
  if(!G.willanIn){G.willanIn=1;if(G.posts&&!G.posts.some(x=>x.by==='willan'))G.posts.unshift(mkPost({...WILLAN_POST,photo:{...WILLAN_POST.photo,author:'willan'}}))}
+ if(!G.soanIn){G.soanIn=1;/* Kylian s'appelle maintenant Soan (l'identifiant interne reste « kylian ») */Object.assign(G,JSON.parse(JSON.stringify(G).replace(/Kylian/g,'Soan').replace(/kyky971/g,'soan971')))}
  if(!G.naelIn){G.naelIn=1;if(G.posts&&!G.posts.some(x=>x.by==='nael'))G.posts.unshift(mkPost({...NAEL_POST,photo:{...NAEL_POST.photo,author:'nael'}}))}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
@@ -2678,8 +2679,8 @@ const REP={
   potins:["Les potins, très peu pour moi 😂","Encore Maëlle qui parle ?"],fatigue:["Pareil, l'entraînement m'a tuée 😴","Dors, champion·ne"],manger:["Bokit après le match 🤤","J'ai une faim de footballeuse 😂"],merci:["De rien 💪","Normal, on est ensemble"],
   q:["Jsp, et toi ?","Peut-être 😂","Bonne question"],def:["Ah ouais ?","Vas-y","Grave","Ahah","Ok ok","Raconte"]},
  eva:{spe:["Arts plastiques et philo 🎨","Arts plastiques, évidemment 🌸"],origine:["Petit-Bourg 🌸 et toi ?","Petit-Bourg, j'adore dessiner la rivière là-bas"],lecture:["Des livres d'art et des BD 📚","Je dessine plus que je lis, pardon 😅"],salut:["Coucou 🌸","Hey toi 💕"],cava:["Oui ça va, et toi ? 🌸","Un peu fatiguée mais ça va 💕"],activite:["Je dessine 🎨","Je peins un coucher de soleil 🌅"],
-  ecole:["Je dessine dans les marges, chut 🤫","On peut réviser ensemble si tu veux 🌸"],sport:["Moi je viens surtout encourager Kylian 😅⚽","Le sport c'est pas trop mon truc 🙈"],musique:["Musique douce pour dessiner 🎧","Sacha m'a fait écouter son nouveau son, trop beau 💕"],
-  weekend:["Plage avec Kylian ce week-end 🌅💕","Je vais peindre au bord de la rivière"],famille:["Ma petite sœur Lou veut tout faire comme moi 🥹","Ma mère est prof d'arts plastiques, c'est elle qui m'a tout appris"],amour:["Je suis avec Kylian 💕 il est trop attentionné","Hihi pourquoi tu demandes ? 🙈"],
+  ecole:["Je dessine dans les marges, chut 🤫","On peut réviser ensemble si tu veux 🌸"],sport:["Moi je viens surtout encourager Soan 😅⚽","Le sport c'est pas trop mon truc 🙈"],musique:["Musique douce pour dessiner 🎧","Sacha m'a fait écouter son nouveau son, trop beau 💕"],
+  weekend:["Plage avec Soan ce week-end 🌅💕","Je vais peindre au bord de la rivière"],famille:["Ma petite sœur Lou veut tout faire comme moi 🥹","Ma mère est prof d'arts plastiques, c'est elle qui m'a tout appris"],amour:["Je suis avec Soan 💕 il est trop attentionné","Hihi pourquoi tu demandes ? 🙈"],
   potins:["Oh non, encore les Potins… 😅","Je préfère pas m'en mêler 🌸"],fatigue:["Repose-toi bien 💕","Moi aussi, j'ai dessiné jusqu'à minuit 😴"],manger:["Un sorbet coco ? 🥥","J'ai trop faim aussi 😅"],merci:["Avec plaisir 🌸","De rien, c'est normal 💕"],
   q:["Je ne sais pas trop… et toi ?","Peut-être 🌸","Bonne question 😅"],def:["Oh c'est mignon 🌸","Ah oui ?","Je vois 💕","Raconte","Trop bien","Hihi"]},
  kenza:{spe:["Anglais et SES, pour bosser dans la mode plus tard ✨","SES et anglais 💅"],origine:["Baie-Mahault 😘 et toi ?","Baie-Mahault, à côté de Jarry, la zone du shopping 💅"],lecture:["Des magazines de mode, ça compte ? 😅","Je lis surtout les commentaires sous mes photos 😂"],salut:["Coucou toi 😘","Hey bébé ✨"],cava:["Toujours 💅 et toi ?","Ça va, un peu fatiguée mais toujours belle 😂"],activite:["Je choisis ma tenue de demain ✨","Je retouche mes photos 📸"],
@@ -2708,7 +2709,7 @@ const REP={
   ecole:["Assez, oui. Je préfère anticiper plutôt que de tout faire à la dernière minute","Je fais un planning de révision, tu veux que je te le passe ?"],sport:["Un peu de natation, de temps en temps","Les échecs, ça compte ? 😅"],musique:["R&B, pop et rap mélodique","J'écoute du R&B en révisant"],
   weekend:["Révisions, documentaires, et un café avec des amis","Je vais voir ma grand-mère, ça me fait du bien"],famille:["Non, je suis enfant unique. J'ai plutôt l'habitude d'être tranquille chez moi","Mon père est ingénieur info, ma mère prof de maths… tu vois le genre 😅"],amour:["Pas actuellement. Mais je ne suis pas contre une relation si je rencontre quelqu'un avec qui je m'entends vraiment bien","C'est une question assez personnelle 😅"]},
 sacha:{spe:["Musique et HLP, gros","Arts-musique, forcément 🎧"],origine:["Lamentin, gros","Moi je suis du Lamentin"],lecture:["J'écris des textes pour mes sons","Je lis des paroles de chansons, c'est de la poésie aussi"],salut:["Yo","Salut, bonne vibe ?"],cava:["Tranquille, la vibe est bonne","Ça va gros, et toi ?"],activite:["Je compose un son 🎧","Je gratte ma guitare au foyer"],
-  ecole:["Les cours… j'arrive toujours en retard 😅","La musique devrait compter au bac"],sport:["Moi c'est skate","Le foot c'est le délire de Kylian"],musique:["T'écoutes quoi toi ? 🎧","Le zouk rétro c'est la base","Je t'envoie mon son si tu veux"],
+  ecole:["Les cours… j'arrive toujours en retard 😅","La musique devrait compter au bac"],sport:["Moi c'est skate","Le foot c'est le délire de Soan"],musique:["T'écoutes quoi toi ? 🎧","Le zouk rétro c'est la base","Je t'envoie mon son si tu veux"],
   weekend:["Ce week-end je joue avec ma mère, gwo ka","Viens au foyer, on fait de la musique"],famille:["Mon père veut que je fasse du commerce… pas moi","Ma mère chante, c'est elle qui m'a tout appris"],amour:["L'amour c'est dans toutes mes chansons","Raconte, gros 👀"],
   potins:["Les Potins c'est pas ma vibe","Encore eux ?"],fatigue:["Moi je dors jamais, je compose","Repose-toi gros"],manger:["Un bokit et je suis bien","J'ai oublié de manger, encore"],merci:["Tranquille","De rien gros"],
   q:["Bonne question gros","Je sais pas, et toi ?","Peut-être, on verra"],def:["Ah ouais","Tranquille","Je vois la vibe","Intéressant","C'est lourd ça","Ok gros"]}};
@@ -4400,18 +4401,18 @@ const INCIDENTS={
   {t:"Meisha et Kenza sont venues au lycée avec exactement la même tenue. Par hasard, jurent-elles 👯‍♀️",self:"on est jumelles, c'est normal 😂"}],
  jessica:[{t:"Jessica a corrigé une erreur au tableau… du prof de maths. M. Lancelot a dû reconnaître qu'elle avait raison 😳📐",self:"je l'ai dit gentiment 😅"},
   {t:"Jessica a eu 20/20 au bac blanc de physique. Rumeur : elle a rendu sa copie 40 minutes en avance 🤯",self:"j'ai juste beaucoup révisé 😊"}],
- noemie:[{t:"Noémie a mis un petit pont à Kylian devant toute la cour. Il ne s'en remet toujours pas 😭⚽",self:"fallait pas me chauffer 😂"},
+ noemie:[{t:"Noémie a mis un petit pont à Soan devant toute la cour. Il ne s'en remet toujours pas 😭⚽",self:"fallait pas me chauffer 😂"},
   {t:"Noémie a contesté une décision de l'arbitre pendant 10 minutes. Carton jaune… et standing ovation des supporters 😤",self:"il y avait main, tout le monde l'a vu !!"}],
  eva:[{t:"Eva a peint une fresque géante sur le mur du foyer… sans autorisation. La proviseure a fini par dire qu'elle la gardait 🎨😳",self:"je suis désolée… mais contente qu'elle reste 🥹"},
-  {t:"Kylian a écrit « EVA ❤️ » avec des coquillages sur la plage et l'a posté. Tout le lycée en parle 🐚💕",self:"il est trop bête… je l'aime 🥹"}],
+  {t:"Soan a écrit « EVA ❤️ » avec des coquillages sur la plage et l'a posté. Tout le lycée en parle 🐚💕",self:"il est trop bête… je l'aime 🥹"}],
  kenza:[{t:"Kenza a reçu trois déclarations d'amour dans la même journée… dont une chantée devant la cantine 🎤😭",self:"je suis pas responsable de ce que ressentent les gens 😘"},
   {t:"Kenza est arrivée au cours de philo avec 20 minutes de retard… et des lunettes de soleil. Mme Florent n'a rien dit 😶",self:"le soleil tapait fort ce matin ✨"},
   {t:"Un garçon de première a offert un bouquet de roses à Kenza devant tout le lycée. Elle a pris une photo… et c'est tout 💐",self:"c'était mignon mais non 😅"}],
  anais:[{t:"Anaïs a été surprise en train d'escalader le portail du lycée à 6 h du matin… pour aller s'entraîner au gymnase 🤾‍♀️😭",self:"j'avais un match samedi, fallait bien s'entraîner 😂💪"},
   {t:"Anaïs a tagué « ALLEZ LES FILLES 🔥 » sur le mur du gymnase avant le match. Convoquée chez la proviseure 😬",self:"j'assume 😅 et on a gagné le match !"},
   {t:"Anaïs a fait tout le cours d'EPS en courant à reculons. M. Bourgeois ne sait plus quoi faire 😂",self:"échauffement spécial 😂"}],
- kylian:[{t:"Kylian a fait un petit pont au CPE dans la cour. Ballon confisqué pour la 3e fois ce mois-ci ⚽😭",self:"il était trop lent frr 😂"},
-  {t:"Kylian a séché la philo pour regarder un match sur son téléphone dans les toilettes. Pris par la proviseure 📵",self:"c'était la finale wsh"}],
+ kylian:[{t:"Soan a fait un petit pont au CPE dans la cour. Ballon confisqué pour la 3e fois ce mois-ci ⚽😭",self:"il était trop lent frr 😂"},
+  {t:"Soan a séché la philo pour regarder un match sur son téléphone dans les toilettes. Pris par la proviseure 📵",self:"c'était la finale wsh"}],
  maelle:[{t:"Maëlle a organisé un flash mob en pleine récré. Même la proviseure a dansé (un peu) 💃",self:"Littéralement le meilleur moment de l'année 💅"},
   {t:"Maëlle a lancé une pétition contre le poisson pané de la cantine : 214 signatures 🐟",self:"Le peuple a parlé 🙄"}],
  jade:[{t:"Un poème anonyme est apparu sur la porte du CDI ce matin. Tout le monde pense que c'est Jade 📜",self:"je ne confirme rien."},
@@ -4711,7 +4712,7 @@ function sendReply(text,stance){
 function refreshPost(p){document.querySelectorAll(`.post[data-id="${p.id}"]`).forEach(el=>el.outerHTML=postHTML(p))}
 
 /* ---------- Insta : comptes, abonnements, débats ---------- */
-const BIO={ines:"Danse dancehall 💃 · K-drama addict 🥺 · Martinique ➜ Guadeloupe ✨",kylian:"⚽ n°10 · Saint-François 🎣 · tkt",maelle:"Capitaine pom-pom 📣 · soirées au Gosier 💅 · DM pour la liste",noah:"🏀 meneur · mangas · la cuisine de mamie 🍛",jade:"poèmes dans la marge.\nastronomie. pas de majuscules.",meisha:"🛍️ shopping addict · rubrique mode du journal ✍️ · ma jumelle @kenza.lcx 👯‍♀️",jessica:"📚 cours particuliers lun & mer 17h-19h · maths 📐 · Les Abymes 😊",noemie:"⚽ seule fille de l'équipe · Morne-à-l'Eau 💪 · on est ensemble",eva:"🎨 dessin · peinture · Petit-Bourg 🌸 · 💕 @kyky971",kenza:"Danse 💃 · mode 💅 · Baie-Mahault 🌴 · DM fermés (ou presque) 😘",anais:"Capitaine hand 🤾‍♀️ · footing 6h 🌅 · toujours le smile 😄",ethan:"🎨 portraits & paysages · 📷 couchers de soleil · soul & jazz · Sainte-Anne",kellian:"🏀 Baie-Mahault · toujours partant · c'est carré 🔥",kais:"🔧 moteurs · rap · Les Abymes",willan:"⚽ Gosier · bouyon & shatta 🔥 · toujours en retard 😭",nael:"📚 maths & physique · ♟️ · Petit-Bourg · futur ingénieur",sacha:"🎧 zouk · gwo ka · rap — nouveau son bientôt",potins:"Tout ce qui se passe au lycée 👀 · envoie tes potins en DM"};
+const BIO={ines:"Danse dancehall 💃 · K-drama addict 🥺 · Martinique ➜ Guadeloupe ✨",kylian:"⚽ n°10 · Saint-François 🎣 · tkt",maelle:"Capitaine pom-pom 📣 · soirées au Gosier 💅 · DM pour la liste",noah:"🏀 meneur · mangas · la cuisine de mamie 🍛",jade:"poèmes dans la marge.\nastronomie. pas de majuscules.",meisha:"🛍️ shopping addict · rubrique mode du journal ✍️ · ma jumelle @kenza.lcx 👯‍♀️",jessica:"📚 cours particuliers lun & mer 17h-19h · maths 📐 · Les Abymes 😊",noemie:"⚽ seule fille de l'équipe · Morne-à-l'Eau 💪 · on est ensemble",eva:"🎨 dessin · peinture · Petit-Bourg 🌸 · 💕 @soan971",kenza:"Danse 💃 · mode 💅 · Baie-Mahault 🌴 · DM fermés (ou presque) 😘",anais:"Capitaine hand 🤾‍♀️ · footing 6h 🌅 · toujours le smile 😄",ethan:"🎨 portraits & paysages · 📷 couchers de soleil · soul & jazz · Sainte-Anne",kellian:"🏀 Baie-Mahault · toujours partant · c'est carré 🔥",kais:"🔧 moteurs · rap · Les Abymes",willan:"⚽ Gosier · bouyon & shatta 🔥 · toujours en retard 😭",nael:"📚 maths & physique · ♟️ · Petit-Bourg · futur ingénieur",sacha:"🎧 zouk · gwo ka · rap — nouveau son bientôt",potins:"Tout ce qui se passe au lycée 👀 · envoie tes potins en DM"};
 const FANS0={ines:412,kylian:986,maelle:2310,noah:644,jade:158,anais:871,kenza:2680,eva:540,noemie:930,jessica:390,meisha:2140,ethan:560,kellian:2050,kais:740,willan:1850,nael:480,sacha:1520,potins:3140};
 const FOLLOW_AT=20;
 /* posts des camarades selon leur personnalité (vie du lycée, passions, avis) ; Jade poste souvent des poèmes */
@@ -5710,7 +5711,7 @@ const KB={
   shop:'Destreland',sortie:'Les Salines au Gosier',iles:['Saint-Barthélemy','Saint-Martin','Martinique'],expr:['bébé','jsp','trop mignon'],sens:[],sort:1,
   fs:"Un grand frère en BTS. Il surveille tous les garçons qui m'approchent 🙄",parents:"Oui, mon père est avocat et ma mère a un institut de beauté.",apres:"Danse, shopping avec Meisha, et des photos pour Insta 😘"},
  eva:{res:'Petit-Bourg',avant:null,lycee:null,raison:null,gt:'bt',shop:'Milénis',sortie:'Grande-Anse à Deshaies',iles:['Les Saintes','Dominique'],expr:["oh c'est trop mignon",'en vrai'],sens:[],sort:.5,
-  fs:"Une petite sœur, Lou, elle a 8 ans et elle veut tout faire comme moi 🌸",parents:"Je vis avec ma mère et mon beau-père.",apres:"Je dessine, et je retrouve Kylian après son entraînement."},
+  fs:"Une petite sœur, Lou, elle a 8 ans et elle veut tout faire comme moi 🌸",parents:"Je vis avec ma mère et mon beau-père.",apres:"Je dessine, et je retrouve Soan après son entraînement."},
  noemie:{res:"Morne-à-l'Eau",avant:null,lycee:null,raison:null,gt:'gt',shop:'Jarry',sortie:'Plage de la Caravelle',iles:['Martinique'],expr:['wesh','vas-y','on est ensemble',"t'es chaud ?"],sens:[],sort:.7,
   fs:"Trois grands frères, tous footeux. C'est avec eux que j'ai appris à jouer.",parents:"Je vis avec ma mère et mes frères.",apres:"Entraînement de foot, et après je regarde les matchs des Bleues."},
  jessica:{res:'Les Abymes',avant:null,lycee:null,raison:null,gt:'gt',shop:'Milénis',sortie:'Jardin botanique de Deshaies',iles:['Marie-Galante','Les Saintes'],expr:['tranquille',"c'est carré"],sens:[],sort:.4,
@@ -6086,7 +6087,7 @@ let talk=null;
 const TALK_SCENE={cafet:'cantine',cour:'cour',cdi:'couloir',foyer:'couloir',cantine:'cantine',maison:'chambre',plage:'plage',centre:'cour',promenade:'marche',cafe:'glacier',glacier:'glacier',brunch:'cantine',resto:'cantine',fastfood:'fastfood',shopping:'marche',cinema:'cinema',club:'couloir'};
 const TALK_SUGG=["Salut !","Ça va ?","Tu fais quoi ici ?","On s'assoit ensemble ?","T'as vu le dernier post des Potins ?","Tu fais quoi ce week-end ?"];
 const GESTES={pos:['*sourit*','*rigole*','*te tape dans la main*','*a les yeux qui brillent*'],neg:['*fronce les sourcils*','*croise les bras*','*soupire*','*détourne le regard*'],neu:['*hausse les épaules*','*hoche la tête*','*réfléchit une seconde*','*te regarde*']};
-const PLACE_TALK={cafet:["Tu prends quoi ? Moi un café, je dors debout ☕","Les croissants sont déjà partis, c'est un scandale 😭"],cour:["Il fait trop chaud dans cette cour 😅","Regarde, Kylian fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
+const PLACE_TALK={cafet:["Tu prends quoi ? Moi un café, je dors debout ☕","Les croissants sont déjà partis, c'est un scandale 😭"],cour:["Il fait trop chaud dans cette cour 😅","Regarde, Soan fait encore le show là-bas 😂"],cdi:["*chuchote* on va se faire griller par la documentaliste","*à voix basse* parle doucement, on est au CDI"],
  foyer:["Le foyer est blindé aujourd'hui","Quelqu'un a mis du zouk au foyer, j'adore"],cantine:["C'est quoi ce plat encore ?","Tu manges ça toi ? 😂"],plage:["L'eau est trop bonne aujourd'hui","Regarde le coucher de soleil…"],centre:["Y a trop de monde au centre-ville aujourd'hui","On passe au glacier après ?"],maison:["On est bien à la maison quand même","Tu as mangé ?"]};
 const talkPlace=()=>{const ph=phase();return ph.type==='soir'||ph.type==='nuit'?'maison':G.place||'cour'};
 function openTalk(id,o){o=o||{};
@@ -6175,8 +6176,8 @@ const DAILY={
  jade:{m:["{jour}. café. cours de {mat}. survivre.","le matin, la cour est silencieuse. c'est mon moment préféré."],j:["j'ai trouvé un livre de 1952 au cdi. je suis heureuse.","bibliothèque > tout le reste"],s:["le ciel est rose ce soir au-dessus de sainte-anne","la lune est presque pleine. levez les yeux ce soir.","bonne nuit à ceux qui regardent encore les étoiles"]},
  meisha:{m:["{jour} : tenue assortie avec Kenza 👯‍♀️","Cours de {mat}… je dessine des robes dans la marge 😅"],j:["Réunion du journal à midi ✍️","Qui vient à Jarry après les cours ? 🛍️","Kenza m'a encore piqué mon gloss 😤💅"],s:["Haul du jour en story 🛍️","J'écris ma rubrique mode 📝","Bonne nuit, demain on brille ✨"]},
  jessica:{m:["{jour} : fiches prêtes ✏️","Cours de {mat} ce matin, j'adore ce chapitre 😊"],j:["Pause cookies au CDI 🍪","Qui a besoin d'aide pour le devoir de {mat} ?","Cours particulier ce soir 17 h 📚"],s:["Mon petit frère a eu 17 en maths 🥹","Roman policier avant de dormir 🔍","Bonne nuit, et n'oubliez pas de relire vos cours 😊"]},
- noemie:{m:["{jour}, jonglage avant les cours ⚽","Cours de {mat}… j'ai mal aux jambes 😂"],j:["Foot à la récré, qui vient ? ⚽","Petit pont à Kylian, encore 😂","Entraînement ce soir 💪"],s:["Match de l'équipe de France féminine ce soir 🇫🇷⚽","Colombo de ma mère après l'entraînement 🍛","Bonne nuit, demain on gagne 💪"]},
- eva:{m:["Bonjour 🌸 {jour} commence avec un croquis","Cours de {mat}… j'ai dessiné dans la marge, pardon 🙈"],j:["Pause dessin au CDI 🎨","Kylian m'a apporté un sorbet coco 🥹💕","Atelier d'arts plastiques ce soir 🌸"],s:["Aquarelle avant de dormir 🎨","Ma petite sœur m'a dessiné un chat, trop mignon 🐱","Bonne nuit 🌙💕"]},
+ noemie:{m:["{jour}, jonglage avant les cours ⚽","Cours de {mat}… j'ai mal aux jambes 😂"],j:["Foot à la récré, qui vient ? ⚽","Petit pont à Soan, encore 😂","Entraînement ce soir 💪"],s:["Match de l'équipe de France féminine ce soir 🇫🇷⚽","Colombo de ma mère après l'entraînement 🍛","Bonne nuit, demain on gagne 💪"]},
+ eva:{m:["Bonjour 🌸 {jour} commence avec un croquis","Cours de {mat}… j'ai dessiné dans la marge, pardon 🙈"],j:["Pause dessin au CDI 🎨","Soan m'a apporté un sorbet coco 🥹💕","Atelier d'arts plastiques ce soir 🌸"],s:["Aquarelle avant de dormir 🎨","Ma petite sœur m'a dessiné un chat, trop mignon 🐱","Bonne nuit 🌙💕"]},
  kenza:{m:["{jour} : tenue du jour validée 💅✨","Cours de {mat}… réveillez-moi à la sonnerie 😴"],j:["Selfie de la récré parce que je le vaux bien 😘","Trois messages de garçons avant midi, record battu 😂","Répétition de danse ce soir 💃"],s:["Masque visage et R&B, bonne nuit 💆‍♀️","Je choisis déjà ma tenue de demain ✨","Bonne nuit, ne rêvez pas trop de moi 😘"]},
  anais:{m:["Footing de 6 h ✅ {jour} commence bien 🌅💪","Cours de {mat} puis entraînement, journée chargée ! 🔥"],j:["Séance de muscu au gymnase 💪","Qui vient courir sur la plage demain ? 🏃‍♀️","Victoire à l'entraînement, on lâche rien 🤾‍♀️"],s:["Mes petits frères ont transformé le salon en terrain de hand 😂","Smoothie mangue-passion après le sport 🥭","Bonne nuit, demain on recommence 💪😴"]},
   ethan:{m:["{jour}, un café et un carnet de croquis ✏️","Cours de {mat} ce matin, j'ai dessiné dans la marge… un peu"],j:["Pause dessin dans la cour, la lumière est belle aujourd'hui","Je trouve que la cantine était presque bonne aujourd'hui"],s:["Soul et crayons ce soir","Balade au bord de la mer avant de rentrer","Bonne nuit. J'aime bien cette ambiance du soir"]},
@@ -6297,11 +6298,11 @@ const EVENTS=[
   {t:"Je lui prête mon devoir",rel:{noah:10}},{t:"Je l'aide à le refaire vite",rel:{noah:6},gems:2},{t:"Je refuse",rel:{noah:-6}}]},
  {who:'jade',text:"Jade est assise seule sur un banc, ses écouteurs sur les oreilles.",choices:[
   {t:"Je m'assois avec elle",rel:{jade:9}},{t:"Je lui fais un signe de loin",rel:{jade:2}},{t:"Je rejoins le groupe de Maëlle",rel:{maelle:4,jade:-3}}]},
- {who:'potins',text:"Un mot anonyme est glissé dans ton casier : « Je sais ce que Kylian raconte sur toi. »",choices:[
-  {t:"Je vais voir Kylian",rel:{kylian:-5},post:{by:'potins',text:"[Anonyme] : grosse discussion entre {me} et @kyky971 près des casiers 👀"}},{t:"Je jette le mot",gems:1},{t:"J'en parle à Inès",rel:{ines:6}}]},
+ {who:'potins',text:"Un mot anonyme est glissé dans ton casier : « Je sais ce que Soan raconte sur toi. »",choices:[
+  {t:"Je vais voir Soan",rel:{kylian:-5},post:{by:'potins',text:"[Anonyme] : grosse discussion entre {me} et @soan971 près des casiers 👀"}},{t:"Je jette le mot",gems:1},{t:"J'en parle à Inès",rel:{ines:6}}]},
  {who:'sacha',text:"Sacha cherche quelqu'un pour chanter sur sa nouvelle compo.",choices:[
   {t:"Je me lance",rel:{sacha:10},post:{by:'sacha',text:"duo avec {me} enregistré 🎤",scene:'chambre'}},{t:"Je propose Inès à ma place",rel:{sacha:3,ines:4}},{t:"Je n'ai pas le temps",rel:{sacha:-4}}]},
- {who:'kylian',text:"Kylian te défie au foot devant toute la cour.",choices:[
+ {who:'kylian',text:"Soan te défie au foot devant toute la cour.",choices:[
   {t:"J'accepte le défi",rel:{kylian:7},gems:2,post:{by:'kylian',text:"match serré contre {me} ⚽ revanche demain",scene:'cour'}},{t:"Je propose d'arbitrer",rel:{kylian:2,noah:2}},{t:"Je l'ignore",rel:{kylian:-5}}]},
  {who:'ines',text:"Inès te confie qu'elle a raté son contrôle de SVT et qu'elle n'ose pas le dire chez elle.",choices:[
   {t:"Je la rassure",rel:{ines:9}},{t:"Je propose de réviser ensemble",rel:{ines:7},gems:1},{t:"Je change de sujet",rel:{ines:-6}}]},
@@ -6311,8 +6312,8 @@ const EVENTS=[
   {t:"Oui, merci beaucoup !",rel:{jessica:6}},{t:"Je m'inscris à ses cours particuliers",rel:{jessica:8},tutor:1},{t:"Non merci, je préfère chercher par moi-même",rel:{jessica:-2}}]},
  {who:'noemie',text:"Noémie te défie aux tirs au but devant toute la cour. Les garçons parient déjà contre toi.",choices:[
   {t:"J'accepte, je vais tout donner",rel:{noemie:8},post:{by:'noemie',text:"tirs au but contre {me} 😂 respect, t'as du cran ⚽",scene:'cour'}},{t:"Je propose d'être dans les buts à sa place",rel:{noemie:5,kylian:2}},{t:"Je refuse, trop de monde",rel:{noemie:-3}}]},
- {who:'eva',text:"Eva a vu Kenza rire très fort avec Kylian à la récré. Elle te demande, les larmes aux yeux, si elle doit s'inquiéter.",choices:[
-  {t:"Je la rassure : Kylian n'a d'yeux que pour elle",rel:{eva:8,kylian:2}},{t:"Je lui conseille d'en parler à Kylian",rel:{eva:5}},{t:"Je lui dis de se méfier de Kenza",rel:{eva:4,kenza:-6}}]},
+ {who:'eva',text:"Eva a vu Kenza rire très fort avec Soan à la récré. Elle te demande, les larmes aux yeux, si elle doit s'inquiéter.",choices:[
+  {t:"Je la rassure : Soan n'a d'yeux que pour elle",rel:{eva:8,kylian:2}},{t:"Je lui conseille d'en parler à Soan",rel:{eva:5}},{t:"Je lui dis de se méfier de Kenza",rel:{eva:4,kenza:-6}}]},
  {who:'kenza',text:"Kenza te demande ton avis : elle hésite entre deux garçons qui l'ont invitée samedi… et te fixe un peu trop longtemps.",choices:[
   {t:"Je lui conseille de suivre son cœur",rel:{kenza:6}},{t:"Je lui dis qu'elle joue trop avec les garçons",rel:{kenza:-6,jade:3}},{t:"Je lui propose plutôt une sortie avec moi",rel:{kenza:5},post:{by:'potins',text:"[Anonyme] : on a vu @kenza.lcx rigoler avec {me} pendant toute la récré 👀"}}]},
  {who:'anais',text:"Anaïs déboule dans la cour en riant : « Footing demain à 6 h sur la plage, tu viens avec moi ? »",choices:[
@@ -6446,12 +6447,12 @@ const EVENTS2=[
   {t:"L'encourager et garder ça pour toi",rel:{ethan:8},mark:['ethan','confiance']},{t:"Lui proposer d'y aller avec lui",rel:{ethan:6}},{t:"Le raconter à Maëlle pour rigoler",rel:{ethan:-14,maelle:3},mark:['ethan','trahison'],potins:"Ethan aurait peur d'exposer ses dessins ? 🎨👀"}]},
  {who:'ines',text:"Inès te prend à part : « Je te dis un secret, mais tu le gardes pour toi… je crois que je craque pour Sacha. »",choices:[
   {t:"Je garde le secret",rel:{ines:8},mark:['ines','confiance']},{t:"Je l'encourage à lui parler",rel:{ines:5,sacha:1}},{t:"Je le répète à Maëlle",rel:{ines:-14,maelle:4},mark:['ines','trahison'],potins:"Inès craquerait pour quelqu'un du club de musique… 🎸👀"}]},
- {who:'noah',text:"Noah te montre en cachette qu'il a eu 6 en maths : « Ne dis rien à Kylian, il va se moquer. »",choices:[
-  {t:"Je ne dis rien et je propose de l'aider",rel:{noah:9},mark:['noah','confiance'],know:{maths:2}},{t:"Je le rassure",rel:{noah:5}},{t:"Je raconte tout à Kylian pour rigoler",rel:{noah:-12,kylian:3},mark:['noah','trahison']}]},
+ {who:'noah',text:"Noah te montre en cachette qu'il a eu 6 en maths : « Ne dis rien à Soan, il va se moquer. »",choices:[
+  {t:"Je ne dis rien et je propose de l'aider",rel:{noah:9},mark:['noah','confiance'],know:{maths:2}},{t:"Je le rassure",rel:{noah:5}},{t:"Je raconte tout à Soan pour rigoler",rel:{noah:-12,kylian:3},mark:['noah','trahison']}]},
  {who:'maelle',text:"Maëlle : « Choisis ton camp. Soit tu traînes avec nous, soit avec Jade. Pas les deux. »",choices:[
   {t:"Je reste avec Maëlle",rel:{maelle:8,jade:-8},mark:['jade','abandon']},{t:"Je défends Jade",rel:{jade:10,maelle:-10},mark:['maelle','rivalite']},{t:"Je refuse de choisir",rel:{maelle:-3,jade:3}}]},
- {who:'kylian',text:"Kylian a cassé la fenêtre du gymnase. La CPE cherche le coupable et te demande si tu as vu quelque chose.",choices:[
-  {t:"Je ne dis rien",rel:{kylian:9},mark:['kylian','confiance']},{t:"Je conseille à Kylian d'avouer",rel:{kylian:2}},{t:"Je le dénonce",rel:{kylian:-15,noah:-5},mark:['kylian','trahison'],potins:"Quelqu'un a balancé Kylian pour la fenêtre du gymnase 😬"}]},
+ {who:'kylian',text:"Soan a cassé la fenêtre du gymnase. La CPE cherche le coupable et te demande si tu as vu quelque chose.",choices:[
+  {t:"Je ne dis rien",rel:{kylian:9},mark:['kylian','confiance']},{t:"Je conseille à Soan d'avouer",rel:{kylian:2}},{t:"Je le dénonce",rel:{kylian:-15,noah:-5},mark:['kylian','trahison'],potins:"Quelqu'un a balancé Soan pour la fenêtre du gymnase 😬"}]},
  {who:'jade',text:"Jade te fait lire un poème très personnel qu'elle n'a montré à personne.",choices:[
   {t:"Je lui dis sincèrement ce que j'en pense",rel:{jade:9},mark:['jade','confiance']},{t:"Je lui dis que c'est très beau",rel:{jade:4}},{t:"Je le prends en photo pour le montrer",rel:{jade:-16},mark:['jade','trahison'],potins:"Un poème de Jade circule dans toute la classe… 📜"}]},
  {who:'kenza',text:"Kenza te confie en pleurant qu'elle en a marre qu'on ne la remarque que pour son physique. Elle te demande de ne le dire à personne.",choices:[
