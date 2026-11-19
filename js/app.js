@@ -2873,18 +2873,18 @@ function smartLine(id,text,chan){
  /* une fille (toi) flirte avec un garçon qui n'est pas son copain : sa réponse suit ce qu'il ressent VRAIMENT
     (intéressé → hésitant → pas intéressé), son caractère (timide, séducteur, joueur) — même les meilleures questions ne le font pas forcément craquer */
  /* apparence (maquillage, poids, coiffure) à un garçon qui n'est pas ton copain : gentil, plus tendre s'il est attiré */
- if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const A=APP_Q.find(([re])=>re.test(t));if(A){const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+ if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const A=APP_Q.find(([re])=>re.test(t));if(A){const v=crAm(id,'me'),att=crCan(id,'me')&&!coupleOf(id);
   const L=A[1].filter(x=>!/sentiments/.test(x));return att&&v>=55?pickR(L.slice(0,2)):pickR(L.slice(2))}}
  /* question « de couple » posée à quelqu'un qui n'est pas ton copain : il le rappelle, selon son attirance */
- if(isNpc(id)&&G.partner!==id&&COUPLE_Q.some(([re])=>re.test(t))&&!FLIRT_Q.some(([re])=>re.test(t))){const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+ if(isNpc(id)&&G.partner!==id&&COUPLE_Q.some(([re])=>re.test(t))&&!FLIRT_Q.some(([re])=>re.test(t))){const v=crAm(id,'me'),att=crCan(id,'me')&&!coupleOf(id);
   return sty(id,fresh(att&&v>=55?["Euh… on n'est pas encore ensemble, mais… peut-être que oui 😏","Tu me poses une question de couple là… t'essaies de me dire quelque chose ? 😳"]:att&&v>=25?["Haha, on n'est pas ensemble 😅 mais c'est mignon comme question","Pourquoi tu me demandes ça ? 🙈"]:["Mais… on n'est pas ensemble 😅","Euh, c'est une question pour ton copain ça, non ? 😅"]))}
  if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const C=COMPL_Q.find(([re])=>re.test(t));
-  if(C){const v=G.rel[id].amour,shy=FICHES[id].soc<=.5,att=crCan(id,'me')&&!coupleOf(id);
+  if(C){const v=crAm(id,'me'),shy=FICHES[id].soc<=.5,att=crCan(id,'me')&&!coupleOf(id);
    /* intéressé (≥55) : flirte en retour ; touché mais timide ou à moitié intéressé : maladroit ; sinon : poli */
    let i=!att||v<25?3:v>=55?(shy&&!(v>=75&&Math.random()<.3)?2:Math.random()<.5?0:1):v>=40?(shy?2:1):2;
    if(i<=1)relChange(id,0,1);return C[1][i]}
   const Q=FLIRT_Q.find(([re])=>re.test(t));
-  if(Q){const v=G.rel[id].amour,F=FICHES[id],shy=F.soc<=.5,player=F.soc>=.75&&F.rom<.45;
+  if(Q){const v=crAm(id,'me'),F=FICHES[id],shy=F.soc<=.5,player=F.soc>=.75&&F.rom<.45;
    let i=!crCan(id,'me')||coupleOf(id)?3:v>=68?0:v>=45?1:v>=25?2:3;
    if(shy&&i<2&&Math.random()<.5)i++;                    /* le timide est intéressé mais n'ose pas le montrer */
    if(player&&i>=2&&crCan(id,'me')&&!coupleOf(id)&&Math.random()<.5)i=1;   /* le joueur flirte sans vouloir de relation */
@@ -2893,13 +2893,13 @@ function smartLine(id,text,chan){
    const r=Q[1][i];return i===3&&coupleOf(id)&&Math.random()<.5?`${r} Et puis… je suis avec ${CNAME(coupleOf(id))}.`:r}}
  /* « qu'est-ce qui te plaît chez moi ? » : selon ce qu'il ou elle ressent vraiment */
  if(isNpc(id)&&/(qu'?est[- ]ce qu'?(il |qui )?te pla[iî]t chez moi|qu'est qui te pla[iî]t chez moi|ce qui te pla[iî]t chez moi|tu (aimes|kiffes) quoi chez moi|pourquoi tu m'aimes bien)/.test(t)){
-  const v=G.rel[id].amour,a=G.rel[id].ami;
+  const v=crAm(id,'me'),a=G.rel[id].ami;
   if(G.partner===id||(v>=55&&crCan(id,'me')))return sty(id,fresh(["Ton sourire, déjà… et ta façon de me regarder 😳","Tout. Ta façon de parler, ton rire… t'as vraiment un truc 😏","T'es {p:différent·e} des autres. Avec toi je me sens bien, c'est tout","Quand t'es là, la journée passe mieux. Voilà 🙈"]),'happy');
   if(a>=50)return sty(id,fresh(["T'es quelqu'un de vrai, on rigole bien ensemble 😄","T'es {p:gentil·le}, et avec toi y a jamais de prise de tête","T'es là quand il faut, c'est rare 🙂"]),'happy');
   return sty(id,fresh(["Euh… on se connaît pas encore assez pour que je réponde 😅","Bonne question… laisse-moi le temps de te connaître 😄"]))}
  /* « je t'aime », « je peux plus me passer de toi »… à quelqu'un qui n'est pas ton ou ta partenaire : selon son attirance réelle */
  if(isNpc(id)&&G.partner!==id&&!/\?/.test(t)&&/(je t ?'?aime\b(?! bien)|je suis (amoureu|piqu|accro)|je (ne )?peux (plus|pas) me passer de toi|je pense à toi (tout le temps|sans arr)|tu comptes (énormément|tellement) pour moi|mon c(œ|oe)ur bat)/.test(t)){
-  const v=G.rel[id].amour,att=crCan(id,'me')&&!coupleOf(id);
+  const v=crAm(id,'me'),att=crCan(id,'me')&&!coupleOf(id);
   if(att&&v>=55){relChange(id,1,3);return pickR(["Oh… 😳 ","Sérieux ? ","Ça me fait trop plaisir… "])+(ilyLine(id)||"Moi aussi, je crois.")}
   if(att&&v>=25){relChange(id,0,1);return sty(id,fresh(["Ah… 😳 je savais pas. Ça me touche, vraiment","Wow… je sais pas quoi dire. Laisse-moi un peu de temps 🙈"]))}
   relChange(id,0,0);return sty(id,fresh(coupleOf(id)?[`C'est gentil… mais je suis avec ${CNAME(coupleOf(id))} 😕`]:["Je t'aime bien aussi… mais en ami·e 😅","Ça me touche, mais je ne ressens pas la même chose, désolé·e"]))}
@@ -4018,7 +4018,7 @@ const ILY={
  dispute:["Même quand on se dispute, mes sentiments ne changent pas.","Je ne veux pas te perdre.","Je tiens tellement à toi, même quand on se prend la tête."]};
 /* niveau de la relation avec toi */
 function ilyLevel(id){if(G.partner===id){if(G.pday==null)G.pday=G.day;const d=G.day-G.pday;if(G.pfight!=null&&G.day-G.pfight<=3)return 'dispute';return d<7?'debut':d<30?'installe':'proche'}
- const v=G.rel[id].amour;return v>=68?'forte':v>=55?'flirt':null}
+ const v=crAm(id,'me');return v>=68?'forte':v>=55?'flirt':null}
 function ilyLine(id){const lv=ilyLevel(id);if(!lv)return null;const F=FICHES[id];
  const st=F.soc<=.5?'timide':F.rom>=.7?'roman':F.soc>=.8&&F.rom<.7?'taquin':Math.random()<.5?'direct':'indirect';
  let L=ILY[lv];if(lv==='installe'||lv==='proche')L=L.concat(ILY[st],ILY.indirect);else if(lv==='debut')L=L.concat(st==='timide'?ILY.timide:[]);
@@ -4039,8 +4039,11 @@ function crCompat(a,b){if(a==='me'||b==='me'){const o=a==='me'?b:a;return clamp(
  const A=FICHES[a],B=FICHES[b],d=['soc','stud','hum','rom'].reduce((t,k)=>t+Math.abs(A[k]-B[k]),0)/4,club=Object.values(CLUBS).some(c=>c.m.includes(a)&&c.m.includes(b));
  return clamp(.65-d*1.2+.15*sharedPass(a,b).length+(club?.1:0),0,1)}
 const crAmi=(a,b)=>b==='me'?G.rel[a].ami:link(a,b).ami;
-const crAm=(a,b)=>b==='me'?G.rel[a].amour:link(a,b).amour;
-function crSet(a,b,v){v=clamp(Math.round(v),0,100);if(b==='me')G.rel[a].amour=v;else link(a,b).amour=v}
+/* envers toi : sentiments CACHÉS (G.cr.f) qui naissent tout seuls ; la jauge Amour (G.rel.amour) ne monte que quand toi tu flirtes
+   ou quand il ou elle flirte avec toi spontanément (crShow) */
+const crAm=(a,b)=>b==='me'?Math.max(G.rel[a].amour,(crInit().f||{})[a]||0):link(a,b).amour;
+function crShow(a,n){const c=crInit(),h=(c.f||{})[a]||0;G.rel[a].amour=clamp(Math.max(G.rel[a].amour,Math.min(h,G.rel[a].amour+n)),0,100)}
+function crSet(a,b,v){v=clamp(Math.round(v),0,100);if(b==='me'){const c=crInit();c.f=c.f||{};c.f[a]=v}else link(a,b).amour=v}
 function crIt(a,b,n){const c=crInit(),k=pk(a,b);c.it[k]=Math.min(40,(c.it[k]||0)+(n||1));if(b==='me'){c.lit=c.lit||{};c.lit[a]=G.day}}
 const crBold=a=>FICHES[a].soc*.6+FICHES[a].rom*.4;
 function crTarget(a,b){const c=crInit(),ami=crAmi(a,b),it=c.it[pk(a,b)]||0,d=c.dec[a+'>'+b];
@@ -4053,7 +4056,7 @@ function crushDay(){const c=crInit(),ids=NPCS.map(n=>n.id),s=socInit();
  ids.forEach(a=>{const cand=[...ids,'me'].filter(b=>crCan(a,b));
   cand.forEach(b=>{const v=crAm(a,b),t=crTarget(a,b);
    /* envers toi : ça ne monte que si vous avez passé du temps ensemble ces 3 derniers jours, et lentement (+1,5 max par jour) */
-   if(b==='me')return;/* envers toi : l'amour ne bouge que quand TU flirtes (Prescillia) */
+   if(b==='me'){/* sentiments cachés : montent si vous avez passé du temps ensemble ces 3 derniers jours (+1,5 max/jour) */const h=(c.f=c.f||{})[a]??G.rel[a].amour,recent=G.day-((c.lit||{})[a]??-99)<=3;c.f[a]=clamp(t>h?(recent?h+Math.min((t-h)*.08,1.5):h):h+(t-h)*.04,0,100);if(c.f[a]<G.rel[a].amour)c.f[a]=G.rel[a].amour;return}
    crSet(a,b,v+(t>v?(t-v)*.1:(t-v)*.05)+(v>=10?rnd(-2,2):0))});
   const cp=coupleOf(a);let cur=c.of[a];
   if(cp){c.of[a]=cp;return}
@@ -4072,16 +4075,16 @@ const CR_SUB=[n=>`👀 ${n} te regarde souvent en cours…`,n=>`😊 ${n} t'a so
 const CR_MSG_SUB=["Elle te va trop bien cette tenue aujourd'hui 😊","J'aime bien quand on parle tous les deux 😊","Ça te dit qu'on aille au glacier un de ces jours ? 🍦","T'as un super sourire, je sais pas si on te l'a déjà dit 🙈"];
 const CR_MSG_DIR=["T'es vraiment canon aujourd'hui 😏","Je crois que je passe un peu trop de temps à penser à toi… 😳","Si je t'invite à un vrai rendez-vous, tu dis oui ? 😏","Avoue, toi aussi tu sens qu'il y a un truc entre nous 👀"];
 const CR_HINT=["J'ai un crush sur quelqu'un… mais j'ose pas lui dire 🙈","Tu crois que je devrais avouer à quelqu'un qu'il ou elle me plaît ? 😳"];
-const crMsg=(a,L)=>{if(G.noOut&&G.noOut[a]!=null)L=L.filter(x=>!/(glacier|rendez-vous|on aille)/.test(x));if(!L.length)return;const th=(G.threads[a]||[]).slice(-30).map(m=>m.text),f=L.filter(x=>!th.includes(genderize(x,a)));pushMsg(a,'them',pickR(f.length?f:L))};
+const crMsg=(a,L)=>{crShow(a,4);if(G.noOut&&G.noOut[a]!=null)L=L.filter(x=>!/(glacier|rendez-vous|on aille)/.test(x));if(!L.length)return;const th=(G.threads[a]||[]).slice(-30).map(m=>m.text),f=L.filter(x=>!th.includes(genderize(x,a)));pushMsg(a,'them',pickR(f.length?f:L))};
 function crToMe(a,lvl,bold,st,d){const n=CNAME(a),r=Math.random(),c=crInit(),k=a+'>me';c.nt=c.nt||{};
- phInit();if(!G.knows[a]||G.blocked[a]){if(G.blocked[a])return;if(lvl>=2&&Math.random()<.3){G.knows[a]=1;phAdd(a,CG(a,`${n} t'a donné son numéro en rougissant 😳`))}else if(Math.random()<.3)note(CG(a,pickR(CR_SUB)(n)));return}
+ phInit();if(!G.knows[a]||G.blocked[a]){if(G.blocked[a])return;if(lvl>=2&&Math.random()<.3){G.knows[a]=1;crShow(a,5);phAdd(a,CG(a,`${n} t'a donné son numéro en rougissant 😳`))}else if(Math.random()<.3){crShow(a,2);note(CG(a,pickR(CR_SUB)(n)))}return}
  if(lvl>=3&&(!d||(d.r==='temps'&&G.day-d.day>=7)||(d.r==='interet'&&G.day-d.day>=4))&&r<.25+crBold(a)*.35){crDeclare(a,d);return}
  if(G.day-(c.nt[a]||-9)<2)return;                                             /* pas tous les jours */
- const sub=()=>{const L=CR_SUB.map(f=>CG(a,f(n))).filter(x=>!G.log.slice(-15).some(l=>l.t===x));note(pickR(L.length?L:[CG(a,CR_SUB[0](n))]))};
+ const sub=()=>{crShow(a,2);const L=CR_SUB.map(f=>CG(a,f(n))).filter(x=>!G.log.slice(-15).some(l=>l.t===x));note(pickR(L.length?L:[CG(a,CR_SUB[0](n))]))};
  if(lvl>=2&&(c.st[k]||0)<2){c.st[k]=2;c.nt[a]=G.day;crMsg(a,bold?CR_MSG_DIR:CR_HINT);return}
  if(lvl>=2&&r<.4){c.nt[a]=G.day;if(r<.12&&ilyLine(a))crMsg(a,[ilyLine(a)]);else if(bold)crMsg(a,CR_MSG_DIR);else if(r<.15)crMsg(a,CR_MSG_SUB);else sub();return}
  if(r<.3){c.nt[a]=G.day;if(bold&&r<.12)crMsg(a,CR_MSG_SUB);else sub()}}
-function crDeclare(a,d){const re=d&&(d.r==='temps'||d.r==='interet');
+function crDeclare(a,d){const re=d&&(d.r==='temps'||d.r==='interet');crShow(a,100);
  pushMsg(a,'them',re?pickR(d.r==='temps'?["Alors… t'as eu le temps de réfléchir ? 🙈","Je voulais savoir… t'as réfléchi à ce que je t'ai dit ? 😳"]:["Bon, j'ai bien vu que toi aussi… alors je te le demande vraiment : on sort ensemble ? 💕","Tu m'as fait comprendre que je te plaisais aussi… alors, on se lance ? 😳💕"])
   :crBold(a)>=.7?pickR(["Bon, je vais être direct·e : tu me plais. Beaucoup. 😳💘","J'ai un crush sur toi depuis un moment… voilà, c'est dit 💘"]):pickR(["Je sais pas comment te dire ça… mais je crois que je suis amoureux·se de toi 🥺💘","Ça fait longtemps que je voulais te le dire… tu me plais vraiment 🙈💘"]),
   {mq:{k:'crush',o:['Moi aussi, tu me plais 💞','Hmm… peut-être que toi aussi tu me plais un peu 😏','Désolé·e, je ne ressens pas la même chose','Je tiens à toi, mais restons ami·e·s','Laisse-moi un peu de temps pour réfléchir'],d:{}}});
