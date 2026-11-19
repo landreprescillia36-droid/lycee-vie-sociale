@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='142';
+const APP_VERSION='143';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2555,6 +2555,7 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.kellianIn){G.kellianIn=1;if(G.posts&&!G.posts.some(x=>x.by==='kellian'))G.posts.unshift(mkPost({...KELLIAN_POST,photo:{...KELLIAN_POST.photo,author:'kellian'}}))}
  if(!G.kaisIn){G.kaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='kais'))G.posts.unshift(mkPost({...KAIS_POST,photo:{...KAIS_POST.photo,author:'kais'}}))}
  if(!G.willanIn){G.willanIn=1;if(G.posts&&!G.posts.some(x=>x.by==='willan'))G.posts.unshift(mkPost({...WILLAN_POST,photo:{...WILLAN_POST.photo,author:'willan'}}))}
+ if(!G.amFix){G.amFix=1;/* amour monté sans flirt (avant la v143) : remis à 0, sauf ton ou ta partenaire et les vrais flirts (> 15) */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&n.id!==G.partner&&r.amour<=15)r.amour=0})}
  if(!G.soanIn){G.soanIn=1;/* Kylian s'appelle maintenant Soan (l'identifiant interne reste « kylian ») */Object.assign(G,JSON.parse(JSON.stringify(G).replace(/Kylian/g,'Soan').replace(/kyky971/g,'soan971')))}
  if(!G.naelIn){G.naelIn=1;if(G.posts&&!G.posts.some(x=>x.by==='nael'))G.posts.unshift(mkPost({...NAEL_POST,photo:{...NAEL_POST.photo,author:'nael'}}))}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
@@ -4052,7 +4053,7 @@ function crushDay(){const c=crInit(),ids=NPCS.map(n=>n.id),s=socInit();
  ids.forEach(a=>{const cand=[...ids,'me'].filter(b=>crCan(a,b));
   cand.forEach(b=>{const v=crAm(a,b),t=crTarget(a,b);
    /* envers toi : ça ne monte que si vous avez passé du temps ensemble ces 3 derniers jours, et lentement (+1,5 max par jour) */
-   if(b==='me'){const recent=G.day-((c.lit||{})[a]??-99)<=3;crSet(a,b,t>v?(recent?v+Math.min((t-v)*.08,1.5):v):v+(t-v)*.04);return}
+   if(b==='me')return;/* envers toi : l'amour ne bouge que quand TU flirtes (Prescillia) */
    crSet(a,b,v+(t>v?(t-v)*.1:(t-v)*.05)+(v>=10?rnd(-2,2):0))});
   const cp=coupleOf(a);let cur=c.of[a];
   if(cp){c.of[a]=cp;return}
@@ -6047,8 +6048,8 @@ function startOuting(p){if(p.fam){startFamOuting(p);return}
 }
 function outing(kind,pid){
  const p=G.plans.find(x=>x.id===pid);if(!p)return;if(kind.startsWith('d_')){dateMoment(p,kind);return}const id=p.by,r=G.rel[id];let ch,msg;G.st.outings++;G.energy=clamp(G.energy-8,0,100);
- if(kind==='fun')ch=relChange(id,7,1);else if(kind==='deep')ch=relChange(id,6,2);
- else if(kind==='photo'){ch=relChange(id,5,1);G.posts.unshift(mkPost({by:id,text:`Sortie ${PLACE_OUT[p.place]} avec ${myHandle()} ✨`,photo:{scene:p.place==='plage'?'plage':p.place==='glacier'?'cantine':'cour',people:[id,'me'],author:id},c:5,r:30,l:600,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==id)).id)]}))}
+ if(kind==='fun')ch=relChange(id,7,0);else if(kind==='deep')ch=relChange(id,6,0);
+ else if(kind==='photo'){ch=relChange(id,5,0);G.posts.unshift(mkPost({by:id,text:`Sortie ${PLACE_OUT[p.place]} avec ${myHandle()} ✨`,photo:{scene:p.place==='plage'?'plage':p.place==='glacier'?'cantine':'cour',people:[id,'me'],author:id},c:5,r:30,l:600,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==id)).id)]}))}
  else ch=r.ami>=55?relChange(id,2,9):relChange(id,-3,-2);
  msg=`Sortie avec ${WHO[id].name} : ${ch.split(' : ')[1]||'bon moment'}`;note(msg);closeSheet();toast(msg);checkObjectives();saveG();drawGame();
 }
