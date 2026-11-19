@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='143';
+const APP_VERSION='144';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2807,6 +2807,22 @@ const MD_IDX=MODELES.map(m=>{const n=mdNorm(m);return {m,tri:mdTri(n),tok:mdTok(
 function modeleProche(t){const n=mdNorm(t);if(n.split(' ').length<3)return null;const tri=mdTri(n),tok=mdTok(n);let best=null,bs=0;
  for(const e of MD_IDX){const sc=.55*mdDice(tri,e.tri)+.45*mdDice(tok,e.tok);if(sc>bs){bs=sc;best=e.m}}if(best==="Je t'aime."&&/aime bien/.test(n))return null;return bs>=.56?best:null}
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
+/* conseils pour se faire des ami·e·s : ceux qu'il ou elle apprécie, avec qui tu as des passions en commun, que tu connais encore peu */
+function friendAdvice(id){const pm=passOf('me'),ids=NPCS.map(n=>n.id).filter(x=>x!==id&&x!==G.partner&&G.rel[x].ami<45);
+ if(!ids.length)return pickR(["Franchement, tu connais déjà tout le monde 😂","T'as déjà plein d'ami·e·s, tu rigoles ?"]);
+ const sc=x=>link(id,x).ami+22*sharedPass(x,'me').length+(Object.values(CLUBS).some(c=>c.m.includes(x)&&(G.clubs||[]).includes(Object.keys(CLUBS).find(k=>CLUBS[k]===c)))?12:0)+Math.random()*15;
+ const L=ids.filter(x=>link(id,x).ami>=30).sort((p,q)=>sc(q)-sc(p)),pr=x=>FICHES[x].g==='f'?'Elle':FICHES[x].g==='nb'?'Iel':'Il';
+ const why=x=>{const sp=sharedPass(x,'me')[0],q=(FICHES[x].qualites||'').split(',').map(w=>w.trim().toLowerCase()).filter(Boolean);
+  if(sp&&PASS[sp])return `${pr(x)} adore ${PASS[sp].n.toLowerCase()} comme toi ${PASS[sp].e}`;
+  if(coupleOf(id)===x)return `C'est ${FICHES[x].g==='f'?'ma copine':'mon copain'}, ${pr(x).toLowerCase()} est trop ${q[0]||'cool'} 😊`;
+  if(link(id,x).ami>=65)return `C'est ${FICHES[x].g==='f'?'une de mes meilleures amies':'un de mes meilleurs potes'}, ${pr(x).toLowerCase()} est ${q[0]||'trop cool'}${q[1]?' et '+q[1]:''}`;
+  return `${pr(x)} est ${q[0]||'sympa'}${q[1]?' et '+q[1]:''}`};
+ if(!L.length)return pickR(["Hmm… honnêtement je sais pas trop, je traîne pas avec grand monde 😅","Bonne question… essaie les clubs, c'est là qu'on rencontre du monde !"]);
+ const a=L[0],b=L[1],worst=NPCS.map(n=>n.id).filter(x=>x!==id&&x!==a&&x!==b).sort((p,q)=>link(id,p).ami-link(id,q).ami)[0];
+ let r=`${pickR(["Va voir","Parle à","Essaie avec"])} ${CNAME(a)} ! ${why(a)}.`;
+ if(b&&Math.random()<.7){const w=sharedPass(b,'me').length?why(b):(()=>{const q=(FICHES[b].qualites||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);return `${pr(b)} est ${q[0]||'cool'}${q[1]?' et '+q[1]:''}`})();r+=` ${pickR(['Et','Sinon,','Tu peux aussi aller voir'])} ${CNAME(b)}${pickR([' aussi',''])} : ${w.replace(/^./,c=>c.toLowerCase())}.`}
+ if(worst&&link(id,worst).ami<30&&Math.random()<.5){const d=(FICHES[worst].defauts||'').split(',')[0].trim().toLowerCase();r+=` Par contre, méfie-toi de ${CNAME(worst)}${d?`, ${pr(worst).toLowerCase()} peut être ${d}`:''} 😬`}
+ return r}
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
  {const m=modeleProche(text);if(m)t=m.toLowerCase()}/* phrase qui ressemble à un modèle de Prescillia */
@@ -2845,6 +2861,8 @@ function smartLine(id,text,chan){
  if(isNpc(id)&&chan==='talk'&&!(talk&&talk.call)){
   if(/(ton (num|num[ée]ro|06|0690|tel|t[ée]l[ée]phone|portable)|passe[- ]moi ton|je peux avoir ton|tu me (donnes|passes|files) ton|on s'[ée]change (nos|les) num)/.test(t)){phInit();if(G.phone[id])return sty(id,fresh(["Mais tu l'as déjà 😂","T'as déjà mon numéro, écris-moi !"]));const r=phAsk(id);if(/s'[ée]change/.test(t)&&G.phone[id])G.knows[id]=1;return r}
   if(/(je te (donne|passe|file|note) mon (num|num[ée]ro|06|tel)|voil[aà] mon (num|num[ée]ro)|prends mon num|note mon num)/.test(t)){phInit();if(G.knows[id])return sty(id,fresh(["Je l'ai déjà 😉","T'inquiète, je l'ai déjà !"]));return phGive(id)}}
+ /* « j'essaie de me faire des ami·e·s, tu me conseilles qui ? », « je sais pas à qui parler » : il ou elle te conseille de vrais camarades */
+ if(isNpc(id)&&/(me faire des (ami|pote|copain|copine)|(conseill|recommand)[a-z]* qui|tu me conseill|je sais pas (à|a) qui parler|je (ne )?sais pas (à|a) qui (aller|m'adresser)|je connais personne|je connais pas grand monde|qui (je peux|j'peux|pourrais-je) (aller voir|parler|aborder)|t'as quelqu'un (à|a) me pr[ée]senter|tu (connais|vois) qui de (sympa|cool|gentil))/.test(t))return sty(id,friendAdvice(id),'happy');
  /* « ça va ? » : la personne répond et te retourne la question */
  if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
   G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
