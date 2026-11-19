@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='134';
+const APP_VERSION='135';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2788,10 +2788,13 @@ function smartLine(id,text,chan){
    note(`📅 ${WHO[id].name} : ${EVT[k].n.toLowerCase()} ${planWhen(pl).replace(' vers ',' à ')}`);toast(`📅 ${EVT[k].n} ${planWhen(pl).replace(' vers ',' à ')}`);relChange(id,2,0);
    return sty(id,fresh([`Trop bien 😄 C'est ${planWhen(pl).replace(' vers ',' à ')}, ${EVT[k].out}. Je compte sur toi ! ${EVT[k].ic}`,`Grave ! ${planWhen(pl).replace(' vers ',' à ').replace(/^./,c=>c.toUpperCase())} ${EVT[k].out}, ça me ferait trop plaisir ${EVT[k].ic}`]),'happy')}
   return sty(id,fresh(["Bien sûr, quand tu veux 😊","Carrément, passe quand tu veux !"]),'happy')}
+ /* « tu veux pas dire ? », « dis-moi » après une question sur sa rupture */
+ if(isNpc(id)&&G.ctopic&&G.ctopic[id]==='rupture'&&/(veux pas (dire|en parler|me dire)|dis[- ]moi|raconte|allez+|stp|s'il te pla[iî]t|pourquoi tu (veux|dis) pas)/.test(t)){G.ctopic[id]=null;
+  if(G.rel[id].ami<40)return sty(id,fresh(["Non vraiment, c'est perso 😕","Je préfère garder ça pour moi, désolé·e"]),'sad');return sty(id,pickR(["Bon… ok. ","Bah… entre nous. ","Ok, mais tu gardes ça pour toi. "])+breakWhy(id),'sad')}
  /* « pourquoi vous avez rompu ? » : l'ex donne le vrai motif (le même que l'autre ex) ; un·e autre camarade ne sait que ce qu'on lui a confié */
  if(isNpc(id)&&/(rompu|cass[ée]|s[ée]par[ée]|c'est fini|plus ensemble|ta rupture|leur rupture|votre rupture|t'es plus avec|tu es plus avec)/.test(t)){
-  const named=NPCS.find(n=>n.id!==id&&new RegExp('\\b'+n.name.toLowerCase()+'\\b').test(t)),r=named?(lastBreak(id,named.id)||lastBreak(named.id)):lastBreak(id);
-  if(r&&(r.v===id||r.c===id)){if(G.rel[id].ami<20)return sty(id,fresh(["C'est perso… je préfère pas en parler.","Ça te regarde pas trop, désolé·e 😕"]));return sty(id,breakWhy(id,named&&named.id),'sad')}
+  const named=NPCS.find(n=>n.id!==id&&new RegExp('(^|[^a-zà-ÿ])'+n.name.toLowerCase()+'([^a-zà-ÿ]|$)').test(t));let r=named?(lastBreak(id,named.id)||lastBreak(named.id)||oldEx(id,named.id)||oldEx(named.id)):(lastBreak(id)||oldEx(id));G.ctopic=G.ctopic||{};G.ctopic[id]=r&&(r.v===id||r.c===id)?'rupture':null;
+  if(r&&(r.v===id||r.c===id)){if(!/(pourquoi|pk|pq|raison|s'est pass|qu'est-ce qui)/.test(t)){const o2=CNAME(r.v===id?r.c:r.v);return sty(id,fresh([`Non… c'est fini avec ${o2} 😕`,`Ouais, c'est fini entre ${o2} et moi`,`Non, on n'est plus ensemble. C'est mieux comme ça`]),'sad')}if(G.rel[id].ami<20)return sty(id,fresh(["C'est perso… je préfère pas en parler.","Ça te regarde pas trop, désolé·e 😕"]));return sty(id,breakWhy(id,named&&named.id),'sad')}
   if(r){const fr=[r.v,r.c].find(y=>link(id,y).ami>=60);if(fr&&G.rel[id].ami>=40){const o=fr===r.v?r.c:r.v,X=r.x?CNAME(r.x):'';return sty(id,`D'après ${CNAME(fr)}… « ${genderize((fr===r.v?BRK[r.k].v:BRK[r.k].c)(brP(o),X,r.x),fr)} » Mais tu le tiens pas de moi 🤫`)}
    return sty(id,fresh(["Aucune idée… les Potins racontent n'importe quoi 👀","J'en sais rien, demande-leur directement","Tout le monde a sa version, moi je sais pas 🤷"]))}
   if(named)return sty(id,fresh(["Hein ? Je savais même pas 😮","Ah bon ? Première nouvelle"]));
@@ -3841,7 +3844,7 @@ const BRK={
  popularite:{n:'Popularité',pub:5,v:P=>`${P.Il} avait honte de moi devant les autres.`,c:()=>"J'avais peur du regard des autres… c'était nul de ma part."},
  rivalite:{n:'Rivalité',pub:6,v:()=>"On était trop en compétition, on se soutenait plus.",c:()=>"On se tirait dessus au lieu de se soutenir."},
  triangle:{n:'Triangle amoureux',x:'crush',pub:2,v:(P,X)=>`${P.Il} s'intéressait à ${X}.`,c:(P,X)=>`${X} m'intéressait… je pouvais pas continuer comme ça.`},
- maturite:{n:'Manque de maturité',pub:5,v:()=>"On savait pas gérer, on était pas prêt·e·s.",c:()=>"On était pas assez mûr·e·s pour être ensemble."},
+ maturite:{n:'Manque de maturité',pub:5,v:()=>"On savait pas gérer, on était pas prêts.",c:()=>"On était pas assez mûrs pour être ensemble."},
  toxique:{n:'Relation toxique',pub:6,v:()=>"On se faisait du mal tout le temps.",c:()=>"C'était devenu toxique, pour tous les deux."}};
 const BRK_PUB=[(A,B)=>`Oups… ${A} et ${B}, que tout le lycée pensait inséparables, ne seraient apparemment plus ensemble. Les choses auraient-elles mal tourné ? 👀`,
  (A,B)=>`Il semblerait que ${A} et ${B} regardent désormais ailleurs… Une histoire qui sentait pourtant le grand amour vient de prendre fin. 💔`,
@@ -3860,11 +3863,15 @@ function brkThird(k,v,c){const t=BRK[k].x,ids=NPCS.map(n=>n.id).filter(y=>y!==v&
  if(t==='amiC'){return npcBff(c,[v])||null}
  if(t==='ex'){const e=(G.exes||[]).filter(([p,q])=>(p===c||q===c)&&p!==v&&q!==v).pop();return e?(e[0]===c?e[1]:e[0]):null}
  return null}
+function brkMake(a,b,c,v,W,old){let k,x;for(let n=0;n<20;n++){const tot=W.reduce((q,[,w])=>q+w,0);let r=Math.random()*tot;k=W.find(([,w])=>(r-=w)<0)[0];x=brkThird(k,v,c);if(x!==null)break}
+ G.breaks=G.breaks||[];const R={v,c,k,x:x||'',day:old?G.day-30:G.day,done:old?['flirtbff','jaloux','dispute','recup','parti','rumeur','groupe','amis','decouv']:[]};G.breaks.push(R);G.exes=G.exes||[];G.exes.push([a,b,R.day]);return R}
+/* rupture d'avant cette version (pas de motif enregistré) : l'ex = amour à 20 des deux côtés ; on lui donne un motif une fois pour toutes */
+function oldEx(id,w){const L=NPCS.map(n=>n.id).filter(y=>y!==id&&(!w||y===w)&&link(id,y).amour===20&&link(y,id).amour===20&&coupleOf(id)!==y);const y=L[0];if(!y)return null;
+ const c=Math.random()<.5?id:y,v=c===id?y:id;return brkMake(id,y,c,v,Object.keys(BRK).map(k=>[k,1]),1)}
 function breakCouple(a,b){const c=link(a,b).amour<=link(b,a).amour?a:b,v=c===a?b:a,ids=Object.keys(BRK);
  /* motifs probables selon la situation (crush ailleurs, amitié qui s'effondre…) */
  const cr=crInit().of[c],W=ids.map(k=>{let w=1;if(cr&&cr!==v&&['emotion','triangle','infidele','reseaux'].includes(k))w=4;if(link(a,b).ami<45&&['disputes','toxique','attention','sentiments','rivalite'].includes(k))w=3;return [k,w]});
- let k,x;for(let n=0;n<20;n++){const tot=W.reduce((q,[,w])=>q+w,0);let r=Math.random()*tot;k=W.find(([,w])=>(r-=w)<0)[0];x=brkThird(k,v,c);if(x!==null)break}
- G.breaks=G.breaks||[];G.breaks.push({v,c,k,x:x||'',day:G.day,done:[]});G.exes=G.exes||[];G.exes.push([a,b,G.day]);
+ brkMake(a,b,c,v,W);
  G.posts.unshift(mkPost({by:'potins',text:'[Anonyme] : '+pickR(BRK_PUB)(WHO[a].handle,WHO[b].handle),c:22,r:300,l:7000}));/* les noms, jamais la vraie cause */
  newsPush(`${WHO[a].name} et ${WHO[b].name} se sont séparé·e·s`,'💔');delete socInit().rom[pk(a,b)];link(a,b).amour=20;link(b,a).amour=20;crInit().of[a]=crInit().of[a]===b?null:crInit().of[a];crInit().of[b]=crInit().of[b]===a?null:crInit().of[b]}
 const lastBreak=(id,w)=>(G.breaks||[]).filter(r=>(r.v===id||r.c===id)&&(!w||r.v===w||r.c===w)).pop();
