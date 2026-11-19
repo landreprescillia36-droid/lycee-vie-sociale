@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='138';
+const APP_VERSION='139';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2787,7 +2787,7 @@ const COMPL_Q=[
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
- const fresh=L=>{const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
+ const fresh=L=>{if(!L||!L.length)L=(isNpc(id)&&(voiceOf(id).neutral||[]).length)?voiceOf(id).neutral:["Ah ouais ?","Je vois 🙂","Ok !"];/* liste manquante : jamais d'erreur */const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
  if(!R){if(!isFam(id)){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}R=FAMREP[famKind(id)]}
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
@@ -3190,11 +3190,13 @@ const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.da
 const proposalText=(id,pl)=>{const sp=sharedPass(id,'me');if(sp.length&&Math.random()<.5){const p=PASS[pickR(sp)];return `On a la même passion ${p.e} ça te dit de venir ${p.act} avec moi ${planWhen(pl)} ? (rendez-vous ${PLACE_OUT[pl.place]})`}return `${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();};
 async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
+ if(isNpc(id)){phInit();G.knows[id]=1}/* tu lui écris : il ou elle a ton numéro, sa réponse arrive */
  pushMsg(id,'me',text);bdayWish(id,text);needUp('soc',1);G.st.msgs++;if(isFam(id))G.st.famTalks++;busyId=id;drawChatMsgs();
  let out=null;
  if(SAMPLE){try{out=await SAMPLE.json(buildPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
  else await new Promise(r=>setTimeout(r,900+Math.random()*900));
- if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=fallbackReply(id,text);
+ if(!out||typeof out.reponse!=='string'||!out.reponse.trim()){try{out=fallbackReply(id,text)}catch(e){console.error(e);out=null}}
+ if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out={reponse:isNpc(id)?pickR(voiceOf(id).neutral||['Ah ouais ?']):'Ah ?',amitie:0,amour:0};/* une erreur ne doit jamais bloquer « … écrit » */
  if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
  busyId=null;
  const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
@@ -6074,7 +6076,8 @@ async function sendTalk(text){
  let out=null;
  if(SAMPLE){try{out=await SAMPLE.json(buildTalkPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
  else await new Promise(r=>setTimeout(r,700+Math.random()*700));
- if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out=talkFallback(id,text);
+ if(!out||typeof out.reponse!=='string'||!out.reponse.trim()){try{out=talkFallback(id,text)}catch(e){console.error(e);out=null}}
+ if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out={reponse:isNpc(id)?pickR(voiceOf(id).neutral||['Ah ouais ?']):'Ah ?',amitie:0,amour:0};
  busyId=null;if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
  G.talks[id].push({from:'them',text:couplePolish(id,genderize(out.reponse.trim().slice(0,300),id))});G.talks[id]=G.talks[id].slice(-60);
  const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
