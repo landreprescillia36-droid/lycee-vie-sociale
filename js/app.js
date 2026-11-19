@@ -2800,6 +2800,10 @@ function smartLine(id,text,chan){
    return sty(id,fresh(["Aucune idée… les Potins racontent n'importe quoi 👀","J'en sais rien, demande-leur directement","Tout le monde a sa version, moi je sais pas 🤷"]))}
   if(named)return sty(id,fresh(["Hein ? Je savais même pas 😮","Ah bon ? Première nouvelle"]));
  }
+ /* en vrai : « tu me passes ton numéro ? », « je te donne mon numéro » */
+ if(isNpc(id)&&chan==='talk'&&!(talk&&talk.call)){
+  if(/(ton (num|num[ée]ro|06|0690|tel|t[ée]l[ée]phone|portable)|passe[- ]moi ton|je peux avoir ton|tu me (donnes|passes|files) ton|on s'[ée]change (nos|les) num)/.test(t)){phInit();if(G.phone[id])return sty(id,fresh(["Mais tu l'as déjà 😂","T'as déjà mon numéro, écris-moi !"]));const r=phAsk(id);if(/s'[ée]change/.test(t)&&G.phone[id])G.knows[id]=1;return r}
+  if(/(je te (donne|passe|file|note) mon (num|num[ée]ro|06|tel)|voil[aà] mon (num|num[ée]ro)|prends mon num|note mon num)/.test(t)){phInit();if(G.knows[id])return sty(id,fresh(["Je l'ai déjà 😉","T'inquiète, je l'ai déjà !"]));return phGive(id)}}
  /* « ça va ? » : la personne répond et te retourne la question */
  if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
   G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
@@ -3908,22 +3912,21 @@ function phAdd(id,why){phInit();const nw=!G.phone[id];G.phone[id]=1;G.knows[id]=
 /* ami·e commun·e qui peut te passer le numéro */
 const phMutual=id=>NPCS.map(n=>n.id).find(f=>f!==id&&G.phone[f]&&!G.blocked[f]&&G.rel[f].ami>=50&&link(f,id).ami>=50);
 function phAsk(id){phInit();const r=G.rel[id],F=FICHES[id],cr=crInit().of[id]==='me',n=WHO[id].name;
- if(G.phAsk[id]!=null&&G.day-G.phAsk[id]<3){toast(`${n} t'a déjà dit non… attends un peu`);return}
+ if(G.phAsk[id]!=null&&G.day-G.phAsk[id]<3){const t=pickR(["Je t'ai déjà dit non… 😅","Toujours pas, désolé·e"]);personLine(id,t);return G.phLine.t}
  const ok=r.ami>=25||cr||(r.ami>=5&&Math.random()<F.soc*.8)||(r.ami>=0&&Math.random()<F.soc*.35);
  if(ok){phAdd(id,`${n} t'a donné son numéro`);relChange(id,1,0);personLine(id,pickR(["Oui, tiens ! 📱","Bien sûr, note-le 😊","Vas-y, je te l'écris"]))}
  else{G.phAsk[id]=G.day;relChange(id,-1,0);personLine(id,pickR(r.ami<0?["Non, désolé·e.","Euh… non."]:["Euh… on se connaît pas encore assez 😅","Plus tard peut-être 😅","Je le donne pas trop, désolé·e"]))}
- saveG();openFiche(id)}
-function phGive(id){phInit();G.knows[id]=1;const r=G.rel[id];personLine(id,pickR(r.ami>=20?["Ok, je t'écris ce soir 😊","Super, je t'enregistre !"]:["Ah… ok, merci 😅","D'accord, je le note"]));note(`📱 Tu as donné ton numéro à ${WHO[id].name}`);saveG();openFiche(id)}
+ saveG();return G.phLine.t}
+function phGive(id){phInit();G.knows[id]=1;const r=G.rel[id];personLine(id,pickR(r.ami>=20?["Ok, je t'écris ce soir 😊","Super, je t'enregistre !"]:["Ah… ok, merci 😅","D'accord, je le note"]));note(`📱 Tu as donné ton numéro à ${WHO[id].name}`);saveG();return G.phLine.t}
 function phViaFriend(id){const f=phMutual(id);if(!f)return;phAdd(id,`${WHO[f].name} t'a passé le numéro de ${WHO[id].name}`);saveG();openFiche(id)}
 function phBlock(id){phInit();if(G.blocked[id]){delete G.blocked[id];toast(`${WHO[id].name} est débloqué·e`)}else{G.blocked[id]=1;toast(`🚫 ${WHO[id].name} est bloqué·e : plus aucun message`)}saveG();openFiche(id)}
 function phDelete(id){phInit();delete G.phone[id];toast(`Contact supprimé (${WHO[id].name} a toujours ton numéro)`);saveG();openFiche(id)}
 /* ce que la personne dit en vrai : petite bulle sur la fiche */
-function personLine(id,t){G.phLine={id,t:genderize(t,id),day:G.day}}
+function personLine(id,t){G.phLine={id,t:genderize(t,id),day:G.day,fresh:1}}
 function phoneCard(id){phInit();const L=G.phLine&&G.phLine.id===id&&G.phLine.day===G.day?`<p class="bubble-them" style="margin:6px 0 10px">« ${esc(G.phLine.t)} »</p>`:'';
  if(G.blocked[id])return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<p class="muted" style="margin-top:0">Numéro bloqué : tu ne reçois plus ses messages.</p><div class="row" style="justify-content:flex-start"><button class="gbtn ghost" type="button" data-phblock="${id}">Débloquer</button></div></div>`;
  if(G.phone[id])return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<div class="row" style="justify-content:flex-start"><button class="gbtn" type="button" data-chat="${id}">Envoyer un message</button><button class="gbtn ghost" type="button" data-phdel="${id}">Supprimer le contact</button><button class="gbtn ghost" type="button" data-phblock="${id}">Bloquer</button></div></div>`;
- const mf=phMutual(id);
- return `<div class="card"><span class="eyebrow">📱 Téléphone</span>${L}<p class="muted" style="margin-top:0">Tu n'as pas son numéro.${G.knows[id]?' '+WHO[id].name+' a le tien.':''}</p><div class="row" style="justify-content:flex-start"><button class="gbtn" type="button" data-phask="${id}">Demander son numéro</button>${G.knows[id]?'':`<button class="gbtn ghost" type="button" data-phgive="${id}">Donner mon numéro</button>`}${mf?`<button class="gbtn ghost" type="button" data-phvia="${id}">Demander à ${esc(WHO[mf].name)}</button>`:''}</div></div>`}
+ return `<div class="card"><span class="eyebrow">📱 Téléphone</span><p class="muted" style="margin-top:0">Tu n'as pas son numéro.${G.knows[id]?' '+WHO[id].name+' a le tien.':''} Demande-le-lui en vrai, quand tu le ou la croises (au lycée, en sortie, au club…).</p></div>`}
 /* chaque matin : les camarades proches finissent par échanger leurs numéros avec toi */
 function phoneDay(){phInit();NPCS.forEach(n=>{const id=n.id;if(G.phone[id]||G.blocked[id])return;const a=G.rel[id].ami;
  if(a>=40&&(G.met[id]||0)>=1&&Math.random()<.25)phAdd(id,`${n.name} t'a donné son numéro`)})}
@@ -5012,6 +5015,7 @@ function openPerson(id){
  openSheet(`<div class="who"><div class="av">${avatarOf(id)}</div><div style="flex:1;min-width:0"><h2>${WHO[id].name}</h2><p class="muted" style="margin:2px 0 0">${PLACES[G.place]||'Au lycée'} · ${statusOf(id)}</p></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <p class="muted" style="margin:0">${esc(ressentiShort(id))}</p>${gaugesHTML(id)}
  <div class="acts">${acts.map(([a,l])=>`<button class="act" type="button" data-pa="${a}" data-id="${id}" ${G.done[k+a]?'disabled':''}><span>${l}</span></button>`).join('')}</div>
+ ${(phInit(),!G.phone[id]||!G.knows[id])?`<div class="acts">${G.phone[id]?'':`<button class="act" type="button" data-phask="${id}"><span>📱 Demander son numéro</span></button>`}${G.knows[id]?'':`<button class="act" type="button" data-phgive="${id}"><span>📱 Donner mon numéro</span></button>`}</div>`:''}${G.phLine&&G.phLine.id===id&&G.phLine.day===G.day&&G.phLine.fresh?`<p class="bubble-them" style="margin:0">« ${esc(G.phLine.t)} »</p>`:''}
  <div class="acts"><button class="act" type="button" data-askopen="${id}"><span>❓ Poser une question</span></button><button class="act" type="button" data-bffopen="${id}"><span>${G.bff===id?'⭐ '+bffWord(id,1):'⭐ Lui demander d\'être '+bffWord(id)}</span></button></div>
  ${romHTML(id)}
  <p class="story-text" id="paOut"></p>
@@ -6455,8 +6459,8 @@ $('sheetBody').addEventListener('click',e=>{
  if(b=q('[data-react]')){if(!sv)return;const s=sv.list[sv.i];if(!s.reacted){s.reacted=true;const c2=relChange(s.by,1,b.dataset.react==='❤️'?1:0);note(`Tu as réagi ${b.dataset.react} à la story de ${nameOf(s.by)}`);saveG();toast(`Réaction envoyée${c2?' · '+c2:''}`);document.querySelectorAll('[data-react]').forEach(x=>x.disabled=true)}return}
  if(b=q('[data-pa]')){personAct(b.dataset.id,b.dataset.pa);return}
  if(b=q('[data-bffopen]')){bffSheet(b.dataset.bffopen);return}
- if(b=q('[data-phask]')){phAsk(b.dataset.phask);return}
- if(b=q('[data-phgive]')){phGive(b.dataset.phgive);return}
+ if(b=q('[data-phask]')){const id=b.dataset.phask;phAsk(id);openPerson(id);if(G.phLine)G.phLine.fresh=0;return}
+ if(b=q('[data-phgive]')){const id=b.dataset.phgive;phGive(id);openPerson(id);if(G.phLine)G.phLine.fresh=0;return}
  if(b=q('[data-phvia]')){phViaFriend(b.dataset.phvia);return}
  if(b=q('[data-phblock]')){phBlock(b.dataset.phblock);return}
  if(b=q('[data-phdel]')){phDelete(b.dataset.phdel);return}
