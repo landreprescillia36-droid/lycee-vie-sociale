@@ -2766,6 +2766,24 @@ const FLIRT_Q=[
  [/(remarques|vois) (jamais |pas )?quand je fais (un effort|des efforts)/,["Si, et ça me fait plaisir.","Je le remarque, mais je ne sais pas toujours comment le montrer.","Honnêtement, je n'y avais pas fait attention.","Je ne voudrais pas que tu fasses des efforts en pensant qu'on est sur la même longueur d'onde."]],
  [/si je te disais que (tu me plais|je t'aime|j'ai un crush)/,["Je te dirais que c'est réciproque.","Je serais content, mais un peu gêné.","Je ne saurais pas quoi répondre.","Je te dirais gentiment que ce n'est pas réciproque."]],
  [/(se voie|se voit|on se voie|on se voit|nous voir) plus souvent/,["Oui, j'aimerais passer plus de temps avec toi.","Oui, quand on est disponibles.","Ça ne me dérange pas.","Pas spécialement, je préfère garder nos distances."]]];
+/* compliments d'une fille à un garçon (exemples de Prescillia) : [compliment, intéressé, intéressé, timide, pas intéressé]
+   la réponse dépend de son attirance VRAIE (pas du hasard) : un garçon pas intéressé ne flirte pas parce qu'on le complimente */
+const COMPL_Q=[
+ [/(j'aime|j'adore) (trop |bien |beaucoup )?ton sourire|t'as (un )?(beau|joli|trop beau) sourire|ton sourire (est|il est) (trop )?(beau|mignon)/,["C'est encore mieux quand c'est toi qui le provoques.","Merci, toi aussi tu as un très beau sourire.","Ah bon ? Merci, c'est gentil.","Ah merci, c'est sympa."]],
+ [/(beaux|jolis) yeux|tes yeux (sont )?(trop )?(beaux|magnifiques)/,["Tu devrais les regarder plus souvent alors.","Les tiens sont encore plus beaux.","Tu trouves ?","Merci, c'est gentil de ta part."]],
+ [/(cette|ta|ta nouvelle) coupe (te va|elle te va)|tes cheveux (te vont|sont trop)/,["Tu préfères comme ça ?","Je savais que tu allais remarquer.","Merci, j'hésitais à la faire.","Merci, ça fait plaisir."]],
+ [/(t'es|tu es) (vraiment |trop |grave )?(beau|bg|canon|mignon)( aujourd'hui)?/,["Seulement aujourd'hui ?","Tu me trouves beau d'habitude aussi ?","Merci, toi aussi t'es jolie.","Merci, c'est gentil."]],
+ [/(j'aime|j'adore) (bien |trop )?ton style|ton style (vestimentaire )?(est|il est) (trop )?(bien|cool|stylé)|t'es (trop )?bien habill/,["Je pourrais te demander conseil pour mes prochaines tenues.","Je savais que tu avais bon goût.","Merci, j'essaie de bien m'habiller.","Ah merci, c'est sympa."]],
+ [/(t'es|tu es) (vraiment |trop |grave )?(drôle|marrant|drole)/,["Je suis encore plus drôle quand je suis avec toi.","J'aime bien te faire rire.","Haha, merci.","Tant mieux si je te fais rire."]],
+ [/(j'aime|j'adore) (bien |trop )?ta (façon|facon|manière) de penser/,["J'aime bien discuter avec toi aussi.","On devrait discuter plus souvent alors.","Ah ouais ? Ça fait plaisir.","Merci pour le compliment."]],
+ [/(t'es|tu es) (vraiment |trop )?gentil (avec moi)?/,["Avec toi, c'est naturel.","Tu mérites qu'on soit gentil avec toi.","C'est normal, non ?","Je suis comme ça avec tout le monde."]],
+ [/(j'aime|j'adore) (bien |trop )?passer du temps avec toi/,["Moi aussi, surtout quand on est tous les deux.","On devrait se voir en dehors du lycée.","Ça me fait plaisir de savoir ça.","C'est sympa, moi aussi j'aime bien l'ambiance avec les amis."]],
+ [/(t'es|tu es) (vraiment |trop )?mon genre/,["Alors j'ai peut-être mes chances avec toi ?","Tu es exactement mon genre de fille aussi.","Ah ouais ? Je ne savais pas.","C'est flatteur, merci."]],
+ [/tu me d[ée]concentres/,["Pourtant, j'aimerais bien être encore plus près.","C'est réciproque, tu sais.","Haha, je ne sais pas quoi répondre.","Ah bon ? Je ne fais pourtant rien."]],
+ [/je (crois|pense) que tu me plais/,["Je crois que c'est réciproque.","Tu n'imagines pas à quel point tu me plais aussi.","Tu me prends un peu au dépourvu là.","Tu es une fille super, mais je préfère qu'on reste amis."]],
+ [/(j'aime|j'adore) (bien |trop )?quand tu (viens|venais) me parler/,["Alors je viendrai te voir plus souvent.","J'attends souvent de te croiser pour venir te parler.","Je viendrai plus souvent alors.","C'est gentil, on se voit en cours de toute façon."]],
+ [/tu me plais (beaucoup|trop|vraiment|grave|énormément)/,["Toi aussi, tu me plais énormément.","J'espérais que tu me le dises.","Je ne savais pas que tu ressentais ça.","Je préfère être honnête, je ne ressens pas la même chose."]],
+ [/(j'aimerais|je voudrais) (bien )?qu'on se rapproche/,["J'en ai envie aussi.","On pourrait commencer par sortir tous les deux.","Pourquoi pas, ça me ferait plaisir.","Je préfère qu'on garde notre relation actuelle."]]];
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
@@ -2820,6 +2838,7 @@ function smartLine(id,text,chan){
   /* réponse selon son caractère : romantique → les premières réponses, plus franc → les dernières */
   const cq=L=>{const h=Math.ceil(L.length/2);return Math.random()<.25+FICHES[id].rom*.6?pickR(L.slice(0,h)):pickR(L.slice(h))};
   for(const [re,L] of COUPLE_Q)if(re.test(t)){relChange(id,0,1);return cq(L)}
+  {const C=COMPL_Q.find(([re])=>re.test(t));if(C){relChange(id,0,1);return C[1][Math.random()<.5?0:1]}}
   if(/maquill|make-?up|makeup/.test(t)&&/(jolie|belle|trouve|pr[ée]f[èe]re|mieux|avec ou sans)/.test(t))return fresh(["Sans maquillage, tu es magnifique.","Avec ou sans, tu me plais.","Ça dépend de ton maquillage 😏","Je préfère quand tu te sens belle."]);
   if(/(tu me trouves|je suis|j'suis|tu trouves que je suis|je suis pas|je deviens)[^?]{0,15}(grosse|trop ronde|enrob[ée]e)|j'ai (grossi|pris du poids|pris des kilos)/.test(t))return fresh(["Non, tu es très bien comme tu es.","Tu me plais comme tu es ❤️","Pourquoi tu te poses cette question ?","Ton poids ne change rien à mes sentiments."]);
   if(/(coiffure|cheveux|coupe|tresses|perruque|teinture)/.test(t)&&/(chang|coup|nouvelle|teind|si je|tu aimerais|t'aimerais)/.test(t))return fresh(["Oui, je suis sûr que ça t'irait bien 😊","Tant que tu aimes, ça me va.","Je préfère ta coiffure actuelle 😅","Il faut voir le résultat !"]);
@@ -2827,8 +2846,13 @@ function smartLine(id,text,chan){
    return fresh(["Bien sûr que je t'aime ❤️","Ne te pose plus jamais la question.","Tu es la personne la plus importante pour moi.","Je t'aime de tout mon cœur ❤️","Mais je t'aime chérie ❤️","C'est quoi cette question enfin, ne doute jamais de mon amour 💘"])}}
  /* une fille (toi) flirte avec un garçon qui n'est pas son copain : sa réponse suit ce qu'il ressent VRAIMENT
     (intéressé → hésitant → pas intéressé), son caractère (timide, séducteur, joueur) — même les meilleures questions ne le font pas forcément craquer */
- if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const Q=FLIRT_Q.find(([re])=>re.test(t));
-  if(Q){const v=G.rel[id].amour,F=FICHES[id],shy=crBold(id)<.45,player=F.soc>=.75&&F.rom<.45;
+ if(isNpc(id)&&G.partner!==id&&me().sexe==='f'&&FICHES[id].g==='m'){const C=COMPL_Q.find(([re])=>re.test(t));
+  if(C){const v=G.rel[id].amour,shy=FICHES[id].soc<=.5,att=crCan(id,'me')&&!coupleOf(id);
+   /* intéressé (≥55) : flirte en retour ; touché mais timide ou à moitié intéressé : maladroit ; sinon : poli */
+   let i=!att||v<25?3:v>=55?(shy&&!(v>=75&&Math.random()<.3)?2:Math.random()<.5?0:1):v>=40?(shy?2:1):2;
+   if(i<=1)relChange(id,0,1);return C[1][i]}
+  const Q=FLIRT_Q.find(([re])=>re.test(t));
+  if(Q){const v=G.rel[id].amour,F=FICHES[id],shy=F.soc<=.5,player=F.soc>=.75&&F.rom<.45;
    let i=!crCan(id,'me')||coupleOf(id)?3:v>=68?0:v>=45?1:v>=25?2:3;
    if(shy&&i<2&&Math.random()<.5)i++;                    /* le timide est intéressé mais n'ose pas le montrer */
    if(player&&i>=2&&crCan(id,'me')&&!coupleOf(id)&&Math.random()<.5)i=1;   /* le joueur flirte sans vouloir de relation */
@@ -3290,7 +3314,8 @@ NPCS.forEach(n=>{LIKE[n.id]=LIKE[n.id]||[];passOf(n.id).forEach(p=>PASS[p].kw.fo
 const prn=id=>FICHES[id]&&FICHES[id].g==='f'?{il:'elle',le:'la',lui:'elle',ind:'lui',de:"d'elle",e:'e'}:{il:'il',le:'le',lui:'lui',ind:'lui',de:'de lui',e:''};
 /* réponse de secours quand le message parle d'une passion */
 function passionLine(id,text){const t=' '+text.toLowerCase()+' ';
- const p=passOf(id).find(k=>PASS[k].kw.some(w=>t.includes(w)));if(!p)return '';const both=passOf('me').includes(p);
+ const wd=w=>new RegExp('(^|[^a-zà-ÿœ])'+w.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'([^a-zà-ÿœ]|$)').test(t);/* mot entier : « rap » ≠ « rapproche » */
+ const p=passOf(id).find(k=>PASS[k].kw.some(wd));if(!p)return '';const both=passOf('me').includes(p);
  return pickR(both?[`Attends, toi aussi t'aimes ${PASS[p].n.toLowerCase()} ?! ${PASS[p].e} faut qu'on ${PASS[p].act.split(' ')[0]==='faire'?PASS[p].act:'aille '+PASS[p].act} ensemble un jour`,`On a ça en commun alors ${PASS[p].e} c'est trop bien !`]:[`${PASS[p].e} Tu parles de ma passion là ! Je pourrais en parler des heures`,`Ah ${PASS[p].n.toLowerCase()} ${PASS[p].e} c'est ma vie, tu veux essayer un jour ?`])}
 
 /* ---------- raison du changement de lycée : questions, réactions, rumeurs, confidences ---------- */
