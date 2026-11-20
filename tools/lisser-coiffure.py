@@ -2,7 +2,7 @@
    python3 tools/lisser-coiffure.py <coiffure> <y_haut> <y_bas_gauche> <x_coupe_gauche>
    - bords extérieurs gauche et droit : courbes lisses ajustées sur le dessin (plus de crans ni de halo) ;
    - derrière (-dos) : la mèche de gauche continue jusqu'en bas (copie verticale des mèches, les cheveux tombent droit) ;
-   - devant : le bas de la mèche de gauche s'efface doucement, la suite est derrière l'épaule."""
+   - devant : le bas des mèches s'efface doucement, la suite est derrière les épaules (elles ne « mangent » pas l'épaule)."""
 import sys, numpy as np
 from PIL import Image
 D = 'assets/coiffures/'
@@ -43,7 +43,7 @@ d2 = clean(dos, True)
 f = np.array(Image.open(D + name + '.png').convert('RGBA')).astype(float)
 f2 = clean(f, False)
 for y in range(YB - 60, H):              # devant : le bas de la mèche de gauche s'efface (elle passe derrière l'épaule)
-    f2[y, :XC, 3] *= np.clip((YB - y) / 60, 0, 1)
+    f2[y, :, 3] *= np.clip((YB - y) / 60, 0, 1)   # des deux côtés : les mèches passent derrière les épaules
 Image.fromarray(d2.clip(0, 255).astype(np.uint8)).save(D + name + '-dos.png', optimize=True)
 Image.fromarray(f2.clip(0, 255).astype(np.uint8)).save(D + name + '.png', optimize=True)
 print('ok', name)
