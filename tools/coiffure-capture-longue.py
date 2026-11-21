@@ -34,37 +34,53 @@ Hc = np.array([28, 18, 12.], np.float32)
 v_ = Hc[None, None] - bg
 a = np.clip(((C - bg) * v_).sum(-1) / np.maximum((v_ * v_).sum(-1), 1), 0, 1)
 hard = cv2.erode((a > .55).astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+hard &= ~((((UU - 200) / 96) ** 2 + ((VV - 205) / 120) ** 2 < 1) & (VV < 215))   # baby hair : jamais forcés opaques
 a = np.where(hard, 1, a); a[a < .1] = 0
 face_in = (((UU - 200) / 96) ** 2 + ((VV - 205) / 120) ** 2 < 1)
-a[(face_in & (lum > 70)) | (face_in & (np.abs(UU - 200) < 78) & (VV > 150))] = 0   # visage (yeux, sourcils, bouche) : jamais des cheveux
+bh = face_in & (VV < 215)   # front et tempes : baby hair
+brows_eyes = face_in & (((np.abs(UU - 200) > 12) & (np.abs(UU - 200) < 74) & (VV > 152)) | (VV > 188) & (np.abs(UU - 200) < 72))
+kill = cv2.GaussianBlur(((face_in & ~bh) | brows_eyes).astype(np.float32), (0, 0), 2.5)
+a = a * (1 - np.clip(kill * 2, 0, 1))   # visage (yeux, sourcils, bouche) : jamais des cheveux, bord fondu
 # bord du visage, du cou et des épaules, bijoux : les pixels clairs ou couleur peau ne sont jamais des cheveux
 near = cv2.dilate((skin | (lum > 215)).astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
-a[near & (lum > 75)] = 0
+a[near & (lum > 75) & ~bh & (VV > 215)] = 0
 # petits trous à l'intérieur de la masse (reflets clairs pris pour du fond) : bouchés
 op_ = (a > .5).astype(np.uint8); n_, lb_, st_, _ = cv2.connectedComponentsWithStats(1 - op_, connectivity=4)
-small = np.isin(lb_, [i for i in range(1, n_) if st_[i, 4] < 300]) & ~face_in
+small = np.isin(lb_, [i for i in range(1, n_) if st_[i, 4] < 300]) & ~face_in & ~cv2.dilate(bh.astype(np.uint8), np.ones((15, 15), np.uint8)).astype(bool)
 a[small] = 1
 nl, lab, st, _ = cv2.connectedComponentsWithStats((a > .3).astype(np.uint8), connectivity=8)
-keepc = [i for i in range(1, nl) if st[i, 4] > 2000]
-keep = cv2.dilate(np.isin(lab, keepc).astype(np.uint8), np.ones((7, 7), np.uint8)).astype(bool)
+keepc = [i for i in range(1, nl) if st[i, 4] > 2000 or (st[i, 4] > 25 and bh[st[i, 1] + st[i, 3] // 2, st[i, 0] + st[i, 2] // 2])]
+keep = cv2.dilate(np.isin(lab, keepc).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))).astype(bool)
 a = np.where(keep, a, 0)
 um = (C - (1 - a[:, :, None]) * bg) / np.maximum(a[:, :, None], .05)
 um = np.minimum(um, np.maximum(C, Hc))
 lu = um @ [.299, .587, .114]; Lmax = np.percentile(lum[hard], 97)
 um = um * np.minimum(1, Lmax / np.maximum(lu, 1))[:, :, None]
-col = np.where(hard[:, :, None], C, um)
-smd = cv2.dilate(small.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)   # trous bouchés : couleur des cheveux autour
+# demi-transparents : clarté démélangée de la peau, teinte des cheveux (jamais bleutée ni couleur peau)
+hue = np.median(C[hard], 0); hl = hue @ [.299, .587, .114]
+ul = np.clip(um @ [.299, .587, .114], 0, Lmax)
+semi = hue[None, None] * (ul / max(hl, 1))[:, :, None]
+semi = semi + np.clip(ul - 255 * 0, 0, 0)[:, :, None]
+col = np.where(hard[:, :, None], C, semi)
+smd = cv2.dilate(small.astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))).astype(bool) & ~bh   # trous bouchés : couleur des cheveux autour
 col = np.where(smd[:, :, None], cv2.inpaint(col.clip(0, 255).astype(np.uint8), smd.astype(np.uint8), 5, cv2.INPAINT_TELEA), col); a[smd] = 1
 new = np.dstack([col, a * 255])
 if os.environ.get('DBG'): Image.fromarray(C.astype(np.uint8)).save('/tmp/claude-0/-home-claude/188c02e2-7576-5cbc-a5dc-25186038a661/scratchpad/ds/dbgC.png'); Image.fromarray((a*255).astype(np.uint8)).save('/tmp/claude-0/-home-claude/188c02e2-7576-5cbc-a5dc-25186038a661/scratchpad/ds/dbgA.png')
 # carte -> image d'origine (au-dessus et en dessous), fondu sur 10 px
 inC = np.clip(np.minimum.reduce([(UU - fu0) * r, (fu1 - UU) * r, (VV - fv0) * r, (fv1 - VV) * r]) / 10, 0, 1)
-top = VV < fv0 + 8   # au-dessus de la carte : contour d'origine limité à la largeur vue dans la capture
-row = int((fv0 - nv0) * r) + 14; xs_ = np.where(new[min(row, H - 1), :, 3] > 128)[0]
+yt = int(np.ceil((fv0 - nv0) * r)) + 10   # première ligne sûre de la capture
+xs_ = np.where(new[yt, :, 3] > 128)[0]
+O[:] = 0
 if len(xs_):
-    lim = np.clip(np.minimum(np.arange(W) - xs_.min() + 3, xs_.max() + 3 - np.arange(W)) / 3, 0, 1)
-    O[:, :, 3] *= np.where(top, lim[None, :], 1)
-O[(VV > fv1 - 2), 3] = 0   # en dessous : pas de reste de l'ancienne image
+    c0, hw0 = (xs_.min() + xs_.max()) / 2, (xs_.max() - xs_.min()) / 2; hc = .45 * hw0
+    for y in range(0, yt + 1):
+        dy = yt - y
+        if dy > hc: continue
+        hw_ = hw0 * np.sqrt(max(0, 1 - (dy / hc) ** 2)); sy = min(H - 1, yt + dy // 2)
+        row_ = new[sy].copy(); xx = np.arange(W)
+        row_[:, 3] = np.minimum(row_[:, 3], np.clip(hw_ - np.abs(xx + .5 - c0) + .5, 0, 1) * 255)
+        if y < yt: new[y] = row_
+inC = np.clip(np.minimum.reduce([(UU - fu0) * r, (fu1 - UU) * r, (fv1 - VV) * r]) / 10, 0, 1)
 out = new * inC[:, :, None] + O * (1 - inC[:, :, None])
 # bas (coupé par la carte) : pointes de boucles arrondies
 rng = np.random.default_rng(3); al = out[:, :, 3] > 128
@@ -85,7 +101,8 @@ m1 = cv2.morphologyEx(cv2.morphologyEx(m0, cv2.MORPH_OPEN, cv2.getStructuringEle
 zt = (VV < fv0 + 30)
 s1 = cv2.GaussianBlur((cv2.GaussianBlur(m1.astype(float), (0, 0), 2) > .5).astype(float), (0, 0), .8) * 255
 out[:, :, 3] = np.where(zt, s1, out[:, :, 3])
-fr = out.copy()   # devant : rien sur les boucles d'oreilles (le jeu dessine les siennes)
+fr = out.copy()
+fr[:, :, 3] *= 1 - cv2.GaussianBlur(((VV > 228) & (np.abs(UU - 200) < 122)).astype(np.float32), (0, 0), 3)   # devant : rien sur les boucles d'oreilles (le jeu dessine les siennes)
 bij = cv2.dilate(((lum > 200) & (VV > 200) & (VV < 300) & (np.abs(np.abs(UU - 200) - 95) < 25)).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))).astype(bool)
 fr[bij, 3] = 0
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(P(hid))
@@ -111,7 +128,7 @@ FT = json.load(open('tools/front-visages.json')); topf = np.interp(UU, [p[0] for
 dark = (out[:, :, 3] > 128).astype(np.uint8)
 cs_, _ = cv2.findContours(cv2.morphologyEx(dark, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 inside = np.zeros_like(dark); cv2.drawContours(inside, [c for c in cs_ if cv2.contourArea(c) > 2000], -1, 1, -1)
-scalp = (inside > 0) & (VV < topf + 12) & (VV > 0) & (np.abs(UU - 200) < 110)
+scalp = (inside > 0) & (VV < topf + 1) & (VV > 0) & (np.abs(UU - 200) < 110)
 pc = np.array([150, 90, 60.])
 if os.path.exists(P(hid + '-peau')):
     q = np.array(Image.open(P(hid + '-peau')).convert('RGBA')); m_ = q[:, :, 3] > 200
