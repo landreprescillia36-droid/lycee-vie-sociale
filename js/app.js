@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='146';
+const APP_VERSION='147';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1063,9 +1063,11 @@ function sideburns(s,A,col,fit,cid){if(HAIR_NEW.includes(s.hair))return '';/* re
  for(let v=vb;v>=y0;v-=5){const u=(v-y0)/(vb-y0);P.push([faceEdge(s,v,k)-k*(Math.max(14,Math.abs(q[0]-faceEdge(s,y0,k)))*(1-u)+7*u),v])}
  const d='M'+P.map(p=>fx(p[0])+','+fx(p[1])).join(' L')+'Z';
  return `<g filter="url(#${id}b)"><path d="${d}" fill="url(#${id})"/><path d="${d}" fill="url(#${id}p)" opacity=".6" mask=""/></g>`}).join('')}
+/* image restée en cache (CDN ou téléphone) d'une version précédente : ses proportions ne correspondent plus à HAIR_ART → on la recharge sans cache */
+const artStale=(f,im)=>{if(f.includes('/')||typeof HAIR_ART==='undefined')return false;const A=HAIR_ART[f.replace(/-dos$/,'')];if(!A||!A.img||!im.naturalHeight)return false;return Math.abs(im.naturalWidth/im.naturalHeight/(A.img[2]/A.img[3])-1)>.02};
 const HTINT={},HTINT_GO={};let HT_PEND=0;
 function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(HTINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;HTINT_GO[k]=1;HT_PEND++;
- const T=tab.map(a=>a.map(Number)),im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
+ const T=tab.map(a=>a.map(Number)),im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{if(artStale(f,im)&&!im._r){im._r=1;im.src=im.src.split('?')[0]+'?r='+Date.now();return}HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data,W=c.width,H=c.height,L=new Float32Array(W*H);
   for(let i=0;i<W*H;i++)L[i]=(a[i*4]*.299+a[i*4+1]*.587+a[i*4+2]*.114)/255;
   if(sm){/* vêtements reteints : clarté lissée (le grain du tissu de la planche, très marqué une fois éclairci, disparaît) */
@@ -1079,7 +1081,7 @@ function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(H
    recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
 const HAIR_PEAU=new Set(['bafro','bafro-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
 function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;STINT_GO[k]=1;HT_PEND++;
- const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
+ const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{if(artStale(f,im)&&!im._r){im._r=1;im.src=im.src.split('?')[0]+'?r='+Date.now();return}HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){if(a[i+3]<200)continue;R+=a[i];G+=a[i+1];B+=a[i+2];W++}/* teinte de référence : pixels de peau bien opaques */
   if(W){const t=rgb(sk),lr=(R+G+B)/W/3;for(let i=0;i<a.length;i+=4){const l=Math.min(1,(a[i]+a[i+1]+a[i+2])/3/lr)*.9;for(let j=0;j<3;j++)a[i+j]=Math.round(t[j]*l)}}/* couleur de la peau, jamais plus claire, un peu dans l'ombre des cheveux */
   x.putImageData(d,0,0);const url=c.toDataURL('image/png');STINT[k]=url;bkPut('s|'+k,url);document.querySelectorAll(`image[data-sk="${k}"]`).forEach(el=>{el.setAttribute('href',url);el.removeAttribute('opacity')})}catch(e){}};
