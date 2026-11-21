@@ -16,3 +16,12 @@ for d, _, fs in os.walk(R):
         im.save(dst, 'WEBP', quality=90, alpha_quality=100, method=6)
         n += 1; av += os.path.getsize(src); ap += os.path.getsize(dst)
 print(f'{n} images converties : {av/1e6:.1f} Mo → {ap/1e6:.1f} Mo')
+
+# empreintes (assets/empreintes.json) : le service worker ne garde l'ancienne copie d'une image que si elle n'a pas changé
+import hashlib, json
+E = {}
+for d, _, fs in os.walk(R):
+    for f in fs:
+        if f.endswith('.webp') or f == 'logo.png':
+            pth = os.path.join(d, f); E[os.path.relpath(pth, os.path.join(R, '..')).replace(os.sep, '/')] = hashlib.md5(open(pth, 'rb').read()).hexdigest()[:10]
+json.dump(dict(sorted(E.items())), open(os.path.join(R, 'empreintes.json'), 'w'), separators=(',', ':'))

@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v152';
+const VERSION = 'v153';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -143,10 +143,17 @@ const toW = u => u.replace(/\.(png|jpg)$/, '.webp');
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(CACHE), olds = (await caches.keys()).filter(k => k.startsWith('lycee-') && k !== CACHE);
+    /* empreintes des images : une image n'est reprise de l'ancienne version que si elle n'a pas changé ;
+       sinon elle est retéléchargée avec ?v=empreinte (jamais l'ancienne copie gardée par le serveur ou le téléphone) */
+    const E = 'assets/empreintes.json';
+    let neuf = {}, vieux = {};
+    try { const r = await fetch(E + '?v=' + VERSION, { cache: 'reload' }); if (r.ok) { neuf = await r.clone().json(); await c.put(E, r) } } catch (_) {}
+    for (const k of olds) { try { const r = await (await caches.open(k)).match(E); if (r) { vieux = await r.json(); break } } catch (_) {} }
     await Promise.all(FICHIERS.map(async u => {
       if (WEBP(u)) u = toW(u);
-      if (LOURD(u)) for (const k of olds) { const r = await (await caches.open(k)).match(u); if (r) { await c.put(u, r); return } }
-      try { await c.add(new Request(u, { cache: 'reload' })) } catch (_) { /* fichier repris plus tard, à la demande */ }
+      const h = neuf[u];
+      if (LOURD(u) && h && vieux[u] === h) for (const k of olds) { const r = await (await caches.open(k)).match(u); if (r) { await c.put(u, r); return } }
+      try { const r = await fetch(u + (u.includes('?') ? '&' : '?') + 'v=' + (h || VERSION), { cache: 'reload' }); if (r.ok) await c.put(u, r) } catch (_) { /* fichier repris plus tard, à la demande */ }
     }));
     await self.skipWaiting();
   })());
