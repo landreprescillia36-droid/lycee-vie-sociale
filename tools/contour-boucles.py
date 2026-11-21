@@ -61,12 +61,31 @@ base = bot.copy()
 if len(xs):
     b = cv2.GaussianBlur(bot[xs].reshape(1, -1), (0, 0), 6).ravel(); base[xs] = b
 yb = np.full(W, H + 5.)
-x = xs.min() if len(xs) else W
-while len(xs) and x <= xs.max():
-    w = int(rng.integers(22, 34)); hw = w / 2; c = x + hw; L = rng.uniform(2, 14)
-    seg = np.arange(x, min(W, x + w)); seg = seg[cols[seg]]; u = np.clip((seg + .5 - c) / hw, -1, 1)
-    yb[seg] = base[seg] - L - hw * 1.1 * (1 - np.sqrt(1 - u * u))
-    x += w
+# boucles dessinées : on repère les colonnes de boucles (anglaises) dans le bas de la coiffure, d'après la texture
+# (les creux sombres entre deux boucles), et chaque pointe suit sa boucle : même largeur, bout arrondi un peu affiné
+lumD = D[:, :, :3] @ [.299, .587, .114]; prof = np.zeros(W)
+for x in xs:
+    y1 = int(base[x]) - 20; y0 = y1 - 70; m = D[y0:y1, x, 3] > 200
+    prof[x] = lumD[y0:y1, x][m].mean() if m.sum() > 10 else np.nan
+pr = np.where(np.isnan(prof), np.nanmean(prof[xs]) if len(xs) else 0, prof)
+pr = cv2.GaussianBlur(pr.reshape(1, -1), (0, 0), 2.5).ravel()
+cuts = [x for x in xs[2:-2] if pr[x] <= pr[x - 2:x + 3].min() and pr[x] < cv2.GaussianBlur(pr.reshape(1, -1), (0, 0), 10).ravel()[x]]
+bd = []   # bords des boucles : creux espacés d'au moins 16 px (une boucle fait 16 à 40 px)
+for x in cuts:
+    if not bd or x - bd[-1] >= 16: bd.append(x)
+segs = []; runs = np.split(xs, np.where(np.diff(xs) > 1)[0] + 1) if len(xs) else []
+for r in runs:
+    b = [r[0]] + [x for x in bd if r[0] + 10 < x < r[-1] - 10] + [r[-1] + 1]
+    for a0, a1 in zip(b[:-1], b[1:]):
+        while a1 - a0 > 40: segs.append((a0, a0 + (a1 - a0) // 2)); a0 = a0 + (a1 - a0) // 2
+        segs.append((a0, a1))
+for a0, a1 in segs:
+    seg = np.arange(a0, a1); hw = max(4, (a1 - a0) / 2); Lg = rng.uniform(0, 10)
+    c = (a0 + a1) / 2 + rng.choice([-1, 1]) * .18 * hw   # la boucle tourne : bout un peu décalé d'un côté
+    u = (seg + .5 - c) / np.where(seg + .5 < c, c - a0, a1 - c)
+    u = np.clip(u, -1, 1)
+    yb[seg] = base[seg] + 4 - Lg - hw * .95 * (1 - np.sqrt(1 - u * u))   # bout de boucle rond
+print('boucles repérées :', len(segs))
 yb[~cols] = H + 5
 Y = np.arange(H)[:, None] + .5
 cov = np.clip(yb[None, :] - Y + .5, 0, 1); top = (Y < (yb[None, :] - 45)); cov = np.where(top | face, 1, cov)
