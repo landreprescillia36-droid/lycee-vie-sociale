@@ -17,16 +17,15 @@ for y in range(src + 1, H + E): dos[y] = np.where((dos[src, :, 3:] > 200), dos[s
 ys, lo, hi = [], [], []
 for y in range(Y0, src):
     xs = np.where(dos[y, :, 3] > 160)[0]
-    if len(xs): ys.append(y); lo.append(xs.min()); hi.append(xs.max())
+    if len(xs) > 40 and xs.min() < W * .3 and xs.max() > W * .7: ys.append(y); lo.append(xs.min()); hi.append(xs.max())
 cl, cr = np.polyfit(ys, lo, 2), np.polyfit(ys, hi, 2); xs = np.arange(W)
 def clip(img):
     for y in range(Y0, H + E):
         L, R = np.polyval(cl, y), np.polyval(cr, y)
         al = np.clip(np.minimum(xs - L + .5, R - xs + .5), 0, 1); row = img[y]
-        for x in np.where((al > .5) & (row[:, 3] < 200) & ((xs < L + 25) | (xs > R - 25)))[0]:
-            j = np.where(row[:, 3] > 200)[0]
-            if len(j): k = j[np.argmin(abs(j - x))]; 
-            if len(j) and abs(k - x) < 25: row[x, :3] = row[k, :3]; row[x, 3] = 255
+        # trous le long du bord (ex. derrière l'oreille) : on prolonge la ligne du dessus (les cheveux tombent droit)
+        for x in np.where((al > .5) & (row[:, 3] < 200) & ((xs < L + 30) | (xs > R - 30)))[0]:
+            if img[y - 1, x, 3] > 100: row[x, :3] = img[y - 1, x, :3]; row[x, 3] = 255
         row[:, 3] = np.minimum(row[:, 3], al * 255)
     return img
 dos = clip(dos); fr = clip(fr)
