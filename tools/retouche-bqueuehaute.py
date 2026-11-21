@@ -160,6 +160,27 @@ for s in ('-peau', '-dos-peau'):
         if 40 < V[y] < 86:
             c = np.clip(1.2 - np.abs(U - 200) / (iw / W) / 1.2, 0, 1) * min(1, (V[y] - 40) / 12)
             q[y, :, :3] = np.where(c[:, None] > 0, med, q[y, :, :3]); q[y, :, 3] = np.maximum(q[y, :, 3], c * 255)
+# finition : contours nets et lisses partout (plus de crans ni de picots), bord extérieur sans liseré clair
+def finition(d):
+    a = d[:, :, 3] / 255.; mk = (a > .5).astype(np.uint8)
+    mk[(UU > 316) & (VV > 100)] = 0   # bout de cheveux collé au bord droit de l'image (marche carrée près de la tempe)
+    mk = cv2.morphologyEx(mk, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+    mk = cv2.morphologyEx(mk, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+    s1 = cv2.GaussianBlur(mk.astype(float), (0, 0), 2.2)
+    s2 = cv2.GaussianBlur(mk.astype(float), (0, 0), 6)   # côté droit de la tête (tempe, derrière l'oreille) : contour plus régulier
+    wr = np.clip((UU - 262) / 12, 0, 1) * np.clip((VV - 110) / 30, 0, 1) * np.clip((340 - VV) / 20, 0, 1)
+    sm = s1 * (1 - wr) + s2 * wr
+    new = cv2.GaussianBlur((sm > .5).astype(float), (0, 0), .8)   # forme lissée, bord fin et net
+    lum = d[:, :, :3] @ [.299, .587, .114]; g = np.median(d[(a > .9) & (lum < 45)][:, :3], 0)
+    grow = (new > a + .05)
+    d[grow, :3] = g
+    d[:, :, 3] = new * 255
+    # liseré clair le long du bord extérieur : repeint couleur cheveux
+    dist = cv2.distanceTransform((new > .5).astype(np.uint8), cv2.DIST_L2, 5)
+    rim = (dist < 20) & (new > 0) & (lum > g @ [.299, .587, .114] + 8)
+    kk = (np.clip((lum - g @ [.299, .587, .114] - 8) / 20, 0, 1) * np.clip((20 - dist) / 8, 0, 1))[:, :, None]
+    d[:, :, :3] = np.where(rim[:, :, None], d[:, :, :3] * (1 - kk) + g * kk, d[:, :, :3])
+for d in (F, D): finition(d)
 # la raie se voit au travers des cheveux de devant
 for d in (F, D):
     for y in range(H):
