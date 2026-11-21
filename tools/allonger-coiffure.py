@@ -32,7 +32,7 @@ dos = clip(dos); fr = clip(fr)
 for y in range(H - 70, H + E): fr[y, :, 3] *= np.clip((H - 10 - y) / 60, 0, 1)
 Image.fromarray(dos.clip(0, 255).astype(np.uint8)).save(D + name + '-dos.png', optimize=True)
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(D + name + '.png', optimize=True)
-for p in ('-peau', '-dos-peau'):
+for p in ('-peau', '-dos-peau', '-acc'):   # -acc : accessoire (serre-tête, barrette) posé au même endroit
     try:
         a = load(name + p); Image.fromarray(np.concatenate([a, np.zeros((E, W, 4))], 0).astype(np.uint8)).save(D + name + p + '.png', optimize=True)
     except FileNotFoundError: pass

@@ -41,7 +41,7 @@ def fix(d, ya, yb):
 
 F = fix(F, y0, yf); D = fix(D, y0, H)
 Image.fromarray(F.astype(np.uint8)).save(P(hid)); Image.fromarray(D.astype(np.uint8)).save(P(hid + '-dos'))
-for s in ('-peau', '-dos-peau'):
+for s in ('-peau', '-dos-peau', '-acc'):
     if M and os.path.exists(P(hid + s)):
         q = np.array(Image.open(P(hid + s)).convert('RGBA')); Image.fromarray(np.pad(q, ((0, 0), (M, M), (0, 0)))).save(P(hid + s))
 if M:
