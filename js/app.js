@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='156';
+const APP_VERSION='157';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2189,6 +2189,7 @@ function relChange(id,da=0,dl=0){
  return p.length?`${WHO[id].name} : ${p.join(', ')}`:'';
 }
 function famChange(id,d){if(G.famRel[id]!=null)G.famRel[id]=clamp(G.famRel[id]+d,0,100)}
+const isMine=id=>!!G&&(G.partner===id);
 function coupleOf(id){if(G.partner===id)return'me';const c=G.couples.find(c=>c.includes(id));return c?c.find(x=>x!==id):null}
 function statusOf(id){const c=coupleOf(id);return c==='me'?'En couple avec toi 💞':c?`En couple avec ${WHO[c].name}`:'Célibataire'}
 function ressenti(id){
@@ -2806,8 +2807,11 @@ const mdTok=t=>new Set(t.replace(/'/g,' ').split(' ').filter(w=>w.length>1).map(
 const mdDice=(A,B)=>{let n=0;A.forEach(x=>{if(B.has(x))n++});return A.size+B.size?2*n/(A.size+B.size):0};
 const MD_IDX=MODELES.map(m=>{const n=mdNorm(m);return {m,tri:mdTri(n),tok:mdTok(n)}});
 /* la phrase modèle la plus proche (null si rien d'assez proche) */
-function modeleProche(t){const n=mdNorm(t);if(n.split(' ').length<3)return null;const tri=mdTri(n),tok=mdTok(n);let best=null,bs=0;
- for(const e of MD_IDX){const sc=.55*mdDice(tri,e.tri)+.45*mdDice(tok,e.tok);if(sc>bs){bs=sc;best=e.m}}if(best==="Je t'aime."&&/aime bien/.test(n))return null;return bs>=.56?best:null}
+function modeleProche(t){const n=mdNorm(t);if(n.split(' ').length<3)return null;const tri=mdTri(n),tok=mdTok(n);let best=null,bs=0,be=null;
+ for(const e of MD_IDX){const sc=.55*mdDice(tri,e.tri)+.45*mdDice(tok,e.tok);if(sc>bs){bs=sc;best=e.m;be=e}}if(best==="Je t'aime."&&/aime bien/.test(n))return null;if(bs<.56)return null;
+ /* chaque mot important de ta phrase (4 lettres ou plus) doit se retrouver dans le modèle, à une faute près */
+ const mw=mdNorm(best).replace(/'/g,' ').split(' ');const near=(a,b)=>{if(a===b||a.slice(0,5)===b.slice(0,5))return true;if(Math.abs(a.length-b.length)>1)return false;let i=0,j=0,d=0;while(i<a.length&&j<b.length){if(a[i]===b[j]){i++;j++;continue}if(++d>1)return false;if(a.length>b.length)i++;else if(b.length>a.length)j++;else{i++;j++}}return d+(a.length-i)+(b.length-j)<=1};
+ if(n.replace(/'/g,' ').split(' ').filter(w=>w.length>=4).some(w=>!mw.some(x=>near(w,x))))return null;return best}
 const STOP_OUT_RE=/((arr[eê]te[rsz]?|stop|cesse)[^.?!]{0,12}(de |d')?(me |m')(invit|harcel|relanc)|(arr[eê]te[rsz]?|stop|évite|evite|cesse)[^.?!]{0,12}(de |d')?(me |m')?(propos|invit|demand)[a-z]*[^.?!]{0,25}(sort|sortie|voir|rendez|rdv|plage|glacier|match|venir)|(me |m')?propose(s|r)? plus|(m'|me )invite(s)? plus|je (ne )?veux (pas|plus) (sortir|qu'on sorte|de sortie)|plus envie de sortir)/;
 /* conseils pour se faire des ami·e·s : ceux qu'il ou elle apprécie, avec qui tu as des passions en commun, que tu connais encore peu */
 function friendAdvice(id){const pm=passOf('me'),ids=NPCS.map(n=>n.id).filter(x=>x!==id&&x!==G.partner&&G.rel[x].ami<45);
@@ -2833,6 +2837,20 @@ function smartLine(id,text,chan){
  const fresh=L=>{if(!L||!L.length)L=(isNpc(id)&&(voiceOf(id).neutral||[]).length)?voiceOf(id).neutral:["Ah ouais ?","Je vois 🙂","Ok !"];if(isNpc(id)&&(G.partner===id||coupleOf(id)==='me')){const K=L.filter(x=>!PALS_RE.test(x));L=K.length?K:COUPLE_OK}/* liste manquante : jamais d'erreur */const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
  if(!R){if(!isFam(id)){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}R=FAMREP[famKind(id)]}
  const V=isFam(id)?R:VOICE[id];
+ /* en couple : « bonne nuit », « bonjour », « tu me manques »… réponses douces */
+ if(isNpc(id)&&isMine(id)){const pn=petName(id);
+  if(/(bonne nuit|dors bien|je vais (dormir|me coucher)|fais de beaux r[eê]ves)/.test(t))return sty(id,fresh([`Bonne nuit ${pn} ❤️ fais de beaux rêves`,`Dors bien ${pn}, je pense à toi 🌙`,`Bonne nuit ${pn} 😘 vivement demain`,`Fais de beaux rêves… de moi 😏❤️`]),'love');
+  if(/^(bonjour|coucou|hello|salut|bien dormi|bon matin)\b/.test(t)&&G.min<11*60)return sty(id,fresh([`Bonjour ${pn} ☀️ bien dormi ?`,`Coucou ${pn} ❤️ j'ai rêvé de toi`,`Hey ${pn} 🥰 t'es déjà réveillé·e ?`]),'love');
+  if(/(tu me manques|tu m'as manqu|j'ai envie de te voir|hâte de te voir|hate de te voir)/.test(t))return sty(id,fresh(["Toi aussi tu me manques… trop 🥺","J'ai trop envie de te voir aussi","On se voit vite, promis ❤️"]),'love');
+  if(/(t'es|tu es|t es) (trop |vraiment |tellement |si |super )?(beau|belle|mignon|mignonne|canon|magnifique|craquant|craquante|parfait|parfaite)/.test(t))return sty(id,fresh(["Arrête, tu vas me faire rougir 😳","C'est toi qui es {p:magnifique} ❤️","Venant de toi, ça me fait fondre 🥰"]),'love')}
+ /* compliment (pas en couple) */
+ if(isNpc(id)&&/(t'es|tu es|t es) (trop |vraiment |tellement |si |super )?(beau|belle|mignon|mignonne|canon|magnifique|craquant|craquante)/.test(t)){const am=G.rel[id].amour;return sty(id,fresh(am>=40?["Arrête, je vais rougir 😳","Toi aussi tu sais 😏","Ohh… merci 🥹"]:["Haha merci 😅","C'est gentil !","Oh, merci 😊"]),'happy')}
+ /* « tu lui plais », « elle a dit que tu lui plais » : la personne réagit à la nouvelle */
+ if(isNpc(id)&&/(tu (lui|le|la) plai[st]|elle (t'aime|te kiffe|te trouve (beau|mignon))|il (t'aime|te kiffe|te trouve (beau|belle|mignon|mignonne))|t'as (une|ta) chance|t'as une touche)/.test(t))return sty(id,fresh(["Sérieux ?! Elle a dit ça ? 😳","Attends… t'es {p:sûr·e} ? 😳","Arrête, tu me fais marcher 😂 … c'est vrai ?","Ohh… ça me fait plaisir, j'avoue 🥹"].map(x=>/Elle a dit/.test(x)&&(FICHES[id]||{}).o!=='hetero'?x.replace('Elle a','On t\'a'):x)),'happy');
+ /* l'avenir : « tu t'imagines où dans 5 ans ? », « tu veux faire quoi plus tard ? » */
+ if(isNpc(id)&&/(dans (\d+|deux|trois|cinq|dix) ans|plus tard|ton avenir|ton futur|tu te vois|tu t'imagines?|tu veux faire quoi (après|apres)|après le bac|apres le bac|ton r[eê]ve|tu r[eê]ves de)/.test(t)&&/\?|tu t'imagin|tu te vois/.test(t)){const f=FUTUR[id]||["J'en sais rien encore… avoir mon bac déjà 😅"];return sty(id,fresh(isMine(id)?f.map(x=>x+' '+pickR(["Et avec toi, j'espère 🥰","Et toi dans ma vie, évidemment ❤️"])):f))}
+ /* tu proposes de vous voir : la réponse (oui / non, l'heure) arrive juste après */
+ if(isNpc(id)&&chan!=='talk'&&SORTIE_RE.test(text)&&!STOP_OUT_RE.test(t)&&/\?|on va|viens|ça te dit|ca te dit/.test(t))return sty(id,fresh(isMine(id)?["Avec toi ? Toujours 🥰","Attends, je regarde… 😍","Oh oui j'ai envie de te voir 🥹"]:["Attends, je regarde…","Hmm, laisse-moi voir","Je regarde ce que j'ai de prévu"]),isMine(id)?'love':'neutral');
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
  const L=chan==='talk'?((G.talks&&G.talks[id])||[]):(G.threads[id]||[]),pv=L[L.length-2],lastQ=pv&&pv.from==='them'&&pv.text.includes('?')?pv.text.split(/(?<=[.!?])\s+/).filter(x=>x.includes('?')).pop():null;
  /* « tu rentres à quelle heure ? », « t'es où ? » : ta réponse (je suis là, j'arrive, à 18 h, tard…) */
@@ -2883,7 +2901,7 @@ function smartLine(id,text,chan){
   if(G.rel[id].ami<40)return sty(id,fresh(["Je préfère pas dire du mal des gens 😅","Hmm, je m'entends avec à peu près tout le monde… 🤐"]));
   return sty(id,link(id,w).ami<30?pickR([`Entre nous… ${CNAME(w)}. On a jamais accroché 😬`,`${CNAME(w)}, j'ai du mal. Mais garde ça pour toi 🤫`]):"Franchement, je m'entends avec tout le monde 😄")}
  /* « j'essaie de me faire des ami·e·s, tu me conseilles qui ? », « je sais pas à qui parler » : il ou elle te conseille de vrais camarades */
- if(isNpc(id)&&/(me faire des (ami|pote|copain|copine)|(conseill|recommand)[a-z]* qui|tu me conseill|je sais pas (à|a) qui parler|je (ne )?sais pas (à|a) qui (aller|m'adresser)|je connais personne|je connais pas grand monde|qui (je peux|j'peux|pourrais-je) (aller voir|parler|aborder)|t'as quelqu'un (à|a) me pr[ée]senter|tu (connais|vois) qui de (sympa|cool|gentil))/.test(t))return sty(id,friendAdvice(id),'happy');
+ if(isNpc(id)&&/(me faire des (ami|pote|copain|copine)|(conseill|recommand|conseil)[a-z]* qui|tu me (conseil|recommand)|qui tu me (conseil|recommand|propos)|quel(le)?s? (élève|eleve|personne|camarade|gens|fille|garçon|garcon)s? (est|sont|serai[t]?) (sympa|cool|gentil|bien)|qui (est|serait) (sympa|cool|gentil)|(je )?cherche (quelqu'un|des gens|des ami|des pote|une personne)|faire connaissance avec qui|avec qui (je pourrais|je peux|parler|traîner|trainer)|je sais pas (à|a) qui parler|je (ne )?sais pas (à|a) qui (aller|m'adresser)|je connais personne|je connais pas grand monde|qui (je peux|j'peux|pourrais-je) (aller voir|parler|aborder)|t'as quelqu'un (à|a) me pr[ée]senter|tu (connais|vois) qui de (sympa|cool|gentil))/.test(t))return sty(id,friendAdvice(id),'happy');
  /* « ça va ? » : la personne répond et te retourne la question */
  if(/(ça va|ca va|\bcv\b|comment tu vas|comment vas-tu|tu vas bien|la forme|bien ou quoi|la pêche|la peche)/.test(t)&&(/\?/.test(t)||t.length<22)&&!/\bet (toi|vous)\b/.test(t)&&!(lastQ&&/(ça va|ca va|tu vas bien|la forme|et toi)/i.test(lastQ))){
   G.ctopic=G.ctopic||{};G.ctopic[id]='cava';const own=(R.cava||[]).map(x=>x.replace(/[,.]?\s*et toi( frr| frère| ma belle| gros)?\s*\?*\s*[\p{Extended_Pictographic}️]*\s*$/iu,'').trim()).filter(Boolean);
@@ -3006,8 +3024,9 @@ function smartLine(id,text,chan){
  if(/(et toi|et vous|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
   if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
   const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]]);
-  /* sinon : le sujet dont vous parliez */
-  const ct=G.ctopic&&G.ctopic[id];if(ct&&R[ct])return fresh(R[ct])}
+  /* sinon : le sujet de tes derniers messages, puis celui dont vous parliez */
+  {const rec=L.slice(-8).reverse().map(m=>(m.text||'').toLowerCase());for(const x of rec){const tp=TOPICS.find(([k,re])=>!['salut','merci','weekend'].includes(k)&&re.test(x)&&R[k]);if(tp)return fresh(R[tp[0]])}}
+  const ct=G.ctopic&&G.ctopic[id];if(ct&&ct!=='weekend'&&R[ct])return fresh(R[ct])}
  const hit=TOPICS.find(([k,re])=>re.test(t)&&R[k]);
  if(hit){if(!['salut','merci'].includes(hit[0])){G.ctopic=G.ctopic||{};G.ctopic[id]=hit[0]}return fresh(R[hit[0]])}
  if(s>0&&/(t'es|tu es|\btoi\b|\bton\b|\bta\b|\btes\b|merci|bisou|❤|😍|🥰)/.test(t))return fresh(V.happy);
@@ -3063,6 +3082,7 @@ const likes=(id,x)=>isNpc(id)&&LIKE[id].some(w=>wordIn(x,w)),hates=(id,x)=>isNpc
 const clean=x=>x.replace(/[?!.…,;]+$/,'').replace(/[\p{Extended_Pictographic}️]/gu,'').trim().slice(0,45);
 /* style de chacun ajouté au bout de la phrase */
 function sty(id,s,mood){
+ if(mood==='love'){if(Math.random()<.35&&!/[\p{Extended_Pictographic}]\uFE0F?\s*$/u.test(s))s=s.replace(/\s*$/,'')+pickR([' ❤️',' 🥰',' 😘']);return s}
  const k=isFam(id)?'f_'+famKind(id):id,r=Math.random();
  const tic=w=>{if(/fr[èée]r|frr/.test(w)&&me().sexe!=='m')return s;/* « frère », « frr » : seulement à un garçon */const i=s.indexOf(', ');if(i>0&&i<14)return s.slice(0,i)+w+s.slice(i);const m=s.match(/^(.*?)(\s*[!?.…]*)((?:\s*[\p{Extended_Pictographic}️‍]+)*)\s*$/u);return m?m[1]+w+m[2]+m[3]:s+w};
  const emo=e=>{if(!/[\p{Extended_Pictographic}]\uFE0F?\s*$/u.test(s))s=s.replace(/\s*$/,'')+e};
@@ -3274,7 +3294,7 @@ function makePlan(by,when){
  planFix(plan);G.plans.push(plan);return plan;
 }
 const planWhen=pl=>`${pl.day===G.day?(pl.hour>=17?'ce soir':"aujourd'hui"):pl.day===G.day+1?'demain':DAYS[wdOf(pl.day)].toLowerCase()} vers ${pl.hour}h`;
-const proposalText=(id,pl)=>{const sp=sharedPass(id,'me');if(sp.length&&Math.random()<.5){const p=PASS[pickR(sp)];return `On a la même passion ${p.e} ça te dit de venir ${p.act} avec moi ${planWhen(pl)} ? (rendez-vous ${PLACE_OUT[pl.place]})`}return `${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();};
+const proposalText=(id,pl)=>{if(isMine(id))return genderize(pickR([`J'aimerais qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)}… tu serais libre ? 🥰`,`J'ai envie de te voir ❤️ ${PLACE_OUT[pl.place].replace(/^./,c=>c.toUpperCase())} ${planWhen(pl)}, ça te dit ?`,`Tu me manques… on se voit ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? 🥺`]),id);const sp=sharedPass(id,'me');if(sp.length&&Math.random()<.5){const p=PASS[pickR(sp)];return `On a la même passion ${p.e} ça te dit de venir ${p.act} avec moi ${planWhen(pl)} ? (rendez-vous ${PLACE_OUT[pl.place]})`}return `${pickR(["Ça te dit","Tu veux bien","Chaud"])} qu'on aille ${PLACE_OUT[pl.place]} ${planWhen(pl)} ? ${id==='jade'?'':pickR(['😄','🌴','✨','😎'])}`.trim();};
 async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
  if(isNpc(id)){phInit();G.knows[id]=1}/* tu lui écris : il ou elle a ton numéro, sa réponse arrive */
@@ -3304,7 +3324,7 @@ function npcPing(){
   /* invitation à sa passion : match, spectacle, atelier… */
   const noOut=G.noOut&&G.noOut[n.id]!=null;
   if(!noOut&&r.ami>=35&&Math.random()<.3&&evOf(n.id)&&G.day-((G.evInv||{})[n.id]??-99)>=6&&!G.plans.some(x=>x.by===n.id&&x.ev&&(x.status==='pending'||x.status==='accepted'))){const pl=evInvite(n.id);G.evInv=G.evInv||{};G.evInv[n.id]=G.day;pushMsg(n.id,'them',evText(pl),{plan:pl.id});return}
-  if(!noOut&&r.ami>=30&&Math.random()<.4&&h<20&&!G.plans.some(x=>x.by===n.id&&(x.status==='pending'||x.status==='accepted'))){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
+  if(!noOut&&r.ami>=30&&Math.random()<.4&&h<20&&!G.plans.some(x=>x.by===n.id&&(x.status==='pending'||x.status==='accepted'||x.status==='hour'||x.day===G.day))&&!(G.outS&&G.outS.with===n.id)){const pl=makePlan(n.id,'ce soir');pushMsg(n.id,'them',proposalText(n.id,pl),{plan:pl.id});return}
   if(r.ami<25){pushMsg(n.id,'them',pickR(["T'as un problème avec moi ?","Je sais ce que t'as dit sur moi.","Évite-moi un peu, merci."]));return}
   /* pas encore fait connaissance : son premier message est une question de nouvelle */
   if(!G.met[n.id]){G.met[n.id]=1;pushMsg(n.id,'them',introLine(n.id));return}
@@ -3501,6 +3521,44 @@ const MQ_FX={
  aide:(id,j)=>{const ch=relChange(id,j?1:6,0);if(!j){G.st.lunchWith=(G.st.lunchWith||0)+1;if(!hasMark(id,'confiance')&&RA[raisK()].s)mark(id,'confiance')}return (j?"Ok, pas de souci, la porte est ouverte 🙂":"Trop bien ! Tu vas voir, on est cool 😄")+(ch?'':'')},
  confie:(id,j,d)=>{const r=raisInit();if(j===0){r.told[id]='verite';relChange(id,d.lied?3:8,0);if(!hasMark(id,'confiance'))mark(id,'confiance');return d.lied?"Merci de me dire la vérité… ça change rien pour moi, t'inquiète 🫶":"Merci de m'en avoir parlé… ça reste entre nous, promis 🫶"}relChange(id,d.lied?-2:1,0);return "D'accord. Je suis là quand tu veux."},
  advF:(id,j,d)=>advAnswer(id,j,d),advL:(id,j,d)=>advAnswer(id,j,d)};
+
+
+/* ---------- en couple : messages doux, rendez-vous du week-end, appels et cadeaux spontanés ---------- */
+const FUTUR={ines:["Dans 5 ans ? Infirmière comme ma mère, ou dans la danse… je sais pas encore 🥺"],kylian:["dans 5 ans je joue en club frr, en métropole si possible ⚽"],maelle:["Dans une grande école de commerce, avec un appart à Paris 💅"],noah:["Ingénieur, peut-être. Si je survis à la physique 😅"],jade:["Dans une université, à écrire. Loin du bruit."],
+ kenza:["Dans la mode, à Paris ou à Montréal. Avec ma propre marque un jour ✨"],eva:["Aux Beaux-Arts, j'espère… et exposer mes tableaux un jour 🎨"],noemie:["En centre de formation, puis en D1 féminine ⚽ Je lâcherai rien"],jessica:["En prépa, puis en école d'ingénieur. J'ai tout planifié 📐"],meisha:["Journaliste mode, avec ma rubrique dans un vrai magazine ✨"],
+ anais:["Prof de sport, ou kiné. Et toujours sur un terrain de hand 💪"],ethan:["Je me vois dans un atelier, avec de la peinture partout. Ou en école d'art"],kellian:["Dans 5 ans ? Je me vois en école de commerce, à monter mon business 😎","Pro de basket si je peux, sinon mon business à moi"],kais:["Dans un garage. Le mien."],
+ willan:["Dans 5 ans ? Toujours le même, mais avec une voiture 😂","Animateur, ou dans l'événementiel. Faut que ça bouge"],nael:["En école d'ingénieur, puis dans la recherche. J'aime comprendre comment tout marche"],sacha:["Sur scène, gros. Avec mes sons 🎤"]};
+const PT_MATIN=p=>[`Bien dormi ${p} ? ☀️`,`Bonjour ${p} ❤️ t'as bien dormi ?`,`Coucou ${p}, première pensée de la journée : toi 🥰`,`Bon réveil ${p} ☀️ j'ai hâte de te voir`];
+const PT_SOIR=p=>[`Passe une bonne nuit ${p} ❤️`,`Bonne nuit ${p}, fais de beaux rêves 🌙`,`Dors bien ${p}, je pense à toi 😘`,`Bonne nuit ${p}… vivement demain 🥰`];
+const PT_MANQUE=p=>[`Tu me manques ${p} 🥺`,`J'arrête pas de penser à toi…`,`J'ai envie de te voir ${p} ❤️`,`Je regarde nos photos, tu me manques 🥹`];
+const PT_GIFTS=[["un bracelet avec nos initiales","💝"],["une rose","🌹"],["ta boisson préférée","🧋"],["un petit ours en peluche","🧸"],["un collier tout fin","💎"],["des chocolats","🍫"],["une carte écrite à la main","💌"],["un porte-clés assorti au mien","🔑"]];
+function partnerTick(){
+ const id=G.partner;if(!id||!isNpc(id)||!G.rel[id]||G.blocked&&G.blocked[id])return;
+ const h=Math.floor(G.min/60),d=G.day,done=k=>G.done[d+'pt'+k],set=k=>{G.done[d+'pt'+k]=1},pn=petName(id),ph=phase(),wd=wdOf(d),we=wd>=5||!schoolDay(d);
+ const busy=G.plans.some(x=>x.by===id&&x.day===d&&(x.status==='accepted'||x.status==='hour'))||(G.outS&&G.outS.with===id);
+ const say=(txt,ex)=>{pushMsg(id,'them',genderize(txt,id),ex);G.lastPing[id]=d*1440+G.min};
+ /* le matin : « bien dormi ? » ; le soir : « bonne nuit » */
+ if(h>=7&&h<=9&&!done('m')&&Math.random()<(h===9?1:.5)){set('m');say(pickR(PT_MATIN(pn)));return}
+ if(h===22&&!done('n')){set('n');say(pickR(PT_SOIR(pn)));return}
+ if(ph.type==='cours')return;
+ /* rendez-vous du week-end : vendredi soir ou samedi / dimanche matin, une fois par week-end */
+ const wk=d-wd;/* le lundi de la semaine : vendredi et week-end comptent ensemble */
+ if((wd===4&&h>=17&&h<=20||we&&h>=9&&h<=12)&&G.ptRdv!==wk&&!G.plans.some(x=>x.by===id&&x.day>=d&&['pending','hour','accepted'].includes(x.status))&&Math.random()<.45){G.ptRdv=wk;
+  const sp=pickR(Object.keys(DATE_SPOTS)),lieu=PLACE_OUT[sp];
+  if(wd===4){say(pickR([`Tu veux faire quoi ce week-end ${pn} ? J'ai envie qu'on passe du temps ensemble 🥰`,`J'aimerais qu'on aille ${lieu} ce week-end… quand tu seras libre ? ❤️`,`Ce week-end je suis tout·e à toi 😏 On va ${lieu} ?`]),{mq:{k:'prdv',o:['Samedi 🥰','Dimanche ❤️','Pas ce week-end'],d:{sp,days:[d+1,d+2]}}});return}
+  say(pickR([`J'ai envie de te voir, tu me manques… on va ${lieu} aujourd'hui ? 🥺`,`J'aimerais qu'on aille ${lieu} aujourd'hui, si t'es libre ❤️`,`${pn.replace(/^./,c=>c.toUpperCase())}, ça te dirait ${lieu} aujourd'hui ? Juste toi et moi 🥰`]),{mq:{k:'prdv',o:['Oui, avec plaisir 🥰','Une autre fois'],d:{sp,days:[d]}}});return}
+ if(busy)return;
+ /* un appel, le soir (tous les 2 jours au plus) */
+ if(h>=19&&h<=21&&d-(G.ptCall??-9)>=2&&Math.random()<.3){G.ptCall=d;say(pickR([`Je peux t'appeler ${pn} ? J'ai envie d'entendre ta voix 🥺`,`T'es dispo ? Je t'appelle 📞❤️`,`Je peux t'appeler deux minutes ? Tu me manques`]),{mq:{k:'pcall',o:['Oui, appelle-moi 🥰','Pas maintenant']}});return}
+ /* un cadeau, de temps en temps */
+ if(h>=12&&h<=20&&d-(G.ptGift??-99)>=6&&Math.random()<.12){G.ptGift=d;const [g,e]=pickR(PT_GIFTS);say(pickR([`Je t'ai pris un petit truc… ${g} ${e} Je te le donne demain 🥰`,`J'ai vu ${g} et j'ai pensé à toi ${e} C'est pour toi ❤️`,`Surprise ${e} ${g}, parce que je t'aime`]));G.ptGot=G.ptGot||[];G.ptGot.push({id,g,e,day:d});relChange(id,0,1);needUp('fun',8);note(`🎁 ${WHO[id].name} t'a offert ${g}`);toast(`🎁 ${WHO[id].name} t'a offert ${g} ${e}`);return}
+ /* « tu me manques » */
+ if(h>=12&&h<=21&&!done('mq')&&d-(G.ptCall??-9)>0&&Math.random()<.06){set('mq');say(pickR(PT_MANQUE(pn)))}
+}
+MQ_FX.pcall=(id,j)=>{if(j){return pickR(["D'accord, plus tard alors ❤️","Ok, je t'écris ce soir 😘"])}
+ setTimeout(()=>{toast(`📞 ${WHO[id].name} t'appelle…`);closeSheet();setTimeout(()=>{note(`📞 ${WHO[id].name} t'a appelé·e`);openTalk(id,{call:1})},900)},1400);return pickR(["Je t'appelle 📞","Ça sonne 😄"])};
+MQ_FX.prdv=(id,j,d)=>{const last=d.days.length;if(j>=last)return pickR(["D'accord… le week-end prochain alors 🥺","Ok, pas de souci ❤️ une autre fois"]);
+ const pl={id:'pl'+Date.now()+Math.floor(Math.random()*999),by:id,day:d.days[j],hour:15,place:d.sp,status:'pending',date:true};G.plans.push(pl);setTimeout(()=>planAskHour(id,pl),900);return pickR(["Trop bien 🥹❤️","Yes ! J'ai trop hâte 🥰"])};
 
 /* ---------- conseils : amitié et amour ---------- */
 function socInit(){G.soc=G.soc||{};const s=G.soc;s.news=s.news||[];s.fr=s.fr||{};s.rom=s.rom||{};s.fights=s.fights||[];s.adv=s.adv||[];s.last=s.last||{};return s}
@@ -4161,7 +4219,7 @@ function advance(n){
   if(G.postQ&&G.postQ.length&&G.postQ[0].at<=G.min)publishDue();
   if(!G.storyQ)planStories();if(G.storyQ.length&&G.storyQ[0].at<=G.min)publishStories();
   if(G.min%15===0){if(!G.asleep)G.energy=clamp(G.energy-(G.min<420?2:1),0,100);needTick()}
-  if(G.min%60===0){socialHour();if(!G.asleep){npcPing();familyPing();followTick();checkObjectives()}}
+  if(G.min%60===0){socialHour();if(!G.asleep){npcPing();partnerTick();familyPing();followTick();checkObjectives()}}
  }
  const ph=phase();
  if(ph.key===G.phaseKey){vsTick();classEventTick(n)}
