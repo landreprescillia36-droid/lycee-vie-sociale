@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='155';
+const APP_VERSION='156';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2074,7 +2074,7 @@ const VOICE={
  meisha:{start:["Coucou ! Shopping à Jarry samedi, tu viens ? 🛍️","T'as vu la tenue de Kenza aujourd'hui ? Trop belle 😍","Jsuis morte, raconte ta journée 😂"],happy:["Trop mignon 🥹💅","Jsuis morte 😂 t'es {p:trop drôle}","Validé, on se capte 🛍️"],hurt:["Euh… pardon ? 😒","Ok, ça c'était pas cool","Je vais faire comme si j'avais rien lu 🙄"],neutral:["Ah ouais ?","Mmh","Ok 💅"]},
  anais:{start:["Hey ! Footing demain matin à la plage, t'es {p:chaud·e} ? 🏃‍♀️","Allez, raconte-moi ta journée 😄","Match de hand samedi, tu viens m'encourager ? 🔥"],happy:["Trop fort 😂🔥","T'es {p:génial·e} toi 💪","Haha j'adore, on fait une super équipe !"],hurt:["Aïe… ça pique un peu là 😕","Hé, doucement !","Ok… je vais courir pour me calmer"],neutral:["Ah ouais ?","Carrément !","Et après ?"]},
   ethan:{start:["Salut. Tu fais quoi de beau ?","Je dessine un peu. Et toi, ta journée ?","J'ai pensé à toi en écoutant un son tout à l'heure."],happy:["Franchement, ça me fait plaisir.","J'aime bien quand on parle comme ça.","C'est gentil, vraiment."],hurt:["Je trouve que c'était pas nécessaire.","D'accord… je vais réfléchir à ça.","Ça m'a un peu touché, je te le dis simplement."],neutral:["Je vois.","C'est particulier.","Hm, d'accord."]},
- kellian:{start:["Wesh, tu fais quoi ? 😂","Je suis avec les gars, viens on discute 🔥","T'as vu le match d'hier ? 🏀"],happy:["Ahh c'est carré ça 🔥","T'es drôle toi 😂","Mais tranquille, t'es un·e vrai·e 🤣"],hurt:["Ah ouais… ok, c'est comme ça 😒","T'inquiète, j'ai compris","Ça c'était pas obligé"],neutral:["Mais tranquille","Ouais ouais","C'est carré"]},
+ kellian:{start:["Wesh, tu fais quoi ? 😂","Je suis avec les gars, viens on discute 🔥","T'as vu le match d'hier ? 🏀"],happy:["Ahh c'est carré ça 🔥","T'es drôle toi 😂","Mais tranquille, t'es {p:un·e vrai·e} 🤣"],hurt:["Ah ouais… ok, c'est comme ça 😒","T'inquiète, j'ai compris","Ça c'était pas obligé"],neutral:["Mais tranquille","Ouais ouais","C'est carré"]},
  kais:{start:["Ouais ?","Tranquille. Tu voulais quoi ?","Je suis posé chez moi, je surveille ma sœur."],happy:["Ça me va.","Tranquille, merci.","T'es cool, en vrai."],hurt:["Comme tu veux.","T'abuses là.","J'ai pas envie d'en parler."],neutral:["Bof.","Ok.","Tranquille."]},
  willan:{start:["Wesh ! Tu fais quoi ? 😂","Frérot, on fait quoi ce week-end ? 🔥","J'arrive, j'arrive ! 😭"],happy:["J'suis mort 😂😂","On est ensemble 🤝","C'est trop drôle 🤣"],hurt:["Mais t'es sérieux ? 😕","Bon… ok. Ça m'a un peu touché, en vrai","Je rigole plus là"],neutral:["PTDR","Wesh","Ouais ouais 😂"]},
  nael:{start:["Salut. Je termine un exercice, mais je peux parler 🤓","Tu as compris le chapitre de physique ?","Je pense que tu vas aimer ce que j'ai trouvé."],happy:["C'est assez intéressant, merci.","Ah, logiquement, ça me fait plaisir 😅","Je ne m'attendais pas à ça. Merci."],hurt:["Ce n'est pas exactement ce que j'attendais de toi.","Je ne suis pas totalement d'accord avec ce que tu dis.","Je préfère ne pas répondre à ça."],neutral:["Je vois.","Si on y réfléchit…","Techniquement, oui."]},
@@ -2634,7 +2634,7 @@ const TOPICS=[
  ['famille',/(famille|parents|mère|mere|père|pere|maman|papa|frère|frere|sœur|soeur|grand-mère|mamie)/],
  ['ecole',/(lycée|cours|devoir|maths|philo|physique|français|anglais|espagnol|svt|histoire|contrôle|controle|interro|bac|prof|note|réviser|reviser|exam)/],
  ['sport',/(foot|basket|hand|sport|match|entraînement|entrainement|courir|footing|gym)/],
- ['musique',/(musique|son|chanson|zouk|gwo ka|gwoka|rap|dancehall|guitare|écoute|ecoute|playlist|danse)/],
+ ['musique',/(musique|\bsons?\b|chanson|zouk|gwo ka|gwoka|\brap\b|dancehall|guitare|écoute|ecoute|playlist|\bdanse\b)/],
  ['amour',/(crush|amoureux|amoureuse|copain|copine|tu me plais|je t'aime|t'aime|sortir avec|célibataire|celibataire|en couple|bisou)/],
  ['potins',/(potins|rumeur|drama|insta|post|story|tu as vu|t'as vu)/],
  ['fatigue',/(fatigué|fatigue|crevé|creve|dormir|sommeil|ennui|m'ennuie|ennuyer|nul aujourd)/],
@@ -2825,10 +2825,12 @@ function friendAdvice(id){const pm=passOf('me'),ids=NPCS.map(n=>n.id).filter(x=>
  if(b&&Math.random()<.7){const w=sharedPass(b,'me').length?why(b):(()=>{const q=(FICHES[b].qualites||'').split(',').map(x=>x.trim().toLowerCase()).filter(Boolean);return `${pr(b)} est ${q[0]||'cool'}${q[1]?' et '+q[1]:''}`})();const [p1,p2]=pickR([['Et',' aussi'],['Sinon,',''],['Tu peux aussi aller voir','']]);r+=` ${p1} ${CNAME(b)}${p2} : ${w.replace(/^./,c=>c.toLowerCase())}.`}
  if(worst&&link(id,worst).ami<30&&Math.random()<.5){const d=(FICHES[worst].defauts||'').split(',')[0].trim().toLowerCase();r+=` Par contre, méfie-toi de ${CNAME(worst)}${d?`, ${pr(worst).toLowerCase()} peut être ${d}`:''} 😬`}
  return r}
+/* phrases « entre potes » qu'un·e partenaire ne dit pas à son copain / sa copine */
+const PALS_RE=/(t'es (\{p:)?un·e vrai·e|t'es un vrai|t'es une vraie|mon gars|frérot|\bfrr\b|t'es marrant·e|t'es drôle toi)/i,COUPLE_OK=["Trop content·e que tu sois là 🥰","T'es {p:adorable} 😍","J'ai trop hâte 🥰","Ça me fait plaisir ❤️"];
 function smartLine(id,text,chan){
  let t=text.toLowerCase(),R=REP[id],s=sentiment(text),used=lastLines(id);
  {const m=modeleProche(text);if(m)t=m.toLowerCase()}/* phrase qui ressemble à un modèle de Prescillia */
- const fresh=L=>{if(!L||!L.length)L=(isNpc(id)&&(voiceOf(id).neutral||[]).length)?voiceOf(id).neutral:["Ah ouais ?","Je vois 🙂","Ok !"];/* liste manquante : jamais d'erreur */const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
+ const fresh=L=>{if(!L||!L.length)L=(isNpc(id)&&(voiceOf(id).neutral||[]).length)?voiceOf(id).neutral:["Ah ouais ?","Je vois 🙂","Ok !"];if(isNpc(id)&&(G.partner===id||coupleOf(id)==='me')){const K=L.filter(x=>!PALS_RE.test(x));L=K.length?K:COUPLE_OK}/* liste manquante : jamais d'erreur */const f=L.map(x=>genderize(x,id)).filter(x=>!used.some(u=>u.includes(x)));return pickR(f.length?f:L.map(x=>genderize(x,id)))};
  if(!R){if(!isFam(id)){const v=voiceOf(id);return fresh(s>0?v.happy:s<0?v.hurt:v.neutral)}R=FAMREP[famKind(id)]}
  const V=isFam(id)?R:VOICE[id];
  /* d'abord comprendre la phrase (réponse à sa question, note, émotion, goût…) */
@@ -2996,8 +2998,12 @@ function smartLine(id,text,chan){
  if(s<0)return fresh(V.hurt);
  /* « moi aussi », « pareil » : vous avez un point commun */
  if(/^\s*(moi aussi|moi pareil|pareil|moi de même|moi de meme|nous aussi|même chose|meme chose)\b/.test(t)&&t.length<40)return sty(id,fresh(["On a ça en commun alors 😄","Trop bien, on se ressemble !","Ah génial, toi aussi ?!","Je savais qu'on allait bien s'entendre 😁"]));
+ /* « toi aussi », « toi de même » : réponse à ce qu'il / elle vient de te dire de gentil (pas un changement de sujet) */
+ if(/^\s*(toi aussi|toi de même|toi de meme|toi pareil|pareil pour toi|de même|de meme|et toi aussi|toi aussi tu)\b/.test(t)&&t.length<40&&!(used.length&&/\?\s*\S*\s*$/.test(used[used.length-1]))){
+  const cp=G.partner===id||coupleOf(id)==='me',am=(G.rel[id]||{}).amour||0,fr=(G.rel[id]||{}).ami||0;
+  return sty(id,fresh(cp||am>=50?["🥹❤️ Tu me fais fondre","Arrête, je vais rougir 😳❤️","C'est pour ça que je t'aime ❤️","Ohh 🥰 t'es trop {p:mignon·ne}"]:fr>=40?["Ohh merci 🥹","Ça me touche vraiment","T'es {p:adorable} 😊","Haha merci, ça fait plaisir"]:["Ah merci 😊","C'est gentil","Haha merci !"]),'happy')}
  /* « et toi ? » : répondre sur le sujet de sa dernière question */
- if(/(et toi|et vous|toi aussi|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
+ if(/(et toi|et vous|et de ton côté)/.test(t)&&used.length){const last=used[used.length-1].toLowerCase().split(/[.!]/).pop(),pr=last.match(/préf[eè]res? (?:la |le |les |l')?([a-zà-ÿ-]+) ou (?:la |le |les |l')?([a-zà-ÿ-]+)/);
   if(pr){const c=pickR([pr[1],pr[2]]);return id==='jade'?`${c}. sans hésiter.`:`Moi ? Plutôt ${c}, clairement`}
   const th=TOPICS.find(([k,re])=>!['salut','merci'].includes(k)&&re.test(last)&&R[k]);if(th)return fresh(R[th[0]]);
   /* sinon : le sujet dont vous parliez */
