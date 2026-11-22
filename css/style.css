@@ -277,6 +277,7 @@ body.playing{background:var(--g-bg)}
 .linkrow{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:8px;width:100%}.linkrow:focus-visible{outline:2px solid var(--g-blue);outline-offset:2px;border-radius:6px}
 .bul{display:flex;flex-direction:column;gap:2px;padding:2px 0}
 .gg.love .bar i{background:#ff5c8a}
+.gg.cpl .bar i{background:#e0457b}
 .felt{background:#f2f6fa}
 .fiche{margin:0;display:grid;gap:4px}
 .fiche dt{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--g-muted);margin-top:8px}
