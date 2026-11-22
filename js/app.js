@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='158';
+const APP_VERSION='159';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -3299,15 +3299,16 @@ async function sendChat(text){
  text=(text||'').trim();if(!text||!chat||busyId)return;const id=chat.id;
  if(isNpc(id)){phInit();G.knows[id]=1}/* tu lui écris : il ou elle a ton numéro, sa réponse arrive */
  pushMsg(id,'me',text);bdayWish(id,text);needUp('soc',isFam(id)?2:3);G.st.msgs++;if(isFam(id))G.st.famTalks++;busyId=id;drawChatMsgs();
- let out=null;
- if(SAMPLE){try{out=await SAMPLE.json(buildPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
+ let out=null;const li=isNpc(id)?loveIntent(id,text):null;
+ if(li){await new Promise(r=>setTimeout(r,900+Math.random()*900));out={reponse:li.txt,amitie:1,amour:0}}
+ else if(SAMPLE){try{out=await SAMPLE.json(buildPrompt(id),{modelTier:'quick',cache:false})}catch(e){if(e&&['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code))SAMPLE=null;out=null}}
  else await new Promise(r=>setTimeout(r,900+Math.random()*900));
  if(!out||typeof out.reponse!=='string'||!out.reponse.trim()){try{out=fallbackReply(id,text)}catch(e){console.error(e);out=null}}
  if(!out||typeof out.reponse!=='string'||!out.reponse.trim())out={reponse:isNpc(id)?pickR(voiceOf(id).neutral||['Ah ouais ?']):'Ah ?',amitie:0,amour:0};/* une erreur ne doit jamais bloquer « … écrit » */
  if(isNpc(id))G.met[id]=(G.met[id]||0)+1;
  busyId=null;
  const da=clamp(Math.round(+out.amitie||0),-6,6),dl=clamp(Math.round(+out.amour||0),-6,6);
- pushMsg(id,'them',out.reponse.trim().slice(0,400));
+ pushMsg(id,'them',out.reponse.trim().slice(0,400),li&&li.mq?{mq:li.mq}:undefined);
  if(isNpc(id)){const ch=relChange(id,da,dl);if(ch)toast(ch)}else famChange(id,da);
  const pr=out.proposition;
  if(!(pr&&typeof pr==='object'))sortieFromChat(id,text);
@@ -3576,7 +3577,7 @@ function askLoveAdvice(){const ids=NPCS.map(n=>n.id).filter(a=>(G.rel[a].ami>=45
  const a=pickR(ids),B=NPCS.map(n=>n.id).filter(b=>b!==a&&!coupleOf(b)&&attracted(FICHES[a].o,FICHES[a].g,FICHES[b].g)&&link(a,b).ami>=30).sort((x,y)=>link(a,y).amour-link(a,x).amour);if(!B.length)return false;
  const b=B[0],p=prn(b);link(a,b).amour=Math.max(link(a,b).amour,40);
  pushMsg(a,'them',pickR([`J'ai l'impression de commencer à avoir des sentiments pour ${CNAME(b)}, mais je sais pas si c'est réciproque. Tu crois que je devrais ${p.ind} en parler ?`,`Faut que je te dise un truc… je crois que ${CNAME(b)} me plaît 🙈 Tu ferais quoi à ma place ?`]),
-  {mq:{k:'advL',o:['Tu devrais lui avouer ce que tu ressens.',`Essaie de te rapprocher ${p.de} avant.`,`Attends de voir si ${p.il} montre des signes d'intérêt.`,'Je pense que tu devrais passer à autre chose.'],d:{a,b,k:'amour'}}});return true}
+  {mq:{k:'advL',o:['Tu devrais lui avouer ce que tu ressens.',`Essaie de te rapprocher ${p.de} avant.`,`Attends de voir ${p.il==='il'?"s'il":'si elle'} montre des signes d'intérêt.`,'Je pense que tu devrais passer à autre chose.'],d:{a,b,k:'amour'}}});return true}
 function advAnswer(a,j,d){const s=socInit(),b=d.b,p=prn(b),ab=link(a,b),ba=link(b,a),B=CNAME(b);
  if(d.k==='ami'){const good=ba.ami+12*sharedPass(a,b).length>=40&&!(G.rival===b);s.adv.push({a,b,k:'ami',j,good,due:G.day+3+Math.floor(Math.random()*3)});
   if(j===0){ab.ami=clamp(ab.ami+10,0,100);ba.ami=clamp(ba.ami+6,0,100);relChange(a,2,0);return `Trop bien, merci ! Je vais aller ${p.ind} parler demain 😊`}
@@ -3591,8 +3592,75 @@ function advAnswer(a,j,d){const s=socInit(),b=d.b,p=prn(b),ab=link(a,b),ba=link(
 function formCouple(a,b,why){if(coupleOf(a)||coupleOf(b))return false;G.couples.push([a,b]);(G.cday=G.cday||{})[pk(a,b)]=G.day;socInit().rom[pk(a,b)]=5;
  G.posts.unshift(mkPost({by:'potins',text:`[Officiel] 💞 ${WHO[a].handle} et ${WHO[b].handle} sont ensemble !! ${why||"On l'avait vu venir ou pas ?"}`,c:30,r:400,l:9000,comments:[npcComment(pickR(NPCS.filter(n=>n.id!==a&&n.id!==b)).id)]}));
  newsPush(`${WHO[a].name} et ${WHO[b].name} sont maintenant en couple`,'💞');return true}
+
+/* ---------- influencer les couples : « t'as un crush ? », « ça se passe comment avec … ? » ---------- */
+/* santé de chaque couple de camarades (0 à 100) : baisse avec les disputes, remonte avec les bons conseils */
+function cplH(a,b){const s=socInit();s.ch=s.ch||{};const k=pk(a,b);if(s.ch[k]==null)s.ch[k]=55+hash(k+'cpl')%35;return s.ch[k]}
+function cplSet(a,b,d){const s=socInit();cplH(a,b);s.ch[pk(a,b)]=clamp(s.ch[pk(a,b)]+d,0,100);return s.ch[pk(a,b)]}
+/* les soucis qu'un·e camarade peut te raconter : f = qui a tort ('a' la personne qui parle, 'b' son ou sa partenaire) */
+const CPL_ISSUE=[
+ {k:'jaloux',f:'b',t:(B,P)=>`${B} est trop jalou${P.il==='elle'?'se':'x'}… ${P.il} m'a fait une scène parce que je parlais avec quelqu'un à la pause 🙄`},
+ {k:'ignore',f:'b',t:(B,P)=>`${B} me répond plus vraiment… ${P.il} passe son temps sur son téléphone quand on est ensemble 😔`},
+ {k:'oubli',f:'b',t:(B,P)=>`${B} a oublié qu'on devait se voir samedi. ${P.il.replace(/^./,c=>c.toUpperCase())} est resté${P.e} avec ses potes 😒`},
+ {k:'mensonge',f:'b',t:(B,P)=>`J'ai découvert que ${B} m'avait menti sur où ${P.il} était hier soir… 😕`},
+ {k:'cri',f:'a',t:(B,P)=>`Je me suis énervé·e contre ${B} pour un truc bête… j'ai crié et ${P.il} est parti${P.e} 😣`},
+ {k:'tel',f:'a',t:(B,P)=>`J'ai regardé le téléphone ${/^[aeiouyéèêàâîïôûh]/i.test(B)?"d'":'de '}${B} sans lui demander… ${P.il} l'a vu et ${P.il} est furieu${P.il==='elle'?'se':'x'} 😬`},
+ {k:'ex',f:'a',t:(B,P)=>`J'ai reparlé avec mon ex et ${B} l'a appris… ${P.il} le prend super mal 😶`},
+ {k:'rien',f:'ab',t:(B,P)=>`On se dispute pour rien en ce moment avec ${B}. Tout m'énerve chez ${P.lui}, et ${P.il} dit pareil 😮‍💨`},
+ {k:'temps',f:'ab',t:(B,P)=>`On se voit presque plus avec ${B}, entre les cours et ses entraînements… j'ai l'impression qu'on s'éloigne 🥺`}];
+const CPL_GOOD=(B,P)=>[`Ça se passe trop bien avec ${B} 🥰 ${P.il.replace(/^./,c=>c.toUpperCase())} est adorable`,`Franchement au top ! On s'est fait un ciné samedi avec ${B}, c'était trop bien 🍿`,`Tout va bien 😊 ${B} me fait rire tous les jours`,`Super bien ! J'ai jamais été aussi bien avec quelqu'un 🥹`,`Ça roule ✨ on se prend jamais la tête avec ${B}`];
+const CPL_MID=(B,P)=>[`Ça va… on a des hauts et des bas avec ${B}, comme tout le monde 😅`,`Bof, un peu de routine avec ${B}, mais ça va`,`Ça va. ${B} est un peu distant${P.e} en ce moment, mais rien de grave je crois`];
+/* « t'as un crush ? » */
+function crushAnswer(a){const r=G.rel[a],c=coupleOf(a),y=crInit().of[a];
+ if(c==='me')return pickR(["Bah… toi 🙄❤️ tu le sais très bien","C'est quoi cette question ? C'est toi évidemment 😘","Personne d'autre que toi 🥰"]);
+ if(c)return pickR([`Bah… je suis avec ${CNAME(c)} 😅`,`J'ai déjà ${CNAME(c)}, tu le sais bien 😏`,`Mon crush c'est ${CNAME(c)}, et on est ensemble 🥰`]);
+ if(r.ami<45)return pickR(["Haha, secret 🤫","Pourquoi tu veux savoir ? 👀","On se connaît pas encore assez pour ça 😅","Ça, c'est confidentiel 😏"]);
+ if(y==='me'&&crCan(a,'me'))return pickR(["Peut-être… quelqu'un pas très loin 🙈","Je te dirai pas, tu vas te moquer 😳","Hmm… y a quelqu'un oui. Mais je dis pas qui 🙈"]);
+ let b=y&&y!=='me'?y:null;
+ if(!b){const L=NPCS.map(n=>n.id).filter(x=>x!==a&&crCan(a,x)&&link(a,x).amour>=35).sort((p,q)=>link(a,q).amour-link(a,p).amour);b=L[0]||null}
+ if(!b)return pickR(["Personne pour l'instant… et toi ? 👀","Non, je suis focus sur mon bac 😂","Pas vraiment, personne me fait vibrer en ce moment 😅","Rien en vue… c'est le désert 🏜️😂"]);
+ const B=CNAME(b),p=prn(b);link(a,b).amour=Math.max(link(a,b).amour,40);
+ return {txt:pickR([`Bon… tu le dis à personne : ${B} 🙈`,`Ok, je te fais confiance… ${B}. Voilà, c'est dit 😳`,`Promets que tu gardes ça pour toi… ${B} me plaît 🙈`,`${B}… mais chut 🤫 Tu ferais quoi à ma place ?`]),
+  mq:{k:'advL',o:['Tu devrais lui avouer ce que tu ressens.',`Essaie de te rapprocher ${p.de} avant.`,`Attends de voir ${p.il==='il'?"s'il":'si elle'} montre des signes d'intérêt.`,'Je pense que tu devrais passer à autre chose.'],d:{a,b,k:'amour'}}}}
+/* « ça se passe comment avec … ? » */
+function coupleAnswer(a,nm){const c=coupleOf(a),r=G.rel[a];
+ if(nm&&nm!==c&&!(nm==='me'))return c?pickR([`Avec ${CNAME(nm)} ? Rien à voir, moi je suis avec ${CNAME(c)} 😂`,`Euh… c'est ${CNAME(c)} mon ${FICHES[c].g==='f'?'amoureuse':'amoureux'}, pas ${CNAME(nm)} 😅`]):pickR([`Avec ${CNAME(nm)} ? On n'est pas ensemble 😂`,`${CNAME(nm)} ? Non non, il se passe rien 😳`]);
+ if(!c)return pickR(["Je suis avec personne en ce moment 😅","Avec qui ? Je suis célibataire 😂","Y a personne dans ma vie pour l'instant"]);
+ if(c==='me')return pickR(["Avec toi ? Trop bien, tu le sais 🥰","Ça se passe très bien… grâce à toi ❤️"]);
+ const B=CNAME(c),P=prn(c),h=cplH(a,c);
+ if(r.ami<35)return pickR(["Ça va 🙂","Bien, merci","Ça va, ça va…"]);
+ if(h>=65)return pickR(CPL_GOOD(B,P));
+ if(h>=50&&Math.random()<.6)return pickR(CPL_MID(B,P));
+ const s=socInit();s.cplIss=s.cplIss||{};let is=CPL_ISSUE.find(x=>x.k===s.cplIss[pk(a,c)]);if(!is){is=pickR(CPL_ISSUE);s.cplIss[pk(a,c)]=is.k}
+ return {txt:genderize(is.t(B,P),a)+' '+pickR(['Tu ferais quoi, toi ?','Je sais pas quoi faire…','T\'en penses quoi ?']),
+  mq:{k:'cpl',o:[`Parle-${P.ind}-en calmement.`,'Là, c\'est toi qui as dépassé les bornes… excuse-toi.','Laisse couler, ça va passer.','Franchement, tu devrais rompre.'],d:{a,b:c,is:is.k,f:is.f}}}}
+MQ_FX.cpl=(id,j,d)=>{const {a,b,f}=d,B=CNAME(b),P=prn(b),s=socInit();delete (s.cplIss||{})[pk(a,b)];relChange(a,1,0);
+ s.adv.push({a,b,k:'cpl',j,f,h0:cplH(a,b),due:G.day+1+Math.floor(Math.random()*2)});
+ if(j===0)return pickR([`T'as raison, je vais ${P.ind} en parler ce soir 🙏`,"Ok… je vais essayer de lui dire calmement","Merci, ça m'aide. Je ${P.ind} parle demain".replace('${P.ind}',P.ind)]);
+ if(j===1){if(f==='b'){relChange(a,-3,0);return pickR(["Moi ?! C'est pas moi qui ai fait n'importe quoi 😤","Sérieux, t'es de son côté ? 🙄"])}return pickR(["…ouais. T'as raison, j'ai abusé 😔","Je sais… je vais m'excuser","Ça fait mal de l'entendre, mais t'as raison"])}
+ if(j===2)return pickR(["Ouais… on verra bien 🤷","J'espère que t'as raison 😕","Ok, je laisse couler"]);
+ return cplH(a,b)<45||f==='b'&&d.is!=='temps'?pickR(["…je crois que t'as raison. Ça peut plus durer comme ça 💔","J'y pensais aussi… merci d'être honnête 😔"]):pickR([`Rompre ? Non… j'aime ${B}, c'est juste une mauvaise passe 😕`,"T'y vas fort là 😶 je vais réfléchir"])};
+function cplBreak(a,b){G.couples=G.couples.filter(c=>!(c.includes(a)&&c.includes(b)));breakCouple(a,b)}
+/* questions sur ses amours (crush, couple) : réponse écrite + choix de conseil, même avec l'IA */
+function loveIntent(id,text){const t=text.toLowerCase().replace(/[’`]/g,"'");
+ /* « t'as un crush ? », « quelqu'un te plaît ? » */
+ if(isNpc(id)&&!/(de moi|pour moi|sur moi)/.test(t)&&/(t'as|tu as|as-tu|t as) (un|une|déjà un|deja un) crush|quelqu'un en vue|quelqu'un en vu|(t'es|tu es|es-tu) (intéress|interess)[a-zé·]* par quelqu'un|quelqu'un (te|qui te) pla[iî]t|tu kiffes? quelqu'un|t'aimes quelqu'un|tu aimes quelqu'un|t'es amoureu|tu es amoureu|c'est qui ton crush|qui est ton crush|ton crush c'est qui|t'as quelqu'un|tu as quelqu'un|quelqu'un dans ta vie/.test(t)){const r=crushAnswer(id);return typeof r==='string'?{txt:sty(id,genderize(r,id))}:{txt:genderize(r.txt,id),mq:r.mq}}
+ /* « ça se passe comment avec … ? », « ça va avec ton copain ? » */
+ if(isNpc(id)&&/(ça se passe comment avec|ca se passe comment avec|comment ça se passe avec|comment ca se passe avec|ça va avec|ca va avec|comment ça va avec|tout va bien avec|vous en êtes où|ça se passe bien avec|ca se passe bien avec|ton couple|ta copine|ton copain|ta meuf|ton mec|ta chérie|ton chéri)/.test(t)){
+  const nm=NPCS.map(n=>n.id).find(x=>x!==id&&new RegExp('\\b'+mdNorm(WHO[x].name)+'\\b').test(mdNorm(t)))||(/(avec moi|nous deux)/.test(t)?'me':null);
+  const r=coupleAnswer(id,nm);return typeof r==='string'?{txt:sty(id,genderize(r,id))}:{txt:r.txt,mq:r.mq}}
+ return null}
+/* quelques jours après ton conseil */
+function cplFollow(x){const {a,b,j,f}=x,B=CNAME(b),P=prn(b);if(coupleOf(a)!==b)return '';
+ if(j===0){if(f==='b'||f==='ab'){cplSet(a,b,22);relChange(a,4,0);return pickR([`On a parlé avec ${B}, ${P.il} s'est excusé${P.e} ❤️ Merci pour ton conseil !`,`J'ai parlé à ${B}, et ça va beaucoup mieux entre nous 🥰 merci !`])}cplSet(a,b,-5);return `J'ai parlé à ${B}… mais ${P.il} m'a dit que c'était moi le problème 😕`}
+ if(j===1){if(f==='a'||f==='ab'){cplSet(a,b,25);relChange(a,4,0);if(!hasMark(a,'confiance'))mark(a,'confiance');return pickR([`Je me suis excusé·e auprès de ${B}… ${P.il} m'a pardonné 🥹 merci de m'avoir secoué·e`,`T'avais raison, j'avais abusé. On a fait la paix avec ${B} ❤️`])}cplSet(a,b,-6);return pickR([`Je me suis pas excusé·e, c'était pas à moi de le faire… du coup on se parle plus trop avec ${B} 😒`,`${B} attend toujours que je m'excuse… mais c'est ${P.il} qui a merdé 🙄`])}
+ if(j===2){const h=cplSet(a,b,f==='ab'?6:-8);return h>=50?pickR(["T'avais raison, c'est passé tout seul 😌","Finalement ça s'est arrangé 🙂"]):pickR([`Ça s'est pas arrangé avec ${B}… c'est même pire 😣`,"J'aurais pas dû laisser couler…"])}
+ if(x.h0<45||f==='b'&&x.h0<60||f==='ab'&&x.h0<40){cplBreak(a,b);relChange(a,3,0);return pickR([`J'ai rompu avec ${B}… ça fait mal, mais je me sens plus léger·ère 💔`,`C'est fini avec ${B}. Merci d'avoir été là 💔`])}
+ cplSet(a,b,-6);if(Math.random()<.3){relChange(b,-6,0);newsPush(`${B} a appris que tu avais conseillé à ${CNAME(a)} de ${P.le} quitter…`,'😬')}return `J'ai pas réussi à rompre avec ${B}… je tiens encore à ${P.lui} 😔`}
+
 /* suite des conseils, quelques jours plus tard */
 function advFollow(){const s=socInit();s.adv.filter(x=>!x.done&&G.day>=x.due).forEach(x=>{x.done=1;const {a,b}=x,B=CNAME(b),p=prn(b),ab=link(a,b),ba=link(b,a);let t='';
+ if(x.k==='cpl'){t=cplFollow(x);if(t)pushMsg(a,'them',genderize(t,a));return}
  if(x.k==='ami'){
   if(x.j===0){if(x.good){ab.ami=clamp(ab.ami+8,0,100);ba.ami=clamp(ba.ami+8,0,100);relChange(a,5,0);if(!hasMark(a,'confiance'))mark(a,'confiance');t=`Tu avais raison pour ${B}, on s'entend trop bien ! Merci 🥰`}else{relChange(a,-2,0);t=`${B} m'a un peu déçu·e… mais bon, merci quand même.`}}
   else if(x.j===1){ab.ami=clamp(ab.ami+5,0,100);relChange(a,3,0);t=x.good?`J'ai pris le temps de connaître ${B}, bonne idée ! On devient proches 😊`:`Heureusement que j'ai pris mon temps avec ${B}… c'était pas mon genre de personne.`}
@@ -3618,6 +3686,9 @@ function socialDay(){const s=socInit(),ids=NPCS.map(n=>n.id);
  s.fights=s.fights.filter(f=>{const age=G.day-f.day;if(age>=2&&Math.random()<.3){link(f.a,f.b).ami=clamp(link(f.a,f.b).ami+12,0,100);link(f.b,f.a).ami=clamp(link(f.b,f.a).ami+12,0,100);newsPush(`${CNAME(f.a)} et ${CNAME(f.b)} se sont réconcilié·e·s`,'🕊️');return false}return age<12});
  /* passion : un moment fort dans la vie d'un·e camarade */
  if(Math.random()<.12){const id=pickR(ids),p=pickR(passOf(id));if(p){const t=S(id,PASS[p].ev);newsPush(`${CNAME(id)} ${t}`,PASS[p].e);G.storyQ=G.storyQ||[];G.storyQ.push({at:Math.max(G.min,600)+Math.floor(Math.random()*500),by:id,pass:p,txt:('J\'ai '+t.replace(/^a /,'')).replace(/ ses /g,' mes ').replace(/ son /g,' mon ').replace(/ sa /g,' ma ')});G.storyQ.sort((a,b)=>a.at-b.at)}}
+ G.couples.forEach(([a,b])=>{if(a==='me'||b==='me')return;const fight=s.fights.some(f=>pk(f.a,f.b)===pk(a,b)),cr=crInit().of[a]&&crInit().of[a]!==b||crInit().of[b]&&crInit().of[b]!==a;
+  const h=cplSet(a,b,Math.round(Math.random()*5-3-(fight?4:0)-(cr?2:0)+(link(a,b).ami+link(b,a).ami>130?1:0)));
+  if(h<12&&Math.random()<.2&&G.day-(G.lastBreak??-99)>=20){G.lastBreak=G.day;cplBreak(a,b)}});
  crushDay();breakAfter();ilyDay();phoneDay();advFollow();raisDay();chapTick();
  if(G.day-(s.last.adv||0)>=3&&Math.random()<.45)s.advAt={day:G.day,h:17+Math.floor(Math.random()*4),k:Math.random()<.5?'F':'L'};
  bdayDay()}
