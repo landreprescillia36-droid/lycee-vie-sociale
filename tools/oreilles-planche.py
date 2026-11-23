@@ -44,10 +44,12 @@ for side in (-1, 1):
     sm = keep & (np.sign(UU - 200) == side)
     if not sm.any(): continue
     outer = du_[sm].max(); vc = VV[sm].mean()
-    M = np.float32([[1, 0, round((126 - outer) * W / iw) * side], [0, 1, 0]])   # hauteur : celle de la planche
-    ms = cv2.warpAffine((np.sign(UU - 200) == side).astype(np.float32), M, (W, H)) > .5
-    A2 = np.where(ms, cv2.warpAffine(A * (np.sign(UU - 200) == side), M, (W, H)), A2)
-    C2 = np.where(ms[:, :, None], cv2.warpAffine(Cu, M, (W, H)), C2)
+    # décalage vers l'extérieur, moins en haut : le haut de l'oreille reste collé à la tête (comme sur la planche)
+    sh = (126 - outer) - np.interp(VV, [185, 215, 240], [9, 3, 0])   # unités, par rangée
+    Xs = (np.arange(W)[None, :] - sh * W / iw * side).astype(np.float32); Ys = np.tile(np.arange(H, dtype=np.float32)[:, None], (1, W))
+    ms = cv2.remap((np.sign(UU - 200) == side).astype(np.float32), Xs, Ys, cv2.INTER_NEAREST) > .5
+    A2 = np.where(ms, cv2.remap((A * (np.sign(UU - 200) == side)).astype(np.float32), Xs, Ys, cv2.INTER_LINEAR), A2)
+    C2 = np.where(ms[:, :, None], cv2.remap(Cu.astype(np.float32), Xs, Ys, cv2.INTER_LINEAR), C2)
 A, Cu = A2, C2
 # une oreille cachée (trait rouge, mèche) : on reprend l'autre en miroir
 ar = [(A * (np.sign(UU - 200) == sd)).sum() for sd in (-1, 1)]
