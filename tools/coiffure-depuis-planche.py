@@ -191,7 +191,8 @@ fr[bij, 3] = 0
 if DROIT:   # devant : rien sur le visage du jeu sous les oreilles (les tresses passent derrière la mâchoire, sans liseré)
     GV_ = [228, 240, 250, 260, 270, 280, 290, 300, 310, 315, 400]; GW_ = [92, 88, 84.5, 80, 75, 68.6, 60.4, 49, 35, 27, 27]
     gwv = np.interp(VV, GV_, GW_); fr[:, :, 3] *= np.where(VV > 232, np.clip((np.abs(UU - 200) - gwv + 1) / 2, 0, 1), 1)
-    fr[:, :, 3] *= np.clip((352 - VV) / 3, 0, 1)   # sur les épaules : les tresses passent derrière le dos (image de derrière)
+    sv = np.interp(np.abs(UU - 200), [0, 30, 44, 52, 60, 76, 92, 108, 116, 124, 132], [336, 338, 342.5, 346.5, 351, 356, 360.5, 365, 368.7, 375, 382])   # haut des épaules du jeu
+    fr[:, :, 3] *= np.clip((sv - VV) / 1.5, 0, 1)   # sur les épaules : les tresses passent derrière le dos (image de derrière), en suivant la ligne des épaules
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(P(hid))
 # derrière le corps : la masse est élargie de quelques pixels vers le visage et le cou (aucun liseré de fond entre les deux)
 dos = out.copy(); m_ = (dos[:, :, 3] > 128).astype(np.uint8)
