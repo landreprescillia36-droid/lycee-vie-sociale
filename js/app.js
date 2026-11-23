@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='160';
+const APP_VERSION='161';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1079,7 +1079,7 @@ function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(H
  im.src=f.includes('/')?`assets/${f}.webp`:`assets/coiffures/${f}.webp`;return null}
 /* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
    recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
-const HAIR_PEAU=new Set(['bafro','bafro-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
+const HAIR_PEAU=new Set(['bafro','bafro-dos','bafrodef','bafrodef-dos','btwistout','btwistout-dos','bpuffhaut','bpuffhaut-dos','bpuffbas','bpuffbas-dos','bcornrows','bcornrows-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
 function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;STINT_GO[k]=1;HT_PEND++;
  const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{if(artStale(f,im)&&!im._r){im._r=1;im.src=im.src.split('?')[0]+'?r='+Date.now();return}HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){if(a[i+3]<200)continue;R+=a[i];G+=a[i+1];B+=a[i+2];W++}/* teinte de référence : pixels de peau bien opaques */
@@ -1400,21 +1400,26 @@ const HAIRDB={
  demichignon:{n:'Demi-chignon haut, longueurs lisses',c:'long lisse chignon attache',r:'F',x:"Chignon sur le dessus et longueurs lisses respectés."},
  queuehaute:{n:'Queue haute avec chouchou',c:'long ondule queue attache',r:'F',x:"Chouchou orange, queue ondulée sur l'épaule et mèche du visage reprises ; la queue est un peu plus courte."},
  carreplongeant:{n:'Carré lisse, mèche balayée',c:'mi lisse',r:'F',x:"Pointes nettes et mèche de côté respectées ; effilage des pointes simplifié."},
- bafro:{n:"Afro naturel",c:'mi crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bafro:{n:"Afro naturel",c:'mi crepu',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
  bbantu:{n:"Bantu knots",c:'court crepu attache chignon',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bcarre:{n:"Carré bouclé",c:'mi boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bchignon:{n:"Chignon haut crépu",c:'chignon attache crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bpuffs:{n:"Deux puffs",c:'crepu attache chignon',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bbox:{n:"Tresses box braids (avec boucles)",c:'long tresse crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bcollees:{n:"Tresses collées",c:'long tresse attache crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
- bdemiqueue:{n:"Demi-queue bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bdemiqueue:{n:"Demi-queue bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
  bqueue:{n:"Queue de cheval bouclée",c:'long boucle queue attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  blongs:{n:"Cheveux longs bouclés",c:'long boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bchignonhaut:{n:"Chignon haut bouclé",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bchignonbas:{n:"Chignon bas bouclé",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  btwists:{n:"Twists",c:'long tresse crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bchignonmeches:{n:"Chignon avec bouclés",c:'chignon attache boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
- bwashgo:{n:"Wash and go",c:'mi boucle crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
+ bwashgo:{n:"Wash and go",c:'mi crepu',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
+ bafrodef:{n:"Afro boucles définies",c:'mi crepu',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
+ btwistout:{n:"Twist out",c:'mi crepu',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
+ bpuffhaut:{n:"Puff haut",c:'boucle attache chignon',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
+ bpuffbas:{n:"Puff bas",c:'mi boucle attache',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
+ bcornrows:{n:"Cornrows",c:'tresse attache crepu',r:'I',x:"Reprise de ta nouvelle planche (cheveux crépus et bouclés) : vrais pixels du dessin."},
  bfoulard:{n:"Avec foulard",c:'court crepu attache',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  btressesboucles:{n:"Tresses + boucles",c:'long tresse boucle',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
  bcourt:{n:"Court crépu",c:'court crepu',r:'I',x:"Reprise de ta planche des coiffures bouclées et crépues : vrais pixels du dessin."},
@@ -1473,7 +1478,7 @@ const HAIR_SWAP={gcarremoyen:'gcarrecourt',gcarrelong:'gcarrecourt',graiemilieu:
  degrade:'gdegmoyen',taper:'gtaper',fadehaut:'gdeghaut',raiecote:'graiecote',court:'gcarrecourt',texture:'gquiff',banane:'gpompadour',piques:'gquiff',meche:'graiecote',fondu:'gdegbas',plaque:'gplaques',raie:'graiecote',rideau:'graiemilieu',rase:'gbuzz'};
 Object.assign(HAIR_SWAP,{gnaturel:'gtaper',gdegbas:'gtaper',gdegmoyen:'gtaper',gdeghaut:'gtaper',gbuzz:'gtaper',gcarrecourt:'gondule'});/* coiffures 2 à 7 des garçons retirées */
 const hairOk=h=>{let n=0;while(!HAIR_ALL.includes(h)&&HAIR_SWAP[h]&&n++<5)h=HAIR_SWAP[h];return h};
-const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gondule'];
+const HAIR_ALL=['carrelisse','queuehaute2','mechesdevant','frangedroite','chignonhaut2','raiecotel','deuxtresses','serretete','barrette','raiemilieu','queuelisse','bafro','bcarre','bchignon','bbox','bcollees','bdemiqueue','bqueue','blongs','bchignonhaut','btwists','bchignonmeches','bwashgo','bafrodef','btwistout','bpuffhaut','bpuffbas','bcornrows','btressesboucles','bcourt','bqueuehaute','chauve','gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gondule'];
 const COLSLOT={top:'topColor',bottom:'bottomColor',dress:'dressColor',jacket:'jacketColor',shoes:'shoesColor',hat:'hatColor',bag:'bagColor'};
 const PALS={topColor:CLOTH,bottomColor:BOTC,dressColor:CLOTH,jacketColor:CLOTH.concat(['#5b7fb5','#2f4a78']),shoesColor:SHOEC,hatColor:CLOTH,bagColor:['#7a5236','#1f2127','#ece2cc','#c49a6c','#d93b5e','#26314f']};
 const SHOE_NOTE="le design et le logo de la marque ne sont pas reproduits.";
