@@ -18,7 +18,7 @@ r = 1.72   # px de l'image par unité de tête (comme les autres coiffures boucl
 ref = cv2.imread(cap)[:, :, ::-1].astype(np.float32)
 # traits rouges : remplacés par le pixel symétrique (axe = milieu des yeux)
 red = (ref[:, :, 0] > 140) & (ref[:, :, 0] - ref[:, :, 1] > 70) & (ref[:, :, 0] - ref[:, :, 2] > 60)
-red = cv2.dilate(red.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+red = cv2.dilate(red.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
 ax = (xg + xd) / 2; yy_, xx_ = np.where(red & (np.arange(ref.shape[1])[None, :] >= X0) & (np.arange(ref.shape[1])[None, :] < X1) & (np.arange(ref.shape[0])[:, None] >= Y0) & (np.arange(ref.shape[0])[:, None] < Y1))
 mx = np.clip(np.round(2 * ax - xx_).astype(int), 0, ref.shape[1] - 1); ref[yy_, xx_] = ref[yy_, mx]
 # repère : yeux de la case -> yeux du jeu
