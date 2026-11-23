@@ -50,7 +50,7 @@ if DROIT:   # tresses qui pendent droit : décalées d'un bloc vers l'extérieur
     U2 = 200 + np.sign(UU - 200) * (du - shv)
     V2 = np.where(VV > 240, 240 + (VV - 240) * (351 - 240) / (381 - 240), VV)   # le cou du jeu est plus long : les tresses sont allongées pour finir sur les épaules, comme sur la planche
     X, Y = to_img(U2, V2); C = cv2.remap(ref, X.astype(np.float32), Y.astype(np.float32), cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).clip(0, 255)
-if ok_.sum() > 10 and not DROIT:
+if ok_.sum() > 10 and not DROIT and 'nojoues' not in OPT:
     sw = np.interp(np.arange(H), np.where(ok_)[0], sw[ok_]); sw = cv2.GaussianBlur(sw.reshape(-1, 1), (0, 0), 10).ravel()
     gw = np.interp(V, GV, GW)
     wv = np.clip((V - 214) / 16, 0, 1) * np.clip((330 - V) / 10, 0, 1)   # fondu au-dessus (yeux) et au cou
