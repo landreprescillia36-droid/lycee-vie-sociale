@@ -46,7 +46,8 @@ ok_ = ~np.isnan(sw)
 if DROIT:   # tresses qui pendent droit : décalées d'un bloc vers l'extérieur (sans être tordues) pour longer la mâchoire du jeu
     du = np.abs(UU - 200); shv = 4 * np.clip((VV - 200) / 25, 0, 1) * np.clip((du - 50) / 20, 0, 1)
     U2 = 200 + np.sign(UU - 200) * (du - shv)
-    X, Y = to_img(U2, VV); C = cv2.remap(ref, X.astype(np.float32), Y.astype(np.float32), cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).clip(0, 255)
+    V2 = np.where(VV > 240, 240 + (VV - 240) * (351 - 240) / (381 - 240), VV)   # le cou du jeu est plus long : les tresses sont allongées pour finir sur les épaules, comme sur la planche
+    X, Y = to_img(U2, V2); C = cv2.remap(ref, X.astype(np.float32), Y.astype(np.float32), cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).clip(0, 255)
 if ok_.sum() > 10 and not DROIT:
     sw = np.interp(np.arange(H), np.where(ok_)[0], sw[ok_]); sw = cv2.GaussianBlur(sw.reshape(-1, 1), (0, 0), 10).ravel()
     gw = np.interp(V, GV, GW)
