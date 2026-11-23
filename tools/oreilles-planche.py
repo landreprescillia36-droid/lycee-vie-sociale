@@ -18,50 +18,53 @@ X = (ex + du * np.cos(th) - dv * np.sin(th)).astype(np.float32); Y = (ey + du * 
 C = cv2.remap(ref, X, Y, cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).clip(0, 255)
 inside = (X > X0 + 2) & (X < X1 - 2) & (Y > Y0 + 2) & (Y < Y1 - 2)
 lum = C @ [.299, .587, .114]; bg = np.array([226, 236, 248.])
-skin = (np.abs(C - bg).sum(-1) > 45) & (C[:, :, 0] - C[:, :, 2] > 25) & (lum > 55)
+# détourage doux : opacité d'après l'écart au fond de la case (bord lisse, sans liseré clair), couleur « dé-mélangée » du fond
+fgd = np.abs(C - bg).sum(-1); am = np.clip((fgd - 18) / 70, 0, 1)
+Cu = ((C - (1 - am[:, :, None]) * bg) / np.maximum(am[:, :, None], .08)).clip(0, 255)
 redm = (C[:, :, 0] > 160) & (C[:, :, 0] - C[:, :, 1] > 105) & (C[:, :, 0] - C[:, :, 2] > 95) & (C[:, :, 1] < 80)   # traits rouges de Prescillia
-skin &= ~cv2.dilate(redm.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
-zone = (np.abs(UU - 200) > 80) & (np.abs(UU - 200) < 140) & (VV > 180) & (VV < 285) & inside & ~((VV < 200) & (np.abs(UU - 200) < 104))   # pas la tempe au-dessus de l oreille
-ear = (skin & zone).astype(np.uint8)
-ear = cv2.morphologyEx(ear, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8))
+du_ = np.abs(UU - 200)
+hwg = np.interp(VV, [176, 190, 200], [95, 97, 98])   # bord du visage du jeu près de la tempe
+zone = (du_ > 80) & (du_ < 140) & (VV > 176) & (VV < 288) & inside & ~((VV < 200) & (du_ < hwg))
+ear = ((am > .5) & (lum > 38) & zone & ~cv2.dilate(redm.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)).astype(np.uint8)
+ear = cv2.morphologyEx(ear, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
 n, lab, st, _ = cv2.connectedComponentsWithStats(ear, 8)
-keep = np.zeros_like(ear, bool)
+keep = np.zeros(ear.shape, bool)
 for side in (-1, 1):   # la plus grande tache de chaque côté
     cand = [i for i in range(1, n) if np.sign(U[int(st[i, 0] + st[i, 2] / 2)] - 200) == side]
     if cand: keep |= lab == max(cand, key=lambda i: st[i, 4])
-keep = cv2.morphologyEx(keep.astype(np.uint8), cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8)).astype(bool)
-# l'oreille est posée au bord du visage du jeu (plus large que celui de la planche) : décalée vers l'extérieur
-# jusqu'à ce que son bord extérieur soit celui des oreilles du jeu (demi-largeur 117 dans le jeu, soit 126 avant l'ajustement de la coiffure à la tête)
-ring0 = cv2.dilate(keep.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & ~keep & zone & (np.abs(C - bg).sum(-1) > 45)
-full = keep | ring0; Cs = C.copy(); full2 = np.zeros_like(full)
+keep = cv2.morphologyEx(keep.astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))).astype(bool)
+keep = cv2.morphologyEx(keep.astype(np.uint8), cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))).astype(bool)   # pas de pointe de tempe
+# trous à l'intérieur (creux sombre de l'oreille) : remplis
+inv = (~keep).astype(np.uint8); n3, l3, s3, _ = cv2.connectedComponentsWithStats(inv, 4)
+keep |= np.isin(l3, [i for i in range(1, n3) if s3[i, 4] < 3000])
+A = am * cv2.GaussianBlur(cv2.dilate(keep.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), .6)
+# l'oreille est posée au bord du visage du jeu : bord extérieur à 126 avant l'ajustement de la coiffure (117 dans le jeu)
+A2 = np.zeros_like(A); C2 = Cu.copy()
 for side in (-1, 1):
-    sm = full & ((np.sign(UU - 200)) == side)
+    sm = keep & (np.sign(UU - 200) == side)
     if not sm.any(): continue
-    outer = np.abs(UU[sm] - 200).max(); sh = int(round((126 - outer) * W / iw)) * side
-    vc = VV[sm].mean(); sy_ = int(round((225 - vc) * H / ih))
-    M = np.float32([[1, 0, sh], [0, 1, sy_]])
-    full2 |= cv2.warpAffine(sm.astype(np.uint8), M, (W, H)).astype(bool)
-    cs = cv2.warpAffine(C, M, (W, H)); Cs = np.where(cv2.warpAffine(sm.astype(np.uint8), M, (W, H))[:, :, None] > 0, cs, Cs)
-    print('  côté', side, 'bord', round(outer, 1), 'centre v', round(vc, 1))
-keep, C = full2, Cs
+    outer = du_[sm].max(); vc = VV[sm].mean()
+    M = np.float32([[1, 0, round((126 - outer) * W / iw) * side], [0, 1, 0]])   # hauteur : celle de la planche
+    ms = cv2.warpAffine((np.sign(UU - 200) == side).astype(np.float32), M, (W, H)) > .5
+    A2 = np.where(ms, cv2.warpAffine(A * (np.sign(UU - 200) == side), M, (W, H)), A2)
+    C2 = np.where(ms[:, :, None], cv2.warpAffine(Cu, M, (W, H)), C2)
+A, Cu = A2, C2
 # une oreille cachée (trait rouge, mèche) : on reprend l'autre en miroir
-ar = [(keep & (np.sign(UU - 200) == sd)).sum() for sd in (-1, 1)]
+ar = [(A * (np.sign(UU - 200) == sd)).sum() for sd in (-1, 1)]
 if min(ar) < .75 * max(ar):
     good = -1 if ar[0] > ar[1] else 1
-    mx = np.clip(np.round(((400 - UU) - ix) / iw * W - .5), 0, W - 1).astype(int)   # u -> 400 - u
-    side_bad = np.sign(UU - 200) == -good
-    mk = keep[np.arange(H)[:, None], mx]; mc = C[np.arange(H)[:, None], mx]
-    keep = np.where(side_bad, mk, keep); C = np.where(side_bad[:, :, None], mc, C)
+    mx = np.clip(np.round(((400 - UU) - ix) / iw * W - .5), 0, W - 1).astype(int); ry = np.arange(H)[:, None]
+    bad = np.sign(UU - 200) == -good
+    A = np.where(bad, A[ry, mx], A); Cu = np.where(bad[:, :, None], Cu[ry, mx], Cu)
     print('  oreille', 'gauche' if good > 0 else 'droite', 'reprise en miroir')
-keep = cv2.morphologyEx(keep.astype(np.uint8), cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17))).astype(bool)   # pas de bout de tempe
-n2, lb2, st2, _ = cv2.connectedComponentsWithStats(keep.astype(np.uint8), 8)
-keep = np.isin(lb2, [i for i in range(1, n2) if st2[i, 4] > 800])
-# bord : le contour sombre de l'oreille dessiné sur la planche est gardé (1 à 2 px autour)
-ring = np.zeros_like(keep)
-a = cv2.GaussianBlur((keep | ring).astype(np.float32), (0, 0), .7)
 # côté visage : fondu (le visage du jeu passe devant)
 hw = np.interp(VV, [180, 210, 240, 270, 285], [96, 97, 92, 84, 78])
-a *= np.clip((np.abs(UU - 200) - (hw - 12)) / 4, 0, 1)
+A *= np.clip((du_ - (hw - 12)) / 4, 0, 1)
+nA, lA, sA, _ = cv2.connectedComponentsWithStats((A > .05).astype(np.uint8), 8)   # seulement l'oreille, pas de miettes
+if nA > 1:
+    big = [max([i for i in range(1, nA) if np.sign(U[int(sA[i, 0] + sA[i, 2] / 2)] - 200) == sd] or [0], key=lambda i: sA[i, 4] if i else -1) for sd in (-1, 1)]
+    A = A * np.isin(lA, [b for b in big if b])
+a = A; C = Cu; keep = A > .5
 D = np.zeros((H, W, 4), np.float32)
 if os.path.exists(P('-dos-peau')):
     D = np.array(Image.open(P('-dos-peau')).convert('RGBA')).astype(np.float32)
