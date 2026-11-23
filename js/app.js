@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='166';
+const APP_VERSION='167';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -175,7 +175,11 @@ function render(s,vb,p,showBg){
  /* garçons : trait de la mâchoire, des joues jusqu'au menton (planche de Prescillia) */
  const jaw=s.sexe==='m'&&FACE_ART.m[faceKey(s.face)];
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
+ /* coiffure garçon reprise d'une planche : le haut de la tête a la forme du modèle (le crâne du jeu ne dépasse pas des cheveux) */
+ const TT=HART(s)&&HART(s).tete?HART(s):null,ttf=TT&&hairFit(s),ttT=ttf?` transform="${ttf.t}"`:'';
+ if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${TT.tete}"${ttT}/><rect x="-400" y="213" width="1200" height="1200"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
+ if(TT)o+='</g>';
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;
  if(big&&F.chin){/* structure du menton (planche) : ombre le long de la mâchoire, menton éclairé, creux sous la lèvre */
   const ch=F.chin,m=s.sexe==='m'?1:.75,my=285+mo+a.mouthY;
