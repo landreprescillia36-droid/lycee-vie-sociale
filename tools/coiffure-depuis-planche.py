@@ -7,6 +7,7 @@ import sys, os, re, json, numpy as np, cv2
 from PIL import Image
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); os.chdir(R)
 hid, cap = sys.argv[1], sys.argv[2]; xg, yg, xd, yd, X0, Y0, X1, Y1 = map(float, sys.argv[3:11])
+DROIT = len(sys.argv) > 11 and sys.argv[11] == 'droit'   # tresses qui pendent droit : pas écartées, passent derrière la mâchoire et le cou
 P = lambda f: 'assets/coiffures/' + f + '.png'
 js = open('js/coiffures-art.js').read()
 if '"' + hid + '":{' not in js:   # nouvelle coiffure : même fiche que l'afro
@@ -42,7 +43,11 @@ for y in range(H):
     while rr < W - 1 and skc[y, rr + 1]: rr += 1
     sw[y] = (rr - l) / 2 / r
 ok_ = ~np.isnan(sw)
-if ok_.sum() > 10:
+if DROIT:   # tresses qui pendent droit : décalées d'un bloc vers l'extérieur (sans être tordues) pour longer la mâchoire du jeu
+    du = np.abs(UU - 200); shv = 4 * np.clip((VV - 200) / 25, 0, 1) * np.clip((du - 50) / 20, 0, 1)
+    U2 = 200 + np.sign(UU - 200) * (du - shv)
+    X, Y = to_img(U2, VV); C = cv2.remap(ref, X.astype(np.float32), Y.astype(np.float32), cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE).clip(0, 255)
+if ok_.sum() > 10 and not DROIT:
     sw = np.interp(np.arange(H), np.where(ok_)[0], sw[ok_]); sw = cv2.GaussianBlur(sw.reshape(-1, 1), (0, 0), 10).ravel()
     gw = np.interp(V, GV, GW)
     wv = np.clip((V - 214) / 16, 0, 1) * np.clip((330 - V) / 10, 0, 1)   # fondu au-dessus (yeux) et au cou
@@ -154,10 +159,13 @@ fr = out.copy()
 fr[:, :, 3] *= 1 - cv2.GaussianBlur(((VV > 228) & (VV < 285) & (np.abs(np.abs(UU - 200) - 96) < 20)).astype(np.float32), (0, 0), 3) * (lum > 150)   # devant : seulement les boucles d'oreilles de la planche (le jeu dessine les siennes) ; les cheveux sur les épaules restent devant   # devant : rien sur les boucles d'oreilles (le jeu dessine les siennes)
 bij = cv2.dilate(((lum > 200) & (VV > 200) & (VV < 300) & (np.abs(np.abs(UU - 200) - 95) < 25)).astype(np.uint8), cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))).astype(bool)
 fr[bij, 3] = 0
+if DROIT:   # devant : rien sur le visage du jeu sous les oreilles (les tresses passent derrière la mâchoire, sans liseré)
+    GV_ = [228, 240, 250, 260, 270, 280, 290, 300, 310, 315, 400]; GW_ = [92, 88, 84.5, 80, 75, 68.6, 60.4, 49, 35, 27, 27]
+    gwv = np.interp(VV, GV_, GW_); fr[:, :, 3] *= np.where(VV > 232, np.clip((np.abs(UU - 200) - gwv + 1) / 2, 0, 1), 1)
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(P(hid))
 # derrière le corps : la masse est élargie de quelques pixels vers le visage et le cou (aucun liseré de fond entre les deux)
 dos = out.copy(); m_ = (dos[:, :, 3] > 128).astype(np.uint8)
-grow = (cv2.dilate(m_, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))) > 0) & (m_ == 0) & (VV > 120)
+grow = (cv2.dilate(m_, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))) > 0) & (m_ == 0) & (VV > 120) & ~(DROIT & (VV > 232))
 dos[:, :, :3] = np.where(grow[:, :, None], cv2.inpaint(dos[:, :, :3].clip(0, 255).astype(np.uint8), grow.astype(np.uint8), 7, cv2.INPAINT_TELEA), dos[:, :, :3])
 fx_ = np.abs(UU - 200) < 125   # seulement vers l'intérieur (cou, épaules), pas vers l'extérieur de la coiffure
 skd = cv2.dilate(skin.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
@@ -165,12 +173,30 @@ dos[:, :, 3] = np.where(grow & fx_ & skd, 255, dos[:, :, 3])
 # derrière le visage, le cou et les épaules (quelle que soit la forme du visage) : rangée remplie d'un bord à l'autre
 span = np.zeros((H, W), bool)
 for y in range(H):
-    if V[y] < 150: continue
+    if V[y] < 150 or DROIT and V[y] > 232: continue
     xs2 = np.where(dos[y, :, 3] > 128)[0]
     if len(xs2) > 1 and U[xs2.min()] < 150 and U[xs2.max()] > 250: span[y, xs2.min():xs2.max() + 1] = True
 fill = span & (dos[:, :, 3] < 250)
 dos[:, :, :3] = np.where(fill[:, :, None], cv2.inpaint(dos[:, :, :3].clip(0, 255).astype(np.uint8), fill.astype(np.uint8), 9, cv2.INPAINT_TELEA), dos[:, :, :3])
 dos[fill, 3] = 255   # là où la capture montre la peau (le corps passe devant)
+if DROIT:   # derrière : chaque rangée de tresses rejoint la mâchoire du jeu (pas de liseré de fond entre les deux)
+    GV_ = [228, 240, 250, 260, 270, 280, 290, 300, 310, 315, 400]; GW_ = [92, 88, 84.5, 80, 75, 68.6, 60.4, 49, 35, 27, 27]
+    gap = np.zeros((H, W), bool)
+    for y in range(H):
+        if not 238 < V[y] < 312: continue
+        gw_ = np.interp(V[y], GV_, GW_)
+        for sgn in (-1, 1):
+            xs3 = np.where((dos[y, :, 3] > 200) & (np.sign(U - 200) == sgn) & (np.abs(U - 200) < gw_ + 25))[0]
+            if not len(xs3): continue
+            inner = xs3.max() if sgn < 0 else xs3.min()
+            lim = np.argmin(np.abs(U - (200 + sgn * (gw_ - 6))))
+            a_, b_ = sorted((inner, lim)); gap[y, a_:b_ + 1] = True
+    gap &= dos[:, :, 3] < 200
+    dos[:, :, :3] = np.where(gap[:, :, None], cv2.inpaint(dos[:, :, :3].clip(0, 255).astype(np.uint8), gap.astype(np.uint8), 5, cv2.INPAINT_TELEA), dos[:, :, :3]); dos[gap, 3] = 255
+if DROIT:   # sous les oreilles : rien de clair (bord de la peau de la planche), seulement les tresses
+    dl = dos[:, :, :3] @ [.299, .587, .114]; dos[:, :, 3] *= np.where((VV > 232) & (dl > 70), np.clip((110 - dl) / 40, 0, 1), 1)
+eb = (VV > 222) & (VV < 292) & (np.abs(np.abs(UU - 200) - 98) < 26) & ((dos[:, :, :3] @ [.299, .587, .114]) > 120)   # boucles d'oreilles de la planche
+dos[cv2.dilate(eb.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool), 3] = 0
 Image.fromarray(dos.clip(0, 255).astype(np.uint8)).save(P(hid + '-dos'))
 # peau du crâne (raie, entre les mèches au-dessus du front) : teinte de la peau dessinée d'origine, reteinte par le jeu
 FT = json.load(open('tools/front-visages.json')); topf = np.interp(UU, [p[0] for p in FT], [p[1] for p in FT], left=-999, right=-999)
