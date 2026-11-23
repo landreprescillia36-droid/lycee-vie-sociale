@@ -82,7 +82,7 @@ kill = cv2.GaussianBlur(((face_in & ~bh) | brows_eyes).astype(np.float32), (0, 0
 a = a * (1 - np.clip(kill * 2, 0, 1))   # visage (yeux, sourcils, bouche) : jamais des cheveux, bord fondu
 if 'garcon' in OPT:   # planche garçons : on garde le dégradé des côtés, on retire seulement yeux, sourcils, oreilles, visage et t-shirt de la planche
     a = A0.copy(); a[a < .1] = 0; du_ = np.abs(UU - 200)
-    k_ = (du_ > 20) & (du_ < 82) & (VV > (212 if 'frangecote' in hid else 186)) & (VV < 224)                                   # yeux
+    k_ = (du_ > 20) & (du_ < 82) & (VV > (199 if 'frangecote' in hid else 186)) & (VV < 224)                                   # yeux
     if 'frangecote' not in hid: k_ |= (du_ > 8) & (du_ < 84) & (VV > 156) & (VV < 188)     # sourcils
     else: k_ |= (UU > 226) & (du_ < 84) & (VV > 156) & (VV < 190)   # seulement le sourcil visible (l'autre est sous la frange)
     k_ |= (du_ < (38 if 'queue' in hid else 66)) & (VV > 222) & (VV < 345)                 # nez, bouche, menton, cou (pas la queue de cheval)
@@ -90,6 +90,7 @@ if 'garcon' in OPT:   # planche garçons : on garde le dégradé des côtés, on
     a = a * (1 - np.clip(cv2.GaussianBlur(k_.astype(np.float32), (0, 0), 1.5) * 2, 0, 1))
     ear_ = (du_ > 78) & (du_ < 128) & (VV > 196) & (VV < 272) & (lum > 42)                   # oreilles (tout sauf le noir des cheveux)
     a[ear_] = 0
+    a[(du_ > 80) & (du_ < 104) & (VV > 186) & (VV < 236) & (lum > 30)] = 0   # restes d'oreille de la planche près des tempes
     bh = np.zeros_like(bh); face_in = np.zeros_like(face_in)
 # bord du visage, du cou et des épaules, bijoux : les pixels clairs ou couleur peau ne sont jamais des cheveux
 near = cv2.dilate((skin | (lum > 215)).astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
