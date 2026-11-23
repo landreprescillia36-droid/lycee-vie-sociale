@@ -203,12 +203,15 @@ dos[:, :, 3] = np.where(grow & fx_ & skd, 255, dos[:, :, 3])
 # derrière le visage, le cou et les épaules (quelle que soit la forme du visage) : rangée remplie d'un bord à l'autre
 span = np.zeros((H, W), bool)
 for y in range(H):
-    if V[y] < 150 or DROIT and V[y] > 232: continue
+    if V[y] < 150 or DROIT and 232 < V[y] < 268: continue   # tresses : derrière la mâchoire, la rangée est déjà jointe
     xs2 = np.where(dos[y, :, 3] > 128)[0]
     if len(xs2) > 1 and U[xs2.min()] < 150 and U[xs2.max()] > 250: span[y, xs2.min():xs2.max() + 1] = True
 fill = span & (dos[:, :, 3] < 250)
 dos[:, :, :3] = np.where(fill[:, :, None], cv2.inpaint(dos[:, :, :3].clip(0, 255).astype(np.uint8), fill.astype(np.uint8), 9, cv2.INPAINT_TELEA), dos[:, :, :3])
 dos[fill, 3] = 255   # là où la capture montre la peau (le corps passe devant)
+if DROIT:   # derrière le cou : cheveux dans l'ombre (plus foncés), sans motif recopié
+    dk = np.percentile((dos[dos[:, :, 3] > 250][:, :3] @ [.299, .587, .114]), 15); dc = np.median(dos[(dos[:, :, 3] > 250) & ((dos[:, :, :3] @ [.299, .587, .114]) <= dk)][:, :3], 0)
+    nf = fill & (VV >= 268); dos[nf, :3] = dc
 if DROIT:   # derrière : chaque rangée de tresses rejoint la mâchoire du jeu (pas de liseré de fond entre les deux)
     GV_ = [228, 240, 250, 260, 270, 280, 290, 300, 310, 315, 400]; GW_ = [92, 88, 84.5, 80, 75, 68.6, 60.4, 49, 35, 27, 27]
     gap = np.zeros((H, W), bool)
