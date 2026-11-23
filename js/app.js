@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'){o+=earBoy(x,EY,k,p,outl,skD,s);return}o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'){if(!(HART(s)&&HART(s).op))o+=earBoy(x,EY,k,p,outl,skD,s);/* coiffure d'une planche : ses oreilles sont dans l'image de peau */return}o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -177,7 +177,7 @@ function render(s,vb,p,showBg){
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
  /* coiffure garçon reprise d'une planche : le haut de la tête a la forme du modèle (le crâne du jeu ne dépasse pas des cheveux) */
  const TT=HART(s)&&HART(s).tete?HART(s):null,ttf=TT&&hairFit(s),ttT=ttf?` transform="${ttf.t}"`:'';
- if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${TT.tete}"${ttT}/><rect x="-400" y="213" width="1200" height="1200"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
+ if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${TT.tete}"${ttT}/><rect x="-400" y="${TT.teteY||213}" width="1200" height="1200"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  if(TT)o+='</g>';
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;

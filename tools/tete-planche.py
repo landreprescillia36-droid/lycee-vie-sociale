@@ -29,7 +29,12 @@ for y in range(C.shape[0]):
         a = min(a_prev, hx.min()) if len(hx) else a_prev; b = max(b_prev, hx.max()) if len(hx) else b_prev
         a = max(a, a_prev); b = min(b, b_prev) if not len(hx) else b
     a_prev, b_prev = a, b
-    L.append(uv(a, y)); Rr.append(uv(b + 1, y))
+    pa, pb = uv(a, y), uv(b + 1, y)
+    if v > 115:   # près des oreilles : rejoint en douceur la largeur du visage du jeu (pas de marche sur la tempe)
+        tt = np.clip((v - 115) / 40, 0, 1); tt = tt * tt * (3 - 2 * tt); gw = 99
+        wa, wb = 200 - pa[0], pb[0] - 200
+        pa = (200 - max(wa, wa + (gw - wa) * tt), pa[1]); pb = (200 + max(wb, wb + (gw - wb) * tt), pb[1])
+    L.append(pa); Rr.append(pb)
 L = np.array(L); Rr = np.array(Rr)
 sm = lambda P: np.c_[cv2.GaussianBlur(P[:, 0].reshape(-1, 1), (0, 0), 2).ravel(), P[:, 1]]
 L, Rr = sm(L), sm(Rr); st_ = max(1, len(L) // 70)
