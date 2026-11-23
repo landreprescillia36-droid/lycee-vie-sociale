@@ -5,13 +5,13 @@
 import sys, os, re, json, numpy as np, cv2
 from PIL import Image
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); os.chdir(R)
-hid = sys.argv[1]; top = float(sys.argv[2]) if len(sys.argv) > 2 else 58
+hid = sys.argv[1]; top = float(sys.argv[2]) if len(sys.argv) > 2 else 58; RX = float(sys.argv[3]) if len(sys.argv) > 3 else 110   # demi-largeur du crâne couvert
 P = lambda f: 'assets/coiffures/' + f + '.png'
 js = open('js/coiffures-art.js').read(); ix, iy, iw, ih = json.loads(re.search(r'"' + hid + r'":\{"img":(\[[^\]]*\])', js).group(1))
 d = np.array(Image.open(P(hid + '-dos')).convert('RGBA')).astype(np.float32); H, W = d.shape[:2]
 U = ix + (np.arange(W) + .5) * iw / W; V = iy + (np.arange(H) + .5) * ih / H; UU, VV = np.meshgrid(U, V)
 cy = (top + 232) / 2; ry = (232 - top) / 2
-sk = (((UU - 200) / 110) ** 2 + ((VV - cy) / ry) ** 2 < 1) & (VV < 232)
+sk = (((UU - 200) / RX) ** 2 + ((VV - cy) / ry) ** 2 < 1) & (VV < 232)
 fill = sk & (d[:, :, 3] < 250)
 src = d[:, :, :3].clip(0, 255).astype(np.uint8)
 inp = cv2.inpaint(src, (fill | (d[:, :, 3] < 128)).astype(np.uint8), 9, cv2.INPAINT_TELEA).astype(np.float32)
