@@ -7,7 +7,8 @@ import sys, os, re, json, numpy as np, cv2
 from PIL import Image
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); os.chdir(R)
 hid, cap = sys.argv[1], sys.argv[2]; xg, yg, xd, yd, X0, Y0, X1, Y1 = map(float, sys.argv[3:11])
-DROIT = len(sys.argv) > 11 and sys.argv[11] == 'droit'   # tresses qui pendent droit : pas écartées, passent derrière la mâchoire et le cou
+OPT = sys.argv[11:]; DROIT = 'droit' in OPT
+ATTACHE = 'attache' in OPT   # cheveux attachés (mèches fines le long du visage) : rien de rempli derrière le visage et le cou   # tresses qui pendent droit : pas écartées, passent derrière la mâchoire et le cou
 P = lambda f: 'assets/coiffures/' + f + '.png'
 js = open('js/coiffures-art.js').read()
 if '"' + hid + '":{' not in js:   # nouvelle coiffure : même fiche que l'afro
@@ -196,7 +197,7 @@ if DROIT:   # devant : rien sur le visage du jeu sous les oreilles (les tresses 
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(P(hid))
 # derrière le corps : la masse est élargie de quelques pixels vers le visage et le cou (aucun liseré de fond entre les deux)
 dos = out.copy(); m_ = (dos[:, :, 3] > 128).astype(np.uint8)
-grow = (cv2.dilate(m_, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))) > 0) & (m_ == 0) & (VV > 120) & ~(DROIT & (VV > 232))
+grow = (cv2.dilate(m_, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))) > 0) & (m_ == 0) & (VV > 120) & ~(DROIT & (VV > 232)) & (not ATTACHE)
 dos[:, :, :3] = np.where(grow[:, :, None], cv2.inpaint(dos[:, :, :3].clip(0, 255).astype(np.uint8), grow.astype(np.uint8), 7, cv2.INPAINT_TELEA), dos[:, :, :3])
 fx_ = np.abs(UU - 200) < 125   # seulement vers l'intérieur (cou, épaules), pas vers l'extérieur de la coiffure
 skd = cv2.dilate(skin.astype(np.uint8), np.ones((9, 9), np.uint8)).astype(bool)
@@ -204,7 +205,7 @@ dos[:, :, 3] = np.where(grow & fx_ & skd, 255, dos[:, :, 3])
 # derrière le visage, le cou et les épaules (quelle que soit la forme du visage) : rangée remplie d'un bord à l'autre
 span = np.zeros((H, W), bool)
 for y in range(H):
-    if V[y] < 150 or DROIT and 232 < V[y] < 268: continue   # tresses : derrière la mâchoire, la rangée est déjà jointe
+    if V[y] < 150 or ATTACHE or DROIT and 232 < V[y] < 268: continue   # tresses : derrière la mâchoire, la rangée est déjà jointe
     xs2 = np.where(dos[y, :, 3] > 128)[0]
     if len(xs2) > 1 and U[xs2.min()] < 150 and U[xs2.max()] > 250: span[y, xs2.min():xs2.max() + 1] = True
 fill = span & (dos[:, :, 3] < 250)
@@ -241,7 +242,7 @@ inside = cv2.erode(inside, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)
 scalp = (inside > 0) & (VV < topf + 1) & (np.abs(UU - 200) < 110) & (VV > fv0 + 8)
 # raccord front / cheveux (le visage de la planche est plus court que celui du jeu) : bande de peau sous la ligne des cheveux
 above = np.maximum.accumulate(dark, axis=0) > 0
-scalp |= above & (np.abs(UU - 200) < 78) & (VV > topf - 14) & (VV < topf + 10)
+scalp |= above & (np.abs(UU - 200) < 80) & (VV < topf + 10) & (VV > fv0 + 8)
 pc = np.array([150, 90, 60.])
 if os.path.exists(P(hid + '-peau')):
     q = np.array(Image.open(P(hid + '-peau')).convert('RGBA')); m_ = q[:, :, 3] > 200
