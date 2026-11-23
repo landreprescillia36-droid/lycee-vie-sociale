@@ -25,7 +25,7 @@ def to_img(u, v):
     du, dv = (u - 200) * k, (v - 205) * k
     return ex + du * np.cos(th) - dv * np.sin(th), ey + du * np.sin(th) + dv * np.cos(th)
 fu0, fu1 = 200 + (X0 + 6 - ex) / k, 200 + (X1 - 6 - ex) / k; fv0, fv1 = 205 + (Y0 + 4 - ey) / k, 205 + (Y1 - ey) / k
-nu0, nu1, nv0, nv1 = fu0, fu1, fv0 - 45, fv1 + 4   # au-dessus : place pour arrondir le haut quand la case coupe les cheveux
+nu0, nu1, nv0, nv1 = fu0, fu1, fv0 - 45, max(fv1 + 4, 480 if DROIT else 0)   # au-dessus : place pour arrondir le haut quand la case coupe les cheveux
 W, H = int(round((nu1 - nu0) * r)), int(round((nv1 - nv0) * r))
 U = nu0 + (np.arange(W) + .5) / r; V = nv0 + (np.arange(H) + .5) / r; UU, VV = np.meshgrid(U, V)
 X, Y = to_img(UU, VV); X = X.astype(np.float32); Y = Y.astype(np.float32)
@@ -152,6 +152,34 @@ m1 = cv2.morphologyEx(cv2.morphologyEx(m0, cv2.MORPH_OPEN, cv2.getStructuringEle
 zt = (VV < fv0 + 30) & domez[None, :]   # seulement les dômes ajoutés (les boucles du haut dessinées restent telles quelles)
 s1 = cv2.GaussianBlur((cv2.GaussianBlur(m1.astype(float), (0, 0), 2) > .5).astype(float), (0, 0), .8) * 255
 out[:, :, 3] = np.where(zt, s1, out[:, :, 3])
+if DROIT:
+    # trous des boucles d'oreilles de la planche (étoiles retirées) : bouchés avec la texture des tresses autour
+    hm = cv2.morphologyEx((out[:, :, 3] > 128).astype(np.uint8), cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25))).astype(bool)
+    ez = (VV > 222) & (VV < 300) & (np.abs(np.abs(UU - 200) - 98) < 30)
+    hole = ez & hm & (out[:, :, 3] < 230)
+    hole |= ez & hm & ((out[:, :, :3] @ [.299, .587, .114]) > 95)
+    hole = cv2.dilate(hole.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool) & hm
+    out[:, :, :3] = np.where(hole[:, :, None], cv2.inpaint(out[:, :, :3].clip(0, 255).astype(np.uint8), hole.astype(np.uint8), 7, cv2.INPAINT_TELEA), out[:, :, :3]); out[hole, 3] = 255
+    # les tresses continuent derrière le dos (comme sur la planche) : texture recopiée vers le bas, pointes arrondies
+    al3 = out[:, :, 3] > 128; vb = 372; yb0 = int(np.argmin(np.abs(V - vb)))
+    colsb = np.where(al3[yb0 - 6] & (np.abs(U - 200) > 50))[0]
+    yend = int(np.argmin(np.abs(V - 465))); Pp = int(50 * r); rng2 = np.random.default_rng(5)
+    tipy = {}
+    for x in colsb:
+        for y in range(yb0 - 6, H):
+            sy = y
+            while sy >= yb0 - 6: sy -= Pp
+            out[y, x] = out[sy, x]
+    # bas : chaque tresse finit en pointe arrondie (largeur ~ une tresse)
+    if len(colsb):
+        runs2 = np.split(colsb, np.where(np.diff(colsb) > 1)[0] + 1); Yc2 = np.arange(H) + .5
+        for rn in runs2:
+            x = rn[0]
+            while x <= rn[-1]:
+                w = int(rng2.integers(int(9 * r), int(13 * r))); seg = np.arange(x, min(rn[-1] + 1, x + w)); hw = max(len(seg) / 2, 1); c_ = x + hw
+                u_ = np.clip((seg + .5 - c_) / hw, -1, 1); ye = yend - rng2.uniform(0, 14 * r) - hw * 1.2 * (1 - np.sqrt(1 - u_ * u_))
+                for i_, xx_ in enumerate(seg): out[:, xx_, 3] *= np.where(Yc2 > yb0, np.clip(ye[i_] - Yc2 + .5, 0, 1), 1)
+                x += w
 # miettes détachées (hors baby hair) : retirées
 nl_, lb2, st2, _ = cv2.connectedComponentsWithStats((out[:, :, 3] > 40).astype(np.uint8), connectivity=8)
 crumbs = np.isin(lb2, [i for i in range(1, nl_) if st2[i, 4] < 300 and not bh[st2[i, 1] + st2[i, 3] // 2, st2[i, 0] + st2[i, 2] // 2]])
@@ -163,6 +191,7 @@ fr[bij, 3] = 0
 if DROIT:   # devant : rien sur le visage du jeu sous les oreilles (les tresses passent derrière la mâchoire, sans liseré)
     GV_ = [228, 240, 250, 260, 270, 280, 290, 300, 310, 315, 400]; GW_ = [92, 88, 84.5, 80, 75, 68.6, 60.4, 49, 35, 27, 27]
     gwv = np.interp(VV, GV_, GW_); fr[:, :, 3] *= np.where(VV > 232, np.clip((np.abs(UU - 200) - gwv + 1) / 2, 0, 1), 1)
+    fr[:, :, 3] *= np.clip((352 - VV) / 3, 0, 1)   # sur les épaules : les tresses passent derrière le dos (image de derrière)
 Image.fromarray(fr.clip(0, 255).astype(np.uint8)).save(P(hid))
 # derrière le corps : la masse est élargie de quelques pixels vers le visage et le cou (aucun liseré de fond entre les deux)
 dos = out.copy(); m_ = (dos[:, :, 3] > 128).astype(np.uint8)
