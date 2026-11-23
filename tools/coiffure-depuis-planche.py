@@ -8,6 +8,7 @@ from PIL import Image
 R = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'); os.chdir(R)
 hid, cap = sys.argv[1], sys.argv[2]; xg, yg, xd, yd, X0, Y0, X1, Y1 = map(float, sys.argv[3:11])
 OPT = sys.argv[11:]; DROIT = 'droit' in OPT
+DOME = float(next((o[5:] for o in OPT if o.startswith('dome=')), .42))   # hauteur du dôme ajouté quand la case coupe le haut (× demi-largeur) : 0,8 = bien rond
 ATTACHE = 'attache' in OPT   # cheveux attachés (mèches fines le long du visage) : rien de rempli derrière le visage et le cou   # tresses qui pendent droit : pas écartées, passent derrière la mâchoire et le cou
 P = lambda f: 'assets/coiffures/' + f + '.png'
 js = open('js/coiffures-art.js').read()
@@ -26,7 +27,7 @@ def to_img(u, v):
     du, dv = (u - 200) * k, (v - 205) * k
     return ex + du * np.cos(th) - dv * np.sin(th), ey + du * np.sin(th) + dv * np.cos(th)
 fu0, fu1 = 200 + (X0 + 6 - ex) / k, 200 + (X1 - 6 - ex) / k; fv0, fv1 = 205 + (Y0 + 4 - ey) / k, 205 + (Y1 - ey) / k
-nu0, nu1, nv0, nv1 = fu0, fu1, fv0 - 45, max(fv1 + 4, 480 if DROIT else 0)   # au-dessus : place pour arrondir le haut quand la case coupe les cheveux
+nu0, nu1, nv0, nv1 = fu0, fu1, fv0 - (45 if DOME <= .42 else 110), max(fv1 + 4, 480 if DROIT else 0)   # au-dessus : place pour arrondir le haut quand la case coupe les cheveux
 W, H = int(round((nu1 - nu0) * r)), int(round((nv1 - nv0) * r))
 U = nu0 + (np.arange(W) + .5) / r; V = nv0 + (np.arange(H) + .5) / r; UU, VV = np.meshgrid(U, V)
 X, Y = to_img(UU, VV); X = X.astype(np.float32); Y = Y.astype(np.float32)
@@ -116,7 +117,7 @@ runs = np.split(np.where(cut)[0], np.where(np.diff(np.where(cut)[0]) > 3)[0] + 1
 for rn in runs:
     if len(rn) < 30: continue
     domez[rn[0]:rn[-1] + 1] = True
-    c0, hw0 = (rn[0] + rn[-1] + 1) / 2, (rn[-1] + 1 - rn[0]) / 2; hc = min(.42 * hw0, yt - 4)
+    c0, hw0 = (rn[0] + rn[-1] + 1) / 2, (rn[-1] + 1 - rn[0]) / 2; hc = min(DOME * hw0, yt - 4)
     top = np.full(W, np.inf); x = rn[0]
     while x <= rn[-1]:   # bord du dôme en boucles : largeur 18 à 30 px, bout arrondi
         w = int(rngc.integers(18, 30)); seg = np.arange(x, min(rn[-1] + 1, x + w)); hwl = max(len(seg) / 2, 1); cl = x + hwl
