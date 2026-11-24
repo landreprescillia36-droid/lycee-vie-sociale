@@ -71,8 +71,20 @@ if min(ar) < .75 * max(ar):
     bad = np.sign(UU - 200) == -good
     A = np.where(bad, A[ry, mx], A); Cu = np.where(bad[:, :, None], Cu[ry, mx], Cu)
     print('  oreille', 'gauche' if good > 0 else 'droite', 'reprise en miroir')
+# oreille agrandie vers le bas : le haut reste en place, le reste est étiré (× EB) vers le bas
+EB = 1.15
+for side in (-1, 1):
+    sm = (A > .6) & (np.sign(UU - 200) == side)
+    if not sm.any(): continue
+    nl_, ll_, sl_, _ = cv2.connectedComponentsWithStats(sm.astype(np.uint8), 8); sm = ll_ == 1 + np.argmax(sl_[1:, 4])
+    vt = np.percentile(VV[sm], 3); print("  oreille", side, "de", round(vt, 1), "à", round(VV[sm].max(), 1))
+    vs = np.where(VV > vt, vt + (VV - vt) / EB, VV)
+    Ys = ((vs - iy) / ih * H - .5).astype(np.float32); Xs = np.tile(np.arange(W, dtype=np.float32), (H, 1))
+    msk = np.sign(UU - 200) == side
+    A = np.where(msk, cv2.remap(A.astype(np.float32), Xs, Ys, cv2.INTER_LINEAR), A)
+    Cu = np.where(msk[:, :, None], cv2.remap(Cu.astype(np.float32), Xs, Ys, cv2.INTER_LINEAR), Cu)
 # côté visage : fondu (le visage du jeu passe devant)
-hw = np.interp(VV, [180, 210, 240, 270, 285], [96, 97, 92, 84, 78])
+hw = np.interp(VV, [180, 210, 240, 270, 285, 300], [96, 97, 92, 84, 78, 70])
 A *= np.clip((du_ - (hw - 12)) / 4, 0, 1)
 nA, lA, sA, _ = cv2.connectedComponentsWithStats((A > .05).astype(np.uint8), 8)   # seulement l'oreille, pas de miettes
 if nA > 1:
