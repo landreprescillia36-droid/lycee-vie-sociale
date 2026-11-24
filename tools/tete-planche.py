@@ -41,6 +41,6 @@ L, Rr = sm(L), sm(Rr); st_ = max(1, len(L) // 70)
 pts = list(L[::st_]) + [L[-1], (L[-1][0] - 40, L[-1][1] + 2), (Rr[-1][0] + 40, Rr[-1][1] + 2), Rr[-1]] + list(Rr[::-st_])
 d = 'M' + ' '.join('%.1f,%.1f' % (p[0], p[1]) for p in pts) + 'Z'
 js = open('js/coiffures-art.js').read(); blk = re.search(r'("' + hid + r'":\{)([^}]*)\}', js)
-body = re.sub(r',"tete":"[^"]*"', '', blk.group(2)); body += ',"tete":"' + d + '"'
+body = re.sub(r',"tete":"[^"]*"', '', blk.group(2)); body = re.sub(r',"teteY":[\d.]+', '', body); body += ',"tete":"' + d + '","teteY":' + '%.1f' % (L[-1][1] + 1)
 js = js[:blk.start(2)] + body + js[blk.end(2):]; open('js/coiffures-art.js', 'w').write(js)
 print(hid, ': tête de la planche, haut v =', round(L[0][1], 1), 'jusqu\'à', round(L[-1][1], 1))
