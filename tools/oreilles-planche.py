@@ -39,6 +39,18 @@ inv = (~keep).astype(np.uint8); n3, l3, s3, _ = cv2.connectedComponentsWithStats
 keep |= np.isin(l3, [i for i in range(1, n3) if s3[i, 4] < 3000])
 A = am * cv2.GaussianBlur(cv2.dilate(keep.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(np.float32), (0, 0), .6)
 # l'oreille est posée au bord du visage du jeu : bord extérieur à 126 avant l'ajustement de la coiffure (117 dans le jeu)
+ES = float(os.environ.get('OREILLE_ECHELLE', 1.3))   # oreilles agrandies (le visage du jeu est plus grand que celui de la planche)
+As, Cs_ = np.zeros_like(A), Cu.copy(); keep_s = np.zeros_like(keep)
+for side in (-1, 1):
+    sm = keep & (np.sign(UU - 200) == side)
+    if not sm.any(): continue
+    ys_, xs_ = np.where(sm); px, py = (xs_.min() if side > 0 else xs_.max()), (ys_.min() + ys_.max()) / 2   # pivot : attache côté visage
+    M = np.float32([[ES, 0, px * (1 - ES)], [0, ES, py * (1 - ES)]])
+    half = (np.sign(UU - 200) == side).astype(np.float32)
+    As += cv2.warpAffine(A * half, M, (W, H)) * half
+    Cs_ = np.where((cv2.warpAffine(half, M, (W, H)) * half)[:, :, None] > .5, cv2.warpAffine(Cu.astype(np.float32), M, (W, H)), Cs_)
+    keep_s |= (cv2.warpAffine(sm.astype(np.uint8), M, (W, H)) > 0) & (half > 0)
+A, Cu, keep = As, Cs_, keep_s
 A2 = np.zeros_like(A); C2 = Cu.copy()
 for side in (-1, 1):
     sm = keep & (np.sign(UU - 200) == side)
