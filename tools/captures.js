@@ -36,7 +36,7 @@ const url = 'file://' + path.join(root, 'index.html');
   await phone.waitForTimeout(300);
   await phone.screenshot({ path: path.join(out, 'jeu-menu.png') });
   await phone.evaluate(() => { cevS = null; cevOpen = false; closeSheet(); });
-  await phone.click('#gAct');
+  await phone.click('#gAct');  // au centre de la barre du bas
   await phone.waitForTimeout(300);
   await phone.screenshot({ path: path.join(out, 'jeu-agir.png') });
 
