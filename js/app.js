@@ -1043,10 +1043,12 @@ const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;
    hauteur d'après le bas des sourcils (sur la planche, le centre des yeux est 30,4 px sous le bas des sourcils) */
 function earGeo(s,F,cy){const a=s.adj||{},eo=F.eo||0,B=typeof BROW_ART_G!=='undefined'&&BROW_ART_G[s.brows],bb=B?cy+((F.bo||0)-eo)+(a.browsY||0)+B[1]+B[3]:cy-23,hw=faceHW(F.d,cy),f=hw/91.2;return {f,hw,cv:bb-EAR_UP+27.1*f,d:F.d}}
 const EAR_UP=12;/* le bas visible des sourcils est plus haut que le bas de leur image (marge transparente) */
-function earP(s,F,cy,sd){const [x,y,w,h]=BIJOU_ART.oreilles[sd],g=earGeo(s,F,cy),f=g.f,Y0=g.cv+y*f,H=h*f;
+/* oreilles plus près de la tête et un peu plus petites (comme sur Noah et Sacha, choix de Prescillia) : resserrées vers le visage, centrées en hauteur */
+const EAR_SX=.68,EAR_SY=.9;
+function earP(s,F,cy,sd){const [x,y,w,h]=BIJOU_ART.oreilles[sd],g=earGeo(s,F,cy),f=g.f,H=h*f*EAR_SY,Y0=g.cv+y*f+h*f*(1-EAR_SY)/2;
  /* le bas de l'oreille suit le bord du visage du jeu (qui se resserre vers la mâchoire) */
  const yA=Y0+H*.35,yB=Y0+H*.88,kk=.6*(faceHW(F.d,yB)-faceHW(F.d,yA))/(yB-yA),c=(sd==='g'?-kk:kk),e=-c*g.cv;
- return `<g transform="matrix(1,0,${fx(c)},1,${fx(e)},0)">`+peauImg('oreg-'+sd,s.skin,fx((sd==='g'?200-g.hw:200+g.hw)+x*f),fx(Y0),fx(w*f),fx(H))+'</g>'}
+ return `<g transform="matrix(1,0,${fx(c)},1,${fx(e)},0)">`+peauImg('oreg-'+sd,s.skin,fx((sd==='g'?200-g.hw:200+g.hw)+x*f*EAR_SX),fx(Y0),fx(w*f*EAR_SX),fx(H))+'</g>'}
 function earsG(s){const sx=(faceHW(faceOf(s).d,150)+3)/104,[x,y,w,h]=EARS_G;return `<g transform="translate(200,205) scale(${fx(sx)}) translate(-200,-205)">${peauImg('oreillesg',s.skin,x,y,w,h)}</g>`}
 function earHoles(s){if(s&&s.sexe==='m')return '';/* garçons : la nouvelle oreille est sous les cheveux, pas de trou ovale dans la coiffure */const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
@@ -1354,7 +1356,7 @@ function earrings(t,ex,dy,geo){
   case 'etoile':return xs.map(x=>gem(x,Y,2.8)+`<path d="M${x},${Y+3} L${x},${Y+17}" stroke="#c9ced4" stroke-width="1"/><path transform="translate(${x},${Y+22})" d="M0,-6 L1.7,-1.9 6,-1.9 2.5,.8 3.7,5.1 0,2.5 -3.7,5.1 -2.5,.8 -6,-1.9 -1.7,-1.9Z" fill="#eef1f4" stroke="#9aa3ad" stroke-width=".7"/><circle cx="${x-1}" cy="${Y+21}" r=".9" fill="#fff"/>`).join('');
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
   default:if(typeof BIJOU_ART!=='undefined'&&BIJOU_ART[t]&&BIJOU_ART[t].g){/* boucles garçons : image de la planche, accrochée au lobe (clou : centre, anneau : haut) */
-   const B=BIJOU_ART[t];/* au même endroit de l'oreille que sur la planche (bord du visage + yeux) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay,off,dyy]=B[sd],f=geo?geo.f:1,YY=geo?geo.cv+dyy*f-dy:Y,X=geo?200+(i?1:-1)*(faceHW(geo.d,geo.cv+dyy*f)+off*f):x;return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax*f)}" y="${fx(YY-ay*f)}" width="${fx(w*f)}" height="${fx(h*f)}" preserveAspectRatio="none"/>`}).join('')}
+   const B=BIJOU_ART[t];/* au même endroit de l'oreille que sur la planche (bord du visage + yeux) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay,off,dyy]=B[sd],f=geo?geo.f:1,O=BIJOU_ART.oreilles.g,ym=geo?geo.cv+(O[1]+O[3]/2)*f:0,YY=geo?ym+(dyy*f-(O[1]+O[3]/2)*f)*EAR_SY-dy:Y,X=geo?200+(i?1:-1)*(faceHW(geo.d,YY+dy)+(off+3)*f*EAR_SX-3*f):x;return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax*f)}" y="${fx(YY-ay*f)}" width="${fx(w*f)}" height="${fx(h*f)}" preserveAspectRatio="none"/>`}).join('')}
   return '';
  }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){
