@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+chainG(s,cy)+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'&&typeof BIJOU_ART!=='undefined'&&BIJOU_ART.oreilles){o+=earP(s,F,cy,i?'d':'g');return}/* garçons : oreilles des modèles de la planche bijoux */o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -177,7 +177,7 @@ function render(s,vb,p,showBg){
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
  /* coiffure garçon reprise d'une planche : le haut de la tête a la forme du modèle (le crâne du jeu ne dépasse pas des cheveux) */
  const TT=HART(s)&&HART(s).tete?HART(s):null,ttf=TT&&hairFit(s),ttT=ttf?` transform="${ttf.t}"`:'';
- if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${TT.tete}"${ttT}/><rect x="-400" y="${TT.teteY||213}" width="1200" height="1200"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
+ if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${teteClip(TT)}"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  if(TT)o+='</g>';
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;
@@ -222,7 +222,7 @@ function render(s,vb,p,showBg){
   o+=`<g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g>`}
  else o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207,s.sexe==='m'?{hw:faceHW(F.d,cy),cy}:null)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -1031,6 +1031,16 @@ function earBoy(x,y,k,p,outl,skD,s){const t=`translate(${x},${y}) scale(${1.25*k
 /* oreilles des garçons : celles des modèles de la planche « Cheveux lisses – Garçons » (pixel par pixel, couleur de la peau choisie),
    à l'échelle de la tête (même ajustement que les coiffures de la planche) */
 const EARS_G=[28.32, -8.8, 336.03, 435.06];
+/* oreilles garçons copiées des modèles (planche bijoux) : collées au bord du visage du jeu à hauteur des yeux, recolorées à la peau */
+/* forme du crâne des coiffures de la planche + dessous : le visage s'élargit en biais sous le crâne (plus de marche à la tempe, cachée avant par les oreilles) */
+const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;if(TCL[K])return TCL[K];const n=TT.tete.match(/-?[\d.]+/g).map(Number),P=[];
+ for(let i=0;i+1<n.length;i+=2)if(n[i+1]<=Y-.5)P.push([n[i],n[i+1]]);if(P.length<3)return TCL[K]=TT.tete+`M-400,${Y}H800V1400H-400Z`;
+ const L=P.filter(q=>q[0]<200),R=P.filter(q=>q[0]>=200),lo=L.reduce((m,q)=>q[1]>m[1]?q:m,L[0]),ro=R.reduce((m,q)=>q[1]>m[1]?q:m,R[0]);
+ /* points du crâne dans l'ordre, puis descente en biais de chaque côté jusqu'à 24 unités plus bas */
+ const i0=P.indexOf(ro),i1=P.indexOf(lo);let pts=P;
+ return TCL[K]='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'+`M${fx(lo[0])},${fx(lo[1])} L${fx(ro[0])},${fx(ro[1])} L${fx(ro[0]+30)},${fx(Y+24)} L800,${fx(Y+24)} L800,1400 L-400,1400 L-400,${fx(Y+24)} L${fx(lo[0]-30)},${fx(Y+24)}Z`}
+function earP(s,F,cy,sd){const [x,y,w,h]=BIJOU_ART.oreilles[sd],hw=faceHW(F.d,cy);return peauImg('oreg-'+sd,s.skin,fx((sd==='g'?200-hw:200+hw)+x),fx(cy+y+EAR_DY),w,h)}
+const EAR_DY=0;/* un peu plus haut que sur la planche : couvre la marche entre le crâne de la coiffure et le visage */
 function earsG(s){const sx=(faceHW(faceOf(s).d,150)+3)/104,[x,y,w,h]=EARS_G;return `<g transform="translate(200,205) scale(${fx(sx)}) translate(-200,-205)">${peauImg('oreillesg',s.skin,x,y,w,h)}</g>`}
 function earHoles(s){if(s&&s.sexe==='m')return '';/* garçons : la nouvelle oreille est sous les cheveux, pas de trou ovale dans la coiffure */const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
@@ -1090,7 +1100,7 @@ function hairTint(f,hc,tab,sm){const k=f+'|'+hc;if(HTINT[k])return HTINT[k];if(H
  im.src=f.includes('/')?`assets/${f}.webp`:`assets/coiffures/${f}.webp`;return null}
 /* peau du crâne dessinée dans les coiffures (raie, bords, espaces entre les tresses) : image à part (tools/cheveux-peau.py),
    recolorée dans un canvas à la couleur de peau du personnage (skinTint), placée sous les cheveux */
-const HAIR_PEAU=new Set(['oreillesg','bafro','bafro-dos','gcourte','gcourte-dos','graie2','graie2-dos','gcrew','gcrew-dos','gmilongue','gmilongue-dos','gqueuehaute','gqueuehaute-dos','gfrange','gfrange-dos','gplaques2','gplaques2-dos','gcurtains','gcurtains-dos','gfrangecote','gfrangecote-dos','gepaules','gepaules-dos','gqueuebasse','gqueuebasse-dos','gchignon','gchignon-dos','bdeuxpompons2','bdeuxpompons2-dos','bchignonpetit','bchignonpetit-dos','bchignonbasc','bchignonbasc-dos','bafrolong','bafrolong-dos','bdemiqueuehaut','bdemiqueuehaut-dos','bafroc','bafroc-dos','bafrocourt2','bafrocourt2-dos','bpomponhaut','bpomponhaut-dos','bdeuxpompons','bdeuxpompons-dos','bchignoncrepu','bchignoncrepu-dos','bpomponbas','bpomponbas-dos','bafrocourt','bafrocourt-dos','bafrodef','bafrodef-dos','btwistout','btwistout-dos','bpuffhaut','bpuffhaut-dos','bpuffbas','bpuffbas-dos','bcornrows','bcornrows-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
+const HAIR_PEAU=new Set(['oreg-g','oreg-d','oreillesg','bafro','bafro-dos','gcourte','gcourte-dos','graie2','graie2-dos','gcrew','gcrew-dos','gmilongue','gmilongue-dos','gqueuehaute','gqueuehaute-dos','gfrange','gfrange-dos','gplaques2','gplaques2-dos','gcurtains','gcurtains-dos','gfrangecote','gfrangecote-dos','gepaules','gepaules-dos','gqueuebasse','gqueuebasse-dos','gchignon','gchignon-dos','bdeuxpompons2','bdeuxpompons2-dos','bchignonpetit','bchignonpetit-dos','bchignonbasc','bchignonbasc-dos','bafrolong','bafrolong-dos','bdemiqueuehaut','bdemiqueuehaut-dos','bafroc','bafroc-dos','bafrocourt2','bafrocourt2-dos','bpomponhaut','bpomponhaut-dos','bdeuxpompons','bdeuxpompons-dos','bchignoncrepu','bchignoncrepu-dos','bpomponbas','bpomponbas-dos','bafrocourt','bafrocourt-dos','bafrodef','bafrodef-dos','btwistout','btwistout-dos','bpuffhaut','bpuffhaut-dos','bpuffbas','bpuffbas-dos','bcornrows','bcornrows-dos','barrette','bbantu','bbox','bbox-dos','bcarre','bcarre-dos','bchignon','bchignonbas','bchignonhaut','bchignonmeches','bcollees','bcollees-dos','bcourt','bdemiqueue','bdemiqueue-dos','blongs','blongs-dos','bpuffs','bqueue','bqueue-dos','bqueuehaute','bqueuehaute-dos','btressesarriere','btressesarriere-dos','btressesboucles','btressesboucles-dos','btwists','btwists-dos','bwashgo','bwashgo-dos','carrelisse','chignonhaut2','deuxtresses','deuxtresses-dos','frangedroite','frangedroite-dos','longs','mechesdevant','mechesdevant-dos','queuehaute2','queuehaute2-dos','queuelisse','queuelisse-dos','raiecotel','raiecotel-dos','raiemilieu','raiemilieu-dos','serretete','serretete-dos']),STINT={},STINT_GO={};
 function skinTint(f,sk){const k=f+'|'+sk;if(STINT[k])return STINT[k];if(STINT_GO[k]||typeof Image==='undefined'||typeof document==='undefined'||!document.createElement)return null;STINT_GO[k]=1;HT_PEND++;
  const im=new Image();im.onerror=()=>{HT_PEND=Math.max(0,HT_PEND-1)};im.onload=()=>{if(artStale(f,im)&&!im._r){im._r=1;im.src=im.src.split('?')[0]+'?r='+Date.now();return}HT_PEND=Math.max(0,HT_PEND-1);try{const c=document.createElement('canvas');c.width=im.naturalWidth;c.height=im.naturalHeight;const x=c.getContext('2d');x.drawImage(im,0,0);
   const d=x.getImageData(0,0,c.width,c.height),a=d.data;let R=0,G=0,B=0,W=0;for(let i=0;i<a.length;i+=4){if(a[i+3]<200)continue;R+=a[i];G+=a[i+1];B+=a[i+2];W++}/* teinte de référence : pixels de peau bien opaques */
@@ -1327,7 +1337,7 @@ function hairFront(s,p,hD,hL){
  }}
 /* boucles d'oreilles des filles d'après ta planche « Accessoires » : puce diamant, petits cercles, grands cercles, perles, pendantes étoile */
 const GOLD='#d9a843',GOLD_D='#9c7020',GOLD_L='#f6dc8a';
-function earrings(t,ex,dy){
+function earrings(t,ex,dy,geo){
  const xs=[ex-2,400-ex+2];dy=dy||0;const Y=232;
  const gem=(x,y,r)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="#eef3f7" stroke="#b9c3cc" stroke-width=".8"/><path d="M${x-r*.6},${y} L${x},${y-r*.6} L${x+r*.6},${y} L${x},${y+r*.6}Z" fill="#fff" opacity=".9"/><circle cx="${x-r*.35}" cy="${y-r*.35}" r="${r*.25}" fill="#fff"/>`;
  const o=(()=>{switch(t){
@@ -1338,7 +1348,7 @@ function earrings(t,ex,dy){
   case 'etoile':return xs.map(x=>gem(x,Y,2.8)+`<path d="M${x},${Y+3} L${x},${Y+17}" stroke="#c9ced4" stroke-width="1"/><path transform="translate(${x},${Y+22})" d="M0,-6 L1.7,-1.9 6,-1.9 2.5,.8 3.7,5.1 0,2.5 -3.7,5.1 -2.5,.8 -6,-1.9 -1.7,-1.9Z" fill="#eef1f4" stroke="#9aa3ad" stroke-width=".7"/><circle cx="${x-1}" cy="${Y+21}" r=".9" fill="#fff"/>`).join('');
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
   default:if(typeof BIJOU_ART!=='undefined'&&BIJOU_ART[t]&&BIJOU_ART[t].g){/* boucles garçons : image de la planche, accrochée au lobe (clou : centre, anneau : haut) */
-   const B=BIJOU_ART[t],OX=10,OY=-16;/* lobe de l'oreille du jeu (garçons) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay]=B[sd],X=x+(i?OX:-OX);return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax)}" y="${fx(Y+OY-ay+(B.k==='anneau'?3:0))}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}).join('')}
+   const B=BIJOU_ART[t];/* au même endroit de l'oreille que sur la planche (bord du visage + yeux) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay,off,dyy]=B[sd],X=geo?200+(i?1:-1)*(geo.hw+off):x,YY=geo?geo.cy+dyy+EAR_DY-dy:Y;return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax)}" y="${fx(YY-ay)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}).join('')}
   return '';
  }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){

@@ -59,7 +59,10 @@ for id, (f, eg, ed, (exg, exd, ey), kind) in EAR.items():
         Image.fromarray(rgba, 'RGBA').save(os.path.join(OUT, f'{id}-{side}.png'))
         # point d'attache = centre (clou) ou haut de l'anneau, en unités du jeu par rapport au coin de l'image
         ax, ay = (cx - X0 - a0) * k, ((cy - Y0 - b0) if kind == 'clou' else 1) * k
-        parts[side] = [round((a1 - a0) * k, 2), round((b1 - b0) * k, 2), round(ax, 2), round(ay, 2)]
+        # attache sur l'oreille : écart au bord du visage (le bord du visage du modèle est à 91,2 unités du milieu des yeux)
+        mid = (exg + exd) / 2; atx = cx; aty = cy if kind == 'clou' else (Y0 + b0 + 1)
+        off, dyy = abs(atx - mid) * k - 91.2, (aty - ey) * k
+        parts[side] = [round((a1 - a0) * k, 2), round((b1 - b0) * k, 2), round(ax, 2), round(ay, 2), round(off, 2), round(dyy, 2)]
     art[id] = {'k': kind, 'g': parts['g'], 'd': parts['d']}
 for id, (f, (x0, y0, x1, y1), (exg, exd, ey)) in CHAIN.items():
     px = load(f); k = 104 / (exd - exg); mid = (exg + exd) / 2
@@ -69,3 +72,26 @@ for id, (f, (x0, y0, x1, y1), (exg, exd, ey)) in CHAIN.items():
     art[id] = {'k': 'chaine', 'img': [round(200 + (x0 + a0 - mid) * k, 2), round((y0 + b0 - ey) * k, 2), round((a1 - a0) * k, 2), round((b1 - b0) * k, 2)]}
 open(os.path.join(R, 'js/bijoux-art.js'), 'w').write('/* généré par tools/bijoux-garcons.py — ne pas modifier à la main */\nconst BIJOU_ART=' + json.dumps(art, ensure_ascii=False) + ';\n')
 print(json.dumps(art, indent=0, ensure_ascii=False))
+
+# ---------- oreilles des modèles (planche bijoux, case « Chaîne moyenne », oreilles sans bijou) ----------
+# copiées pixel par pixel, détourées sur le fond bleu ; recolorées en jeu à la peau choisie (assets/coiffures/oreg-*-peau.png).
+# Position : x par rapport au bord du visage du modèle à hauteur des yeux (collée au bord du visage du jeu), y par rapport aux yeux.
+px = load('planche-bijoux-garcons-1.jpg'); exg, exd, ey = 547.0, 663.7, 880.4; k = 104 / (exd - exg)
+FACE_EDGE = {'g': 503.0, 'd': 707.5}
+WIN = {'g': (466, 848, 511, 926), 'd': (700, 848, 745, 926)}
+BG = np.array([226, 236, 248.])
+for side, (x0, y0, x1, y1) in WIN.items():
+    sub = px[y0:y1, x0:x1]; fgd = np.abs(sub - BG).sum(-1); a = np.clip((fgd - 20) / 60, 0, 1)
+    yy, xx = np.mgrid[y0:y1, x0:x1]
+    inner = (xx > FACE_EDGE[side] - 3) if side == 'g' else (xx < FACE_EDGE[side] + 3)
+    a = a * ~(inner & (yy > 914))            # le bas de la joue / mâchoire du modèle n'est pas l'oreille
+    dd = (FACE_EDGE[side] - xx) if side == 'g' else (xx - FACE_EDGE[side])   # > 0 = hors du visage
+    ins = np.interp(yy, [850, 864, 878], [-10, -6, 8])   # en haut, l'oreille s'arrête avant la tempe du modèle
+    a = a * np.clip((dd + ins) / 4, 0, 1) * np.clip((yy - 848) / 3, 0, 1)
+    col = ((sub - (1 - a[..., None]) * BG) / np.maximum(a[..., None], .1)).clip(0, 255)   # couleur sans le fond
+    rgba = np.dstack([col, a * 255]).astype(np.uint8)
+    os.makedirs(os.path.join(R, 'assets/coiffures'), exist_ok=True)
+    Image.fromarray(rgba, 'RGBA').save(os.path.join(R, f'assets/coiffures/oreg-{side}-peau.png'))
+    art.setdefault('oreilles', {})[side] = [round((x0 - FACE_EDGE[side]) * k, 2), round((y0 - ey) * k, 2), round((x1 - x0) * k, 2), round((y1 - y0) * k, 2)]
+open(os.path.join(R, 'js/bijoux-art.js'), 'w').write('/* généré par tools/bijoux-garcons.py — ne pas modifier à la main */\nconst BIJOU_ART=' + json.dumps(art, ensure_ascii=False) + ';\n')
+print(art['oreilles'])
