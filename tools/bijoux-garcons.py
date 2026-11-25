@@ -78,16 +78,17 @@ print(json.dumps(art, indent=0, ensure_ascii=False))
 # Position : x par rapport au bord du visage du modèle à hauteur des yeux (collée au bord du visage du jeu), y par rapport aux yeux.
 px = load('planche-bijoux-garcons-1.jpg'); exg, exd, ey = 547.0, 663.7, 880.4; k = 104 / (exd - exg)
 FACE_EDGE = {'g': 503.0, 'd': 707.5}
-WIN = {'g': (466, 848, 511, 926), 'd': (700, 848, 745, 926)}
+WIN = {'g': (466, 846, 511, 926), 'd': (700, 846, 745, 926)}
 BG = np.array([226, 236, 248.])
 for side, (x0, y0, x1, y1) in WIN.items():
     sub = px[y0:y1, x0:x1]; fgd = np.abs(sub - BG).sum(-1); a = np.clip((fgd - 20) / 60, 0, 1)
+    a = np.minimum(a, ndimage.grey_erosion(a, size=(3, 3)) * 1.0 + .0)   # sans le liseré clair du contour de la planche
     yy, xx = np.mgrid[y0:y1, x0:x1]
-    inner = (xx > FACE_EDGE[side] - 3) if side == 'g' else (xx < FACE_EDGE[side] + 3)
+    inner = (xx > FACE_EDGE[side] + 2) if side == 'g' else (xx < FACE_EDGE[side] - 2)
     a = a * ~(inner & (yy > 914))            # le bas de la joue / mâchoire du modèle n'est pas l'oreille
     dd = (FACE_EDGE[side] - xx) if side == 'g' else (xx - FACE_EDGE[side])   # > 0 = hors du visage
-    ins = np.interp(yy, [850, 864, 878], [-10, -6, 8])   # en haut, l'oreille s'arrête avant la tempe du modèle
-    a = a * np.clip((dd + ins) / 4, 0, 1) * np.clip((yy - 848) / 3, 0, 1)
+    ins = np.interp(yy, [850, 866, 880], [-1, 2, 8])   # l'oreille entière, jusqu'au bord de la tête du modèle (x 502 en haut)
+    a = a * np.clip((dd + ins) / 2 + 1, 0, 1) * np.clip((yy - 853.5) / 2, 0, 1)
     col = ((sub - (1 - a[..., None]) * BG) / np.maximum(a[..., None], .1)).clip(0, 255)   # couleur sans le fond
     rgba = np.dstack([col, a * 255]).astype(np.uint8)
     os.makedirs(os.path.join(R, 'assets/coiffures'), exist_ok=True)
