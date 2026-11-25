@@ -721,7 +721,8 @@ function necklaceSVG(s){const n=s.necklace,gem=(x,y,r)=>`<circle cx="${x}" cy="$
   case 'choker':return `<path d="M185,198 Q200,203 215,198 L215,206 Q200,211 185,206Z" fill="#141214"/><path d="M185,199 Q200,204 215,199" fill="none" stroke="#3a3438" stroke-width="1"/>`+LN('M200,208 L200,212','#c9ced4',1)+losange(200,219,6.5,1);
   default:return ''}}
 /* chaînes garçons (planche) : placées par rapport aux yeux du modèle, comme sur la planche */
-function chainG(s,cy){const B=typeof BIJOU_ART!=='undefined'&&BIJOU_ART[s.necklace];if(!B||!B.img)return '';const [x,y,w,h]=B.img;return `<image href="assets/bijoux/${s.necklace}.webp" x="${x}" y="${fx(cy+y)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}
+const HOOD_TOPS=['ghood','gzip','capuche','capuche2'];/* sweats à capuche : la chaîne est cachée dessous */
+function chainG(s,cy){const B=typeof BIJOU_ART!=='undefined'&&BIJOU_ART[s.necklace];if(!B||!B.img||HOOD_TOPS.includes(s.top)&&!(s.dress&&s.dress!=='aucune'))return '';const [x,y,w,h]=B.img;return `<image href="assets/bijoux/${s.necklace}.webp" x="${x}" y="${fx(cy+y)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}
 function accSVG(G,s){let o=necklaceSVG(s);const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
  if(s.necklace==='perles')for(let i=0;i<=14;i++){const t=i/14,x=(1-t)*(1-t)*184+2*(1-t)*t*200+t*t*216,y=(1-t)*(1-t)*212+2*(1-t)*t*256+t*t*212;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="2.7" fill="#f6f1e6" stroke="#c9bfa9" stroke-width=".6"/>`}
