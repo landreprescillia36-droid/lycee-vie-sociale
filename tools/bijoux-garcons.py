@@ -87,8 +87,8 @@ for side, (x0, y0, x1, y1) in WIN.items():
     inner = (xx > FACE_EDGE[side] + 2) if side == 'g' else (xx < FACE_EDGE[side] - 2)
     a = a * ~(inner & (yy > 914))            # le bas de la joue / mâchoire du modèle n'est pas l'oreille
     dd = (FACE_EDGE[side] - xx) if side == 'g' else (xx - FACE_EDGE[side])   # > 0 = hors du visage
-    ins = np.interp(yy, [850, 866, 880], [-1, 2, 8])   # l'oreille entière, jusqu'au bord de la tête du modèle (x 502 en haut)
-    a = a * np.clip((dd + ins) / 2 + 1, 0, 1) * np.clip((yy - 853.5) / 2, 0, 1)
+    ins = np.interp(yy, [850, 856, 868, 880], [-8, -4, 2, 8])   # l'oreille entière, jusqu'au bord de la tête du modèle (x 502 en haut)
+    a = a * np.clip((dd + ins) / 2 + 1, 0, 1) * np.clip((yy - 848) / 2, 0, 1)
     col = ((sub - (1 - a[..., None]) * BG) / np.maximum(a[..., None], .1)).clip(0, 255)   # couleur sans le fond
     rgba = np.dstack([col, a * 255]).astype(np.uint8)
     os.makedirs(os.path.join(R, 'assets/coiffures'), exist_ok=True)

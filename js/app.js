@@ -180,9 +180,6 @@ function render(s,vb,p,showBg){
  if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${teteClip(TT)}"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  if(TT)o+='</g>';
- if(s.sexe==='m'&&typeof BIJOU_ART!=='undefined'&&BIJOU_ART.oreilles){/* contour du visage devant l'oreille, net comme sur la planche */
-  const [,ey,,eh]=BIJOU_ART.oreilles.g,y0=cy+ey+EAR_DY+12,hw=faceHW(F.d,cy);
-  o+=`<defs><clipPath id="${p}ec2"><rect x="0" y="${fx(y0)}" width="${fx(200-hw+14)}" height="${fx(eh-14)}"/><rect x="${fx(200+hw-14)}" y="${fx(y0)}" width="200" height="${fx(eh-14)}"/></clipPath></defs><path d="${F.d}" fill="none" stroke="${shade(sk,-.35)}" stroke-width="3" opacity=".42" clip-path="url(#${p}ec2)"/>`}
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;
  if(big&&F.chin){/* structure du menton (planche) : ombre le long de la mâchoire, menton éclairé, creux sous la lèvre */
   const ch=F.chin,m=s.sexe==='m'?1:.75,my=285+mo+a.mouthY;
@@ -225,7 +222,7 @@ function render(s,vb,p,showBg){
   o+=`<g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g>`}
  else o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207,s.sexe==='m'?{hw:faceHW(F.d,cy),cy,d:F.d}:null)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207,s.sexe==='m'?earGeo(s,F,cy):null)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -1042,11 +1039,14 @@ const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;
  /* points du crâne dans l'ordre, puis descente en biais de chaque côté jusqu'à 24 unités plus bas */
  const i0=P.indexOf(ro),i1=P.indexOf(lo);let pts=P;
  return TCL[K]='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'+`M${fx(lo[0])},${fx(lo[1])} L${fx(ro[0])},${fx(ro[1])} L${fx(ro[0]+30)},${fx(Y+24)} L800,${fx(Y+24)} L800,1400 L-400,1400 L-400,${fx(Y+24)} L${fx(lo[0]-30)},${fx(Y+24)}Z`}
-function earP(s,F,cy,sd){const [x,y,w,h]=BIJOU_ART.oreilles[sd],hw=faceHW(F.d,cy),Y0=cy+y+EAR_DY;
- /* le bas de l'oreille suit le bord du visage du jeu (qui se resserre vers la mâchoire) : inclinaison d'après le bord du visage à hauteur de l'oreille */
- const yA=Y0+h*.35,yB=Y0+h*.88,kk=(faceHW(F.d,yB)-faceHW(F.d,yA))/(yB-yA),c=(sd==='g'?-kk:kk),e=-c*cy;
- return `<g transform="matrix(1,0,${fx(c)},1,${fx(e)},0)">`+peauImg('oreg-'+sd,s.skin,fx((sd==='g'?200-hw:200+hw)+x),fx(Y0),w,h)+'</g>'}
-const EAR_DY=0;/* un peu plus haut que sur la planche : couvre la marche entre le crâne de la coiffure et le visage */
+/* repère des oreilles de la planche dans le visage du jeu : taille d'après la largeur du visage (91,2 unités sur la planche),
+   hauteur d'après le bas des sourcils (sur la planche, le centre des yeux est 30,4 px sous le bas des sourcils) */
+function earGeo(s,F,cy){const a=s.adj||{},eo=F.eo||0,B=typeof BROW_ART_G!=='undefined'&&BROW_ART_G[s.brows],bb=B?cy+((F.bo||0)-eo)+(a.browsY||0)+B[1]+B[3]:cy-23,hw=faceHW(F.d,cy),f=hw/91.2;return {f,hw,cv:bb-EAR_UP+27.1*f,d:F.d}}
+const EAR_UP=12;/* le bas visible des sourcils est plus haut que le bas de leur image (marge transparente) */
+function earP(s,F,cy,sd){const [x,y,w,h]=BIJOU_ART.oreilles[sd],g=earGeo(s,F,cy),f=g.f,Y0=g.cv+y*f,H=h*f;
+ /* le bas de l'oreille suit le bord du visage du jeu (qui se resserre vers la mâchoire) */
+ const yA=Y0+H*.35,yB=Y0+H*.88,kk=.6*(faceHW(F.d,yB)-faceHW(F.d,yA))/(yB-yA),c=(sd==='g'?-kk:kk),e=-c*g.cv;
+ return `<g transform="matrix(1,0,${fx(c)},1,${fx(e)},0)">`+peauImg('oreg-'+sd,s.skin,fx((sd==='g'?200-g.hw:200+g.hw)+x*f),fx(Y0),fx(w*f),fx(H))+'</g>'}
 function earsG(s){const sx=(faceHW(faceOf(s).d,150)+3)/104,[x,y,w,h]=EARS_G;return `<g transform="translate(200,205) scale(${fx(sx)}) translate(-200,-205)">${peauImg('oreillesg',s.skin,x,y,w,h)}</g>`}
 function earHoles(s){if(s&&s.sexe==='m')return '';/* garçons : la nouvelle oreille est sous les cheveux, pas de trou ovale dans la coiffure */const ex=faceOf(s).ex,[ERX,ERY,EDX]=earSz(s),rx=ERX-1.5,ry=ERY-1.5,EY=earY(s);
  return [ex-EDX,400-ex+EDX].map(x=>`M${x-rx},${EY} a${rx},${ry} 0 1,0 ${2*rx},0 a${rx},${ry} 0 1,0 ${-2*rx},0Z`).join(' ')}
@@ -1354,7 +1354,7 @@ function earrings(t,ex,dy,geo){
   case 'etoile':return xs.map(x=>gem(x,Y,2.8)+`<path d="M${x},${Y+3} L${x},${Y+17}" stroke="#c9ced4" stroke-width="1"/><path transform="translate(${x},${Y+22})" d="M0,-6 L1.7,-1.9 6,-1.9 2.5,.8 3.7,5.1 0,2.5 -3.7,5.1 -2.5,.8 -6,-1.9 -1.7,-1.9Z" fill="#eef1f4" stroke="#9aa3ad" stroke-width=".7"/><circle cx="${x-1}" cy="${Y+21}" r=".9" fill="#fff"/>`).join('');
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
   default:if(typeof BIJOU_ART!=='undefined'&&BIJOU_ART[t]&&BIJOU_ART[t].g){/* boucles garçons : image de la planche, accrochée au lobe (clou : centre, anneau : haut) */
-   const B=BIJOU_ART[t];/* au même endroit de l'oreille que sur la planche (bord du visage + yeux) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay,off,dyy]=B[sd],YY=geo?geo.cy+dyy+EAR_DY-dy:Y,X=geo?200+(i?1:-1)*(faceHW(geo.d,geo.cy+dyy+EAR_DY)+off):x;return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax)}" y="${fx(YY-ay)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}).join('')}
+   const B=BIJOU_ART[t];/* au même endroit de l'oreille que sur la planche (bord du visage + yeux) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay,off,dyy]=B[sd],f=geo?geo.f:1,YY=geo?geo.cv+dyy*f-dy:Y,X=geo?200+(i?1:-1)*(faceHW(geo.d,geo.cv+dyy*f)+off*f):x;return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax*f)}" y="${fx(YY-ay*f)}" width="${fx(w*f)}" height="${fx(h*f)}" preserveAspectRatio="none"/>`}).join('')}
   return '';
  }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){
