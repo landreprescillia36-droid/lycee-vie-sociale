@@ -166,7 +166,7 @@ function render(s,vb,p,showBg){
  const HT=s.sexe==='m'?`translate(${HX},${HY-9}) scale(${HS})`:globalThis.HT_F;
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
- o+=`<g transform="${HT}">`+(HART(s)?'':hairMid(s,p,hD,hL));
+ o+=`<g transform="${HT}">`+chainG(s,cy)+(HART(s)?'':hairMid(s,p,hD,hL));
  const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
@@ -720,6 +720,8 @@ function necklaceSVG(s){const n=s.necklace,gem=(x,y,r)=>`<circle cx="${x}" cy="$
   case 'multi':return chainV(220,236,20)+chainV(224,250,23)+chainV(228,266,26)+[[236,0],[250,0],[266,0]].map(([y])=>gem(200,y+1,1.5)).join('')+[-1,1].map(k=>`<circle cx="${200+k*8}" cy="247" r="1.1" fill="${GOLD_L}"/><circle cx="${200+k*10}" cy="262" r="1.1" fill="${GOLD_L}"/>`).join('');
   case 'choker':return `<path d="M185,198 Q200,203 215,198 L215,206 Q200,211 185,206Z" fill="#141214"/><path d="M185,199 Q200,204 215,199" fill="none" stroke="#3a3438" stroke-width="1"/>`+LN('M200,208 L200,212','#c9ced4',1)+losange(200,219,6.5,1);
   default:return ''}}
+/* chaînes garçons (planche) : placées par rapport aux yeux du modèle, comme sur la planche */
+function chainG(s,cy){const B=typeof BIJOU_ART!=='undefined'&&BIJOU_ART[s.necklace];if(!B||!B.img)return '';const [x,y,w,h]=B.img;return `<image href="assets/bijoux/${s.necklace}.webp" x="${x}" y="${fx(cy+y)}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}
 function accSVG(G,s){let o=necklaceSVG(s);const bc=s.bagColor,bd=shade(bc,-.3);
  if(s.necklace==='chaine')o+=LN('M186,214 Q200,262 214,214','#d4af37',1.6)+`<circle cx="200" cy="244" r="3.6" fill="#d4af37"/>`;
  if(s.necklace==='perles')for(let i=0;i<=14;i++){const t=i/14,x=(1-t)*(1-t)*184+2*(1-t)*t*200+t*t*216,y=(1-t)*(1-t)*212+2*(1-t)*t*256+t*t*212;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="2.7" fill="#f6f1e6" stroke="#c9bfa9" stroke-width=".6"/>`}
@@ -1334,7 +1336,9 @@ function earrings(t,ex,dy){
   case 'perles':return xs.map(x=>`<circle cx="${x}" cy="${Y+1}" r="5.6" fill="#f8f3ea" stroke="#d9cfbd" stroke-width=".9"/><circle cx="${x-1.4}" cy="${Y-.4}" r="1.5" fill="#fff"/><circle cx="${x+1.2}" cy="${Y+2.6}" r="2" fill="#e9dfcf" opacity=".6"/>`).join('');
   case 'etoile':return xs.map(x=>gem(x,Y,2.8)+`<path d="M${x},${Y+3} L${x},${Y+17}" stroke="#c9ced4" stroke-width="1"/><path transform="translate(${x},${Y+22})" d="M0,-6 L1.7,-1.9 6,-1.9 2.5,.8 3.7,5.1 0,2.5 -3.7,5.1 -2.5,.8 -6,-1.9 -1.7,-1.9Z" fill="#eef1f4" stroke="#9aa3ad" stroke-width=".7"/><circle cx="${x-1}" cy="${Y+21}" r=".9" fill="#fff"/>`).join('');
   case 'anneaux':return xs.map(x=>`<circle cx="${x}" cy="242" r="10" fill="none" stroke="#d6a93e" stroke-width="3.5"/>`).join('');
-  default:return '';
+  default:if(typeof BIJOU_ART!=='undefined'&&BIJOU_ART[t]&&BIJOU_ART[t].g){/* boucles garçons : image de la planche, accrochée au lobe (clou : centre, anneau : haut) */
+   const B=BIJOU_ART[t],OX=10,OY=-16;/* lobe de l'oreille du jeu (garçons) */return xs.map((x,i)=>{const sd=i?'d':'g',[w,h,ax,ay]=B[sd],X=x+(i?OX:-OX);return `<image href="assets/bijoux/${t}-${sd}.webp" x="${fx(X-ax)}" y="${fx(Y+OY-ay+(B.k==='anneau'?3:0))}" width="${w}" height="${h}" preserveAspectRatio="none"/>`}).join('')}
+  return '';
  }})();return dy&&o?`<g transform="translate(0,${dy})">${o}</g>`:o}
 function glasses(t,dx,cy,sc,ex){
  if(t==='aucune') return '';
@@ -1572,7 +1576,9 @@ const WEAR={
 };
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
-REFS.K='tes captures des personnages';REFS.HG='ta planche « Hauts pour garçon »';
+REFS.K='tes captures des personnages';REFS.BJ='ta planche « Bijoux – Garçons »';
+WEAR.acc.items.push(...[['gpuce','Puce'],['gboucle','Petites boucles'],['gcreole','Petit créole'],['gcreole2','Petits créoles']].map(([v,n])=>({s:'earrings',v,n,r:'BJ',g:'m',nw:1,vb:hv('55 175 110 120')})),
+ {s:'necklace',v:'aucun',n:'Sans chaîne',g:'m',vb:hv('115 262 170 150')},...[['gchfine','Chaîne fine'],['gchmoy','Chaîne moyenne'],['gchepaisse','Chaîne épaisse']].map(([v,n])=>({s:'necklace',v,n,r:'BJ',g:'m',nw:1,vb:hv('115 262 170 150')})));REFS.HG='ta planche « Hauts pour garçon »';
 /* planche « Hauts pour garçon » : logos de marques non reproduits */
 WEAR.top.items.unshift(...[['gtee','#f4f1ea','T-shirt blanc'],['gtee','#1f2127','T-shirt noir'],['gtee','#ece2cc','T-shirt crème'],['gtee','#4a4b50','T-shirt gris anthracite'],['gtee','#26314f','T-shirt marine'],['gpolo','#26314f','Polo marine'],['gpolo','#a9adb3','Polo gris'],['gpolo','#4b5236','Polo kaki'],['ghood','#26314f','Sweat à capuche marine'],['ghood','#f4f1ea','Sweat à capuche blanc'],['gzip','#a9adb3','Sweat zippé à capuche gris'],['gchem','#f4f1ea','Chemise blanche'],['gsweat','#ece2cc','Sweat col rond crème'],['gpolo','#f4f1ea','Polo blanc'],['gpolo','#1f2127','Polo noir'],['gpolopk','#ece2cc','Polo crème à poche'],['gchem','#1f2127','Chemise noire'],['ghood','#a9adb3','Sweat à capuche gris'],['ghood','#1f2127','Sweat à capuche noir'],['ghood','#ece2cc','Sweat à capuche crème'],['gzip','#1f2127','Sweat zippé à capuche noir'],['gsweat','#1f2127','Sweat col rond noir'],['gsweat','#a9adb3','Sweat col rond gris'],['gpull','#ece2cc','Pull en maille crème'],['gcote','#1f2127','Pull côtelé noir'],['gbandes','#f4f1ea','T-shirt à bandes blanc'],['gbandes','#1f2127','T-shirt à bandes noir'],['gdeb','#1f2127','Débardeur noir'],['gdeb','#f4f1ea','Débardeur blanc'],['gnageur','#1f2127','Débardeur dos nageur noir'],['gnageur','#f4f1ea','Débardeur dos nageur blanc'],['glayer','#1f2127','T-shirt noir sur manches longues'],['glayer','#f4f1ea','T-shirt blanc sur manches longues'],['gteepk','#1f2127','T-shirt noir à poche'],['gover','#ece2cc','T-shirt ample crème'],['glin','#ece2cc','Chemise en lin crème'],['graye','#1f2127','Pull rayé noir'],['graye','#ece2cc','Pull rayé crème']].map(([v,c,n])=>({s:'top',v,c,n,r:'HG',g:'m',nw:1})));
 REFS.V='ta planche « Hauts et robes »';
@@ -1691,7 +1697,8 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
-const BO_F=['puce','pcercles','gcercles','perles','etoile'],COL_F=['pendrond','penddiam','prenom','multi','choker'];
+const BO_G=['gpuce','gboucle','gcreole','gcreole2'],COL_G=['gchfine','gchmoy','gchepaisse'];/* bijoux garçons (planches de Prescillia) */
+const BO_F=['puce','pcercles','gcercles','perles','etoile',...BO_G],COL_F=['pendrond','penddiam','prenom','multi','choker',...COL_G];
 function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anneaux'):BO_F.includes(s.earrings)?s.earrings:'aucune',co=COL_F.includes(s.necklace)?s.necklace:'aucun';
  if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace===co&&s.glasses==='aucune'&&s.earrings===bo)return s;return {...s,hat:'aucun',bag:'aucun',necklace:co,glasses:'aucune',earrings:bo}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(boucheSexe(s))}
