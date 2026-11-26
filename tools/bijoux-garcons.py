@@ -86,9 +86,12 @@ for side, (x0, y0, x1, y1) in WIN.items():
     yy, xx = np.mgrid[y0:y1, x0:x1]
     inner = (xx > FACE_EDGE[side] + 2) if side == 'g' else (xx < FACE_EDGE[side] - 2)
     dd = (FACE_EDGE[side] - xx) if side == 'g' else (xx - FACE_EDGE[side])   # > 0 = hors du visage
-    ins = np.interp(yy, [850, 856, 868, 880, 898, 906, 924], [-8, -4, 6, 8, 8, 14, -1])   # l'oreille entière, jusqu'au bord de la tête du modèle (x 502 en haut)
+    ins = np.interp(yy, [850, 856, 866, 872, 898, 906, 924], [-8, -4, 6, 9, 9, 14, -1])   # l'oreille entière, jusqu'au bord de la tête du modèle (x 502 en haut)
     a = a * np.clip((dd + ins) / 2 + 1, 0, 1) * np.clip((yy - 848) / 2, 0, 1)
-    col = ((sub - (1 - a[..., None]) * BG) / np.maximum(a[..., None], .1)).clip(0, 255)   # couleur sans le fond
+    chs = sub.max(-1) - sub.min(-1); eye = (dd < 3) & ((sub.mean(-1) < 95) | (chs < 45) & (sub.mean(-1) < 150) | (chs < 70) & (sub.mean(-1) > 165))   # coin de l'œil du modèle (trait noir) : remplacé par la peau voisine
+    a0 = np.clip((fgd - 20) / 60, 0, 1)   # couverture réelle du pixel (pour retirer le fond bleu mêlé au bord)
+    col = ((sub - (1 - a0[..., None]) * BG) / np.maximum(a0[..., None], .5)).clip(0, 255)   # couleur sans le fond (pas de division par presque 0)
+    skin_med = np.median(sub[(a > .9) & ~eye & (dd < 0)], axis=0); col[eye] = skin_med
     rgba = np.dstack([col, a * 255]).astype(np.uint8)
     os.makedirs(os.path.join(R, 'assets/coiffures'), exist_ok=True)
     Image.fromarray(rgba, 'RGBA').save(os.path.join(R, f'assets/coiffures/oreg-{side}-peau.png'))
