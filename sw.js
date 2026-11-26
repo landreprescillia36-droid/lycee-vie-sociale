@@ -2,7 +2,7 @@
    Stratégie : réseau d'abord (toujours la dernière version quand il y a internet), copie en cache sinon.
    À l'installation, les fichiers sont téléchargés sans passer par le cache du navigateur (cache: 'reload').
    Nouveau fichier dans le jeu (image, script…) : l'ajouter à FICHIERS et augmenter VERSION. */
-const VERSION = 'v173';
+const VERSION = 'v174';
 const CACHE = 'lycee-' + VERSION;
 const FICHIERS = [
   './', 'index.html', 'manifest.webmanifest', 'assets/logo.png',
@@ -55,6 +55,38 @@ const FICHIERS = [
   'assets/coiffures/gqueuebasse-dos.png',
   'assets/coiffures/gqueuebasse-peau.png',
   'assets/coiffures/gqueuebasse-dos-peau.png',
+  'assets/coiffures/gdegradebas.png',
+  'assets/coiffures/gdegradebas-dos.png',
+  'assets/coiffures/gdegradebas-peau.png',
+  'assets/coiffures/gdegradebas-dos-peau.png',
+  'assets/coiffures/gcarremoyen3.png',
+  'assets/coiffures/gcarremoyen3-dos.png',
+  'assets/coiffures/gcarremoyen3-peau.png',
+  'assets/coiffures/gcarremoyen3-dos-peau.png',
+  'assets/coiffures/gcarrelong3.png',
+  'assets/coiffures/gcarrelong3-dos.png',
+  'assets/coiffures/gcarrelong3-peau.png',
+  'assets/coiffures/gcarrelong3-dos-peau.png',
+  'assets/coiffures/graiecote3.png',
+  'assets/coiffures/graiecote3-dos.png',
+  'assets/coiffures/graiecote3-peau.png',
+  'assets/coiffures/graiecote3-dos-peau.png',
+  'assets/coiffures/graiemilieu3.png',
+  'assets/coiffures/graiemilieu3-dos.png',
+  'assets/coiffures/graiemilieu3-peau.png',
+  'assets/coiffures/graiemilieu3-dos-peau.png',
+  'assets/coiffures/gpompadour2.png',
+  'assets/coiffures/gpompadour2-dos.png',
+  'assets/coiffures/gpompadour2-peau.png',
+  'assets/coiffures/gpompadour2-dos-peau.png',
+  'assets/coiffures/gondulees.png',
+  'assets/coiffures/gondulees-dos.png',
+  'assets/coiffures/gondulees-peau.png',
+  'assets/coiffures/gondulees-dos-peau.png',
+  'assets/coiffures/gafrocourt.png',
+  'assets/coiffures/gafrocourt-dos.png',
+  'assets/coiffures/gafrocourt-peau.png',
+  'assets/coiffures/gafrocourt-dos-peau.png',
   'assets/coiffures/gchignon.png',
   'assets/coiffures/gchignon-dos.png',
   'assets/coiffures/gchignon-peau.png',
