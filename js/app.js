@@ -1045,22 +1045,31 @@ const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;
 /* ---------- oreilles des garçons (dessinées) ----------
    De la hauteur des sourcils à la base du nez, collées au bord du visage (sans changer sa largeur), un peu décollées.
    Repère de l'oreille : u = vers l'extérieur (0 = bord du visage, 1 = bord de l'oreille), v = de haut (0) en bas (1). */
+/* demi-largeur de la tête VISIBLE à la hauteur y (visage coupé par la forme du crâne des coiffures de la planche, cf. teteClip) */
+const TETE_PTS={};function visHW(s,F,y){const f=faceHW(F.d,y),TT=HART(s)&&HART(s).tete?HART(s):null,fit=TT&&hairFit(s);if(!fit)return f;
+ const Y=TT.teteY||213,yh=205+(y-205-fit.dy)/fit.sy;if(yh>=Y+24)return f;
+ const K=s.hair;if(!TETE_PTS[K]){const n=TT.tete.match(/-?[\d.]+/g).map(Number),L=[];for(let i=0;i+1<n.length;i+=2)if(n[i]<200&&n[i+1]<=Y-.5)L.push([n[i],n[i+1]]);TETE_PTS[K]=L}
+ const L=TETE_PTS[K];if(!L.length)return f;let xl=200;const yy=Math.min(yh,Y-.6);
+ for(let i=0;i+1<L.length;i++){const [x1,y1]=L[i],[x2,y2]=L[i+1];if((y1-yy)*(y2-yy)<=0&&y1!==y2){xl=Math.min(xl,x1+(x2-x1)*(yy-y1)/(y2-y1))}}
+ if(xl===200)return f;let hw=(200-xl)*fit.sx;if(yh>Y)hw+=(yh-Y)/24*30*fit.sx;return Math.min(f,hw)}
 function earVG(s,F,cy,no){const a=s.adj||{},g=earGeo(s,F,cy),yT=g.cv-27.1*g.f-6,yB=252+no+(a.noseY||0)+8,H=Math.max(50,yB-yT),W=H*.32;
  const v1=.25,v2=.85,h1=faceHW(F.d,yT+H*v1),h2=faceHW(F.d,yT+H*v2);
- const P=(k,u,v)=>{const t=Math.max(0,(v-v1)/(v2-v1)),hw=h1+(h2-h1)*t;return [fx(200-k*(hw-1+u*W)),fx(yT+v*H)]};
+ const hwAt=v=>visHW(s,F,yT+v*H);
+ const P=(k,u,v)=>[fx(200-k*(hwAt(v)-1.5+u*W)),fx(yT+v*H)];
  return {yT,H,W,P,lobe:k=>P(k,.4,.93)}}
-function earV(s,F,G,p,sk){const out=shade(sk,-.34),dk=shade(sk,-.26),lt=shade(sk,.08);let o=`<defs><clipPath id="${p}eo"><path clip-rule="evenodd" d="M-200,-200H600V700H-200Z ${F.d}"/></clipPath><filter id="${p}eb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${fx(G.H*.02)}"/></filter></defs><g clip-path="url(#${p}eo)">`;
+function earV(s,F,G,p,sk){const out=shade(sk,-.34),dk=shade(sk,-.26),lt=shade(sk,.08);const TTc=HART(s)&&HART(s).tete;let o=`<defs><mask id="${p}eo" maskUnits="userSpaceOnUse" x="-200" y="-200" width="800" height="900"><rect x="-200" y="-200" width="800" height="900" fill="#fff"/><path d="${F.d}" fill="#000"${TTc?` clip-path="url(#${p}tt)"`:''}/></mask><filter id="${p}eb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${fx(G.H*.02)}"/></filter></defs><g mask="url(#${p}eo)">`;
  [1,-1].forEach(k=>{const P=(u,v)=>G.P(k,u,v).join(','),[ax]=G.P(k,0,.5),[bx]=G.P(k,.55,.5);
-  const shape=`M${P(.06,.24)} C${P(.1,.06)} ${P(.3,-.03)} ${P(.58,.03)} C${P(.88,.1)} ${P(1.01,.3)} ${P(.96,.5)} C${P(.92,.62)} ${P(.78,.7)} ${P(.68,.8)} C${P(.6,.9)} ${P(.56,1)} ${P(.38,1)} C${P(.22,1)} ${P(.12,.95)} ${P(.04,.87)} L${P(-.3,.87)} L${P(-.3,.42)} L${P(.02,.36)}Z`;
+  const shape=`M${P(-.4,.34)} C${P(-.1,.14)} ${P(.2,-.01)} ${P(.5,-.01)} C${P(.8,0)} ${P(.99,.18)} ${P(.97,.42)} C${P(.95,.6)} ${P(.8,.7)} ${P(.68,.8)} C${P(.6,.9)} ${P(.56,1)} ${P(.38,1)} C${P(.2,1)} ${P(.06,.97)} ${P(-.05,.93)} L${P(-.5,.93)} L${P(-.5,.34)}Z`;
   o+=`<linearGradient id="${p}eg${k}" gradientUnits="userSpaceOnUse" x1="${ax}" y1="0" x2="${bx}" y2="0"><stop offset="0" stop-color="${shade(sk,-.16)}"/><stop offset="1" stop-color="${sk}"/></linearGradient>`
    +`<path d="${shape}" fill="url(#${p}eg${k})"/>`
-   /* creux central (conque) */
-   +`<ellipse cx="${G.P(k,.42,.5)[0]}" cy="${G.P(k,.42,.5)[1]}" rx="${fx(G.W*.16)}" ry="${fx(G.H*.16)}" fill="${dk}" opacity=".7" filter="url(#${p}eb)"/>`
+   /* creux central (conque) : zone plus sombre en forme de coquille, ombre douce */
+   +`<path d="M${P(.2,.3)} C${P(.42,.24)} ${P(.62,.34)} ${P(.6,.5)} C${P(.58,.64)} ${P(.4,.72)} ${P(.22,.68)} C${P(.12,.6)} ${P(.12,.38)} ${P(.2,.3)}Z" fill="${dk}" opacity=".55" filter="url(#${p}eb)"/>`
    /* relief intérieur qui suit le bord (anthélix) + reflet */
-   +`<path d="M${P(.42,.13)} C${P(.74,.18)} ${P(.84,.4)} ${P(.72,.56)} C${P(.64,.66)} ${P(.56,.7)} ${P(.5,.79)}" fill="none" stroke="${dk}" stroke-width="${fx(G.H*.022)}" stroke-linecap="round" opacity=".55"/>`
-   +`<path d="M${P(.5,.18)} C${P(.7,.24)} ${P(.76,.4)} ${P(.66,.53)}" fill="none" stroke="${lt}" stroke-width="${fx(G.H*.014)}" stroke-linecap="round" opacity=".5"/>`
-   /* tragus */
-   +`<path d="M${P(.1,.44)} C${P(.25,.42)} ${P(.3,.53)} ${P(.21,.62)} C${P(.16,.65)} ${P(.11,.63)} ${P(.09,.6)}Z" fill="${lt}" stroke="${dk}" stroke-width="${fx(G.H*.01)}" opacity=".85"/>`
+   +`<path d="M${P(.4,.12)} C${P(.74,.16)} ${P(.84,.38)} ${P(.74,.55)} C${P(.66,.68)} ${P(.56,.72)} ${P(.5,.8)}" fill="none" stroke="${dk}" stroke-width="${fx(G.H*.02)}" stroke-linecap="round" opacity=".5"/>`
+   +`<path d="M${P(.48,.17)} C${P(.7,.22)} ${P(.77,.38)} ${P(.68,.52)}" fill="none" stroke="${lt}" stroke-width="${fx(G.H*.013)}" stroke-linecap="round" opacity=".45"/>`
+   /* tragus : petit relief arrondi devant le creux, près du visage */
+   +`<path d="M${P(.06,.44)} C${P(.2,.42)} ${P(.26,.5)} ${P(.22,.58)} C${P(.18,.64)} ${P(.08,.63)} ${P(.04,.58)}" fill="${lt}" opacity=".55"/>`
+   +`<path d="M${P(.2,.43)} C${P(.27,.48)} ${P(.26,.57)} ${P(.19,.62)}" fill="none" stroke="${dk}" stroke-width="${fx(G.H*.01)}" stroke-linecap="round" opacity=".55"/>`
    /* lobe : reflet doux */
    +`<ellipse cx="${G.P(k,.42,.9)[0]}" cy="${G.P(k,.42,.9)[1]}" rx="${fx(G.W*.13)}" ry="${fx(G.H*.05)}" fill="#fff" opacity=".1"/>`
    /* contour doux, un peu plus foncé que la peau */
@@ -1114,7 +1123,7 @@ function hairFit(s){if(s.sexe!=='m'||!HAIR_G.includes(s.hair))return null;const 
  const sx=(faceHW(d,150)+3)/104,sy=sx;   /* même échelle en largeur et en hauteur (la coiffure garde sa forme), yeux en place : le front reste comme sur la planche */
  const nw=HAIR_NEW.includes(s.hair),k=nw?HFIT[0]:1,dy=nw?HFIT[1]:0;/* coiffure posée sur le crâne : plus enveloppante, ligne des cheveux plus basse (planche « Vestes hommes ») */
  const ey=nw?HFIT[2]:1;/* un peu plus haute : la ligne des cheveux descend, le haut du crâne reste en place */
- return {sx:sx*k,sy:sy*k*ey,t:`translate(200,${205+dy}) scale(${fx(sx*k)},${fx(sy*k*ey)}) translate(-200,-205)`}}
+ return {sx:sx*k,sy:sy*k*ey,dy,t:`translate(200,${205+dy}) scale(${fx(sx*k)},${fx(sy*k*ey)}) translate(-200,-205)`}}
 let HFIT=[1.1,9,1];/* nouvelle pose + tempes : seulement pour les coiffures validées (8 à 13) */
 const HAIR_NEW=['gplaques','graiecote','gquiff','gpompadour','gtaper','gvagues','gbouclette','gondule'];
 function faceEdge(s,v,k){const n=faceOf(s).d.match(/-?[\d.]+/g).map(Number);let best=null;for(let i=0;i<n.length;i+=2){const x=n[i],y=n[i+1];if((x-200)*k<=0)continue;const d=Math.abs(y-v);if(!best||d<best[0])best=[d,x]}return best?best[1]:200+k*95}
