@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='171';
+const APP_VERSION='172';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -2652,7 +2652,7 @@ function newGame(fam){
   money:4000,rel:Object.fromEntries(NPCS.map(n=>[n.id,{ami:0,amour:0,resp:30}])),links:initLinks(),couples:[['kylian','eva']],partner:null,
   family:fam.map((f,i)=>({role:f.role,name:f.name,trait:f.trait,id:'fam'+i,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))})),famRel:{},
   posts:START_POSTS.map(p=>{const q=mkPost({...clone(p),photo:p.photo&&{...p.photo,author:p.by}});q.day=0;q.min=900+Math.floor(Math.random()*480);q.comments.forEach(c=>c.id=mkC().id);if(p.by==='jade'){q.poem=true;q.comments.push(...debateThread(q))}return q}),
-  met:{},talks:{},phone:{},knows:{},blocked:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{},followers:{},reqs:[],once:{}},
+  met:{},talks:{},phone:{},knows:{},blocked:{},postQ:[],ig:{bio:'Terminale 📚 · Guadeloupe 🌴',priv:true,fans:12,following:{potins:1},followers:{},reqs:[],once:{}},
   stories:START_STORIES.map((s,i)=>({id:'st'+i,t:1440+450,...s,photo:s.photo&&{...s.photo,author:s.by},seen:false,reacted:false})),
   log:[],unread:0,threads:{},unreadMsg:{},plans:[],lastPing:{},confessed:{},confessAns:{},
   know:Object.fromEntries(Object.keys(SUBJ).map(k=>[k,40])),grades:[],acts:0,cb:0,done:{},place:null,placeKey:null,pres:null,phaseKey:null,lastPhase:null,paused:false,
@@ -2677,6 +2677,8 @@ if(G&&G.rel){NPCS.forEach(n=>{if(!G.rel[n.id])G.rel[n.id]={ami:0,amour:0}});cons
  if(!G.amFix){G.amFix=1;/* amour monté sans flirt (avant la v143) : remis à 0, sauf ton ou ta partenaire et les vrais flirts (> 15) */NPCS.forEach(n=>{const r=G.rel[n.id];if(r&&n.id!==G.partner&&r.amour<=15)r.amour=0})}
  if(!G.soanIn){G.soanIn=1;/* Kylian s'appelle maintenant Soan (l'identifiant interne reste « kylian ») */Object.assign(G,JSON.parse(JSON.stringify(G).replace(/Kylian/g,'Soan').replace(/kyky971/g,'soan971')))}
  if(!G.naelIn){G.naelIn=1;if(G.posts&&!G.posts.some(x=>x.by==='nael'))G.posts.unshift(mkPost({...NAEL_POST,photo:{...NAEL_POST.photo,author:'nael'}}))}
+ if(G.calme===undefined)G.calme=false;
+ if(G.ig&&!G.igPot){G.igPot=1;if(!Object.keys(G.ig.following).length)G.ig.following.potins=1}
  if(!G.anaisIn){G.anaisIn=1;if(G.posts&&!G.posts.some(x=>x.by==='anais'))G.posts.unshift(mkPost({...ANAIS_POST,photo:{...ANAIS_POST.photo,author:'anais'}}))}}
 /* Insta : abonnements et identifiants de commentaires (pour répondre) */
 if(G&&G.posts&&!G.phone){G.phone={};G.knows={};G.blocked={};NPCS.forEach(n=>{if((G.threads[n.id]||[]).length||(G.rel[n.id]&&G.rel[n.id].ami>=30)){G.phone[n.id]=1;G.knows[n.id]=1}})}/* parties d'avant le téléphone : on garde les conversations existantes */
@@ -3568,7 +3570,7 @@ function raisonNote(id){const r=raisInit(),k=raisK(),t=r.told[id],me_=nameOf('me
  return `Tu ne sais pas encore pourquoi ${me_} a changé de lycée : ${(G.met[id]||0)<3?'demande-le-lui un jour':'tu peux le lui demander'}, selon ton caractère (${ty}).`}
 /* question en vrai, à la récré ou à la cantine, pendant les premières semaines */
 function raisAskTick(ph){const r=raisInit(),sd=schoolDay(G.day);if(!sd||sd>45||vsHome()||r.asked.day===G.day||G.asleep||!$('sheet').hidden||cevOpen)return;
- if(!['recre','dej'].includes(ph.type)||Math.random()>.35)return;const map=presence(ph),here=(map[G.place]||[]).filter(id=>!r.told[id]&&!r.asked[id]);if(!here.length)return;
+ if(!['recre','dej'].includes(ph.type)||Math.random()>.35*popK())return;const map=presence(ph),here=(map[G.place]||[]).filter(id=>!r.told[id]&&!r.asked[id]);if(!here.length)return;
  const id=pickR(here);r.asked[id]=G.day;r.asked.day=G.day;raisPop(id)}
 function raisPop(id){const k=raisK(),ty=RTYPE[id]||'bienv',A=RA[k];
  const q={curieux:"« Au fait, pourquoi t'as changé de lycée en pleine terminale ? Raconte 👀 »",prejuge:"« C'est quand même bizarre d'arriver en terminale… il s'est passé quoi dans ton ancien lycée ? »",bienv:`« Alors, ça te change du ${me().ancien||'ton ancien lycée'} ? Pourquoi t'es venu·e ici, si c'est pas indiscret ? 🙂 »`}[ty];
@@ -4017,7 +4019,7 @@ function tvGo(){const fams=[...document.querySelectorAll('[data-tvpick]')].filte
  advance(60);const fx=needsFx({fun:28,energy:3,soc:fams.length||gst?10:0});let base=`Tu regardes ${show} (${fx}).`;
  if(gst){const ch=relChange(gst,3,0);base+=` ${WHO[gst].name} est avec toi${ch?' ('+ch.split(' : ')[1]+')':''}.`}
  fams.forEach(f=>famChange(f,2));
- if(fams.length&&Math.random()<.75)famPops(FAM_TV_POP,fams,1,{eb:'📺 Télé en famille',t:show.charAt(0).toUpperCase()+show.slice(1)},acc=>famResult('📺 Télé',fams.length?'en famille':'',[base,...acc]));
+ if(fams.length&&Math.random()<.75*popK())famPops(FAM_TV_POP,fams,1,{eb:'📺 Télé en famille',t:show.charAt(0).toUpperCase()+show.slice(1)},acc=>famResult('📺 Télé',fams.length?'en famille':'',[base,...acc]));
  else famResult('📺 Télé',fams.length?'en famille':'seul·e',[base])}
 /* film : avec la famille et/ou l'invité·e, 2 pop-ups pendant le film */
 function homeFilm(g){const who=[...document.querySelectorAll('[data-fpick]')].filter(x=>x.checked).map(x=>x.dataset.fpick);
@@ -4026,12 +4028,12 @@ function homeFilm(g){const who=[...document.querySelectorAll('[data-fpick]')].fi
   else{const ch=relChange(id,4,G.partner===id||iLike(id)&&g==='romance'?3:0);res.push(`${WHO[id].name} a bien aimé${ch?' ('+ch.split(' : ')[1]+')':''}`)}});
  advance(120);const fx=needsFx({fun:45,energy:6,soc:who.length?15:0});closeSheet();
  const fin=acc=>famResult('🎬 Soirée film',nm,[...acc,(res.length?res.join(' · ')+'. ':'Tu regardes le film tranquille. ')+`(${fx})`]);
- const fams=who.filter(isFam);if(fams.length)famPops(FAM_FILM_POP,fams,2,{eb:'🎬 Pendant le film',t:FILMS.find(x=>x[0]===g)[1]},fin);else fin([])}
+ const fams=who.filter(isFam);if(fams.length)famPops(FAM_FILM_POP,fams,calm()?1:2,{eb:'🎬 Pendant le film',t:FILMS.find(x=>x[0]===g)[1]},fin);else fin([])}
 /* repas en famille */
 function mealGo(){const w=mealWin();if(!w||G.done[G.day+'meal'+w])return;G.done[G.day+'meal'+w]=1;const fams=G.family.map(f=>f.id),plat=pickR(['un colombo de poulet','des accras et du riz','un court-bouillon de poisson','un gratin de christophine','des pâtes au poulet','un fricassé de chatrou','une salade composée']);
  advance(45);fams.forEach(f=>famChange(f,2));const fx=needsFx({faim:60,energy:4,soc:fams.length?10:0});
  const base=fams.length?`Au menu : ${plat}. Toute la famille est à table (${fx}).`:`Tu manges ${plat} (${fx}).`;
- if(fams.length)famPops(MEAL_POP,fams,2,{eb:w==='midi'?'🍽️ Déjeuner en famille':'🍽️ Dîner en famille',t:'À table !'},acc=>famResult(w==='midi'?'🍽️ Déjeuner':'🍽️ Dîner','en famille',[base,...acc]));
+ if(fams.length)famPops(MEAL_POP,fams,calm()?1:2,{eb:w==='midi'?'🍽️ Déjeuner en famille':'🍽️ Dîner en famille',t:'À table !'},acc=>famResult(w==='midi'?'🍽️ Déjeuner':'🍽️ Dîner','en famille',[base,...acc]));
  else famResult('🍽️ Repas','',[base])}
 function snackGo(){setCd('snack');advance(10);const s=pickR(['un fruit','un yaourt','un paquet de biscuits','un reste de gâteau patate','une tartine','un jus de goyave']);const fx=needsFx({faim:15});toast(`🍪 Tu grignotes ${s} (${fx})`);note(`Tu grignotes ${s}`);saveG();drawHUD();drawView()}
 function restGo(){setCd('rest');advance(60);const fx=needsFx({energy:12,fun:2});toast(`🛋️ Tu te reposes une heure (${fx})`);saveG();drawHUD();drawView()}
@@ -4119,7 +4121,7 @@ function outAct(a){const o=G.outS;if(!o)return;const v=VENUES[o.v],id=o.with,n=i
   else{G.stories.push(mkStory('me',{type:'photo',photo:{scene:v.sc,people:['me'],author:'me'},text:`${v.ic} ${v.n}`,seen:true,cat:'A'}));G.st.stories++;m='Ta story est publiée. '+needsFx({fun:3})}}
  else if(a==='enjoy'){advance(45);m=`${v.act}. `+needsFx({fun:Math.round((v.fx.fun||8)/2),energy:v.fx.energy?-2:2})}
  else if(a==='meet'){advance(20);const here=NPCS.map(x=>x.id).filter(x=>v.pass.some(p=>passOf(x).includes(p))||hash(x+G.day+o.v)%6===0);if(here.length&&Math.random()<.7){const b=pickR(here);o.msg=`Tu croises ${WHO[b].name} !`;outSheet();vsPop({eb:`${v.ic} ${v.n}`,t:`Tu croises ${WHO[b].name}`,html:`<div class="av">${avatarOf(b)}</div>`,b:`${WHO[b].name} est là aussi.`,ch:[['Aller lui parler',()=>{closeSheet();cevOpen=false;openTalk(b,{pl:v.pl});needUp('soc',5);return KEEP}],[`Lui proposer de rester avec toi`,()=>{if(outAccept(b,o.v)||G.rel[b].ami>=40){o.with=b;o.msg=`${WHO[b].name} reste avec toi ! `+joinFx([relChange(b,4,0),needsFx({soc:10})])}else o.msg=`${WHO[b].name} : « Désolé·e, je dois y aller ! »`;outSheet();return KEEP}],['Juste lui faire un signe',()=>{o.msg='Vous vous faites un signe de la main. '+relChange(b,1,0);outSheet();return KEEP}]]});saveG();return}m='Personne que tu connais… mais l\'ambiance est sympa. '+needsFx({fun:3})}
- o.msg=m;note(m.slice(0,200));if(Math.random()<.25&&outPop())return;outSheet();saveG();drawHUD()}
+ o.msg=m;note(m.slice(0,200));if(Math.random()<.25*popK()&&outPop())return;outSheet();saveG();drawHUD()}
 /* petits imprévus pendant la sortie */
 function outPop(){const o=G.outS,id=o.with,v=VENUES[o.v];if(!id)return false;const n=WHO[id].name,others=NPCS.map(x=>x.id).filter(x=>x!==id),b=pickR(others);
  const L=[
@@ -4164,7 +4166,7 @@ function clubGo(k){const c=CLUBS[k];if(!c||!clubToday().includes(k))return;if(G.
  G.energy=clamp(G.energy-8,0,100);G.done[G.day+'club'+k]=1;G.clubXP[k]=(G.clubXP[k]||0)+1;G.know[c.sub]=clamp(G.know[c.sub]+3,0,100);G.place='club';
  const a=pickR(c.m),line=pickR(CLUB_LINES[k]).replace('{a}',WHO[a].name);G.clubS={k,left:3,talked:[]};advance(30);
  G.clubS.msg=joinFx([line,...c.m.map(i=>relChange(i,2)),needsFx({fun:12,soc:12}),`${SUBJ[c.sub]} +3 %`]);note(`${c.ic} ${c.n} : ${line}`);
- if(Math.random()<.6){clubSheet();clubPop(k);return}clubSheet()}
+ if(Math.random()<.6*popK()){clubSheet();clubPop(k);return}clubSheet()}
 function clubSheet(){const s=G.clubS;if(!s)return;const c=CLUBS[s.k],big=G.clubXP[s.k]%CLUB_BIG===0&&!s.big;
  openSheet(`<div class="who"><div style="flex:1;min-width:0"><span class="eyebrow">${c.ic} Séance n° ${G.clubXP[s.k]} · ${fmtT(G.min)}</span><h2>${c.n}</h2></div><button class="gbtn ghost" type="button" data-close aria-label="Fermer">✕</button></div>
  <div class="present">${c.m.map(id=>`<button class="pers" type="button" data-clubtalk="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${s.talked.includes(id)?'déjà parlé':'parler'}</small></button>`).join('')}</div>
@@ -4181,7 +4183,7 @@ function clubAct(a){const s=G.clubS;if(!s)return;const c=CLUBS[s.k];
  if(a==='end'){G.clubS=null;G.place='maison';advance(20);closeSheet();toast(`${c.ic} Fin de la séance`);saveG();drawGame();return}
  if(a==='big'){s.big=1;closeSheet();clubBig(s.k);return}
  if(!s.left)return;s.left--;advance(30);
- if(a==='act'){s.msg=joinFx([pickR(CLUB_LINES[s.k]).replace('{a}',WHO[pickR(c.m)].name),...c.m.map(i=>relChange(i,2)),needsFx({fun:8,energy:-3}),`${SUBJ[c.sub]} +2 %`]);G.know[c.sub]=clamp(G.know[c.sub]+2,0,100);if(Math.random()<.3){clubSheet();clubPop(s.k);return}}
+ if(a==='act'){s.msg=joinFx([pickR(CLUB_LINES[s.k]).replace('{a}',WHO[pickR(c.m)].name),...c.m.map(i=>relChange(i,2)),needsFx({fun:8,energy:-3}),`${SUBJ[c.sub]} +2 %`]);G.know[c.sub]=clamp(G.know[c.sub]+2,0,100);if(Math.random()<.3*popK()){clubSheet();clubPop(s.k);return}}
  else if(a==='group'){openSheet(sheetHead('💬 Discussion de groupe','De quoi tu veux parler ?')+`<div class="choices">${CLUB_TOPICS.map(([t,l])=>`<button class="choice" type="button" data-ctopic="${t}">${l}</button>`).join('')}</div>`);s.left++;return}
  clubSheet();saveG();drawHUD()}
 function clubTopic(t){const s=G.clubS;if(!s)return;const c=CLUBS[s.k];s.left=Math.max(0,s.left-1);advance(30);
@@ -4798,7 +4800,7 @@ sacha:[{t:"Sacha a branché une enceinte sous le préau : concert surprise de gw
   {t:"Des paroles de chanson ont été taguées sur le mur du préau. Sacha a été convoqué chez la proviseure 😬",self:"c'était de la poésie urbaine gros"}]};
 const INC_COM=["😭😭😭","c'est tellement {n} ça","je savais que ça arriverait 😂","légende","la proviseure va craquer un jour","quelqu'un a une vidéo ??"];
 function incidentDay(){
- if(!schoolDay(G.day)||fetesToday().length||Math.random()>.15)return;
+ if(!schoolDay(G.day)||fetesToday().length||Math.random()>.15*popK())return;
  G.incUsed=G.incUsed||[];const all=Object.entries(INCIDENTS).flatMap(([id,L])=>L.map((x,i)=>({id,i,...x}))),free=all.filter(x=>!G.incUsed.includes(x.id+x.i));
  const inc=pickR(free.length?free:all);G.incUsed.push(inc.id+inc.i);if(!free.length)G.incUsed=[inc.id+inc.i];
  const p=mkPost({by:'potins',text:'[Anonyme] : '+inc.t,min:6*60+Math.floor(Math.random()*80),c:25+Math.floor(Math.random()*40),r:300+Math.floor(Math.random()*600),l:8000+Math.floor(Math.random()*14000)});
@@ -5225,6 +5227,10 @@ function igGrid(list){
  return `<div class="ig-grid">${list.map(p=>p.photo?`<button class="ig-tile" type="button" data-igpost="${p.id}" aria-label="Voir la publication">${photoSVG(p.photo).replace('<svg ','<svg preserveAspectRatio="xMidYMid slice" ')}</button>`
   :`<button class="ig-tile" type="button" data-igpost="${p.id}" style="background:${STORY_BG[hash(p.id)%STORY_BG.length]};color:${STORY_FG[hash(p.id)%STORY_BG.length]}"><span>${esc(p.text)}</span></button>`).join('')}</div>`}
 const igPeople=(ids,extra)=>`<div class="present">${ids.map(id=>`<button class="pers" type="button" data-ig="${id}"><span class="av">${avatarOf(id)}</span><span>${esc(nameOf(id))}</span><small>${extra?extra(id):''}</small></button>`).join('')}</div>`;
+/* Fil : « Comptes à suivre » tant que tu suis moins de 5 comptes */
+function suggestHTML(){const ig=G.ig;if(Object.keys(ig.following).length>=5)return '';
+ const L=['potins',...NPCS.map(n=>n.id).sort((a,b)=>(FANS0[b]||0)-(FANS0[a]||0))].filter(id=>!ig.following[id]).slice(0,8);if(!L.length)return '';
+ return `<div class="card sugg"><span class="eyebrow">Comptes à suivre</span><div class="sugg-row">${L.map(id=>`<div class="sugg-it"><button class="av avbtn" type="button" data-ig="${id}" aria-label="Voir le profil de ${esc(nameOf(id))}">${avatarOf(id)}</button><b>${esc(nameOf(id))}</b><button class="gbtn" type="button" data-follow="${id}">${ig.sent&&ig.sent[id]!=null?'Demandé':'Suivre'}</button></div>`).join('')}</div></div>`}
 function drawInsta(){
  const ig=G.ig,c=igCounts('me'),fol=igFollowers(),ing=Object.keys(ig.following),fr=igFriends();
  const disc=[...NPCS.map(n=>n.id),'potins'].filter(id=>!ig.following[id]);
@@ -5250,7 +5256,7 @@ function openInsta(id){
 }
 /* clics communs au fil, à l'onglet Insta et aux fiches */
 function igClick(t){let b;
- if(b=t.closest('[data-follow]')){const id=b.dataset.follow;igFollow(id);if(!$('sheet').hidden&&$('sheetBody').querySelector('.ig-top'))openInsta(id);if(view==='insta')drawView();return true}
+ if(b=t.closest('[data-follow]')){const id=b.dataset.follow;igFollow(id);if(!$('sheet').hidden&&$('sheetBody').querySelector('.ig-top'))openInsta(id);if(view==='insta'||view==='home')drawView();return true}
  if(b=t.closest('[data-req]')){igRequest(b.dataset.req,b.dataset.ok==='1');if(view==='insta')drawView();return true}
  if(b=t.closest('[data-ig]')){openInsta(b.dataset.ig);return true}
  if(b=t.closest('[data-igpost]')){cm=null;openComments(b.dataset.igpost);return true}
@@ -5270,7 +5276,9 @@ const NAV=[
  ['profil','Profil','<circle cx="12" cy="8" r="4.5" fill="currentColor"/><path d="M3.5 21c.8-4.4 4.2-7 8.5-7s7.7 2.6 8.5 7z" fill="currentColor"/>']];
 function drawNav(){
  const unreadM=Object.values(G.unreadMsg).reduce((a,b)=>a+b,0);
- $('gNav').innerHTML=NAV.map(([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id||(id==='home'&&view==='insta')?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='home'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}</button>`).join('');
+ const btn=([id,lb,ic])=>`<button type="button" data-v="${id}" aria-label="${lb}" ${view===id||(id==='home'&&view==='insta')?'aria-current="page"':''}><svg viewBox="0 0 24 24">${ic}</svg><small>${lb==='Aujourd\'hui'?'Journée':lb}</small>${id==='messages'&&unreadM?`<span class="badge">${unreadM}</span>`:''}${id==='home'&&G.ig.reqs.length?`<span class="badge">${G.ig.reqs.length}</span>`:''}</button>`;
+ /* « Agir » au centre de la barre, toujours visible */
+ $('gNav').innerHTML=NAV.slice(0,2).map(btn).join('')+`<button type="button" class="nav-act" id="gAct" data-v="act" aria-label="Agir : lancer un événement ou publier"><span class="plus" aria-hidden="true">+</span><small>Agir</small></button>`+NAV.slice(2).map(btn).join('');
 }
 function knowBars(only){return `<div class="kb">${(only||Object.keys(SUBJ)).map(k=>{const v=G.know[k],c=v>=60?'#3fcf8e':v>=45?'#ffd23f':'#ff7a6b';return `<div class="gg"><span>${SUBJ[k]}</span><div class="bar"><i style="width:${v}%;background:${c}"></i></div><b>${v}%</b></div>`}).join('')}</div>`}
 function nextEvalTxt(){const sd=sdDone(G.day);if(sd>=TRI_END[2])return null;const wd=weekday();if(wd===4&&G.min<1020)return G.min<840?"aujourd'hui à 14h":'en cours';return 'vendredi à 14h'}
@@ -5278,6 +5286,12 @@ function schoolCard(){
  const sd=Math.min(sdDone(G.day),YEAR_DAYS),t=curTri(),ta=triAvg(t),left=BAC_DAYS[0]-sd,ne=nextEvalTxt(),r=G.bac.result;
  return `<div class="card"><div class="ph-top"><span class="eyebrow">Terminale · trimestre ${t}</span><span class="muted">jour ${sd}/${YEAR_DAYS}</span></div>
  <p class="muted">${r?P(`Bac : ${r.ok?'admis·e':'non admis·e'} (${fmtG(r.fin)}/20)`):left>0?`Bac dans ${left} jour${left>1?'s':''} de cours`:'Bac en cours'}${ne?` · prochaine évaluation ${ne}`:''} · moyenne du trimestre ${fmtG(ta)}/20</p></div>`}
+/* « Maintenant / prochain cours » en haut d'Aujourd'hui */
+function nextClassHTML(){const sd=schoolDay(G.day);if(sd===null||sd>YEAR_DAYS)return '';const wd=weekday(),m=G.min;
+ const nx=SLOTS.find(s=>s[2]==='cours'&&s[0]>m&&!(wd===4&&s[0]>=840&&s[0]<1020));let txt='';
+ if(nx){const k=TT[wd][nx[3]];txt=`Prochain cours : <b>${SUBJ[k]}</b> à ${fmtT(nx[0])} · ${PROFS[k][0]}`}
+ else if(wd===4&&m<840)txt='Ensuite : <b>évaluation commune</b> à 14h';
+ return txt?`<p class="next-cls">⏭️ ${txt}</p>`:''}
 function ttHTML(){
  const wd=weekday(),sd=schoolDay(G.day);
  if(sd===null)return `<p class="muted">Pas de cours ${dayLbl(G.day)?'('+dayLbl(G.day).toLowerCase()+')':'le week-end'}. Profite de ton temps libre pour réviser.</p>`;
@@ -5298,9 +5312,9 @@ const riskLbl=(r,s)=>{const x=r*s;return x===0?['Sans risque','ok']:x<.2?['Risqu
 function drawDay(){
  const ph=phase(),v=$('gView');
  const pct=clamp((G.min-ph.start)/(ph.end-ph.start),0,1)*100;
- const ft=fetesOpen();let h=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:'')+schoolCard()+(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:'')+(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})()+objectivesCard();
- h+=vsCard();h+=clubCard();h+=tutorCard();
- h+=`<div class="card phase"><div class="ph-top"><span class="eyebrow">${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
+ const ft=fetesOpen();const FETES=(ft.length?`<div class="card"><span class="eyebrow">Aujourd'hui au lycée</span>${ft.map(f=>`<div class="prof"><b>${f.ic} ${f.n}</b><button class="gbtn" type="button" data-fetesheet="${f.id}">Participer</button></div>`).join('')}</div>`:''),SEAT=(schoolDay(G.day)&&G.min<1020&&phase().type!=='cours'?`<div class="card"><span class="eyebrow">Ta place en classe aujourd'hui</span><div class="prof"><span>${seatToday()?'À côté de <b>'+WHO[seatToday()].name+'</b>':'Pas encore choisie : ce sera au hasard'}</span><button class="gbtn ${seatToday()?'ghost':''}" type="button" data-seatopen>${seatToday()?'Changer':'Choisir'}</button></div></div>`:''),AVENIR=(()=>{const u=upcoming(3);return u.length?`<div class="card"><span class="eyebrow">À venir au lycée</span>${u.map(([d,t])=>`<div class="prof"><span>${t}</span><span class="muted">${fmtDay(d)}</span></div>`).join('')}</div>`:''})();
+ let h='';
+ h+=`<div class="card phase now">${nextClassHTML()}<div class="ph-top"><span class="eyebrow">Maintenant · ${ph.lbl||PLABEL[ph.type]}${ph.sub?' · '+SUBJ[ph.sub]:''}</span><span class="muted">${fmtT(ph.start)} – ${fmtT(ph.end%1440)}</span></div><div class="bar"><i id="phBar" style="width:${pct}%"></i></div>`;
  if(['cours','eval','bac'].includes(ph.type)&&vsHome()){const v=vsInit();
   h+=`<p class="story-text">${v.expelled?P('Tu as été exclu·e définitivement du lycée.'):v.excl&&G.day<=v.excl?P('Tu es exclu·e du lycée jusqu\'au '+fmtDay(v.excl,true)+'.'):v.sick[G.day]?P('Tu es resté·e à la maison aujourd\'hui (« malade »).'):P('Tu as décidé de ne pas aller au lycée aujourd\'hui : chaque cours compte comme une absence.')} Tu fais ce que tu veux à la maison, les horaires de cours ne comptent pas.</p>`+placeBody(ph,'maison',{})+'</div>';
  }else if(ph.type==='cours'&&vsAbsent(ph)){const v=vsInit();
@@ -5327,9 +5341,15 @@ function drawDay(){
  }
  h=h.replace('</div>',outCard()+'</div>');
  const plans=G.plans.filter(p=>p.status==='accepted');
+ h+=FETES;
  if(plans.length)h+=`<div class="card"><span class="eyebrow">Sorties prévues</span>${plans.map(p=>`<div class="relrow"><div class="av">${avatarOf(p.by)}</div><div class="info"><b>${esc(p.fam?'En famille':nameOf(p.by))}</b><span class="muted">${PLACE_OUT[p.place]} ${planWhen(p)}</span></div></div>`).join('')}</div>`;
- h+=`<div class="card"><span class="eyebrow">Emploi du temps · ${DAYS[weekday()]}</span>${ttHTML()}</div>`;
+ h+=objectivesCard();
+ /* emploi du temps juste sous « Maintenant » (replié, on l'ouvre d'un geste) ; le reste plus bas */
+ let ttOpen=false;try{ttOpen=localStorage.getItem('ui-tt')==='1'}catch(e){}
+ h+=`<details class="card tt-card"${ttOpen?' open':''}><summary><span class="eyebrow">Emploi du temps · ${DAYS[weekday()]}</span></summary>${ttHTML()}</details>`;
+ h+=vsCard()+SEAT+clubCard()+tutorCard()+schoolCard()+AVENIR;
  v.innerHTML=h;
+ const tc=v.querySelector&&v.querySelector('.tt-card');if(tc&&tc.addEventListener)tc.addEventListener('toggle',()=>{try{localStorage.setItem('ui-tt',tc.open?'1':'0')}catch(e){}});
 }
 function clubCard(){const L=myClubs();if(!L.length)return `<div class="card"><span class="eyebrow">Clubs</span><div class="prof"><span class="muted">Théâtre, foot, journal du lycée… rejoins un club pour rencontrer du monde.</span><button class="gbtn" type="button" data-clubs>Voir</button></div></div>`;
  const evening=G.min>=1020&&G.min<1320;
@@ -5408,10 +5428,27 @@ function placeBody(ph,place,map){
  h+=ids.length?`<p class="muted">Présents ici :</p><div class="present">${ids.map(id=>{const c=coupleOf(id);return `<button class="pers" type="button" data-person="${id}"><span class="av">${avatarOf(id)}</span><span>${WHO[id].name}</span><small>${c&&c!=='me'&&ids.includes(c)?'avec '+WHO[c].name:G.rel[id].ami>=65?S(id,'ami·e'):''}</small></button>`}).join('')}</div>`:`<p class="muted">Personne ici pour l'instant.</p>`;
  return h;
 }
+/* Camarades : recherche + filtres (filtrage sur place, sans redessiner la page) ; fiches compactes (amitié seulement) */
+let mateQ='',mateF='all';
+const MATE_F=[['all','Tous'],['proches','Proches'],['met','Rencontré·e·s'],['new','À rencontrer'],['single','Célibataires'],['couple','En couple']];
+const normTxt=s=>String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function mateTags(id){const r=G.rel[id],met=metOf(id),c=coupleOf(id);return ['all',met?'met':'new',c?'couple':'single',met&&r.ami>=30?'proches':''].join(' ')}
+function mateFilter(){const q=normTxt(mateQ.trim());let n=0;
+ document.querySelectorAll('#gView [data-mate]').forEach(b=>{const ok=b.dataset.tags.split(' ').includes(mateF)&&(!q||b.dataset.n.includes(q));b.hidden=!ok;if(ok)n++});
+ const c=document.getElementById('mateCount');if(c)c.textContent=n?`${n} camarade${n>1?'s':''}`:'Personne ne correspond.'}
 function drawMates(){
- $('gView').innerHTML=`<div class="sec-title">Groupes</div>${groupsHTML()}<div class="sec-title">Camarades</div><div class="list">${NPCS.map(n=>`<button class="card mate" type="button" data-mate="${n.id}"><div class="relrow"><div class="av">${avatarOf(n.id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(n.id))}</span><small>${statusOf(n.id)}</small></div>${gaugesHTML(n.id)}<span class="muted">${esc(ressentiShort(n.id))}</span></div></div></button>`).join('')}</div>
+ const L=NPCS.map(n=>n.id).sort((a,b)=>(metOf(b)-metOf(a))||(G.rel[b].ami-G.rel[a].ami));
+ $('gView').innerHTML=`<div class="sec-title">Camarades</div>
+ <div class="mate-tools"><input type="search" id="mateQ" placeholder="Rechercher un·e camarade" aria-label="Rechercher un·e camarade" value="${esc(mateQ)}" autocomplete="off">
+ <div class="chips mate-f" role="group" aria-label="Filtres">${MATE_F.map(([k,l])=>`<button class="chip" type="button" data-matef="${k}" aria-pressed="${mateF===k}">${l}</button>`).join('')}</div><span class="muted" id="mateCount"></span></div>
+ <div class="list">${L.map(id=>{const r=G.rel[id],met=metOf(id);return `<button class="card mate" type="button" data-mate="${id}" data-tags="${mateTags(id)}" data-n="${esc(normTxt(fullNameOf(id)+' '+WHO[id].name))}"><div class="relrow"><div class="av">${avatarOf(id)}</div><div class="info"><div class="top"><span>${esc(fullNameOf(id))}</span><small>${statusOf(id)}</small></div><div class="gg${met?'':' off'}"><span>Amitié</span><div class="bar"><i style="width:${met?Math.max(0,r.ami):0}%"></i></div><b>${met?r.ami:'–'}</b></div><span class="muted">${esc(ressentiShort(id))}</span></div></div></button>`}).join('')}</div>
+ <div class="sec-title">Groupes</div>${groupsHTML()}
  <div class="sec-title">Professeurs</div><div class="card list">${Object.entries(PROFS).map(([k,[n,s]])=>`<div class="prof"><div><b>${n}</b><span class="muted"> · ${SUBJ[k]}${G.cls&&G.cls.appr[k]?` · ${G.cls.appr[k]>=3?'t\'apprécie 😊':G.cls.appr[k]<=-3?gtxt('agacé·e',profSex(n))+' 😒':'neutre'}`:''}</span></div><span class="sev" title="${SEV[s]}">${'●'.repeat(s)}<i>${'●'.repeat(3-s)}</i></span></div>`).join('')}</div>`;
+ if(typeof document!=='undefined'&&document.querySelectorAll){const q=document.getElementById('mateQ');if(q&&q.addEventListener)q.addEventListener('input',()=>{mateQ=q.value;mateFilter()});mateFilter()}
 }
+/* début de partie : Maëlle (la plus sociable) t'accueille et te donne son numéro → un premier contact au lycée */
+function welcomeMsg(){phInit();if(G.welcome)return;G.welcome=1;const id='maelle';G.phone[id]=1;G.knows[id]=1;
+ pushMsg(id,'them',P("Coucou ! C'est Maëlle, de ta classe 😊 La CPE m'a demandé de t'accueillir, alors voilà mon numéro. Si t'es {p:perdu·e} ou si tu veux savoir qui est qui, demande-moi !"))}
 function drawMessages(){
  phInit();const ids=[...G.family.map(f=>f.id),...NPCS.map(n=>n.id).filter(id=>G.phone[id]&&!G.blocked[id])];
  ids.sort((a,b)=>((G.threads[b]||[]).slice(-1)[0]?.at??-1)-((G.threads[a]||[]).slice(-1)[0]?.at??-1));
@@ -5442,7 +5479,7 @@ function drawProfile(){
 function drawView(){
  $('gStories').hidden=view!=='home';$('gFabs').hidden=view!=='home'&&view!=='day';
  const filSeg=()=>`<div class="seg filseg" role="group" aria-label="Fil"><button type="button" data-filv="home" aria-pressed="${view==='home'}">Fil</button><button type="button" data-filv="insta" aria-pressed="${view==='insta'}">Mon Insta${G.ig.reqs.length?` · ${G.ig.reqs.length}`:''}</button></div>`;
- if(view==='home'){const n=G.feedN||10,FP=G.posts.filter(p=>p.by==='me'||G.ig.following[p.by]);$('gView').innerHTML=filSeg()+(FP.length?'':`<div class="card"><p style="margin:0">Ton fil est vide pour l'instant 📭</p><p class="muted">Seuls les comptes que tu suis apparaissent ici. Va dans <b>Mon Insta</b> → « Comptes à découvrir » pour t'abonner.</p></div>`)+FP.slice(0,n).map(postHTML).join('')+(FP.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
+ if(view==='home'){const n=G.feedN||10,FP=G.posts.filter(p=>p.by==='me'||G.ig.following[p.by]);$('gView').innerHTML=filSeg()+suggestHTML()+(FP.length?'':`<div class="card"><p style="margin:0">Ton fil est vide pour l'instant 📭</p><p class="muted">Seuls les comptes que tu suis apparaissent ici. Abonne-toi à des camarades juste au-dessus.</p></div>`)+FP.slice(0,n).map(postHTML).join('')+(FP.length>n?`<div class="row" style="justify-content:center;margin:14px 0"><button class="gbtn ghost" type="button" data-feedmore>Voir les posts plus anciens</button></div>`:'')}
  else if(view==='insta'){drawInsta();$('gView').innerHTML=filSeg()+$('gView').innerHTML}
  else if(view==='day')drawDay();else if(view==='messages')drawMessages();else if(view==='mates')drawMates();else drawProfile();
 }
@@ -5820,11 +5857,14 @@ function vsTick(){if(!G||G.asleep||G.tutoOn||cevOpen||mg||!$('sheet').hidden||$(
  if(G.feteDue&&(G.min>=465||ph.type!=='matin')){const f=FETES.find(x=>x.id===G.feteDue);G.feteDue=null;if(f&&!fst(f.id).done&&!vsHome()&&fetesToday().includes(f)){openSheet(feteSheet(f),true);return}}
  if(provTick(ph))return;
  if(ph.type==='cours'&&v.bc!==ph.key){v.bc=ph.key;if(vsHome())return;hwCollect(ph);vsBeforeClass(ph)}}
+/* « Moins d'interruptions » (menu ⚙, G.calme) : moins de fenêtres au hasard, encore moins en ×5 / ×10 */
+const calm=()=>!!(G&&G.calme);
+const popK=()=>!calm()?1:(G.speed||1)>=5?.15:.35;
 function classEventTick(n){
  if(!G||G.asleep||cevOpen||mg||!$('sheet').hidden||$('game').hidden)return;const ph=phase();if(ph.type!=='cours')return;
  if(vsAbsent(ph)||vsInit().bc!==ph.key)return;
  const c=clsInit();if(c.ev.key!==ph.key){/* au début du cours : 1 événement presque toujours (85 %), parfois un 2e (40 %), à des heures tirées au sort */
-  const len=ph.end-ph.start,at=[];if(Math.random()<.85)at.push(ph.start+8+Math.floor(Math.random()*(len*.45)));if(at.length&&Math.random()<.4)at.push(Math.min(ph.end-8,at[0]+20+Math.floor(Math.random()*(len*.35))));c.ev={key:ph.key,n:0,last:ph.start,at}}
+  const len=ph.end-ph.start,at=[];if(Math.random()<.85*popK())at.push(ph.start+8+Math.floor(Math.random()*(len*.45)));if(at.length&&!calm()&&Math.random()<.4)at.push(Math.min(ph.end-8,at[0]+20+Math.floor(Math.random()*(len*.35))));c.ev={key:ph.key,n:0,last:ph.start,at}}
  const e=c.ev;e.at=e.at||[];
  if(e.n<e.at.length&&G.min>=e.at[e.n]&&G.min<ph.end-3)openClassEvent(ph)}
 function openClassEvent(ph,force){const c=clsInit(),sub=ph.sub,prof=ph.prof[0];
@@ -5885,6 +5925,7 @@ function discReact(o){const g=o.g,who=o.who,ac=o.accuse;
 
 /* ----- le matin ----- */
 function vsMorning(){const v=vsInit();if(v.wake===G.day||!schoolDay(G.day)||weekday()>=5||vsHome())return;v.wake=G.day;
+ if(calm()){G.energy=clamp(G.energy-2,0,100);return}
  vsPop({eb:'☀️ '+fmtDay(G.day,true),t:'Le réveil sonne',b:`Il est ${fmtT(G.min)}. Premier cours : ${SUBJ[firstSub()]||'les cours'} à 8\u00a0h.`,ch:[
   ['Se lever et aller en cours',()=>{G.energy=clamp(G.energy-2,0,100);return 'Tu te prépares et tu pars au lycée à l\'heure.'}],
   ['Rester à la maison (absence)',()=>{v.home=v.home||{};v.home[G.day]=1;G.place='maison';G.energy=clamp(G.energy+10,0,100);return P('Tu décides de ne pas aller au lycée. Chaque cours de la journée comptera comme une absence injustifiée. +10 énergie.')}],
@@ -5899,6 +5940,7 @@ function firstSub(){try{return TT[weekday()][0]}catch(e){return null}}
 function vsBeforeClass(ph){const v=vsInit();if(v.home&&v.home[G.day]&&!v.sick[G.day]&&!v.skip[ph.key]&&!(v.excl&&G.day<=v.excl)&&!v.expelled){skipClass(ph,null,'en restant chez toi');G.place='maison';return}if(vsHome())return;
  if(v.skipNext&&v.skipNext.day===G.day){v.skipNext=null;skipClass(ph,null,'dans la cour');toast(`🏃 Tu sèches ${SUBJ[ph.sub]} en restant dans la cour`);return}
  const late=v.lateFirst===G.day&&ph.slot===0;
+ if(calm()&&!late)return;
  vsPop({eb:`🔔 ${SUBJ[ph.sub]} · ${ph.prof[0]}`,t:late?'Tu es en retard !':`Cours de ${SUBJ[ph.sub]}`,b:late?`Il est 8 h 10, le cours de ${SUBJ[ph.sub]} a déjà commencé.`:`La sonnerie retentit. ${ph.prof[0]} attend devant la salle.`,ch:[
   ...(late?[]:[['Entrer en classe normalement',()=>'Tu t\'installes à ta place.']]),
   ['Arriver en retard',()=>lateClass(ph)],
@@ -6984,7 +7026,8 @@ $('gStories').addEventListener('click',e=>{
  const b=e.target.closest('[data-who]');if(!b)return;const w=b.dataset.who;
  if(w==='me'&&!liveStories().some(s=>s.by==='me')){openCompose('story');return}openStories(w);
 });
-$('gNav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;view=b.dataset.v;drawNav();drawView();window.scrollTo(0,0)});
+document.addEventListener('click',e=>{const f=e.target.closest&&e.target.closest('[data-matef]');if(!f)return;mateF=f.dataset.matef;document.querySelectorAll('[data-matef]').forEach(b=>b.setAttribute('aria-pressed',b===f));mateFilter()});
+$('gNav').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.v==='act'){openAct();return}view=b.dataset.v;drawNav();drawView();window.scrollTo(0,0)});
 $('gView').addEventListener('click',e=>{
  const t=e.target;let b;
  if(t.id==='gEdit'){showAtelier();return}
@@ -7029,7 +7072,7 @@ $('gView').addEventListener('click',e=>{
  if(a==='r')p.rt=!p.rt;if(a==='f')p.fav=!p.fav;saveG();refreshPost(p);
 });
 /* bouton flottant unique : événement du jour ou publication */
-$('gAct').onclick=()=>{openSheet(`<h2>Que veux-tu faire ?</h2><div class="menu-list"><button class="mrow" type="button" data-a="ev"><span class="mic">🎲</span><span><b>Lancer un événement</b><small>Une surprise au lycée ou à la maison</small></span></button><button class="mrow" type="button" data-a="post"><span class="mic">📸</span><span><b>Publier un post</b><small>Photo ou texte sur ton Insta</small></span></button></div><button class="gbtn ghost" type="button" data-a="x">Fermer</button>`);
+const openAct=()=>{openSheet(`<h2>Que veux-tu faire ?</h2><div class="menu-list"><button class="mrow" type="button" data-a="ev"><span class="mic">🎲</span><span><b>Lancer un événement</b><small>Une surprise au lycée ou à la maison</small></span></button><button class="mrow" type="button" data-a="post"><span class="mic">📸</span><span><b>Publier un post</b><small>Photo ou texte sur ton Insta</small></span></button></div><button class="gbtn ghost" type="button" data-a="x">Fermer</button>`);
  $('sheetBody').onclick=e=>{const a=e.target.closest('[data-a]')?.dataset.a;if(!a)return;$('sheetBody').onclick=null;if(a==='x'){closeSheet();return}closeSheet();a==='ev'?playEvent():openCompose('post')}};
 /* vitesse du temps : 1, 2, 5 ou 10 minutes de jeu par seconde (le temps repasse à ×1 pendant un mini-jeu) */
 const SPEEDS=[1,2,5,10];
@@ -7047,6 +7090,7 @@ function drawMenu(){
   <p class="muted" style="margin:4px 0 0">🎯 Chaque objectif atteint : +${OBJ_ENERGY} ⚡</p></div>
  <div class="menu-list">
   <button class="mrow" type="button" data-m="music" aria-pressed="${MUS.on}"><span class="mic">${MUS.on?'🎵':'🔇'}</span><span><b>Musique</b><small>${MUS.on?'Activée : touche pour couper':'Coupée : touche pour activer'}</small></span></button>
+  <button class="mrow" type="button" data-m="calme" aria-pressed="${calm()}"><span class="mic">${calm()?'🤫':'🔔'}</span><span><b>Moins d'interruptions</b><small>${calm()?'Activé : tu vas en cours directement, peu d\'imprévus':'Désactivé : toutes les fenêtres et imprévus'}</small></span></button>
   <button class="mrow" type="button" data-m="notes"><span class="mic">📊</span><span><b>Mes notes</b><small>Moyenne du trimestre : ${fmtG(avg)}/20</small></span></button>
   ${GEMS_ON?'<button class="mrow" type="button" data-m="shop"><span class="mic">🛍️</span><span><b>Boutique</b><small>Bientôt disponible</small></span></button>':''}
   <button class="mrow" type="button" data-m="notif"><span class="mic">🔔</span><span><b>Notifications</b><small>${G.unread?G.unread+' nouvelle'+(G.unread>1?'s':''):'Ce qui s\'est passé récemment'}</small></span></button>
@@ -7062,6 +7106,7 @@ function menuClick(e){const b=e.target.closest('[data-m]');if(!b||b.disabled)ret
  else if(m.startsWith('sp')){G.speed=+m.slice(2);toast(G.speed===1?'⏱ Temps normal':`⏩ Temps accéléré ×${G.speed}`)}
  else if(m==='bonus'){const add=G.bonus*5;G.energy=clamp(G.energy+add,0,100);toast(`+${add} énergie récupérée`);G.bonus=0;G.nextAt=Date.now()+RECHARGE}
  else if(m==='music'){const on=!MUS.on;try{localStorage.setItem(MUSKEY,on?'on':'off')}catch(e){}on?musStart():musStop();toast(on?'🎵 Musique activée':'🔇 Musique coupée')}
+ else if(m==='calme'){G.calme=!G.calme;toast(G.calme?'🤫 Moins d\'interruptions':'🔔 Toutes les fenêtres reviennent')}
  else if(m==='notes'){$('sheetBody').onclick=null;notesSheet();return}
  else if(m==='notif'){$('sheetBody').onclick=null;notifSheet();return}
  else if(m==='shop'){toast('La boutique arrive bientôt');return}
@@ -7104,7 +7149,7 @@ $('famGo').onclick=()=>{
  try{localStorage.setItem(KEY,JSON.stringify(me()))}catch(e){}
  famDraft.forEach(f=>{f.name=(f.name||'').trim()||f.role});
  if(famEdit){G.family=famDraft.map((f,i)=>{const old=G.family.find(x=>x.id===f.id);const id=old?old.id:'fam'+Date.now()+i;if(G.famRel[id]==null)G.famRel[id]=65;return{role:f.role,name:f.name,trait:f.trait,id,av:f.av||famAvatar(f.role,f.seed??hash(f.name+f.role+i))}});saveG();showGame();return}
- G=newGame(famDraft);planPosts();pickRival();G.wsnap=weekSnap();
+ G=newGame(famDraft);planPosts();pickRival();G.wsnap=weekSnap();welcomeMsg();
  G.phaseKey=phase().key;G.lastPhase=phase();
  if(G.rel.ines&&G.rel.ines.ami>=60)pushMsg('ines','them',`Coucou ! C'est toi ${me().sexe==='f'?'la nouvelle':me().sexe==='m'?'le nouveau':'le ou la nouvelle'} ? Bienvenue au lycée ✨ si t'as besoin de quoi que ce soit, demande-moi 🥰`);
  if(G.family[0])pushMsg(G.family[0].id,'them',`Bonne rentrée ${me().name||''} ❤️ Les cours commencent à 8h, ne sois pas en retard !`);
