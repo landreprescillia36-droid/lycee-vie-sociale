@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='172';
+const APP_VERSION='173';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -219,7 +219,8 @@ function render(s,vb,p,showBg){
   const T=hairTint(f,bc,tab);
   if(!T)o+=`<defs><filter id="${fid}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values=".299 .587 .114 0 0 .299 .587 .114 0 0 .299 .587 .114 0 0 0 0 0 1 0"/><feComponentTransfer><feFuncR type="table" tableValues="${tab[0].join(' ')}"/><feFuncG type="table" tableValues="${tab[1].join(' ')}"/><feFuncB type="table" tableValues="${tab[2].join(' ')}"/></feComponentTransfer><feComposite in2="SourceAlpha" operator="in"/></filter></defs>`;
   const img=`<image href="${T||`assets/${f}.webp`}" data-hk="${f}|${bc}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="none"${T?'':` filter="url(#${fid})"`}/>`;
-  o+=`<g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g>`}
+  /* coupés au bord du visage : le bout des sourcils ne dépasse pas devant l'oreille */
+  o+=`<defs><clipPath id="${p}bgc"><path d="${F.d}"/></clipPath></defs><g clip-path="url(#${p}bgc)"><g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g></g>`}
  else o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
  const EG=s.sexe==='m'?earVG(s,F,cy,no):null;
