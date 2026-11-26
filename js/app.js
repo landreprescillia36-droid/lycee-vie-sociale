@@ -177,7 +177,7 @@ function render(s,vb,p,showBg){
  if(jaw)o+=`<defs><linearGradient id="${p}jg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".45" stop-color="#fff" stop-opacity="1"/></linearGradient><mask id="${p}jm"><rect x="0" y="236" width="400" height="160" fill="url(#${p}jg)"/></mask></defs>`;
  /* coiffure garçon reprise d'une planche : le haut de la tête a la forme du modèle (le crâne du jeu ne dépasse pas des cheveux) */
  const TT=HART(s)&&HART(s).tete?HART(s):null,ttf=TT&&hairFit(s),ttT=ttf?` transform="${ttf.t}"`:'';
- if(TT)o+=`<defs><clipPath id="${p}tt"><path d="${teteClip(TT)}"${ttT}/></clipPath></defs><g clip-path="url(#${p}tt)">`;
+ if(TT)o+=`<defs><clipPath id="${p}tt">${teteClip(TT).split('|').map(d=>`<path d="${d}"${ttT}/>`).join('')}</clipPath></defs><g clip-path="url(#${p}tt)">`;
  o+=`<path d="${F.d}" fill="url(#${p}sk)"/><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.4" opacity=".5"/>`;
  if(TT)o+='</g>';
  if(jaw)o+=`<g mask="url(#${p}jm)"><path d="${F.d}" fill="none" stroke="${outl}" stroke-width="2.6" opacity=".55"/></g>`;
@@ -1035,11 +1035,14 @@ const EARS_G=[28.32, -8.8, 336.03, 435.06];
 /* oreilles garçons copiées des modèles (planche bijoux) : collées au bord du visage du jeu à hauteur des yeux, recolorées à la peau */
 /* forme du crâne des coiffures de la planche + dessous : le visage s'élargit en biais sous le crâne (plus de marche à la tempe, cachée avant par les oreilles) */
 const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;if(TCL[K])return TCL[K];const n=TT.tete.match(/-?[\d.]+/g).map(Number),P=[];
- for(let i=0;i+1<n.length;i+=2)if(n[i+1]<=Y-.5)P.push([n[i],n[i+1]]);if(P.length<3)return TCL[K]=TT.tete+`M-400,${Y}H800V1400H-400Z`;
+ for(let i=0;i+1<n.length;i+=2)if(n[i+1]<=Y-.5)P.push([n[i],n[i+1]]);if(P.length<3)return TCL[K]=TT.tete+`|M-400,${Y}H800V1400H-400Z`;
  const L=P.filter(q=>q[0]<200),R=P.filter(q=>q[0]>=200),lo=L.reduce((m,q)=>q[1]>m[1]?q:m,L[0]),ro=R.reduce((m,q)=>q[1]>m[1]?q:m,R[0]);
  /* points du crâne dans l'ordre, puis descente en biais de chaque côté jusqu'à 24 unités plus bas */
  const i0=P.indexOf(ro),i1=P.indexOf(lo);let pts=P;
- return TCL[K]='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'+`M${fx(lo[0])},${fx(lo[1])} L${fx(ro[0])},${fx(ro[1])} L${fx(ro[0]+30)},${fx(Y+24)} L800,${fx(Y+24)} L800,1400 L-400,1400 L-400,${fx(Y+24)} L${fx(lo[0]-30)},${fx(Y+24)}Z`}
+ /* sous le crâne, le bord du visage s'écarte en douceur (courbe, pas de bosse) : écart = TB_W·t², t de 0 à 1 sur TB_H */
+ const RR=[],L2=[];for(let i=0;i<=12;i++){const q=i/12,d=TB_W*q*q,y=Y-2+q*(TB_H+1.5);RR.push(fx(ro[0]+d)+','+fx(y));L2.unshift(fx(lo[0]-d)+','+fx(y))}
+ return TCL[K]='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z|'+`M${fx(lo[0])},${fx(Y-2)} L${RR.join(' L')} L800,${fx(Y-.5+TB_H)} L800,1400 L-400,1400 L-400,${fx(Y-.5+TB_H)} L${L2.join(' L')}Z`}
+const TB_W=60,TB_H=60;
 /* repère des oreilles de la planche dans le visage du jeu : taille d'après la largeur du visage (91,2 unités sur la planche),
    hauteur d'après le bas des sourcils (sur la planche, le centre des yeux est 30,4 px sous le bas des sourcils) */
 /* ---------- oreilles des garçons (dessinées) ----------
@@ -1047,11 +1050,11 @@ const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;
    Repère de l'oreille : u = vers l'extérieur (0 = bord du visage, 1 = bord de l'oreille), v = de haut (0) en bas (1). */
 /* demi-largeur de la tête VISIBLE à la hauteur y (visage coupé par la forme du crâne des coiffures de la planche, cf. teteClip) */
 const TETE_PTS={};function visHW(s,F,y){const f=faceHW(F.d,y),TT=HART(s)&&HART(s).tete?HART(s):null,fit=TT&&hairFit(s);if(!fit)return f;
- const Y=TT.teteY||213,yh=205+(y-205-fit.dy)/fit.sy;if(yh>=Y+24)return f;
+ const Y=TT.teteY||213,yh=205+(y-205-fit.dy)/fit.sy;if(yh>=Y+TB_H)return f;
  const K=s.hair;if(!TETE_PTS[K]){const n=TT.tete.match(/-?[\d.]+/g).map(Number),L=[];for(let i=0;i+1<n.length;i+=2)if(n[i]<200&&n[i+1]<=Y-.5)L.push([n[i],n[i+1]]);TETE_PTS[K]=L}
  const L=TETE_PTS[K];if(!L.length)return f;let xl=200;const yy=Math.min(yh,Y-.6);
  for(let i=0;i+1<L.length;i++){const [x1,y1]=L[i],[x2,y2]=L[i+1];if((y1-yy)*(y2-yy)<=0&&y1!==y2){xl=Math.min(xl,x1+(x2-x1)*(yy-y1)/(y2-y1))}}
- if(xl===200)return f;let hw=(200-xl)*fit.sx;if(yh>Y)hw+=(yh-Y)/24*30*fit.sx;return Math.min(f,hw)}
+ if(xl===200)return f;let hw=(200-xl)*fit.sx;if(yh>Y){const q=Math.min(1,(yh-Y)/TB_H);hw+=TB_W*q*q*fit.sx}return Math.min(f,hw)}
 const EAR_K=.7;/* taille des oreilles (1 = des sourcils à la base du nez) */
 function earVG(s,F,cy,no){const a=s.adj||{},g=earGeo(s,F,cy),yT0=g.cv-27.1*g.f-6,yB=252+no+(a.noseY||0)+8,H0=Math.max(50,yB-yT0),H=H0*EAR_K,yT=yT0+(H0-H)*.5,W=H*.32;
  const v1=.25,v2=.85,h1=faceHW(F.d,yT+H*v1),h2=faceHW(F.d,yT+H*v2);
@@ -1075,7 +1078,11 @@ function earV(s,F,G,p,sk){const out=shade(sk,-.34),dk=shade(sk,-.26),lt=shade(sk
    +`<ellipse cx="${G.P(k,.42,.9)[0]}" cy="${G.P(k,.42,.9)[1]}" rx="${fx(G.W*.13)}" ry="${fx(G.H*.05)}" fill="#fff" opacity=".1"/>`
    /* contour doux, un peu plus foncé que la peau */
    +`<path d="${shape}" fill="none" stroke="${out}" stroke-width="${fx(G.H*.016)}" stroke-linejoin="round" opacity=".7"/>`});
- return o+'</g>'}
+ o+='</g>';
+ /* contour du visage devant l'oreille : trait net qui suit le bord visible de la joue */
+ const outl=mix(sk,'#6a2e14',.42);[1,-1].forEach(k=>{const pts=[];for(let i=0;i<=16;i++){const y=G.yT+G.H*.2+i/16*G.H*.9;pts.push(fx(200-k*(visHW(s,F,y)-.6))+','+fx(y))}
+  o+=`<path d="M${pts.join(' L')}" fill="none" stroke="${outl}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity=".6"/>`});
+ return o}
 /* boucles d'oreilles des garçons (dessinées, argentées), accrochées au lobe des deux oreilles */
 const EARV_BO={gpuce:{n:'Puces discrètes'},gpcreole:{n:'Petits créoles'},gmcreole:{n:'Créoles moyennes'}};
 function earringV(t,G,p){if(!EARV_BO[t])return '';const H=G.H;let o=`<defs><linearGradient id="${p}ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#d6d9dd"/><stop offset="1" stop-color="#868c93"/></linearGradient></defs>`;
