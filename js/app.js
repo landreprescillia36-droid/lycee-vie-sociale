@@ -1052,7 +1052,8 @@ const TETE_PTS={};function visHW(s,F,y){const f=faceHW(F.d,y),TT=HART(s)&&HART(s
  const L=TETE_PTS[K];if(!L.length)return f;let xl=200;const yy=Math.min(yh,Y-.6);
  for(let i=0;i+1<L.length;i++){const [x1,y1]=L[i],[x2,y2]=L[i+1];if((y1-yy)*(y2-yy)<=0&&y1!==y2){xl=Math.min(xl,x1+(x2-x1)*(yy-y1)/(y2-y1))}}
  if(xl===200)return f;let hw=(200-xl)*fit.sx;if(yh>Y)hw+=(yh-Y)/24*30*fit.sx;return Math.min(f,hw)}
-function earVG(s,F,cy,no){const a=s.adj||{},g=earGeo(s,F,cy),yT=g.cv-27.1*g.f-6,yB=252+no+(a.noseY||0)+8,H=Math.max(50,yB-yT),W=H*.32;
+const EAR_K=.8;/* taille des oreilles (1 = des sourcils à la base du nez) */
+function earVG(s,F,cy,no){const a=s.adj||{},g=earGeo(s,F,cy),yT0=g.cv-27.1*g.f-6,yB=252+no+(a.noseY||0)+8,H0=Math.max(50,yB-yT0),H=H0*EAR_K,yT=yT0+(H0-H)*.5,W=H*.32;
  const v1=.25,v2=.85,h1=faceHW(F.d,yT+H*v1),h2=faceHW(F.d,yT+H*v2);
  const hwAt=v=>visHW(s,F,yT+v*H);
  const P=(k,u,v)=>[fx(200-k*(hwAt(v)-1.5+u*W)),fx(yT+v*H)];
