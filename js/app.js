@@ -875,8 +875,6 @@ function topSVG(G,T,s,p,K){
   tab=[[],[],[]],ray=/^(bandes|raye)-/.test(hg.k);if(!same){const lc=lum(cc),src=lum(hg.A[8]),dk=ray&&src>.5?'#232120':shade(cc,lc>.6?-.32:lc>.3?-.5:-.62),lt=ray&&src<.5?'#efede8':shade(cc,lc>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
   const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab,ray?0:2),fid=p+'hgf';
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
-  {const TA=s._motif&&typeof TS_ART!=='undefined'&&TS_ART[s._motif];if(TA&&TA[7]){const [X,Y,W,H]=TA[7];/* t-shirt de la planche « T-shirts garçons » : forme et motif repris tels quels */
-   return arms()+`<g transform="translate(200,0) scale(${fx(kx)},1) translate(-200,0)"><image href="assets/hauts/motifs/${s._motif}-t.webp" x="${X}" y="${Y}" width="${W}" height="${H}" preserveAspectRatio="none"/></g>`+J.torso+J.sleeves+hands()}}
   let vec=arms();/* plus d'ancien haut dessous : le nouveau haut le remplace complètement */
   /* seuls les petits jours aux épaules (entre le col et l'épaule) sont bouchés, d'une teinte unie identique au haut : aucun ancien détail visible */
   if(false&&!['gdeb','gnageur'].includes(s.top)){HG_OFF=1;/* plus de dessous vectoriel (il dépassait au col et aux épaules) */let sil='';try{sil=topSVG(G,T,{...s,jacket:'aucune'},p+'u',K)}finally{HG_OFF=0}
