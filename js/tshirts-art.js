@@ -1,0 +1,2 @@
+/* généré par tools/tshirts-garcons.py — ne pas modifier à la main */
+const TS_ART={"tsbrooklyn": [139.42, 251.82, 119.8, 50.35, "#181717", "T-shirt Brooklyn"], "tslosangeles": [141.97, 243.66, 124.9, 107.5, "#f0e9e9", "T-shirt Los Angeles 92"], "tspositive": [145.8, 257.26, 117.25, 65.31, "#f6e9de", "T-shirt Positive"]};
