@@ -5374,6 +5374,8 @@ const HOME_ACTS=[['meal','🍽️','Repas en famille','faim, complicité'],['sna
  ['call','📞','Appeler quelqu\'un','au téléphone'],['out','📅','Prévoir une sortie','un·e camarade'],['invite','🏠','Inviter à la maison','parler en vrai'],
  ['tv','📺','Regarder la télé','seul·e ou en famille'],['pc','💻','Jouer sur l\'ordinateur','divertissement · 1 h'],['film','🎬','Regarder un film','2 h · famille'],
  ['hobby','🎨','Ma passion','divertissement · 1 h'],['hw','📝','Faire mes devoirs','devoirs à rendre']];
+/* catégories des activités de la maison (titres) */
+const HOME_CATS=[['🍽️ Manger',['meal','snack']],['👥 Amis et sorties',['go','out','call','invite']],['🎮 Détente',['tv','film','pc','hobby']],['📚 Devoirs et révisions',['hw']]];
 const guestHere=()=>!!(G.guest&&G.guest.day===G.day&&G.min<G.guest.until);
 function homeOff(k){if(k==='meal')return mealOff();if(k==='go')return goOff();
  if(k==='invite'&&guestHere())return 'déjà quelqu\'un';return homeTimeOff(k)}
@@ -5429,8 +5431,9 @@ function placeBody(ph,place,map){
   ${fam.length||guestHere()?`<div class="present">${guestHere()?`<button class="pers" type="button" data-person="${G.guest.id}"><span class="av">${avatarOf(G.guest.id)}</span><span>${WHO[G.guest.id].name}</span><small>invité·e</small></button>`:''}${fam.map(f=>`<button class="pers" type="button" data-fam="${f.id}"><span class="av">${avatarOf(f.id)}</span><span>${esc(f.name)}</span><small>${f.role}</small></button>`).join('')}</div>`:''}
   ${guestHere()?`<p class="muted">🏠 ${WHO[G.guest.id].name} est chez toi jusqu'à ${fmtT(G.guest.until)}. Touche son portrait pour lui parler en vrai.</p>`:''}
   <span class="eyebrow">À la maison</span>
-  <div class="acts two">${HOME_ACTS.map(([k,ic,l,sm])=>`<button class="act" type="button" data-home="${k}" ${homeOff(k)?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${homeOff(k)||sm}</small></button>`).join('')}</div>
-  <div class="acts two"><button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser</span><small class="r-ok">−6 énergie</small></button>
+  ${HOME_CATS.map(([tt,ks])=>`<h4 class="act-cat">${tt}</h4><div class="acts two">${ks.map(k=>{const [,ic,l,sm]=HOME_ACTS.find(q=>q[0]===k);return `<button class="act" type="button" data-home="${k}" ${homeOff(k)?'disabled':''}><span class="ico">${ic}</span><span>${l}</span><small class="r-ok">${homeOff(k)||sm}</small></button>`}).join('')}${tt.includes('Devoirs')?`<button class="act" type="button" data-do="revise"><span class="ico">📚</span><span>Réviser</span><small class="r-ok">−6 énergie</small></button>`:''}</div>`).join('')}
+  <h4 class="act-cat">😴 Repos</h4>
+  <div class="acts two">
   <button class="act" type="button" data-do="rest" ${cdLeft('rest')?'disabled':''}><span class="ico">🛋️</span><span>Se reposer</span><small class="r-ok">${homeTimeOff('rest')||'1 h · énergie +12'}</small></button>
   ${G.min>=1260||G.min<360?`<button class="act" type="button" data-do="sleep"><span class="ico">🌙</span><span>Dormir</span><small class="r-ok">jusqu'à 7h</small></button>`:`<button class="act" type="button" data-do="nap" ${cdLeft('nap')?'disabled':''}><span class="ico">😴</span><span>Faire une sieste</span><small class="r-ok">${homeTimeOff('nap')||'1 h 30 · énergie +18'}</small></button>`}</div>`;
   return h;
