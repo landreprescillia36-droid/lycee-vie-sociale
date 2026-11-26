@@ -873,7 +873,7 @@ function topSVG(G,T,s,p,K){
    les bras et les mains restent ceux du jeu ; autre couleur → l'image est reteinte d'après sa clarté */
  {const hg=!HG_OFF&&hgArt(s);if(hg){const [x,y,w,h,l0,lm,l1]=hg.A,G0=hgG0(),kx=(sideX(G,330)+.001)/(sideX(G0,330)+.001),cc=s.topColor||hg.A[8],same=!hg.tint,
   tab=[[],[],[]],ray=/^(bandes|raye)-/.test(hg.k);if(!same){const lc=lum(cc),src=lum(hg.A[8]),dk=ray&&src>.5?'#232120':shade(cc,lc>.6?-.32:lc>.3?-.5:-.62),lt=ray&&src<.5?'#efede8':shade(cc,lc>.75?.0:.32);for(let i=0;i<16;i++){const v=i/15,c2=v<=lm?mix(dk,cc,clamp((v-l0)/Math.max(.01,lm-l0),0,1)):mix(cc,lt,clamp((v-lm)/Math.max(.01,l1-lm),0,1));rgb(c2).forEach((q,j)=>tab[j].push((q/255).toFixed(3)))}}
-  const f='hauts/'+hg.k,T_=same?null:hairTint(f,cc,tab,ray?0:2),fid=p+'hgf';
+  const f='hauts/'+hg.k+(s._motif&&hg.k==='over-creme'?'-sr':''),/* t-shirts à motif : sans revers aux manches */T_=same?null:hairTint(f,cc,tab,ray?0:2),fid=p+'hgf';
   /* dessous : le haut dessiné par le jeu (il épouse le corps), dessus : le haut de la planche */
   let vec=arms();/* plus d'ancien haut dessous : le nouveau haut le remplace complètement */
   /* seuls les petits jours aux épaules (entre le col et l'épaule) sont bouchés, d'une teinte unie identique au haut : aucun ancien détail visible */
