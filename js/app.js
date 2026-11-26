@@ -167,7 +167,7 @@ function render(s,vb,p,showBg){
  o+=`<g transform="${HT}">${s.hair&&s.hair!=='chauve'&&!HART(s)?`<path d="${GAPF}" fill="${shade(hc,-.22)}"/>`:''}${HART(s)?hairArt(s,'back',p):hairBack(s,p,hD)}</g>`;
  o+=`<g transform="translate(200,${BODY_Y}) scale(${wk},${+(hk*BODY_K).toFixed(3)}) translate(-200,-${BODY_Y})">`+body(s,p,sk,skD,skDD,skL)+'</g>';
  o+=`<g transform="${HT}">`+chainG(s,cy)+(HART(s)?'':hairMid(s,p,hD,hL));
- const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m'&&typeof BIJOU_ART!=='undefined'&&BIJOU_ART.oreilles){o+=earP(s,F,cy,i?'d':'g');return}/* garçons : oreilles des modèles de la planche bijoux */o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
+ const outl=mix(sk,'#6a2e14',.42),EY=earY(s),[ERX,ERY,EDX]=earSz(s);[F.ex,400-F.ex].forEach((x,i)=>{const k=i?-1:1,rx=ERX,ry=ERY,xx=x-EDX*k;if(s.sexe==='m')return;/* garçons : oreilles dessinées (earV) après les cheveux, pour rester visibles */o+=`<ellipse cx="${xx}" cy="${EY}" rx="${rx}" ry="${ry}" fill="url(#${p}sk)" stroke="${outl}" stroke-width="2.2" stroke-opacity=".55"/><ellipse cx="${xx+4*k}" cy="${EY+2}" rx="${rx*.47}" ry="${ry*.55}" fill="${skD}" opacity=".6"/><path d="M${xx-8*k},${EY-ry*.55} C${xx+6*k},${EY-ry*.6} ${xx+8*k},${EY+ry*.3} ${xx-2*k},${EY+ry*.5}" fill="none" stroke="${outl}" stroke-width="2" stroke-linecap="round" opacity=".45"/>`});
  /* ombre portée du menton sur le cou (planche) */
  /* détails du menton (flous) seulement sur les grands portraits : les petites pastilles du fil restent légères à afficher */
  const big=vh===240||vh>=600;
@@ -222,7 +222,8 @@ function render(s,vb,p,showBg){
   o+=`<g transform="translate(${200+X},${Y})">${img}</g><g transform="translate(${200-X},${Y}) scale(-1,1)">${img}</g>`}
  else o+=`<g transform="translate(${200+bx},${by})">${brow(s.brows,bc,p+'brR')}</g><g transform="translate(${200-bx},${by}) scale(-1,1)">${brow(s.brows,bc,p+'brL')}</g>`;
  /* avec une coiffure décalquée, les cheveux couvrent les oreilles : la boucle est posée au bord du visage, sur la peau */
- o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207,s.sexe==='m'?earGeo(s,F,cy):null)+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
+ const EG=s.sexe==='m'?earVG(s,F,cy,no):null;
+ o+=(HART(s)?hairArt(s,'front',p):hairFront(s,p,hD,hL))+templeFill(s,p)+edgesSVG(s,hD)+(EG?earV(s,F,EG,p,sk)+earringV(s.earrings,EG,p):earrings(s.earrings,F.ex+(HART(s)&&!HART(s).ears?11:0),(HART(s)&&!HART(s).ears?15:0)+earY(s)-207))+hatSVG(s,p)+glasses(s.glasses,dx,cy,sc,F.ex)+'</g>';
  return o+'</g></svg>';
 }
 function bgLayer(s,p){const c=s.bgColor,c2=shade(c,c<'#5'?.08:-.07),R='x="-400" y="-400" width="1200" height="1800"';
@@ -1041,6 +1042,41 @@ const TCL={};function teteClip(TT){const Y=TT.teteY||213,K=Y+'|'+TT.tete.length;
  return TCL[K]='M'+pts.map(q=>fx(q[0])+','+fx(q[1])).join(' L')+'Z'+`M${fx(lo[0])},${fx(lo[1])} L${fx(ro[0])},${fx(ro[1])} L${fx(ro[0]+30)},${fx(Y+24)} L800,${fx(Y+24)} L800,1400 L-400,1400 L-400,${fx(Y+24)} L${fx(lo[0]-30)},${fx(Y+24)}Z`}
 /* repère des oreilles de la planche dans le visage du jeu : taille d'après la largeur du visage (91,2 unités sur la planche),
    hauteur d'après le bas des sourcils (sur la planche, le centre des yeux est 30,4 px sous le bas des sourcils) */
+/* ---------- oreilles des garçons (dessinées) ----------
+   De la hauteur des sourcils à la base du nez, collées au bord du visage (sans changer sa largeur), un peu décollées.
+   Repère de l'oreille : u = vers l'extérieur (0 = bord du visage, 1 = bord de l'oreille), v = de haut (0) en bas (1). */
+function earVG(s,F,cy,no){const a=s.adj||{},g=earGeo(s,F,cy),yT=g.cv-27.1*g.f-6,yB=252+no+(a.noseY||0)+8,H=Math.max(50,yB-yT),W=H*.32;
+ const v1=.25,v2=.85,h1=faceHW(F.d,yT+H*v1),h2=faceHW(F.d,yT+H*v2);
+ const P=(k,u,v)=>{const t=Math.max(0,(v-v1)/(v2-v1)),hw=h1+(h2-h1)*t;return [fx(200-k*(hw-1+u*W)),fx(yT+v*H)]};
+ return {yT,H,W,P,lobe:k=>P(k,.4,.93)}}
+function earV(s,F,G,p,sk){const out=shade(sk,-.34),dk=shade(sk,-.26),lt=shade(sk,.08);let o=`<defs><clipPath id="${p}eo"><path clip-rule="evenodd" d="M-200,-200H600V700H-200Z ${F.d}"/></clipPath><filter id="${p}eb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${fx(G.H*.02)}"/></filter></defs><g clip-path="url(#${p}eo)">`;
+ [1,-1].forEach(k=>{const P=(u,v)=>G.P(k,u,v).join(','),[ax]=G.P(k,0,.5),[bx]=G.P(k,.55,.5);
+  const shape=`M${P(.06,.24)} C${P(.1,.06)} ${P(.3,-.03)} ${P(.58,.03)} C${P(.88,.1)} ${P(1.01,.3)} ${P(.96,.5)} C${P(.92,.62)} ${P(.78,.7)} ${P(.68,.8)} C${P(.6,.9)} ${P(.56,1)} ${P(.38,1)} C${P(.22,1)} ${P(.12,.95)} ${P(.04,.87)} L${P(-.3,.87)} L${P(-.3,.42)} L${P(.02,.36)}Z`;
+  o+=`<linearGradient id="${p}eg${k}" gradientUnits="userSpaceOnUse" x1="${ax}" y1="0" x2="${bx}" y2="0"><stop offset="0" stop-color="${shade(sk,-.16)}"/><stop offset="1" stop-color="${sk}"/></linearGradient>`
+   +`<path d="${shape}" fill="url(#${p}eg${k})"/>`
+   /* creux central (conque) */
+   +`<ellipse cx="${G.P(k,.42,.5)[0]}" cy="${G.P(k,.42,.5)[1]}" rx="${fx(G.W*.16)}" ry="${fx(G.H*.16)}" fill="${dk}" opacity=".7" filter="url(#${p}eb)"/>`
+   /* relief intérieur qui suit le bord (anthélix) + reflet */
+   +`<path d="M${P(.42,.13)} C${P(.74,.18)} ${P(.84,.4)} ${P(.72,.56)} C${P(.64,.66)} ${P(.56,.7)} ${P(.5,.79)}" fill="none" stroke="${dk}" stroke-width="${fx(G.H*.022)}" stroke-linecap="round" opacity=".55"/>`
+   +`<path d="M${P(.5,.18)} C${P(.7,.24)} ${P(.76,.4)} ${P(.66,.53)}" fill="none" stroke="${lt}" stroke-width="${fx(G.H*.014)}" stroke-linecap="round" opacity=".5"/>`
+   /* tragus */
+   +`<path d="M${P(.1,.44)} C${P(.25,.42)} ${P(.3,.53)} ${P(.21,.62)} C${P(.16,.65)} ${P(.11,.63)} ${P(.09,.6)}Z" fill="${lt}" stroke="${dk}" stroke-width="${fx(G.H*.01)}" opacity=".85"/>`
+   /* lobe : reflet doux */
+   +`<ellipse cx="${G.P(k,.42,.9)[0]}" cy="${G.P(k,.42,.9)[1]}" rx="${fx(G.W*.13)}" ry="${fx(G.H*.05)}" fill="#fff" opacity=".1"/>`
+   /* contour doux, un peu plus foncé que la peau */
+   +`<path d="${shape}" fill="none" stroke="${out}" stroke-width="${fx(G.H*.016)}" stroke-linejoin="round" opacity=".7"/>`});
+ return o+'</g>'}
+/* boucles d'oreilles des garçons (dessinées, argentées), accrochées au lobe des deux oreilles */
+const EARV_BO={gpuce:{n:'Puces discrètes'},gpcreole:{n:'Petits créoles'},gmcreole:{n:'Créoles moyennes'}};
+function earringV(t,G,p){if(!EARV_BO[t])return '';const H=G.H;let o=`<defs><linearGradient id="${p}ag" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#d6d9dd"/><stop offset="1" stop-color="#868c93"/></linearGradient></defs>`;
+ [1,-1].forEach(k=>{const [x,y]=G.lobe(k).map(Number);
+  if(t==='gpuce'){const r=H*.03;o+=`<circle cx="${fx(x)}" cy="${fx(y)}" r="${fx(r)}" fill="url(#${p}ag)" stroke="#5f656c" stroke-width="${fx(r*.18)}"/><circle cx="${fx(x-r*.35)}" cy="${fx(y-r*.35)}" r="${fx(r*.32)}" fill="#fff" opacity=".9"/>`}
+  else{const big=t==='gmcreole',r=H*(big?.095:.062),w=H*(big?.024:.016),cy2=y+r-w*.6;
+   o+=`<circle cx="${fx(x)}" cy="${fx(cy2)}" r="${fx(r)}" fill="none" stroke="#5f656c" stroke-width="${fx(w+H*.008)}"/>`
+    +`<circle cx="${fx(x)}" cy="${fx(cy2)}" r="${fx(r)}" fill="none" stroke="url(#${p}ag)" stroke-width="${fx(w)}"/>`
+    +`<circle cx="${fx(x)}" cy="${fx(cy2)}" r="${fx(r-w*.35)}" fill="none" stroke="#6d737a" stroke-width="${fx(w*.3)}" opacity=".45"/>`
+    +`<path d="M${fx(x-r*.75*k)},${fx(cy2+r*.55)} A${fx(r)},${fx(r)} 0 0 ${k>0?1:0} ${fx(x-r*.2*k)},${fx(cy2+r*.97)}" fill="none" stroke="#fff" stroke-width="${fx(w*.35)}" stroke-linecap="round" opacity=".85"/>`}});
+ return o}
 function earGeo(s,F,cy){const a=s.adj||{},eo=F.eo||0,B=typeof BROW_ART_G!=='undefined'&&BROW_ART_G[s.brows],bb=B?cy+((F.bo||0)-eo)+(a.browsY||0)+B[1]+B[3]:cy-23,hw=faceHW(F.d,cy),f=hw/91.2;return {f,hw,cv:bb-EAR_UP+27.1*f,d:F.d}}
 const EAR_UP=12;/* le bas visible des sourcils est plus haut que le bas de leur image (marge transparente) */
 /* oreilles plus près de la tête et un peu plus petites (comme sur Noah et Sacha, choix de Prescillia) : resserrées vers le visage, centrées en hauteur */
@@ -1596,7 +1632,7 @@ const WEAR={
 /* ---------- catalogue filles / catalogue garçons ----------
    g:'f' = filles, g:'m' = garçons, sans g = dans les deux ; non-binaire = tout le catalogue */
 REFS.K='tes captures des personnages';REFS.BJ='ta planche « Bijoux – Garçons »';
-WEAR.acc.items.push(...[['gpuce','Puce'],['gboucle','Petites boucles'],['gcreole','Petit créole'],['gcreole2','Petits créoles']].map(([v,n])=>({s:'earrings',v,n,r:'BJ',g:'m',nw:1,vb:hv('55 175 110 120')})),
+WEAR.acc.items.push(...Object.entries(EARV_BO).map(([v,o])=>({s:'earrings',v,n:o.n,g:'m',nw:1,vb:hv('40 180 110 120')})),
  {s:'necklace',v:'aucun',n:'Sans chaîne',g:'m',vb:hv('115 262 170 150')},...[['gchfine','Chaîne fine'],['gchmoy','Chaîne moyenne'],['gchepaisse','Chaîne épaisse']].map(([v,n])=>({s:'necklace',v,n,r:'BJ',g:'m',nw:1,vb:hv('115 262 170 150')})));REFS.HG='ta planche « Hauts pour garçon »';
 /* planche « Hauts pour garçon » : logos de marques non reproduits */
 WEAR.top.items.unshift(...[['gtee','#f4f1ea','T-shirt blanc'],['gtee','#1f2127','T-shirt noir'],['gtee','#ece2cc','T-shirt crème'],['gtee','#4a4b50','T-shirt gris anthracite'],['gtee','#26314f','T-shirt marine'],['gpolo','#26314f','Polo marine'],['gpolo','#a9adb3','Polo gris'],['gpolo','#4b5236','Polo kaki'],['ghood','#26314f','Sweat à capuche marine'],['ghood','#f4f1ea','Sweat à capuche blanc'],['gzip','#a9adb3','Sweat zippé à capuche gris'],['gchem','#f4f1ea','Chemise blanche'],['gsweat','#ece2cc','Sweat col rond crème'],['gpolo','#f4f1ea','Polo blanc'],['gpolo','#1f2127','Polo noir'],['gpolopk','#ece2cc','Polo crème à poche'],['gchem','#1f2127','Chemise noire'],['ghood','#a9adb3','Sweat à capuche gris'],['ghood','#1f2127','Sweat à capuche noir'],['ghood','#ece2cc','Sweat à capuche crème'],['gzip','#1f2127','Sweat zippé à capuche noir'],['gsweat','#1f2127','Sweat col rond noir'],['gsweat','#a9adb3','Sweat col rond gris'],['gpull','#ece2cc','Pull en maille crème'],['gcote','#1f2127','Pull côtelé noir'],['gbandes','#f4f1ea','T-shirt à bandes blanc'],['gbandes','#1f2127','T-shirt à bandes noir'],['gdeb','#1f2127','Débardeur noir'],['gdeb','#f4f1ea','Débardeur blanc'],['gnageur','#1f2127','Débardeur dos nageur noir'],['gnageur','#f4f1ea','Débardeur dos nageur blanc'],['glayer','#1f2127','T-shirt noir sur manches longues'],['glayer','#f4f1ea','T-shirt blanc sur manches longues'],['gteepk','#1f2127','T-shirt noir à poche'],['gover','#ece2cc','T-shirt ample crème'],['glin','#ece2cc','Chemise en lin crème'],['graye','#1f2127','Pull rayé noir'],['graye','#ece2cc','Pull rayé crème']].map(([v,c,n])=>({s:'top',v,c,n,r:'HG',g:'m',nw:1})));
@@ -1716,9 +1752,9 @@ const DEFAULT={name:'Léa',nom:'Dupont',taille:'moyenne',corpulence:'moyenne',ri
 const KEY='atelier-avatar-v1';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* accessoires retirés du jeu (seules les créoles restent) : enlevés de tous les personnages */
-const BO_G=['gpuce','gboucle','gcreole','gcreole2'],COL_G=['gchfine','gchmoy','gchepaisse'];/* bijoux garçons (planches de Prescillia) */
+const BO_G=['gpuce','gpcreole','gmcreole'],BO_G_OLD={gboucle:'gpuce',gcreole:'gpcreole',gcreole2:'gpcreole'},COL_G=['gchfine','gchmoy','gchepaisse'];/* bijoux garçons (planches de Prescillia) */
 const BO_F=['puce','pcercles','gcercles','perles','etoile',...BO_G],COL_F=['pendrond','penddiam','prenom','multi','choker',...COL_G];
-function noAcc(s){const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anneaux'):BO_F.includes(s.earrings)?s.earrings:'aucune',co=COL_F.includes(s.necklace)?s.necklace:'aucun';
+function noAcc(s){if(BO_G_OLD[s.earrings])s={...s,earrings:BO_G_OLD[s.earrings]};const bo=s.earrings==='anneaux'?(s.sexe==='f'?'pcercles':'anneaux'):BO_F.includes(s.earrings)?s.earrings:'aucune',co=COL_F.includes(s.necklace)?s.necklace:'aucun';
  if(s.hat==='aucun'&&s.bag==='aucun'&&s.necklace===co&&s.glasses==='aucune'&&s.earrings===bo)return s;return {...s,hat:'aucun',bag:'aucun',necklace:co,glasses:'aucune',earrings:bo}}
 function normalize(x){const s=clone(DEFAULT);if(x&&typeof x==='object'){for(const k in s){if(k!=='adj'&&typeof x[k]===typeof s[k])s[k]=x[k]}if(x.adj)for(const k in s.adj){if(typeof x.adj[k]==='number')s.adj[k]=x.adj[k]}}s.hair=hairOk(s.hair);s.face=faceKey(s.face);if(typeof EYE_ART!=='undefined'&&!EYE_ART[s.eyes])s.eyes=EYE_OLD[s.eyes]||'amande';if(typeof EYE_LASHES!=='undefined'&&!EYE_LASHES.includes(s.cils))s.cils='naturels';if(!BROWS[s.brows])s.brows='naturels';if(typeof MOUTH_ART!=='undefined'&&!MOUTH_ART[s.mouth])s.mouth=MOUTH_OLD[s.mouth]||'naturelle';if(x&&typeof x.nom!=='string'&&/\s/.test((s.name||'').trim())){const w=s.name.trim().split(/\s+/);s.name=w.shift();s.nom=w.join(' ').replace(/^./,c=>c.toUpperCase())}else if(x&&typeof x.nom!=='string')s.nom=['Léa','Enzo',''].includes((s.name||'').trim())?DEFAULT.nom:'';if(!(s.name||'').trim()){s.name=s.sexe==='m'?'Enzo':'Léa';if(!(s.nom||'').trim())s.nom=DEFAULT.nom}return basNeuf(boucheSexe(s))}
 /* bouches : les garçons ont les bouches de leur planche, les filles celles de la leur */
