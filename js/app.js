@@ -1,5 +1,5 @@
 /* numéro de version visible dans l'appli (à augmenter avec VERSION dans sw.js) */
-const APP_VERSION='177';
+const APP_VERSION='178';
 /* gemmes mises de côté pour l'instant (demande de Prescillia) : le compteur G.gems continue en silence,
    mais rien ne les montre, ne les coûte ni ne les annonce. Remettre à true pour les réactiver. */
 const GEMS_ON=false;
@@ -1645,7 +1645,6 @@ const WEAR={
   {n:'Gilet long crème',r:'T',x:"Gilet et pantalon crème de ta capture ; t-shirt blanc dessous et chaussures choisis au plus proche.",set:{top:'tshirt',topColor:'#f4f1ea',jacket:'cardigan',jacketColor:'#ece2cc',bottom:'cordon',bottomColor:'#ece2cc',shoes:'basses',shoesColor:'#f4f1ea'}}]},
  jacket:{l:'Vestes',vb:'86 150 228 360',items:[
   {s:'jacket',v:'aucune',n:'Sans veste'},
-  {s:'jacket',v:'gvarsity',c:'#1f2127',n:'Veste universitaire',r:'BV',g:'m',nw:1},{s:'jacket',v:'gdoudoune',c:'#1f2127',n:'Doudoune',r:'BV',g:'m',nw:1},
   {s:'jacket',v:'matelassee',c:'#5b5a3c',n:'Blouson matelassé kaki court',r:'T',x:"Matelassage, col montant, longueur courte et teinte kaki respectés."},
   {s:'jacket',v:'cardigan',c:'#ece2cc',n:'Gilet long crème boutonné',r:'T',x:"Longueur, boutons et maille côtelée respectés ; porté ouvert."},
   {s:'jacket',v:'jean',c:'#5b7fb5',n:'Veste en jean',r:null},{s:'jacket',v:'blazer',c:'#1f2127',n:'Blazer noir',r:null},{s:'jacket',v:'bomber',c:'#26314f',n:'Bomber marine',r:null}]},
